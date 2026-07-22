@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <!-- Appender, Layout 설정 -->
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout charset="UTF-8" pattern=" %-5level %c(%M:%L)- %m%n"/>
+        </Console>
+    </Appenders>
+
+    <!-- Logger 설정 -->
+    <Loggers>
+        <!-- URL 맵핑 정보만 로그로 출력하기 -->
+        <Logger name="_org.springframework.web.servlet.HandlerMapping.Mappings" level="DEBUG" additivity="false" >
+            <AppenderRef ref="console"/>
+        </Logger>
+
+
+        <Root level="INFO">
+            <AppenderRef ref="console"/>
+        </Root>
+
+        <Logger name="org.scoula" level="INFO" additivity="false" >
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <Logger name="org.springframework" level="INFO" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <!-- 실행된 SQL 문장은 INFO 레벨부터 출력 -->
+        <Logger name="jdbc.sqlonly" level="INFO" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+
+
+        <!-- jdbc 관련 로그는 WARN 이상만 출력 -->
+        <Logger name="jdbc" level="WARN" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+    </Loggers>
+</Configuration>
