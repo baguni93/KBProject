@@ -29,35 +29,30 @@ CREATE TABLE `tbl_member_auth` (
 DROP TABLE IF EXISTS user_tbl;
 
 -- 1. 회원 테이블 정의서
+DROP TABLE IF EXISTS user_tbl;
+
 CREATE TABLE user_tbl (
     user_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '회원번호',
-
     user_name VARCHAR(30) NOT NULL COMMENT '이름',
-
+    birth_date CHAR(8) NOT NULL COMMENT '생년월일',
     phone_number VARCHAR(20) NOT NULL UNIQUE COMMENT '휴대폰번호',
-
-    email VARCHAR(100) NOT NULL UNIQUE COMMENT '이메일(로그인 ID)',
-
-    password VARCHAR(255) NOT NULL COMMENT 'BCrypt 암호화 비밀번호',
-
-    user_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'
-        COMMENT '회원상태 (ACTIVE, WD)',
-
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-        COMMENT '가입일시',
-
+    pin_password VARCHAR(255) NOT NULL COMMENT '암호화된 숫자 6자리 간편비밀번호',
+    user_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '회원상태',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '가입일시',
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP
         COMMENT '수정일시',
+    withdrawn_at DATETIME NULL COMMENT '탈퇴일시',
+    last_login_at DATETIME NULL COMMENT '최근접속일시',
 
-    withdrawn_at DATETIME NULL
-        COMMENT '탈퇴일시',
+    CONSTRAINT chk_user_name_length
+        CHECK (CHAR_LENGTH(user_name) BETWEEN 2 AND 30),
 
-    last_login_at DATETIME NULL
-        COMMENT '최근접속일시',
+    CONSTRAINT chk_user_birth_date
+        CHECK (birth_date REGEXP '^[0-9]{8}$'),
 
     CONSTRAINT chk_user_status
-        CHECK (user_status IN ('ACTIVE', 'WD'))
+        CHECK (user_status IN ('ACTIVE', 'WITHDRAWN'))
 ) COMMENT = '회원';
 
 -- 3. 은행 테이블
@@ -159,61 +154,59 @@ CREATE TABLE wallet_tbl (
         CHECK (wallet_status IN ('ACTIVE', 'CLOSED'))
 );
 
--- 6-2 휴대폰인증 테이블
+-- 6-2. 인증 테이블 정의서
 DROP TABLE IF EXISTS verification_tbl;
 
 CREATE TABLE verification_tbl (
     verification_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '인증번호',
-
     user_id INT NULL COMMENT '회원번호',
-
-    verification_type VARCHAR(20) NOT NULL COMMENT '인증수단',
-
-    target_value VARCHAR(100) NOT NULL COMMENT '인증대상',
-
-    verification_code VARCHAR(10) NOT NULL COMMENT '인증코드',
-
+    user_name VARCHAR(30) NOT NULL COMMENT '인증이름',
+    birth_date CHAR(8) NOT NULL COMMENT '생년월일',
+    carrier_code VARCHAR(20) NOT NULL COMMENT '통신사코드',
+    phone_number VARCHAR(20) NOT NULL COMMENT '휴대폰번호',
+    verification_code VARCHAR(255) NOT NULL COMMENT '암호화된 인증코드',
     verification_purpose VARCHAR(30) NOT NULL COMMENT '인증목적',
-
-    requested_at DATETIME NOT NULL COMMENT '인증요청일시',
-
-    expires_at DATETIME NOT NULL COMMENT '인증만료일시',
-
+    requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
     verified_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '인증완료여부',
-
-    verified_at DATETIME NULL COMMENT '인증완료일시',
-
-    resend_count INT NOT NULL DEFAULT 0 COMMENT '재전송횟수',
+    fail_count INT NOT NULL DEFAULT 0 COMMENT '인증실패횟수',
 
     CONSTRAINT fk_verification_user
         FOREIGN KEY (user_id)
         REFERENCES user_tbl(user_id),
 
-    CONSTRAINT chk_verification_type
+    CONSTRAINT chk_verification_user_name_length
+        CHECK (CHAR_LENGTH(user_name) BETWEEN 2 AND 30),
+
+    CONSTRAINT chk_verification_birth_date
+        CHECK (birth_date REGEXP '^[0-9]{8}$'),
+
+    CONSTRAINT chk_verification_carrier
         CHECK (
-            verification_type IN ('PHONE', 'EMAIL')
+            carrier_code IN (
+                'SKT',
+                'KT',
+                'LGU',
+                'SKT_MVNO',
+                'KT_MVNO',
+                'LGU_MVNO'
+            )
         ),
 
     CONSTRAINT chk_verification_purpose
         CHECK (
             verification_purpose IN (
                 'SIGN_UP',
-                'PHONE_CHANGE',
-                'EMAIL_CHANGE',
-                'PASSWORD_RESET'
+                'PIN_RESET',
+                'WITHDRAWAL'
             )
         ),
 
-    CONSTRAINT chk_verification_yn
-        CHECK (
-            verified_yn IN ('Y', 'N')
-        ),
+    CONSTRAINT chk_verification_verified_yn
+        CHECK (verified_yn IN ('Y', 'N')),
 
-    CONSTRAINT chk_resend_count
-        CHECK (
-            resend_count >= 0
-        )
-);
+    CONSTRAINT chk_verification_fail_count
+        CHECK (fail_count >= 0)
+) COMMENT = '휴대폰인증';
 
 
 -- 6-3. 프로필 테이블
@@ -221,19 +214,12 @@ DROP TABLE IF EXISTS profile_tbl;
 
 CREATE TABLE profile_tbl (
     profile_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '프로필번호',
-
     user_id INT NOT NULL UNIQUE COMMENT '회원번호',
-
     nickname VARCHAR(30) NOT NULL UNIQUE COMMENT '닉네임',
-
     introduction VARCHAR(300) NULL COMMENT '자기소개',
-
     original_name VARCHAR(255) NULL COMMENT '이미지원본명',
-
     stored_name VARCHAR(255) NULL COMMENT '이미지파일명',
-
     created_at DATETIME NOT NULL COMMENT '생성일시',
-
     updated_at DATETIME NOT NULL COMMENT '수정일시',
 
     CONSTRAINT fk_profile_user
@@ -246,15 +232,10 @@ DROP TABLE IF EXISTS notification_setting_tbl;
 
 CREATE TABLE notification_setting_tbl (
     notification_setting_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림설정번호',
-
     user_id INT NOT NULL UNIQUE COMMENT '회원번호',
-
     finance_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '금융알림여부',
-
     reward_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '리워드알림여부',
-
     event_benefit_notification_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '이벤트혜택알림여부',
-
     updated_at DATETIME NOT NULL COMMENT '수정일시',
 
     CONSTRAINT fk_notification_setting_user
@@ -276,13 +257,9 @@ DROP TABLE IF EXISTS refresh_token_tbl;
 
 CREATE TABLE refresh_token_tbl (
     refresh_token_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '토큰번호',
-
     user_id INT NOT NULL COMMENT '회원번호',
-
     refresh_token VARCHAR(500) NOT NULL UNIQUE COMMENT '리프레시토큰',
-
     issued_at DATETIME NOT NULL COMMENT '발급일시',
-
     expires_at DATETIME NOT NULL COMMENT '만료일시',
 
     CONSTRAINT fk_refresh_token_user
@@ -1646,3 +1623,52 @@ CREATE TABLE event_challenge_user_tbl (
         )
 
 ) COMMENT='이벤트 챌린지 참여이력';
+
+-- 49. 카드사 테이블 정의서
+DROP TABLE IF EXISTS card_company_tbl;
+
+CREATE TABLE card_company_tbl (
+    card_company_code VARCHAR(10) PRIMARY KEY COMMENT '카드사코드',
+    
+    card_company_name VARCHAR(50) NOT NULL UNIQUE COMMENT '카드사명',
+
+    CONSTRAINT chk_card_company_name
+        CHECK (CHAR_LENGTH(TRIM(card_company_name)) > 0)
+) COMMENT = '카드사';
+
+
+-- 50. 연결카드 테이블 정의서
+DROP TABLE IF EXISTS linked_card_tbl;
+
+CREATE TABLE linked_card_tbl (
+    linked_card_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '연결카드번호',
+    user_id INT NOT NULL COMMENT '회원번호',
+    
+    card_id INT NOT NULL UNIQUE COMMENT '등록카드번호',
+    
+    card_company_code VARCHAR(10) NOT NULL COMMENT '카드사코드',
+    
+    card_name VARCHAR(100) NOT NULL COMMENT '카드명',
+    
+    card_image_name VARCHAR(255) NULL COMMENT '카드이미지파일명',
+    
+    represent_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '대표카드여부',
+
+    CONSTRAINT fk_linked_card_user
+        FOREIGN KEY (user_id)
+        REFERENCES user_tbl(user_id),
+
+    CONSTRAINT fk_linked_card_registered_card
+        FOREIGN KEY (card_id)
+        REFERENCES registered_card_tbl(card_id),
+
+    CONSTRAINT fk_linked_card_company
+        FOREIGN KEY (card_company_code)
+        REFERENCES card_company_tbl(card_company_code),
+
+    CONSTRAINT chk_linked_card_name_length
+        CHECK (CHAR_LENGTH(card_name) BETWEEN 1 AND 100),
+
+    CONSTRAINT chk_linked_card_represent_yn
+        CHECK (represent_yn IN ('Y', 'N'))
+) COMMENT = '연결카드';
