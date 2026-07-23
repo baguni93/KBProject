@@ -1069,40 +1069,6 @@ CREATE TABLE card_tbl (
         REFERENCES account_dummy_tbl(account_id)
 );
 
--- 31.간편비밀번호 테이블
-DROP TABLE IF EXISTS pin_password_tbl;
-
-CREATE TABLE pin_password_tbl (
-    pin_password_id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'pin인증번호',
-
-    user_id INT NOT NULL UNIQUE COMMENT '회원번호',
-
-    hash_password VARCHAR(255) NOT NULL COMMENT '해시비밀번호',
-
-    fail_count INT NOT NULL DEFAULT 0 COMMENT '오류누적횟수',
-
-    locked_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '잠금여부',
-
-    locked_at DATETIME NULL COMMENT '잠금일시',
-
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP 
-        ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-
-    CONSTRAINT fk_pin_password_user
-        FOREIGN KEY (user_id)
-        REFERENCES user_tbl(user_id),
-
-    CONSTRAINT chk_pin_password_fail_count
-        CHECK (
-            fail_count >= 0
-        ),
-
-    CONSTRAINT chk_pin_password_locked_yn
-        CHECK (
-            locked_yn IN ('Y', 'N')
-        )
-);
-
 -- 32.등록실물카드 테이블
 DROP TABLE IF EXISTS registered_card_tbl;
 
@@ -1118,6 +1084,8 @@ CREATE TABLE registered_card_tbl (
     expiry_date CHAR(5) NOT NULL COMMENT '유효기간',
 
     cvv VARCHAR(255) NOT NULL COMMENT 'cvv',
+    
+    card_password VARCHAR(255) NOT NULL COMMENT '카드 비밀번호 4자리',
 
     represent_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '대표카드여부',
 
