@@ -2,6 +2,7 @@ package org.scoula.member.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.scoula.common.util.UploadPathName;
 import org.scoula.exception.PasswordMismatchException;
 import org.scoula.member.dto.ChangePasswordDTO;
 import org.scoula.member.dto.MemberDTO;
@@ -23,6 +24,7 @@ import java.util.Optional;
 @Service
 @Log4j2
 @RequiredArgsConstructor
+
 public class MemberServiceImpl implements MemberService{
 
     private final MemberMapper memberMapper;
@@ -55,10 +57,12 @@ public class MemberServiceImpl implements MemberService{
 
     private void saveAvatar(MultipartFile avatar, String username) {
         //아바타 업로드
+        String basePath  = UploadPathName.getUploadPath();
+
         if(avatar != null && !avatar.isEmpty()) {
-            File dest = new File("c:/upload", username + ".png");
+            File file = new File(basePath, username + ".png");
             try {
-                avatar.transferTo(dest);
+                avatar.transferTo(file);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

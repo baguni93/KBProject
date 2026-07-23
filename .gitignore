@@ -55,6 +55,7 @@ backend/src/main/resources/application-secret.properties
 
 # Upload Files
 uploads/
+uploads/**
 upload/
 temp/
 

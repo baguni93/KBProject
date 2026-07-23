@@ -2,6 +2,7 @@ package org.scoula.common.util;
 
 public class UploadFileName {
 
+
     public static String getUniqueName(String filename){
 
         int ix = filename.lastIndexOf(".");
@@ -11,4 +12,5 @@ public class UploadFileName {
         return String.format("%s-%d.%s", name, System.currentTimeMillis(), ext);
 
     }
+
 }
