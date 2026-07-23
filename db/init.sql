@@ -1069,40 +1069,6 @@ CREATE TABLE card_tbl (
         REFERENCES account_dummy_tbl(account_id)
 );
 
--- 31.간편비밀번호 테이블
-DROP TABLE IF EXISTS pin_password_tbl;
-
-CREATE TABLE pin_password_tbl (
-    pin_password_id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'pin인증번호',
-
-    user_id INT NOT NULL UNIQUE COMMENT '회원번호',
-
-    hash_password VARCHAR(255) NOT NULL COMMENT '해시비밀번호',
-
-    fail_count INT NOT NULL DEFAULT 0 COMMENT '오류누적횟수',
-
-    locked_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '잠금여부',
-
-    locked_at DATETIME NULL COMMENT '잠금일시',
-
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP 
-        ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-
-    CONSTRAINT fk_pin_password_user
-        FOREIGN KEY (user_id)
-        REFERENCES user_tbl(user_id),
-
-    CONSTRAINT chk_pin_password_fail_count
-        CHECK (
-            fail_count >= 0
-        ),
-
-    CONSTRAINT chk_pin_password_locked_yn
-        CHECK (
-            locked_yn IN ('Y', 'N')
-        )
-);
-
 -- 32.등록실물카드 테이블
 DROP TABLE IF EXISTS registered_card_tbl;
 
@@ -1118,6 +1084,8 @@ CREATE TABLE registered_card_tbl (
     expiry_date CHAR(5) NOT NULL COMMENT '유효기간',
 
     cvv VARCHAR(255) NOT NULL COMMENT 'cvv',
+
+    card_password VARCHAR(255) NOT NULL COMMENT '카드 비밀번호 4자리',
 
     represent_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '대표카드여부',
 
@@ -1148,14 +1116,6 @@ CREATE TABLE registered_card_tbl (
 );
 
 -- 33.결제일회성토큰 테이블
--- card_id 복합 FK 설정 오류 가능성이 있습니다.
-
--- 정의서:
-
--- FOREIGN KEY (card_id, user_id)
--- REFERENCES registered_card_tbl(card_id, user_id)
--- 그런데 registered_card_tbl에서는 UNIQUE(card_id, user_id)가 설정되어 있어 현재 구조로는 참조 가능합니다.
--- 따라서 그대로 반영했습니다.
 
 DROP TABLE IF EXISTS payment_token_tbl;
 
@@ -1205,10 +1165,6 @@ CREATE TABLE receipt_memo_tbl (
 );
 
 -- 35.피드 테이블
--- transaction_id 컬럼의 UK 설정이 정의서상 Y입니다.
--- 비고: 거래당 1개의 피드 생성 UNIQUE(transaction_id)
--- 따라서 UNIQUE(transaction_id) 적용했습니다.
--- feed_id가 PK이면서 AUTO_INCREMENT인 구조는 정상입니다.
 DROP TABLE IF EXISTS feed_tbl;
 
 CREATE TABLE feed_tbl (
@@ -1458,8 +1414,6 @@ CREATE TABLE card_application_history_tbl (
 
 
 -- 43.이벤트 테이블
--- event_type의 CHECK 조건이 정의서에는 ('ATTENDANCE', )만 존재합니다.
--- → 현재 기준 그대로 작성합니다.
 DROP TABLE IF EXISTS event_tbl;
 
 CREATE TABLE event_tbl (
@@ -1566,19 +1520,6 @@ CREATE TABLE event_participation_tbl (
 
 
 -- 46. 이벤트 리워드 수령이력 테이블 정의서
--- UNIQUE(event_id, user_id)
-
--- 유지하면 의미는:
-
--- 한 사용자는 하나의 이벤트에서 리워드를 1번만 받을 수 있다
-
--- 라는 정책입니다.
-
--- 예:
-
--- event_id	user_id	reward_id	결과
--- 1	100	1	가능
--- 1	100	2	불가능 (이미 해당 이벤트 보상 수령)
 CREATE TABLE event_reward_receive_tbl (
 
     recv_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '리워드수령ID',
