@@ -28,32 +28,37 @@ CREATE TABLE `tbl_member_auth` (
 
 DROP TABLE IF EXISTS user_tbl;
 
+-- 1. 회원 테이블 정의서
 CREATE TABLE user_tbl (
     user_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '회원번호',
 
     user_name VARCHAR(30) NOT NULL COMMENT '이름',
 
-    birth_date CHAR(8) NOT NULL COMMENT '생년월일(YYYYMMDD)',
-
     phone_number VARCHAR(20) NOT NULL UNIQUE COMMENT '휴대폰번호',
 
-    pin_password VARCHAR(255) NOT NULL COMMENT '간편비밀번호(암호화)',
+    email VARCHAR(100) NOT NULL UNIQUE COMMENT '이메일(로그인 ID)',
 
-    user_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '회원상태(ACTIVE, WITHDRAWN)',
+    password VARCHAR(255) NOT NULL COMMENT 'BCrypt 암호화 비밀번호',
 
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '가입일시',
+    user_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'
+        COMMENT '회원상태 (ACTIVE, WD)',
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        COMMENT '가입일시',
 
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+        ON UPDATE CURRENT_TIMESTAMP
+        COMMENT '수정일시',
 
-    withdrawn_at DATETIME NULL COMMENT '탈퇴일시',
+    withdrawn_at DATETIME NULL
+        COMMENT '탈퇴일시',
 
-    last_login_at DATETIME NULL COMMENT '최근접속일시',
+    last_login_at DATETIME NULL
+        COMMENT '최근접속일시',
 
     CONSTRAINT chk_user_status
-        CHECK (user_status IN ('ACTIVE', 'WITHDRAWN'))
-
-) COMMENT='회원';
+        CHECK (user_status IN ('ACTIVE', 'WD'))
+) COMMENT = '회원';
 
 -- 3. 은행 테이블
 DROP TABLE IF EXISTS bank_tbl;
