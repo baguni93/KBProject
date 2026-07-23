@@ -1118,6 +1118,8 @@ CREATE TABLE registered_card_tbl (
     expiry_date CHAR(5) NOT NULL COMMENT '유효기간',
 
     cvv VARCHAR(255) NOT NULL COMMENT 'cvv',
+    
+    card_password VARCHAR(255) NOT NULL COMMENT '카드 비밀번호 4자리',
 
     represent_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '대표카드여부',
 
