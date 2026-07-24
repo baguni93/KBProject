@@ -1403,9 +1403,15 @@ CREATE TABLE card_application_history_tbl (
 
 
 -- 43.이벤트 테이블
--- event_type의 CHECK 조건이 정의서에는 ('ATTENDANCE', )만 존재합니다.
--- → 현재 기준 그대로 작성합니다.
 DROP TABLE IF EXISTS event_tbl;
+
+-- event_type 부가설명
+-- 'ATTENDANCE' : 매일 출석체크
+-- 'PERMANENT' : 단발성(앱 기본 기능 사용 튜토리얼)
+-- 'LIMITED' : 기간제
+-- 'SEASON' : 기간제(계절,명절,기념일 등)
+-- 'LUCKYDRAW' : 랜덤박스
+-- 'PROMOTION' : 브랜드 행사 연동
 
 CREATE TABLE event_tbl (
     event_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '이벤트ID',
@@ -1432,7 +1438,7 @@ CREATE TABLE event_tbl (
 
     CONSTRAINT chk_event_type
         CHECK (
-            event_type IN ('ATTENDANCE')
+            event_type IN ('ATTENDANCE', 'PERMANENT', 'LIMITED', 'SEASON', 'PROMOTION', 'LUCKYDRAW' )
         ),
 
     CONSTRAINT chk_event_status
