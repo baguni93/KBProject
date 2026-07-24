@@ -26,6 +26,7 @@ import org.springframework.web.servlet.view.JstlView;
         "org.scoula.controller",
         "org.scoula.exception",
         "org.scoula.member.controller",
+        "org.scoula.pointwallet.controller"
 })
 public class ServletConfig implements WebMvcConfigurer {
 
