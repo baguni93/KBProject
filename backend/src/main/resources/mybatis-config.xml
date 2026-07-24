@@ -10,6 +10,7 @@
     <typeAliases>
         <typeAlias alias="AuthVO" type="org.scoula.security.account.domain.AuthVO" />
         <typeAlias alias="MemberVO" type="org.scoula.security.account.domain.MemberVO" />
+        <typeAlias alias="MemberVO" type="org.scoula.security.account.domain.MemberVO" />
     </typeAliases>
 
 </configuration>
