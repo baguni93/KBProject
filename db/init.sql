@@ -822,41 +822,73 @@ CREATE TABLE notification_tbl (
 
 
 -- 26. 통합 거래 원장 테이블
+-- ============================================
+-- 26. 통합 거래 원장 테이블
+-- ============================================
+
 DROP TABLE IF EXISTS financial_transaction_tbl;
 
 CREATE TABLE financial_transaction_tbl (
-    transaction_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '거래번호',
 
-    parent_transaction_id INT NULL COMMENT '상위 거래번호',
+    transaction_id INT AUTO_INCREMENT PRIMARY KEY
+    COMMENT '거래번호',
 
-    user_id INT NOT NULL COMMENT '거래 요청자 회원번호',
+    parent_transaction_id INT NULL
+    COMMENT '상위 거래번호',
 
-    transaction_type VARCHAR(30) NOT NULL COMMENT '거래유형',
+    user_id INT NOT NULL
+    COMMENT '거래 요청자 회원번호',
 
-    source_type VARCHAR(20) NOT NULL COMMENT '거래 출처 유형',
+    receive_id INT NOT NULL
+    COMMENT '거래 요청을 받는 회원번호',
 
-    target_type VARCHAR(20) NOT NULL COMMENT '거래 대상 유형',
+    transaction_type VARCHAR(30) NOT NULL
+    COMMENT '거래유형',
 
-    transaction_status VARCHAR(20) NOT NULL COMMENT '거래상태',
+    source_type VARCHAR(20) NOT NULL
+    COMMENT '거래 출처 유형',
 
-    amount INT NOT NULL COMMENT '거래금액',
+    target_type VARCHAR(20) NOT NULL
+    COMMENT '거래 대상 유형',
 
-    spending_category_id INT NULL COMMENT '소비 카테고리 ID',
+    transaction_status VARCHAR(20) NOT NULL
+    COMMENT '거래상태',
 
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    amount INT NOT NULL
+    COMMENT '거래금액',
 
+    spending_category_id INT NULL
+    COMMENT '소비 카테고리 ID',
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    COMMENT '생성일시',
+
+
+    -- 상위 거래 관계
     CONSTRAINT fk_financial_transaction_parent
         FOREIGN KEY (parent_transaction_id)
         REFERENCES financial_transaction_tbl(transaction_id),
 
+
+    -- 요청자 회원
     CONSTRAINT fk_financial_transaction_user
         FOREIGN KEY (user_id)
         REFERENCES user_tbl(user_id),
 
+
+    -- 수신자 회원
+    CONSTRAINT fk_financial_transaction_receiver
+        FOREIGN KEY (receive_id)
+        REFERENCES user_tbl(user_id),
+
+
+    -- 소비 카테고리
     CONSTRAINT fk_financial_transaction_category
         FOREIGN KEY (spending_category_id)
         REFERENCES spending_category_tbl(spending_category_id),
 
+
+    -- 거래 유형
     CONSTRAINT chk_financial_transaction_type
         CHECK (
             transaction_type IN (
@@ -867,6 +899,8 @@ CREATE TABLE financial_transaction_tbl (
             )
         ),
 
+
+    -- 출처 유형
     CONSTRAINT chk_financial_source_type
         CHECK (
             source_type IN (
@@ -875,6 +909,8 @@ CREATE TABLE financial_transaction_tbl (
             )
         ),
 
+
+    -- 대상 유형
     CONSTRAINT chk_financial_target_type
         CHECK (
             target_type IN (
@@ -883,6 +919,8 @@ CREATE TABLE financial_transaction_tbl (
             )
         ),
 
+
+    -- 거래 상태
     CONSTRAINT chk_financial_transaction_status
         CHECK (
             transaction_status IN (
@@ -892,6 +930,8 @@ CREATE TABLE financial_transaction_tbl (
             )
         ),
 
+
+    -- 금액 검증
     CONSTRAINT chk_financial_transaction_amount
         CHECK (
             amount >= 0
@@ -1403,15 +1443,9 @@ CREATE TABLE card_application_history_tbl (
 
 
 -- 43.이벤트 테이블
+-- event_type의 CHECK 조건이 정의서에는 ('ATTENDANCE', )만 존재합니다.
+-- → 현재 기준 그대로 작성합니다.
 DROP TABLE IF EXISTS event_tbl;
-
--- event_type 부가설명
--- 'ATTENDANCE' : 매일 출석체크
--- 'PERMANENT' : 단발성(앱 기본 기능 사용 튜토리얼)
--- 'LIMITED' : 기간제
--- 'SEASON' : 기간제(계절,명절,기념일 등)
--- 'LUCKYDRAW' : 랜덤박스
--- 'PROMOTION' : 브랜드 행사 연동
 
 CREATE TABLE event_tbl (
     event_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '이벤트ID',
@@ -1438,7 +1472,7 @@ CREATE TABLE event_tbl (
 
     CONSTRAINT chk_event_type
         CHECK (
-            event_type IN ('ATTENDANCE', 'PERMANENT', 'LIMITED', 'SEASON', 'PROMOTION', 'LUCKYDRAW' )
+            event_type IN ('ATTENDANCE')
         ),
 
     CONSTRAINT chk_event_status
