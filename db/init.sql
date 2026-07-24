@@ -335,7 +335,7 @@ CREATE TABLE point_transaction_tbl (
         CHECK (point_amount > 0),
 
     CONSTRAINT chk_point_transaction_reason
-        CHECK (reason_type IN ('EVENT'))
+        CHECK (reason_type IN ('EVENT', 'DEPOSIT','ATTENDANCE', 'RANDOM_BOX','CONVERSION',  'EVENT'))
 );
 
 -- 10.랜덤박스 테이블
