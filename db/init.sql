@@ -839,7 +839,7 @@ CREATE TABLE financial_transaction_tbl (
     user_id INT NOT NULL
     COMMENT '거래 요청자 회원번호',
 
-    receive_id INT NOT NULL
+    receive_id INT NULL
     COMMENT '거래 요청을 받는 회원번호',
 
     transaction_type VARCHAR(30) NOT NULL
