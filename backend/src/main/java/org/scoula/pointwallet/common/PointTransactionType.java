@@ -1,9 +1,10 @@
 package org.scoula.pointwallet.common;
 
 public enum PointTransactionType {
-    DEPOSIT,
-    ATTENDANCE,
-    RANDOM_BOX,
-    CONVERSION,
-    EVENT
+
+    EARN,       // 적립
+    USE,        // 사용
+    EXPIRE,     // 만료
+    CANCEL      // 취소 또는 복구
 }
+

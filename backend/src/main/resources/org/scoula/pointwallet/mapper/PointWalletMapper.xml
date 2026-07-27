@@ -7,22 +7,87 @@
 
 <!--  1. 포인트 지갑 조회  -->
     <select id="selectWalletByUserId"
-            parameterType="java.lang.Integer"
-            resultType="org.scoula.pointwallet.dto.PointWalletDTO">
+            resultMap="pointWalletResultMap">
 
         SELECT
-        point_wallet_id AS pointWalletId,
-        user_id AS userId,
-        point_balance AS pointBalance,
-        DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updatedAt
+        point_wallet_id,
+        user_id,
+        point_balance,
+        DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at
         FROM point_wallet_tbl
         WHERE user_id = #{userId}
 
     </select>
 
-<!--  2. 포인트 거래내역 조회  -->
+<!--  2. 전체 포인트 거래내역 조회  -->
     <select id="selectTransactionsByUserId"
-            parameterType="java.lang.Integer"
+            resultType="org.scoula.pointwallet.dto.PointTransactionDTO">
+
+        SELECT
+        pt.point_transaction_id AS pointTransactionId,
+        pt.point_wallet_id AS pointWalletId,
+        pt.transaction_type AS transactionType,
+        pt.point_amount AS pointAmount,
+        pt.reason_type AS reasonType,
+        DATE_FORMAT(
+        pt.created_at,
+        '%Y-%m-%d %H:%i:%s'
+        ) AS createdAt
+        FROM point_transaction_tbl pt
+        INNER JOIN point_wallet_tbl pw
+        ON pw.point_wallet_id = pt.point_wallet_id
+        WHERE pw.user_id = #{userId}
+
+        <if test="transactionType != null and transactionType != ''">
+            AND pt.transaction_type = #{transactionType}
+        </if>
+
+        ORDER BY
+        pt.created_at DESC,
+        pt.point_transaction_id DESC
+
+    </select>
+
+    <!-- 포인트 잔액 증가 -->
+    <update id="increasePointBalance">
+        UPDATE point_wallet_tbl
+        SET point_balance = point_balance + #{pointAmount}
+        WHERE point_wallet_id = #{pointWalletId}
+    </update>
+
+
+    <!-- 포인트 거래내역 저장 -->
+    <insert id="insertPointTransaction">
+        INSERT INTO point_transaction_tbl (
+        point_wallet_id,
+        transaction_type,
+        point_amount,
+        reason_type,
+        created_at
+        )
+        VALUES (
+        #{pointWalletId},
+        #{transactionType},
+        #{pointAmount},
+        #{reasonType},
+        CURRENT_TIMESTAMP
+        )
+    </insert>
+
+    <!-- 회원 가입시 포인트 지갑 자동 생성 -->
+    <insert id="insertPointWallet">
+        INSERT INTO point_wallet_tbl (
+        user_id,
+        point_balance
+        )
+        VALUES (
+        #{userId},
+        0
+        )
+    </insert>
+
+<!--    최근 거래내역 5건만 보여주는 기능-->
+    <select id="selectRecentTransactionsByUserId"
             resultType="org.scoula.pointwallet.dto.PointTransactionDTO">
 
         SELECT
@@ -42,7 +107,53 @@
         ORDER BY
         pt.created_at DESC,
         pt.point_transaction_id DESC
+        LIMIT 5
 
     </select>
+
+    <!-- 포인트 취소 처리 전 지갑에 ROWLOCK 걸고 조회 -->
+    <resultMap id="pointWalletResultMap"
+               type="org.scoula.pointwallet.domain.PointWalletVO">
+
+        <id property="pointWalletId"
+            column="point_wallet_id"/>
+
+        <result property="userId"
+                column="user_id"/>
+
+        <result property="pointBalance"
+                column="point_balance"/>
+
+        <result property="updatedAt"
+                column="updated_at"/>
+
+    </resultMap>
+
+    <!-- 포인트 취소 처리 전 지갑 행 잠금 조회 -->
+    <select id="selectPointWalletForUpdate"
+            resultMap="pointWalletResultMap">
+
+        SELECT
+        point_wallet_id,
+        user_id,
+        point_balance,
+        DATE_FORMAT(
+        updated_at,
+        '%Y-%m-%d %H:%i:%s'
+        ) AS updated_at
+        FROM point_wallet_tbl
+        WHERE user_id = #{userId}
+        FOR UPDATE
+
+    </select>
+
+    <!-- 포인트 취소 차감: 음수 잔액 허용 -->
+    <update id="decreasePointBalance">
+
+        UPDATE point_wallet_tbl
+        SET point_balance = point_balance - #{pointAmount}
+        WHERE user_id = #{userId}
+
+    </update>
 
 </mapper>
