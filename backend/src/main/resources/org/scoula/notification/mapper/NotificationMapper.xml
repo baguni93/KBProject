@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scoula.notification.mapper.NotificationMapper">
+
+
+    <insert id="create" useGeneratedKeys="true" keyProperty="notificationId">
+        insert notification_tbl(receiver_id, sender_id, notification_type, target_id)
+        values (#{receiverId}, #{senderId} , #{notificationType},#{targetId})
+    </insert>
+
+    <delete id="read">
+        delete from notification_tbl where notification_id = #{notificationId};
+    </delete>
+
+    <delete id="readAll">
+        delete from notification_tbl where receiver_id = #{userId};
+    </delete>
+
+
+    <select id="get" resultType="org.scoula.notification.domain.NotificationVO">
+        select
+            notification_id,
+            receiver_id,
+            sender_id,
+            notification_type,
+            target_id,
+            created_at
+        from notification_tbl where notification_id = #{notificationId};
+    </select>
+
+    <select id="getList" resultType="org.scoula.notification.domain.NotificationVO">
+        select
+            notification_id,
+            receiver_id,
+            sender_id,
+            notification_type,
+            target_id,
+            created_at
+        from notification_tbl where receiver_id = #{userId};
+    </select>
+</mapper>
