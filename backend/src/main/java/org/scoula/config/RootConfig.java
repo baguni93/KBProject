@@ -28,10 +28,21 @@ import javax.sql.DataSource;
         "org.scoula.member.mapper",
         "org.scoula.security.account.mapper",
         "org.scoula.feed.mapper",
+        "org.scoula.settlement.mapper",
+        "org.scoula.notification.mapper",
+        "org.scoula.friend.mapper",
+        "org.scoula.comment.mapper",
+        "org.scoula.like.mapper",
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
         "org.scoula.feed.service",
+        "org.scoula.settlement.service",
+        "org.scoula.notification.service",
+        "org.scoula.friend.service",
+        "org.scoula.comment.service",
+        "org.scoula.like.service",
+
 })
 
 @EnableTransactionManagement

@@ -27,6 +27,11 @@ import org.springframework.web.servlet.view.JstlView;
         "org.scoula.exception",
         "org.scoula.member.controller",
         "org.scoula.feed.controller",
+        "org.scoula.settlement.controller",
+        "org.scoula.notification.controller",
+        "org.scoula.friend.controller",
+        "org.scoula.comment.controller",
+        "org.scoula.like.controller",
 })
 public class ServletConfig implements WebMvcConfigurer {
 
