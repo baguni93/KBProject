@@ -578,22 +578,22 @@ CREATE TABLE point_conversion_history_tbl
 (
     point_conversion_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '포인트 전환내역 PK',
     user_id             INT      NOT NULL COMMENT '유저 ID',
-    point_wallet_id     INT      NOT NULL COMMENT '포인트 지갑',
-    linked_account_id   INT      NOT NULL COMMENT '입금계좌번호',
-    converted_point     INT      NOT NULL COMMENT '변환 금액',
-    converted_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '변환 일시',
+    point_wallet_id     INT      NOT NULL COMMENT '포인트 지갑 ID',
+    wallet_id           INT      NOT NULL COMMENT '충전된 전자지갑 ID',
+    converted_point     INT      NOT NULL COMMENT '전환 포인트',
+    converted_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '전환 일시',
 
     CONSTRAINT fk_point_conversion_user
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id),
 
-    CONSTRAINT fk_point_conversion_wallet
+    CONSTRAINT fk_point_conversion_point_wallet
         FOREIGN KEY (point_wallet_id)
             REFERENCES point_wallet_tbl (point_wallet_id),
 
-    CONSTRAINT fk_point_conversion_account
-        FOREIGN KEY (linked_account_id)
-            REFERENCES linked_account_tbl (linked_account_id),
+    CONSTRAINT fk_point_conversion_wallet
+        FOREIGN KEY (wallet_id)
+            REFERENCES wallet_tbl (wallet_id),
 
     CONSTRAINT chk_point_conversion_point
         CHECK (converted_point > 0)
@@ -2144,7 +2144,7 @@ INSERT INTO point_wallet_tbl (point_wallet_id,
                               user_id,
                               point_balance,
                               updated_at)
-VALUES (1, 1, 4000, '2026-07-24 09:10:00'),
+VALUES (1, 1, 500, '2026-07-24 09:10:00'),
        (2, 2, 5000, '2026-07-24 09:20:00'),
        (3, 3, 7500, '2026-07-24 09:30:00');
 
@@ -2166,9 +2166,9 @@ VALUES
     -- 사용자 1: 1,000 사용
     (2, 1, 'USE', 1000, 'CONVERSION', '2026-07-23 09:10:00'),
 
-    -- 사용자 1: 랜덤박스 보상 4,500 회수
-    -- 5,000 - 1,000 - 4,500 = -500
-    (3, 1, 'CANCEL', 4500, 'RANDOM_BOX', '2026-07-24 09:10:00'),
+    -- 사용자 1: 랜덤박스 보상 3,500 회수
+    -- 5,000 - 1,000 - 3,500 = 500
+    (3, 1, 'CANCEL', 3500, 'RANDOM_BOX', '2026-07-24 09:10:00'),
 
     -- 사용자 2: 7,000 적립
     (4, 2, 'EARN', 7000, 'EVENT', '2026-07-21 09:00:00'),
@@ -2205,13 +2205,13 @@ INSERT INTO user_random_box_tbl (
       (2, 1, 'EVENT', 1, 'UNOPENED', NULL, '2026-07-24 09:00:00', NULL, NULL, NULL),
 
       -- 정상 개봉된 출석 랜덤박스
-      (3, 2, 'ATTENDANCE', 2, 'OPENED', 1000, '2026-07-19 09:00:00', '2026-07-19 09:05:00', NULL, NULL),
+      (3, 2, 'ATTENDANCE', 3, 'OPENED', 1000, '2026-07-19 09:00:00', '2026-07-19 09:05:00', NULL, NULL),
 
       -- 이벤트 랜덤박스 미개봉 상태에서 회수
       (4, 2, 'EVENT', 2, 'REVOKED', NULL, '2026-07-24 09:10:00', NULL, '2026-07-25 10:00:00', 'EVENT_CANCEL'),
 
       -- 정상 개봉된 출석 랜덤박스
-      (5, 3, 'ATTENDANCE', 3, 'OPENED', 300, '2026-07-20 09:00:00', '2026-07-20 09:05:00', NULL, NULL);
+      (5, 3, 'ATTENDANCE', 5, 'OPENED', 300, '2026-07-20 09:00:00', '2026-07-20 09:05:00', NULL, NULL);
 
 
 -- ---------------------------------------------------------------------
@@ -2230,19 +2230,21 @@ VALUES (1, 1, '2026-07-22'),
 -- ---------------------------------------------------------------------
 -- 포인트 전환 내역: 6건
 -- ---------------------------------------------------------------------
-INSERT INTO point_conversion_history_tbl (point_conversion_id,
-                                          user_id,
-                                          point_wallet_id,
-                                          linked_account_id,
-                                          converted_point,
-                                          converted_at)
-VALUES (1, 1, 1, 1, 500, '2026-07-18 12:00:00'),
-       (2, 1, 1, 2, 1000, '2026-07-19 12:00:00'),
-       (3, 2, 2, 3, 500, '2026-07-20 12:00:00'),
-       (4, 2, 2, 4, 1000, '2026-07-21 12:00:00'),
-       (5, 3, 3, 5, 500, '2026-07-22 12:00:00'),
-       (6, 3, 3, 6, 1000, '2026-07-23 12:00:00');
-
+INSERT INTO point_conversion_history_tbl (
+    point_conversion_id,
+    user_id,
+    point_wallet_id,
+    wallet_id,
+    converted_point,
+    converted_at
+)
+VALUES
+    (1, 1, 1, 1, 500,  '2026-07-18 12:00:00'),
+    (2, 1, 1, 1, 1000, '2026-07-19 12:00:00'),
+    (3, 2, 2, 2, 500,  '2026-07-20 12:00:00'),
+    (4, 2, 2, 2, 1000, '2026-07-21 12:00:00'),
+    (5, 3, 3, 3, 500,  '2026-07-22 12:00:00'),
+    (6, 3, 3, 3, 1000, '2026-07-23 12:00:00');
 -- ---------------------------------------------------------------------
 -- 소비 분석: 6건
 -- ---------------------------------------------------------------------

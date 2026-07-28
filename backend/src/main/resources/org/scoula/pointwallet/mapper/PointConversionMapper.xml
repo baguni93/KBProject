@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.pointwallet.mapper.PointConversionMapper">
+
+    <resultMap id="pointConversionResultMap"
+               type="org.scoula.pointwallet.domain.PointConversionVO">
+
+        <id property="pointConversionId"
+            column="point_conversion_id"/>
+
+        <result property="userId"
+                column="user_id"/>
+
+        <result property="pointWalletId"
+                column="point_wallet_id"/>
+
+        <result property="walletId"
+                column="wallet_id"/>
+
+        <result property="convertedPoint"
+                column="converted_point"/>
+
+        <result property="convertedAt"
+                column="converted_at"/>
+
+    </resultMap>
+
+    <!-- 포인트 전환 이력 저장 -->
+    <insert id="insertPointConversion"
+            parameterType="org.scoula.pointwallet.domain.PointConversionVO"
+            useGeneratedKeys="true"
+            keyProperty="pointConversionId"
+            keyColumn="point_conversion_id">
+
+        INSERT INTO point_conversion_history_tbl (
+        user_id,
+        point_wallet_id,
+        wallet_id,
+        converted_point,
+        converted_at
+        )
+        VALUES (
+        #{userId},
+        #{pointWalletId},
+        #{walletId},
+        #{convertedPoint},
+        CURRENT_TIMESTAMP
+        )
+
+    </insert>
+
+    <!-- 포인트 전환 이력 조회 -->
+    <select id="selectPointConversionById"
+            resultMap="pointConversionResultMap">
+
+        SELECT
+        point_conversion_id,
+        user_id,
+        point_wallet_id,
+        wallet_id,
+        converted_point,
+        DATE_FORMAT(
+        converted_at,
+        '%Y-%m-%d %H:%i:%s'
+        ) AS converted_at
+        FROM point_conversion_history_tbl
+        WHERE point_conversion_id = #{pointConversionId}
+
+    </select>
+
+</mapper>

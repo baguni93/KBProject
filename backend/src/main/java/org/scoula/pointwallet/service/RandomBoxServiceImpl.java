@@ -109,14 +109,23 @@ public class RandomBoxServiceImpl implements RandomBoxService {
         );
     }
 
+    // 피드 송신, 수신 하면 하면 이거 실행하시면 됩니다.
+    // 중복발급이랑, 일일 최대 10개제한, 랜덤박스에 저장은 공통 랜덤박스
+    // 발급 정책 클래스에서 처리한다.
+
     @Override
     @Transactional
     public RandomBoxIssueResultDTO claimFromReceivedFeed(
             Integer userId,
             Integer feedId
     ) {
-        // TODO-INTEGRATION: 현재 사용자가 해당 피드를 실제로 수신했는지 검증
-        // TODO-INTEGRATION: 비공개 피드 또는 본인 피드는 수신 보상에서 제외
+        // TODO-INTEGRATION: 현재 사용자가 해당 피드를 실제로 수신했는지 검증코드 작성 필요
+        // 친구관계인지? 해당사용자가 볼 수있는 피드인지, 피드가 삭제되지는 않았는지 등 ...
+        // TODO-INTEGRATION: 비공개 피드 또는 본인 피드는 수신 보상에서 제외코드 작성 필요
+        // 수신보상인데, 본인 피드로 보상을 받으면 안되고, 비공개 피드에서 다른사용자가
+        // 랜덤박스를 받으면 안됨.
+
+        // 모두 통과시, 랜덤박스 발급 함수를 호출한다.
         return issueRandomBox(
                 userId,
                 RandomBoxIssueReason.FEED_RECEIVE_CLAIM,

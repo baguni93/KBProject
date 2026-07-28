@@ -156,4 +156,15 @@
 
     </update>
 
+    <!-- 포인트 전환 차감: 잔액이 충분한 경우에만 처리 -->
+    <update id="decreasePointBalanceIfSufficient">
+
+        UPDATE point_wallet_tbl
+        SET point_balance = point_balance - #{pointAmount}
+        WHERE point_wallet_id = #{pointWalletId}
+        AND point_balance >= #{pointAmount}
+
+    </update>
+
+
 </mapper>

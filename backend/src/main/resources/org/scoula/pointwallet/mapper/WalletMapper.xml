@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.pointwallet.mapper.WalletMapper">
+
+    <resultMap id="walletResultMap"
+               type="org.scoula.pointwallet.domain.WalletVO">
+
+        <id property="walletId"
+            column="wallet_id"/>
+
+        <result property="userId"
+                column="user_id"/>
+
+        <result property="balance"
+                column="balance"/>
+
+        <result property="walletStatus"
+                column="wallet_status"/>
+
+    </resultMap>
+
+    <!-- 사용자 전자지갑 조회 -->
+    <select id="selectWalletByUserId"
+            resultMap="walletResultMap">
+
+        SELECT
+        wallet_id,
+        user_id,
+        balance,
+        wallet_status
+        FROM wallet_tbl
+        WHERE user_id = #{userId}
+
+    </select>
+
+    <!-- 포인트 전환 전 전자지갑 행 잠금 조회 -->
+    <select id="selectWalletForUpdate"
+            resultMap="walletResultMap">
+
+        SELECT
+        wallet_id,
+        user_id,
+        balance,
+        wallet_status
+        FROM wallet_tbl
+        WHERE user_id = #{userId}
+        FOR UPDATE
+
+    </select>
+
+    <!-- 전자지갑 잔액 증가 -->
+    <update id="increaseWalletBalance">
+
+        UPDATE wallet_tbl
+        SET balance = balance + #{amount}
+        WHERE wallet_id = #{walletId}
+        AND wallet_status = 'ACTIVE'
+
+    </update>
+
+</mapper>

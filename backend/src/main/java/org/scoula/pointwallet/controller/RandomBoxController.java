@@ -22,8 +22,7 @@ public class RandomBoxController {
      * 사용자가 보유한 미개봉 랜덤박스 목록 조회
      */
     @GetMapping("/unopened")
-    public ResponseEntity<List<UserRandomBoxDTO>>
-    getUnopenedRandomBoxes() {
+    public ResponseEntity<List<UserRandomBoxDTO>> getUnopenedRandomBoxes() {
 
         Integer userId = getCurrentUserId();
 
@@ -62,8 +61,7 @@ public class RandomBoxController {
      * 사용자가 선택한 랜덤박스 1개 개봉
      */
     @PostMapping("/{userRandomBoxId}/open")
-    public ResponseEntity<RandomBoxOpenResultDTO>
-    openRandomBox(
+    public ResponseEntity<RandomBoxOpenResultDTO> openRandomBox(
             @PathVariable("userRandomBoxId")
             Integer userRandomBoxId
     ) {
@@ -82,8 +80,7 @@ public class RandomBoxController {
      * 사용자가 보유한 미개봉 랜덤박스 모두 개봉
      */
     @PostMapping("/open-all")
-    public ResponseEntity<RandomBoxOpenAllResultDTO>
-    openAllRandomBoxes() {
+    public ResponseEntity<RandomBoxOpenAllResultDTO> openAllRandomBoxes() {
 
         Integer userId = getCurrentUserId();
 

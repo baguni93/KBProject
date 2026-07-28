@@ -51,8 +51,15 @@ public interface PointWalletMapper {
             @Param("userId") Integer userId
     );
 
+    // 포인트 단순 차감- > 취소 용도
     int decreasePointBalance(
             @Param("userId") Integer userId,
+            @Param("pointAmount") Integer pointAmount
+    );
+
+    // 포인트 전환 시 잔액이 충분한 경우에만 차감 -> 전환 용도
+    int decreasePointBalanceIfSufficient(
+            @Param("pointWalletId") Integer pointWalletId,
             @Param("pointAmount") Integer pointAmount
     );
 

@@ -16,11 +16,11 @@ public final class RandomBoxRewardPolicy {
      * 랜덤박스 확률
      * 1~10P:  90%
      * 11~100P : 9%
-     * 101~1000P: 1%
+     * 101~1000P: 0.9%
      * 1001~5000P: 0.09%
      * 10000P : 0.01%
      *
-     * -> 인당 랜덤박스 1개 기대값은 18.6원 
+     * -> 인당 랜덤박스 1개 기대값은 18.6P
      */
     private static final int TOTAL_PROBABILITY_WEIGHT = 10_000;
 
