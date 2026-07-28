@@ -26,6 +26,7 @@ import org.springframework.web.servlet.view.JstlView;
         "org.scoula.controller",
         "org.scoula.exception",
         "org.scoula.member.controller",
+        "org.scoula.feed.controller",
         "org.scoula.wallet.controller",
         "org.scoula.remittance.controller"
 })

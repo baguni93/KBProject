@@ -19,4 +19,11 @@ public class UploadPathName {
             throw new RuntimeException(e);
         }
     }
+
+    public  static  String getFeedPath(){
+
+
+        return getUploadPath() + "feed/";
+
+    }
 }
