@@ -1,26 +1,19 @@
 export default {
-  title: '2팀', // 메인 타이틀
-  subtitle: '최종 프로젝트', // 서브 타이틀
+  title: 'KB Pay',
+  subtitle: '',
   menus: [
-    // 메인 메뉴 구성 정보
     {
-      title: '로그인',
-      url: '/auth/login',
-      icon: 'fa-solid fa-paste',
+      title: 'KB Pay 지갑',
+      url: '/wallet',
+      icon: 'fa-solid fa-wallet',
     },
     {
-      title: '로그인',
-      url: '/auth/login',
-      icon: 'fa-solid fa-plane-departure',
-    },
-    {
-      title: '로그인',
-      url: '/auth/login',
-      icon: 'fa-regular fa-images',
+      title: '송금하기',
+      url: '/remittance',
+      icon: 'fa-solid fa-paper-plane',
     },
   ],
   accoutMenus: {
-    // 인증 관련 메뉴 정보
     login: {
       url: '/auth/login',
       title: '로그인',
