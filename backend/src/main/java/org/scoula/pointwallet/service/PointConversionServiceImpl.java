@@ -24,6 +24,7 @@ public class PointConversionServiceImpl implements PointConversionService {
     private final PointWalletMapper pointWalletMapper;
     private final WalletMapper walletMapper;
     private final PointConversionMapper pointConversionMapper;
+    private static final int MINIMUM_CONVERSION_POINT = 100;
 
     @Override
     @Transactional
@@ -270,11 +271,16 @@ public class PointConversionServiceImpl implements PointConversionService {
             );
         }
 
-        if (pointAmount == null || pointAmount <= 0) {
+        if (pointAmount == null
+                || pointAmount < MINIMUM_CONVERSION_POINT) {
+
             throw new PointWalletException(
                     PointWalletErrorCode.INVALID_POINT_AMOUNT,
-                    "전환 포인트는 0보다 커야 합니다."
+                    "포인트 전환은 최소 "
+                            + MINIMUM_CONVERSION_POINT
+                            + "포인트부터 가능합니다."
             );
         }
     }
+
 }

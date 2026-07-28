@@ -28,18 +28,16 @@ import javax.sql.DataSource;
         "org.scoula.member.mapper",
         "org.scoula.security.account.mapper",
         "org.scoula.feed.mapper",
+        "org.scoula.pointwallet.mapper",
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
         "org.scoula.feed.service",
         "org.scoula.wallet.service",
-        "org.scoula.remittance.service"
-        "org.scoula.pointwallet.mapper",
-})
-@ComponentScan(basePackages = {
-        "org.scoula.member.service",
+        "org.scoula.remittance.service",
         "org.scoula.pointwallet.service",
 })
+
 
 @EnableTransactionManagement
 @EnableAspectJAutoProxy
