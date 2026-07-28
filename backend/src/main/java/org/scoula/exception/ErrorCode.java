@@ -29,8 +29,11 @@ public enum ErrorCode {
     FRIEND_ALREADY_CANCEL(HttpStatus.NOT_FOUND, "FR004", "이미 취소된 친구 요청입니다."),
     FRIEND_REQUEST_ALREADY_EXISTS(HttpStatus.NOT_FOUND, "FR005", "이미 친구 요청이 존재합니다."),
     //Friend
-    FRIEND_NOT_FOUND(HttpStatus.NOT_FOUND, "F001", "친구를 찾을 수 없습니다."),
+    FRIEND_NOT_FOUND(HttpStatus.NOT_FOUND, "FD001", "친구를 찾을 수 없습니다."),
 
+    //Comment
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "C001", "댓글이 존재하지않습니다."),
+    
     // Wallet
     INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "W001", "잔액이 부족합니다.");
 
