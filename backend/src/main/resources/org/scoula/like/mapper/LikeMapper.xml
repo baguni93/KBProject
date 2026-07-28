@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scoula.like.mapper.LikeMapper">
+
+    <insert id="create">
+        insert feed_like_tbl(feed_id, user_id) values (#{feedId}, #{userId})
+    </insert>
+    <delete id="delete">
+        delete  from feed_like_tbl
+                where feed_id =#{feedId} and user_id = #{userId};
+    </delete>
+</mapper>
