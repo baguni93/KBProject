@@ -5,6 +5,8 @@ import lombok.extern.log4j.Log4j2;
 import org.scoula.pointwallet.common.PointReasonType;
 import org.scoula.pointwallet.domain.AttendanceVO;
 import org.scoula.pointwallet.dto.*;
+import org.scoula.pointwallet.exception.PointWalletErrorCode;
+import org.scoula.pointwallet.exception.PointWalletException;
 import org.scoula.pointwallet.mapper.AttendanceMapper;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -52,9 +54,10 @@ public class AttendanceServiceImpl implements AttendanceService {
                         userId
                 );
 
+        // 이미 오늘 출석을 완료한 경우.
         if (todayAttendanceCount > 0) {
-            throw new IllegalStateException(
-                    "오늘은 이미 출석을 완료했습니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.ALREADY_ATTENDED
             );
         }
 
@@ -73,22 +76,34 @@ public class AttendanceServiceImpl implements AttendanceService {
                     attendanceMapper.insertTodayAttendance(
                             attendanceVO
                     );
-        } catch (DuplicateKeyException e) {
-            throw new IllegalStateException(
-                    "오늘은 이미 출석을 완료했습니다.",
-                    e
+        } catch (DuplicateKeyException exception) {
+            // 이미 출석을 완료한 경우
+            throw new PointWalletException(
+                    PointWalletErrorCode.ALREADY_ATTENDED,
+                    exception
             );
         }
 
         if (insertedCount != 1) {
-            throw new IllegalStateException(
-                    "출석 내역 저장에 실패했습니다."
+            log.error(
+                    "출석 내역 저장 실패 userId={}, insertedCount={}",
+                    userId,
+                    insertedCount
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
         if (attendanceVO.getAttendanceId() == null) {
-            throw new IllegalStateException(
-                    "생성된 출석 ID를 확인하지 못했습니다."
+            log.error(
+                    "출석 ID 가져오기 실패 userId={}",
+                    userId
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -105,6 +120,18 @@ public class AttendanceServiceImpl implements AttendanceService {
                         PointReasonType.ATTENDANCE
                 );
 
+        if (updatedWallet == null) {
+            log.error(
+                    "출석 포인트 지급 결과 조회 실패 userId={}, attendanceId={}",
+                    userId,
+                    attendanceVO.getAttendanceId()
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            );
+        }
+
         /*
          * 랜덤박스 Service는 VO로 DB 저장 후
          * 발급 결과 DTO를 반환한다.
@@ -114,6 +141,26 @@ public class AttendanceServiceImpl implements AttendanceService {
                         userId,
                         attendanceVO.getAttendanceId()
                 );
+
+
+        /*
+         * 출석 보상에서는 반드시 랜덤박스가 1개 지급되어야 한다.
+         */
+        if (randomBoxResult == null
+                || !randomBoxResult.isIssued()
+                || randomBoxResult.getUserRandomBoxId() == null) {
+
+            log.error(
+                    "출석 랜덤박스 지급 결과 오류 userId={}, attendanceId={}, result={}",
+                    userId,
+                    attendanceVO.getAttendanceId(),
+                    randomBoxResult
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            );
+        }
 
         log.info(
                 "출석 완료 userId={}, attendanceId={}, rewardPoint={}, randomBoxId={}",
@@ -150,7 +197,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     private void validateAttendanceRequest(Integer userId) {
         if (userId == null || userId <= 0) {
-            throw new IllegalArgumentException(
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_REQUEST,
                     "유효한 사용자 ID가 필요합니다."
             );
         }

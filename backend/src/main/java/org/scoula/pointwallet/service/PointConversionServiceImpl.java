@@ -8,6 +8,8 @@ import org.scoula.pointwallet.domain.PointConversionVO;
 import org.scoula.pointwallet.domain.PointWalletVO;
 import org.scoula.pointwallet.domain.WalletVO;
 import org.scoula.pointwallet.dto.PointConversionResultDTO;
+import org.scoula.pointwallet.exception.PointWalletErrorCode;
+import org.scoula.pointwallet.exception.PointWalletException;
 import org.scoula.pointwallet.mapper.PointConversionMapper;
 import org.scoula.pointwallet.mapper.PointWalletMapper;
 import org.scoula.pointwallet.mapper.WalletMapper;
@@ -43,9 +45,10 @@ public class PointConversionServiceImpl implements PointConversionService {
                         userId
                 );
 
+        // 포인트 지갑이 존재하지 않는 경우
         if (pointWallet == null) {
-            throw new IllegalArgumentException(
-                    "포인트 지갑이 존재하지 않습니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.WALLET_NOT_FOUND
             );
         }
 
@@ -59,21 +62,24 @@ public class PointConversionServiceImpl implements PointConversionService {
                         userId
                 );
 
+        // 전자 지갑이 존재하지 않는 경우
         if (wallet == null) {
-            throw new IllegalArgumentException(
-                    "전자지갑이 존재하지 않습니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.WALLET_NOT_FOUND
             );
         }
 
+        // 전자 지갑이 사용 가능한 상태가 아닌 경우
         if (!"ACTIVE".equals(wallet.getWalletStatus())) {
-            throw new IllegalStateException(
-                    "전자지갑이 사용 가능한 상태가 아닙니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.WALLET_NOT_ACTIVE
             );
         }
 
+        // 보유 포인트가 부족한 경우
         if (pointWallet.getPointBalance() < pointAmount) {
-            throw new IllegalStateException(
-                    "보유 포인트가 부족합니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.INSUFFICIENT_POINT
             );
         }
 
@@ -87,9 +93,17 @@ public class PointConversionServiceImpl implements PointConversionService {
                         pointAmount
                 );
 
+        // 포인트 차감에 실패한 경우.
         if (pointUpdatedCount != 1) {
-            throw new IllegalStateException(
-                    "포인트 차감에 실패했습니다."
+            log.error(
+                    "포인트 차감 실패 userId={}, pointWalletId={}, amount={}",
+                    userId,
+                    pointWallet.getPointWalletId(),
+                    pointAmount
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -105,9 +119,17 @@ public class PointConversionServiceImpl implements PointConversionService {
                         PointReasonType.CONVERSION.name()
                 );
 
+        // 포인트 전환 거래내역 저장에 실패
         if (transactionInsertedCount != 1) {
-            throw new IllegalStateException(
-                    "포인트 전환 거래내역 저장에 실패했습니다."
+            log.error(
+                    "포인트 전환 거래내역 저장 실패 userId={}, pointWalletId={}, amount={}",
+                    userId,
+                    pointWallet.getPointWalletId(),
+                    pointAmount
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -118,8 +140,15 @@ public class PointConversionServiceImpl implements PointConversionService {
                 );
 
         if (walletUpdatedCount != 1) {
-            throw new IllegalStateException(
-                    "전자지갑 잔액 반영에 실패했습니다."
+            log.error(
+                    "전자지갑 잔액 반영 실패 userId={}, walletId={}, amount={}",
+                    userId,
+                    wallet.getWalletId(),
+                    pointAmount
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -141,14 +170,28 @@ public class PointConversionServiceImpl implements PointConversionService {
                 );
 
         if (conversionInsertedCount != 1) {
-            throw new IllegalStateException(
-                    "포인트 전환 이력 저장에 실패했습니다."
+            log.error(
+                    "포인트 전환 이력 저장 실패 userId={}, walletId={}, amount={}",
+                    userId,
+                    wallet.getWalletId(),
+                    pointAmount
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
         if (pointConversion.getPointConversionId() == null) {
-            throw new IllegalStateException(
-                    "포인트 전환 이력 ID를 확인하지 못했습니다."
+            log.error(
+                    "포인트 전환 이력 ID 생성 실패 userId={}, walletId={}, amount={}",
+                    userId,
+                    wallet.getWalletId(),
+                    pointAmount
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -158,8 +201,13 @@ public class PointConversionServiceImpl implements PointConversionService {
                 );
 
         if (updatedPointWallet == null) {
-            throw new IllegalStateException(
-                    "변경된 포인트 지갑을 조회하지 못했습니다."
+            log.error(
+                    "변경된 포인트 지갑 조회 실패 userId={}",
+                    userId
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -169,8 +217,13 @@ public class PointConversionServiceImpl implements PointConversionService {
                 );
 
         if (updatedWallet == null) {
-            throw new IllegalStateException(
-                    "변경된 전자지갑을 조회하지 못했습니다."
+            log.error(
+                    "변경된 전자지갑 조회 실패 userId={}",
+                    userId
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -180,8 +233,13 @@ public class PointConversionServiceImpl implements PointConversionService {
                 );
 
         if (savedConversion == null) {
-            throw new IllegalStateException(
-                    "저장된 포인트 전환 이력을 조회하지 못했습니다."
+            log.error(
+                    "저장된 포인트 전환 이력 조회 실패 pointConversionId={}",
+                    pointConversion.getPointConversionId()
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -206,13 +264,15 @@ public class PointConversionServiceImpl implements PointConversionService {
             Integer pointAmount
     ) {
         if (userId == null || userId <= 0) {
-            throw new IllegalArgumentException(
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_REQUEST,
                     "유효한 사용자 ID가 필요합니다."
             );
         }
 
         if (pointAmount == null || pointAmount <= 0) {
-            throw new IllegalArgumentException(
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_POINT_AMOUNT,
                     "전환 포인트는 0보다 커야 합니다."
             );
         }

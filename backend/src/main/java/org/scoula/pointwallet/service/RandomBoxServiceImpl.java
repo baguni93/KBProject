@@ -8,6 +8,8 @@ import org.scoula.pointwallet.common.RandomBoxRevokeReason;
 import org.scoula.pointwallet.common.RandomBoxStatus;
 import org.scoula.pointwallet.domain.UserRandomBoxVO;
 import org.scoula.pointwallet.dto.*;
+import org.scoula.pointwallet.exception.PointWalletErrorCode;
+import org.scoula.pointwallet.exception.PointWalletException;
 import org.scoula.pointwallet.mapper.RandomBoxMapper;
 import org.scoula.pointwallet.policy.RandomBoxIssuePolicy;
 import org.scoula.pointwallet.policy.RandomBoxRewardPolicy;
@@ -57,7 +59,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
         );
 
         if (paymentAmount == null || paymentAmount <= 0) {
-            throw new IllegalArgumentException(
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_REQUEST,
                     "유효한 결제 금액이 필요합니다."
             );
         }
@@ -183,13 +186,12 @@ public class RandomBoxServiceImpl implements RandomBoxService {
             return;
         }
 
-        if (!RandomBoxStatus.UNOPENED.name()
-                .equals(currentStatus)
-                && !RandomBoxStatus.OPENED.name()
-                .equals(currentStatus)) {
+        if (!RandomBoxStatus.UNOPENED.name().equals(currentStatus)
+                && !RandomBoxStatus.OPENED.name().equals(currentStatus)) {
 
-            throw new IllegalStateException(
-                    "회수할 수 없는 랜덤박스 상태입니다."
+            // 랜덤박스가 이미 개봉되어 회수 할 수 없습니다.
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -211,8 +213,9 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                 );
 
         if (updatedCount != 1) {
-            throw new IllegalStateException(
-                    "랜덤박스 회수에 실패했거나 이미 회수되었습니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.RANDOM_BOX_ALREADY_PROCESSED,
+                    "랜덤박스가 이미 회수되었거나 다른 요청에서 처리되었습니다."
             );
         }
 
@@ -224,9 +227,17 @@ public class RandomBoxServiceImpl implements RandomBoxService {
 
         Integer rewardPoint = randomBox.getRewardPoint();
 
+        // 개봉된 랜덤박스의 포인트가 0이하이거나, null입니다./
         if (rewardPoint == null || rewardPoint < 0) {
-            throw new IllegalStateException(
-                    "개봉된 랜덤박스의 보상 포인트가 올바르지 않습니다."
+            log.error(
+                    "개봉 랜덤박스 보상 포인트 오류 userId={}, userRandomBoxId={}, rewardPoint={}",
+                    userId,
+                    randomBox.getUserRandomBoxId(),
+                    rewardPoint
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -260,9 +271,10 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                         sourceId
                 );
 
+        // 이미 해당 조건으로, 랜덤박스가 지급되었습니다.
         if (duplicateCount > 0) {
-            throw new IllegalStateException(
-                    "이미 해당 조건으로 랜덤박스가 지급되었습니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.RANDOM_BOX_ALREADY_ISSUED
             );
         }
 
@@ -287,21 +299,42 @@ public class RandomBoxServiceImpl implements RandomBoxService {
             int insertedCount =
                     randomBoxMapper.insertRandomBox(randomBoxVO);
 
+            // 랜덤박스 지급에 실패했습니다.
             if (insertedCount != 1) {
-                throw new IllegalStateException(
-                        "랜덤박스 지급에 실패했습니다."
+                log.error(
+                        "랜덤박스 발급 실패 userId={}, issueReason={}, sourceId={}, insertedCount={}",
+                        userId,
+                        issueReason,
+                        sourceId,
+                        insertedCount
+                );
+
+                throw new PointWalletException(
+                        PointWalletErrorCode.INTERNAL_PROCESS_ERROR
                 );
             }
-        } catch (DuplicateKeyException e) {
-            throw new IllegalStateException(
-                    "이미 해당 조건으로 랜덤박스가 지급되었습니다.",
-                    e
+        } catch (DuplicateKeyException exception) {
+            /* 복합키 exception
+             * 두 요청이 동시에 사전 중복 검사를 통과해도
+             * DB UNIQUE 제약에서 한 요청을 차단한다.
+             */
+            throw new PointWalletException(
+                    PointWalletErrorCode.RANDOM_BOX_ALREADY_ISSUED,
+                    exception
             );
         }
 
+        // 생성된 랜덤박스 ID 확인에 실패한 경우
         if (randomBoxVO.getUserRandomBoxId() == null) {
-            throw new IllegalStateException(
-                    "생성된 랜덤박스 ID를 확인하지 못했습니다."
+            log.error(
+                    "생성된 랜덤박스 ID 확인 실패 userId={}, issueReason={}, sourceId={}",
+                    userId,
+                    issueReason,
+                    sourceId
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -312,8 +345,14 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                 );
 
         if (createdRandomBox == null) {
-            throw new IllegalStateException(
-                    "지급된 랜덤박스를 조회하지 못했습니다."
+            log.error(
+                    "발급된 랜덤박스 조회 실패 userId={}, userRandomBoxId={}",
+                    userId,
+                    randomBoxVO.getUserRandomBoxId()
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -348,9 +387,11 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                         issueReason.name()
                 );
 
+        // 오늘 발급 가능한 랜덤박스의 최대 개수를 초과했습니다.
         if (todayIssuedCount >= dailyLimit) {
-            throw new IllegalStateException(
-                    "오늘 받을 수 있는 랜덤박스의 최대 개수를 초과했습니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode
+                            .RANDOM_BOX_DAILY_LIMIT_EXCEEDED
             );
         }
     }
@@ -365,8 +406,10 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                 "유효한 사용자 ID가 필요합니다."
         );
 
+        // 지급 사유를 읽어오지 못했을 때
         if (issueReason == null) {
-            throw new IllegalArgumentException(
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_REQUEST,
                     "랜덤박스 지급 사유가 필요합니다."
             );
         }
@@ -382,7 +425,10 @@ public class RandomBoxServiceImpl implements RandomBoxService {
             String message
     ) {
         if (value == null || value <= 0) {
-            throw new IllegalArgumentException(message);
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_REQUEST,
+                    message
+            );
         }
     }
 
@@ -412,36 +458,48 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                         userId
                 );
 
+        // 랜덤박스가 존재하지 않거나, 현재 사용자의 랜덤박스가 아니다.
         if (randomBox == null) {
-            throw new IllegalArgumentException(
-                    "랜덤박스가 존재하지 않거나 현재 사용자의 랜덤박스가 아닙니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.RANDOM_BOX_NOT_FOUND
             );
         }
 
         String currentStatus =
                 randomBox.getBoxStatus();
 
+        // 이미 랜덤박스가 개봉된 상태인 경우
         if (RandomBoxStatus.OPENED.name()
                 .equals(currentStatus)) {
 
-            throw new IllegalStateException(
-                    "이미 개봉된 랜덤박스입니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.RANDOM_BOX_ALREADY_OPENED
             );
         }
 
+        // 회수된 랜덤박스를 개봉하려고 시도하는 경우
         if (RandomBoxStatus.REVOKED.name()
                 .equals(currentStatus)) {
 
-            throw new IllegalStateException(
-                    "회수된 랜덤박스는 개봉할 수 없습니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.RANDOM_BOX_REVOKED
             );
         }
 
+
+        // 랜덤박스가 개봉 불가인 상태인 경우
         if (!RandomBoxStatus.UNOPENED.name()
                 .equals(currentStatus)) {
 
-            throw new IllegalStateException(
-                    "개봉할 수 없는 랜덤박스 상태입니다."
+            log.error(
+                    "개봉할 수 없는 랜덤박스 상태 userId={}, userRandomBoxId={}, status={}",
+                    userId,
+                    userRandomBoxId,
+                    currentStatus
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -459,9 +517,11 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                         rewardPoint
                 );
 
+        // 랜덤박스 개봉에 실패했거나, 이미 다른 요청에서 처리된 랜덤박스인 경우
         if (updatedCount != 1) {
-            throw new IllegalStateException(
-                    "랜덤박스 개봉에 실패했거나 이미 처리된 랜덤박스입니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.RANDOM_BOX_ALREADY_PROCESSED,
+                    "랜덤박스가 이미 개봉되었거나 다른 요청에서 처리되었습니다."
             );
         }
 
@@ -483,8 +543,14 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                 );
 
         if (openedRandomBox == null) {
-            throw new IllegalStateException(
-                    "개봉된 랜덤박스를 조회하지 못했습니다."
+            log.error(
+                    "개봉된 랜덤박스 조회 실패 userId={}, userRandomBoxId={}",
+                    userId,
+                    userRandomBoxId
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -619,8 +685,9 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                     );
 
             if (updatedCount != 1) {
-                throw new IllegalStateException(
-                        "랜덤박스 모두 열기 중 개봉 처리에 실패했습니다."
+                throw new PointWalletException(
+                        PointWalletErrorCode.RANDOM_BOX_ALREADY_PROCESSED,
+                        "모두 열기 처리 중 이미 처리된 랜덤박스가 발견되었습니다."
                 );
             }
 
@@ -642,8 +709,14 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                     );
 
             if (openedRandomBox == null) {
-                throw new IllegalStateException(
-                        "개봉된 랜덤박스를 조회하지 못했습니다."
+                log.error(
+                        "모두 열기 중 개봉 결과 조회 실패 userId={}, userRandomBoxId={}",
+                        userId,
+                        userRandomBoxId
+                );
+
+                throw new PointWalletException(
+                        PointWalletErrorCode.INTERNAL_PROCESS_ERROR
                 );
             }
 

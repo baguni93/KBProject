@@ -5,6 +5,8 @@ import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.scoula.pointwallet.dto.PointConversionRequestDTO;
 import org.scoula.pointwallet.dto.PointConversionResultDTO;
+import org.scoula.pointwallet.exception.PointWalletErrorCode;
+import org.scoula.pointwallet.exception.PointWalletException;
 import org.scoula.pointwallet.service.PointConversionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,7 +32,8 @@ public class PointConversionController {
         Integer temporaryUserId = 1;
 
         if (request == null) {
-            throw new IllegalArgumentException(
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_REQUEST,
                     "포인트 전환 요청값이 필요합니다."
             );
         }

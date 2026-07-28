@@ -7,6 +7,8 @@ import org.scoula.pointwallet.common.PointTransactionType;
 import org.scoula.pointwallet.domain.PointWalletVO;
 import org.scoula.pointwallet.dto.PointTransactionDTO;
 import org.scoula.pointwallet.dto.PointWalletDTO;
+import org.scoula.pointwallet.exception.PointWalletErrorCode;
+import org.scoula.pointwallet.exception.PointWalletException;
 import org.scoula.pointwallet.mapper.PointWalletMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,9 +33,10 @@ public class PointWalletServiceImpl implements PointWalletService {
         PointWalletVO wallet =
                 pointWalletMapper.selectWalletByUserId(userId);
 
+        // 포인트 지갑이 존재하지 않는 경우
         if (wallet == null) {
-            throw new IllegalArgumentException(
-                    "포인트 지갑이 존재하지 않습니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.POINT_WALLET_NOT_FOUND
             );
         }
 
@@ -52,9 +55,10 @@ public class PointWalletServiceImpl implements PointWalletService {
         PointWalletVO wallet =
                 pointWalletMapper.selectWalletByUserId(userId);
 
+        // 포인트 지갑이 존재하지 않는 경우
         if (wallet == null) {
-            throw new IllegalArgumentException(
-                    "포인트 지갑이 존재하지 않습니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.POINT_WALLET_NOT_FOUND
             );
         }
 
@@ -88,9 +92,10 @@ public class PointWalletServiceImpl implements PointWalletService {
         PointWalletVO wallet =
                 pointWalletMapper.selectWalletByUserId(userId);
 
+        // 포인트 지갑이 존재하지 않는 경우
         if (wallet == null) {
-            throw new IllegalArgumentException(
-                    "포인트 지갑이 존재하지 않습니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.POINT_WALLET_NOT_FOUND
             );
         }
 
@@ -127,9 +132,11 @@ public class PointWalletServiceImpl implements PointWalletService {
         try {
             PointTransactionType.valueOf(normalized);
 
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(
-                    "거래 유형은 ALL, EARN, USE, EXPIRE, CANCEL 중 하나여야 합니다."
+        } catch (IllegalArgumentException exception) {
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_TRANSACTION_TYPE,
+                    "거래 유형은 ALL, EARN, USE, EXPIRE, CANCEL 중 하나여야 합니다.",
+                    exception
             );
         }
 
@@ -154,9 +161,10 @@ public class PointWalletServiceImpl implements PointWalletService {
         PointWalletVO wallet =
                 pointWalletMapper.selectWalletByUserId(userId);
 
+        // 포인트 지갑이 존재하지 않는 경우
         if (wallet == null) {
-            throw new IllegalArgumentException(
-                    "포인트 지갑이 존재하지 않습니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.POINT_WALLET_NOT_FOUND
             );
         }
 
@@ -167,9 +175,17 @@ public class PointWalletServiceImpl implements PointWalletService {
                         pointAmount
                 );
 
+        // 포인트 잔액 반영 실패
         if (updatedCount != 1) {
-            throw new IllegalStateException(
-                    "포인트 잔액 반영에 실패했습니다."
+            log.error(
+                    "포인트 잔액 반영 실패 userId={}, pointWalletId={}, amount={}",
+                    userId,
+                    wallet.getPointWalletId(),
+                    pointAmount
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -183,8 +199,16 @@ public class PointWalletServiceImpl implements PointWalletService {
                 );
 
         if (insertedCount != 1) {
-            throw new IllegalStateException(
-                    "포인트 거래내역 저장에 실패했습니다."
+            log.error(
+                    "포인트 적립 거래내역 저장 실패 userId={}, pointWalletId={}, amount={}, reasonType={}",
+                    userId,
+                    wallet.getPointWalletId(),
+                    pointAmount,
+                    reasonType
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -192,8 +216,13 @@ public class PointWalletServiceImpl implements PointWalletService {
                 pointWalletMapper.selectWalletByUserId(userId);
 
         if (updatedWallet == null) {
-            throw new IllegalStateException(
-                    "변경된 포인트 지갑을 조회하지 못했습니다."
+            log.error(
+                    "포인트 적립 후 지갑 조회 실패 userId={}",
+                    userId
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -217,20 +246,23 @@ public class PointWalletServiceImpl implements PointWalletService {
         validateUserId(userId);
 
         if (pointAmount == null || pointAmount <= 0) {
-            throw new IllegalArgumentException(
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_POINT_AMOUNT,
                     "적립 포인트는 0보다 커야 합니다."
             );
         }
 
         if (reasonType == null) {
-            throw new IllegalArgumentException(
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_REQUEST,
                     "포인트 적립 사유는 필수입니다."
             );
         }
 
         // 포인트 전환은 적립이 아니라 사용 처리
         if (reasonType == PointReasonType.CONVERSION) {
-            throw new IllegalArgumentException(
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_REQUEST,
                     "CONVERSION은 포인트 적립 사유로 사용할 수 없습니다."
             );
         }
@@ -265,8 +297,14 @@ public class PointWalletServiceImpl implements PointWalletService {
                 pointWalletMapper.insertPointWallet(userId);
 
         if (insertedCount != 1) {
-            throw new IllegalStateException(
-                    "포인트 지갑 생성에 실패했습니다."
+            log.error(
+                    "포인트 지갑 생성 실패 userId={}, insertedCount={}",
+                    userId,
+                    insertedCount
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -274,8 +312,13 @@ public class PointWalletServiceImpl implements PointWalletService {
                 pointWalletMapper.selectWalletByUserId(userId);
 
         if (createdWallet == null) {
-            throw new IllegalStateException(
-                    "생성된 포인트 지갑을 조회하지 못했습니다."
+            log.error(
+                    "생성된 포인트 지갑 조회 실패 userId={}",
+                    userId
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -310,9 +353,10 @@ public class PointWalletServiceImpl implements PointWalletService {
         PointWalletVO wallet =
                 pointWalletMapper.selectPointWalletForUpdate(userId);
 
+        // 포인트 지갑이 없는 경우
         if (wallet == null) {
-            throw new IllegalArgumentException(
-                    "포인트 지갑이 존재하지 않습니다."
+            throw new PointWalletException(
+                    PointWalletErrorCode.POINT_WALLET_NOT_FOUND
             );
         }
 
@@ -327,8 +371,15 @@ public class PointWalletServiceImpl implements PointWalletService {
                 );
 
         if (updatedCount != 1) {
-            throw new IllegalStateException(
-                    "포인트 취소 반영에 실패했습니다."
+            log.error(
+                    "포인트 취소 반영 실패 userId={}, pointWalletId={}, amount={}",
+                    userId,
+                    wallet.getPointWalletId(),
+                    pointAmount
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -345,8 +396,16 @@ public class PointWalletServiceImpl implements PointWalletService {
                 );
 
         if (insertedCount != 1) {
-            throw new IllegalStateException(
-                    "포인트 취소 거래내역 저장에 실패했습니다."
+            log.error(
+                    "포인트 취소 거래내역 저장 실패 userId={}, pointWalletId={}, amount={}, reasonType={}",
+                    userId,
+                    wallet.getPointWalletId(),
+                    pointAmount,
+                    reasonType
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -354,8 +413,13 @@ public class PointWalletServiceImpl implements PointWalletService {
                 pointWalletMapper.selectWalletByUserId(userId);
 
         if (updatedWallet == null) {
-            throw new IllegalStateException(
-                    "변경된 포인트 지갑을 조회하지 못했습니다."
+            log.error(
+                    "포인트 취소 후 변경된 지갑 조회 실패 userId={}",
+                    userId
+            );
+
+            throw new PointWalletException(
+                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
             );
         }
 
@@ -379,14 +443,18 @@ public class PointWalletServiceImpl implements PointWalletService {
     ) {
         validateUserId(userId);
 
+        // 취소하는 포인트 금액이 없거나 0이하일떄.
         if (pointAmount == null || pointAmount <= 0) {
-            throw new IllegalArgumentException(
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_POINT_AMOUNT,
                     "취소 포인트는 0보다 커야 합니다."
             );
         }
 
+        // 포인트 취소사유가 들어오지 않았을 때
         if (reasonType == null) {
-            throw new IllegalArgumentException(
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_REQUEST,
                     "포인트 취소 사유는 필수입니다."
             );
         }
@@ -397,7 +465,8 @@ public class PointWalletServiceImpl implements PointWalletService {
     private void validateUserId(Integer userId) {
 
         if (userId == null || userId <= 0) {
-            throw new IllegalArgumentException(
+            throw new PointWalletException(
+                    PointWalletErrorCode.INVALID_REQUEST,
                     "유효한 사용자 ID가 필요합니다."
             );
         }
