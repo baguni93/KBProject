@@ -27,9 +27,13 @@ import javax.sql.DataSource;
         "org.scoula.mapper",
         "org.scoula.member.mapper",
         "org.scoula.security.account.mapper",
+        "org.scoula.wallet.mapper",
+        "org.scoula.remittance.mapper"
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
+        "org.scoula.wallet.service",
+        "org.scoula.remittance.service"
 })
 
 @EnableTransactionManagement
@@ -58,6 +62,7 @@ public class RootConfig {
     public SqlSessionFactory sqlSessionFactory() throws Exception {
         SqlSessionFactoryBean sqlSessionFactory = new SqlSessionFactoryBean();
         sqlSessionFactory.setConfigLocation(applicationContext.getResource("classpath:/mybatis-config.xml"));
+        sqlSessionFactory.setMapperLocations(applicationContext.getResources("classpath:/org/scoula/**/mapper/*.xml"));
         sqlSessionFactory.setDataSource(dataSource());
         return (SqlSessionFactory) sqlSessionFactory.getObject();
     }

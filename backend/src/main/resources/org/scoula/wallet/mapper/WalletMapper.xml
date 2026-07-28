@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.wallet.mapper.WalletMapper">
+
+    <!-- 회원 번호(userId)로 지갑 정보 및 잔액 조회 -->
+    <select id="getByUserId" resultType="org.scoula.wallet.dto.WalletDTO">
+        SELECT
+            wallet_id AS walletId,
+            user_id AS userId,
+            balance,
+            wallet_status AS walletStatus
+        FROM wallet_tbl
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 지갑 ID로 지갑 정보 및 잔액 조회 -->
+    <select id="getByWalletId" resultType="org.scoula.wallet.dto.WalletDTO">
+        SELECT
+            wallet_id AS walletId,
+            user_id AS userId,
+            balance,
+            wallet_status AS walletStatus
+        FROM wallet_tbl
+        WHERE wallet_id = #{walletId}
+    </select>
+
+    <!-- 지갑 잔액 증가 -->
+    <update id="addBalance">
+        UPDATE wallet_tbl
+        SET balance = balance + #{amount}
+        WHERE wallet_id = #{walletId}
+    </update>
+
+    <!-- 충전 거래 내역 저장 (PK 번호를 DTO chargeId로 획득) -->
+    <insert id="insertChargeTransaction" useGeneratedKeys="true" keyProperty="chargeId">
+        INSERT INTO financial_transaction_tbl (
+            user_id, transaction_type, source_type, target_type, transaction_status, amount
+        ) VALUES (
+            #{userId}, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', #{amount}
+        )
+    </insert>
+
+    <!-- 충전 상세 내역 조회 -->
+    <select id="getChargeById" resultType="org.scoula.wallet.dto.WalletChargeDTO">
+        SELECT
+            transaction_id AS chargeId,
+            user_id AS userId,
+            amount,
+            transaction_status AS status,
+            created_at AS createdAt
+        FROM financial_transaction_tbl
+        WHERE transaction_id = #{chargeId}
+    </select>
+
+</mapper>
