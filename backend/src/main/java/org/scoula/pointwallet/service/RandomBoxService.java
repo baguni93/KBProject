@@ -14,25 +14,13 @@ public interface RandomBoxService {
             Integer attendanceId
     );
 
-    // 랜덤박스 결제
-    RandomBoxIssueResultDTO issueForPayment(
-            Integer userId,
-            Integer transactionId,
-            Integer paymentAmount
-    );
 
-
-    // 피드 송신 완료 보상
+    // 피드(친구/공개) 송신 완료 보상
     RandomBoxIssueResultDTO issueForFeedShare(
             Integer senderUserId,
             Integer feedId
     );
 
-    // 피드 수신 및 받기 보상
-    RandomBoxIssueResultDTO claimFromReceivedFeed(
-            Integer receiverUserId,
-            Integer feedId
-    );
 
     // 이벤트 참여 완료 보상
     RandomBoxIssueResultDTO issueForEvent(
@@ -40,11 +28,15 @@ public interface RandomBoxService {
             Integer eventParticipationId
     );
 
-    // 랜덤박스 취소
-    void revokePaymentRandomBox(
-            Integer userId,
-            Integer transactionId
+
+
+    // 송금 했을 때 랜덤박스 제공
+    RandomBoxIssueResultDTO issueForTransfer(
+            Integer senderUserId, // 송금한 사용자
+            Integer transactionId, // 실제 성공한 송금 거래 ID + 랜덤박스 발급 원인 추적용
+            Integer targetAccountId // 수취계좌 ID, 계좌당 한번 지급 중복 검사 용도
     );
+
 
     // 랜덤박스 1개 개봉
     RandomBoxOpenResultDTO openRandomBox(
@@ -66,6 +58,8 @@ public interface RandomBoxService {
     RandomBoxOpenAllResultDTO openAllRandomBoxes(
             Integer userId
     );
+
+
 
 
 }

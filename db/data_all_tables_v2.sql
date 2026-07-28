@@ -434,7 +434,7 @@ CREATE TABLE user_random_box_tbl
         COMMENT '랜덤박스 PK',
 
     user_id            INT         NOT NULL
-        COMMENT '유저 ID',
+        COMMENT '랜덤박스를 지급받은 사용자 ID',
 
     issue_reason       VARCHAR(30) NOT NULL
         COMMENT '랜덤박스 지급 사유',
@@ -442,12 +442,15 @@ CREATE TABLE user_random_box_tbl
     source_id          INT         NOT NULL
         COMMENT '지급 원인이 된 데이터의 PK',
 
+    target_account_id  INT         NULL
+        COMMENT '송금 보상의 수취 계좌 ID',
+
     box_status         VARCHAR(20) NOT NULL
         DEFAULT 'UNOPENED'
-        COMMENT '개봉 상태',
+        COMMENT '랜덤박스 개봉 상태',
 
     reward_point       INT         NULL
-        COMMENT '개봉 결과 포인트',
+        COMMENT '랜덤박스 개봉 결과 포인트',
 
     issued_at          DATETIME    NOT NULL
         DEFAULT CURRENT_TIMESTAMP
@@ -455,24 +458,19 @@ CREATE TABLE user_random_box_tbl
 
     opened_at          DATETIME    NULL
         COMMENT '랜덤박스 개봉 일시',
-    revoked_at DATETIME NULL
-        COMMENT '랜덤박스 회수 일시',
-
-    revoke_reason VARCHAR(30) NULL
-        COMMENT '랜덤박스 회수 사유',
 
 
     CONSTRAINT fk_user_random_box_user
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id),
+    -- 출석, 피드공유하기, 송금, 이벤트
 
     CONSTRAINT chk_user_random_box_issue_reason
         CHECK (
             issue_reason IN (
-                             'PAYMENT',
-                             'FEED_SHARE',
-                             'FEED_RECEIVE_CLAIM',
                              'ATTENDANCE',
+                             'FEED_SHARE',
+                             'TRANSFER',
                              'EVENT'
                 )
             ),
@@ -481,8 +479,7 @@ CREATE TABLE user_random_box_tbl
         CHECK (
             box_status IN (
                            'UNOPENED',
-                           'OPENED',
-                           'REVOKED'
+                           'OPENED'
                 )
             ),
 
@@ -494,55 +491,56 @@ CREATE TABLE user_random_box_tbl
 
     CONSTRAINT chk_user_random_box_open_state
         CHECK (
-            -- 정상 미개봉
             (
                 box_status = 'UNOPENED'
                     AND reward_point IS NULL
                     AND opened_at IS NULL
-                    AND revoked_at IS NULL
-                    AND revoke_reason IS NULL
                 )
-
                 OR
-
-                -- 정상 개봉
             (
                 box_status = 'OPENED'
                     AND reward_point IS NOT NULL
                     AND opened_at IS NOT NULL
-                    AND revoked_at IS NULL
-                    AND revoke_reason IS NULL
-                )
-
-                OR
-
-                -- 개봉 전에 회수
-            (
-                box_status = 'REVOKED'
-                    AND reward_point IS NULL
-                    AND opened_at IS NULL
-                    AND revoked_at IS NOT NULL
-                    AND revoke_reason IS NOT NULL
-                )
-
-                OR
-
-                -- 개봉 후면 포인트까지 회수
-            (
-                box_status = 'REVOKED'
-                    AND reward_point IS NOT NULL
-                    AND opened_at IS NOT NULL
-                    AND revoked_at IS NOT NULL
-                    AND revoke_reason IS NOT NULL
                 )
             ),
 
+    /*
+     * 출석·피드·송금 거래·이벤트 참여 이력 하나당
+     * 랜덤박스 중복 지급 방지
+     */
     CONSTRAINT uq_random_box_issue_source
         UNIQUE (
                 user_id,
                 issue_reason,
                 source_id
-        )
+        ),
+
+    /*
+     * 동일 사용자가 동일 수취 계좌로 반복 송금해도
+     * 송금 랜덤박스는 한 번만 지급
+     */
+    CONSTRAINT uq_random_box_transfer_account
+        UNIQUE (
+                user_id,
+                issue_reason,
+                target_account_id
+        ),
+
+    /*
+     * TRANSFER일 때만 target_account_id가 존재해야 한다.
+     */
+    CONSTRAINT chk_random_box_target_account
+        CHECK (
+            (
+                issue_reason = 'TRANSFER'
+                    AND target_account_id IS NOT NULL
+                )
+                OR
+            (
+                issue_reason <> 'TRANSFER'
+                    AND target_account_id IS NULL
+                )
+            )
 );
 
 
@@ -1172,6 +1170,11 @@ CREATE TABLE account_dummy_tbl
             balance >= 0
             )
 );
+
+ALTER TABLE user_random_box_tbl
+    ADD CONSTRAINT fk_random_box_target_account
+        FOREIGN KEY (target_account_id)
+            REFERENCES account_dummy_tbl (account_id);
 
 -- 28.계좌 거래 상세 테이블
 DROP TABLE IF EXISTS account_transaction_tbl;
@@ -2151,14 +2154,12 @@ VALUES (1, 1, 500, '2026-07-24 09:10:00'),
 -- ---------------------------------------------------------------------
 -- 포인트 거래내역: 6건
 -- ---------------------------------------------------------------------
-INSERT INTO point_transaction_tbl (
-    point_transaction_id,
-    point_wallet_id,
-    transaction_type,
-    point_amount,
-    reason_type,
-    created_at
-)
+INSERT INTO point_transaction_tbl (point_transaction_id,
+                                   point_wallet_id,
+                                   transaction_type,
+                                   point_amount,
+                                   reason_type,
+                                   created_at)
 VALUES
     -- 사용자 1: 5,000 적립
     (1, 1, 'EARN', 5000, 'EVENT', '2026-07-20 09:00:00'),
@@ -2186,33 +2187,94 @@ VALUES
 -- ---------------------------------------------------------------------
 -- 사용자 랜덤박스: 6건
 -- ---------------------------------------------------------------------
-INSERT INTO user_random_box_tbl (
-    user_random_box_id,
-    user_id,
-    issue_reason,
-    source_id,
-    box_status,
-    reward_point,
-    issued_at,
-    opened_at,
-    revoked_at,
-    revoke_reason
-) VALUES
-      -- 정상 개봉된 출석 랜덤박스
-      (1, 1, 'ATTENDANCE', 1, 'OPENED', 500, '2026-07-18 09:00:00', '2026-07-18 09:05:00', NULL, NULL),
+INSERT INTO user_random_box_tbl (user_random_box_id,
+                                 user_id,
+                                 issue_reason,
+                                 source_id,
+                                 target_account_id,
+                                 box_status,
+                                 reward_point,
+                                 issued_at,
+                                 opened_at)
+VALUES
+    -- 정상 개봉된 출석 랜덤박스
+    (1,
+     1,
+     'ATTENDANCE',
+     1,
+     NULL,
+     'OPENED',
+     500,
+     '2026-07-18 09:00:00',
+     '2026-07-18 09:05:00'),
 
-      -- 정상 미개봉 이벤트 랜덤박스
-      (2, 1, 'EVENT', 1, 'UNOPENED', NULL, '2026-07-24 09:00:00', NULL, NULL, NULL),
+    -- 정상 미개봉 이벤트 랜덤박스
+    (2,
+     1,
+     'EVENT',
+     1,
+     NULL,
+     'UNOPENED',
+     NULL,
+     '2026-07-24 09:00:00',
+     NULL),
 
-      -- 정상 개봉된 출석 랜덤박스
-      (3, 2, 'ATTENDANCE', 3, 'OPENED', 1000, '2026-07-19 09:00:00', '2026-07-19 09:05:00', NULL, NULL),
+    -- 정상 개봉된 출석 랜덤박스
+    (3,
+     2,
+     'ATTENDANCE',
+     3,
+     NULL,
+     'OPENED',
+     1000,
+     '2026-07-19 09:00:00',
+     '2026-07-19 09:05:00'),
 
-      -- 이벤트 랜덤박스 미개봉 상태에서 회수
-      (4, 2, 'EVENT', 2, 'REVOKED', NULL, '2026-07-24 09:10:00', NULL, '2026-07-25 10:00:00', 'EVENT_CANCEL'),
+    -- 정상 미개봉 이벤트 랜덤박스
+    (4,
+     2,
+     'EVENT',
+     2,
+     NULL,
+     'UNOPENED',
+     NULL,
+     '2026-07-24 09:10:00',
+     NULL),
 
-      -- 정상 개봉된 출석 랜덤박스
-      (5, 3, 'ATTENDANCE', 5, 'OPENED', 300, '2026-07-20 09:00:00', '2026-07-20 09:05:00', NULL, NULL);
+    -- 정상 개봉된 출석 랜덤박스
+    (5,
+     3,
+     'ATTENDANCE',
+     5,
+     NULL,
+     'OPENED',
+     300,
+     '2026-07-20 09:00:00',
+     '2026-07-20 09:05:00'),
 
+    -- 공개 또는 친구 공개 피드 송신으로 지급된 미개봉 랜덤박스
+    (6,
+     1,
+     'FEED_SHARE',
+     1,
+     NULL,
+     'UNOPENED',
+     NULL,
+     '2026-07-24 10:00:00',
+     NULL),
+
+    -- 송금 성공으로 지급된 미개봉 랜덤박스
+    -- source_id = 송금 transaction_id
+    -- target_account_id = 송금받은 계좌 ID
+    (7,
+     1,
+     'TRANSFER',
+     2,
+     2,
+     'UNOPENED',
+     NULL,
+     '2026-07-24 11:00:00',
+     NULL);
 
 -- ---------------------------------------------------------------------
 -- 출석 내역: 6건
@@ -2230,21 +2292,18 @@ VALUES (1, 1, '2026-07-22'),
 -- ---------------------------------------------------------------------
 -- 포인트 전환 내역: 6건
 -- ---------------------------------------------------------------------
-INSERT INTO point_conversion_history_tbl (
-    point_conversion_id,
-    user_id,
-    point_wallet_id,
-    wallet_id,
-    converted_point,
-    converted_at
-)
-VALUES
-    (1, 1, 1, 1, 500,  '2026-07-18 12:00:00'),
-    (2, 1, 1, 1, 1000, '2026-07-19 12:00:00'),
-    (3, 2, 2, 2, 500,  '2026-07-20 12:00:00'),
-    (4, 2, 2, 2, 1000, '2026-07-21 12:00:00'),
-    (5, 3, 3, 3, 500,  '2026-07-22 12:00:00'),
-    (6, 3, 3, 3, 1000, '2026-07-23 12:00:00');
+INSERT INTO point_conversion_history_tbl (point_conversion_id,
+                                          user_id,
+                                          point_wallet_id,
+                                          wallet_id,
+                                          converted_point,
+                                          converted_at)
+VALUES (1, 1, 1, 1, 500, '2026-07-18 12:00:00'),
+       (2, 1, 1, 1, 1000, '2026-07-19 12:00:00'),
+       (3, 2, 2, 2, 500, '2026-07-20 12:00:00'),
+       (4, 2, 2, 2, 1000, '2026-07-21 12:00:00'),
+       (5, 3, 3, 3, 500, '2026-07-22 12:00:00'),
+       (6, 3, 3, 3, 1000, '2026-07-23 12:00:00');
 -- ---------------------------------------------------------------------
 -- 소비 분석: 6건
 -- ---------------------------------------------------------------------

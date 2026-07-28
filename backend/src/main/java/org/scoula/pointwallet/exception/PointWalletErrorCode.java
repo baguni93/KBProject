@@ -85,11 +85,6 @@ public enum PointWalletErrorCode {
             "이미 개봉된 랜덤박스입니다."
     ),
 
-    RANDOM_BOX_REVOKED(
-            HttpStatus.CONFLICT,
-            "RANDOM_BOX_REVOKED",
-            "회수된 랜덤박스는 개봉할 수 없습니다."
-    ),
 
     RANDOM_BOX_ALREADY_PROCESSED(
             HttpStatus.CONFLICT,

@@ -16,14 +16,20 @@ public class UserRandomBoxVO {
 
     private Integer userRandomBoxId;
     private Integer userId;
+
     private String issueReason;
+
+    // 출석 ID, 피드 ID, 송금 거래 ID, 이벤트 참여 ID
     private Integer sourceId;
+
+    // TRANSFER일 때만 값 존재
+    private Integer targetAccountId;
+
     private String boxStatus;
     private Integer rewardPoint;
+
     private String issuedAt;
     private String openedAt;
-    private String revokedAt;
-    private String revokeReason;
 
     // 랜덤박스 발급 결과를 DTO로 변환
     public RandomBoxIssueResultDTO toIssueResultDTO() {

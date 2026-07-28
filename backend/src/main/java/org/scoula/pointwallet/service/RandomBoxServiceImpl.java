@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.pointwallet.common.PointReasonType;
 import org.scoula.pointwallet.common.RandomBoxIssueReason;
-import org.scoula.pointwallet.common.RandomBoxRevokeReason;
 import org.scoula.pointwallet.common.RandomBoxStatus;
 import org.scoula.pointwallet.domain.UserRandomBoxVO;
 import org.scoula.pointwallet.dto.*;
@@ -37,65 +36,12 @@ public class RandomBoxServiceImpl implements RandomBoxService {
         return issueRandomBox(
                 userId,
                 RandomBoxIssueReason.ATTENDANCE,
-                attendanceId
+                attendanceId,
+                null
         );
     }
 
-    @Override
-    @Transactional
-    public RandomBoxIssueResultDTO issueForPayment(
-            Integer userId,
-            Integer transactionId,
-            Integer paymentAmount
-    ) {
-        validatePositiveId(
-                userId,
-                "유효한 사용자 ID가 필요합니다."
-        );
 
-        validatePositiveId(
-                transactionId,
-                "유효한 결제 거래 ID가 필요합니다."
-        );
-
-        if (paymentAmount == null || paymentAmount <= 0) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.INVALID_REQUEST,
-                    "유효한 결제 금액이 필요합니다."
-            );
-        }
-
-        /*
-         * 1,000원 미만 결제는 잘못된 결제가 아니다.
-         * 정상 결제로 처리하되 랜덤박스만 지급하지 않는다.
-         */
-        if (paymentAmount
-                < RandomBoxIssuePolicy.PAYMENT_MINIMUM_AMOUNT) {
-
-            log.info(
-                    "결제 랜덤박스 미지급 userId={}, transactionId={}, amount={}",
-                    userId,
-                    transactionId,
-                    paymentAmount
-            );
-
-            return RandomBoxIssueResultDTO.builder()
-                    .issued(false)
-                    .message("1,000원 미만 결제는 랜덤박스 지급 대상이 아닙니다.")
-                    .userRandomBoxId(null)
-                    .issueReason(RandomBoxIssueReason.PAYMENT.name())
-                    .boxStatus(null)
-                    .issuedAt(null)
-                    .build();
-        }
-
-        // TODO-INTEGRATION: 결제 거래가 완료 상태이고 현재 사용자의 거래인지 검증
-        return issueRandomBox(
-                userId,
-                RandomBoxIssueReason.PAYMENT,
-                transactionId
-        );
-    }
 
     @Override
     @Transactional
@@ -108,33 +54,11 @@ public class RandomBoxServiceImpl implements RandomBoxService {
         return issueRandomBox(
                 userId,
                 RandomBoxIssueReason.FEED_SHARE,
-                feedId
+                feedId,
+                null
         );
     }
 
-    // 피드 송신, 수신 하면 하면 이거 실행하시면 됩니다.
-    // 중복발급이랑, 일일 최대 10개제한, 랜덤박스에 저장은 공통 랜덤박스
-    // 발급 정책 클래스에서 처리한다.
-
-    @Override
-    @Transactional
-    public RandomBoxIssueResultDTO claimFromReceivedFeed(
-            Integer userId,
-            Integer feedId
-    ) {
-        // TODO-INTEGRATION: 현재 사용자가 해당 피드를 실제로 수신했는지 검증코드 작성 필요
-        // 친구관계인지? 해당사용자가 볼 수있는 피드인지, 피드가 삭제되지는 않았는지 등 ...
-        // TODO-INTEGRATION: 비공개 피드 또는 본인 피드는 수신 보상에서 제외코드 작성 필요
-        // 수신보상인데, 본인 피드로 보상을 받으면 안되고, 비공개 피드에서 다른사용자가
-        // 랜덤박스를 받으면 안됨.
-
-        // 모두 통과시, 랜덤박스 발급 함수를 호출한다.
-        return issueRandomBox(
-                userId,
-                RandomBoxIssueReason.FEED_RECEIVE_CLAIM,
-                feedId
-        );
-    }
 
     @Override
     @Transactional
@@ -146,117 +70,17 @@ public class RandomBoxServiceImpl implements RandomBoxService {
         return issueRandomBox(
                 userId,
                 RandomBoxIssueReason.EVENT,
-                participationId
+                participationId,
+                null
         );
     }
 
-    @Override
-    @Transactional
-    public void revokePaymentRandomBox(
-            Integer userId,
-            Integer transactionId
-    ) {
-        validatePositiveId(
-                userId,
-                "유효한 사용자 ID가 필요합니다."
-        );
-
-        validatePositiveId(
-                transactionId,
-                "유효한 결제 거래 ID가 필요합니다."
-        );
-
-        UserRandomBoxVO randomBox =
-                randomBoxMapper.selectRandomBoxBySource(
-                        userId,
-                        RandomBoxIssueReason.PAYMENT.name(),
-                        transactionId
-                );
-
-        // 1,000원 미만 결제 등으로 랜덤박스가 지급되지 않은 경우
-        if (randomBox == null) {
-            return;
-        }
-
-        String currentStatus = randomBox.getBoxStatus();
-
-        // 이미 회수된 경우 중복 처리하지 않음
-        if (RandomBoxStatus.REVOKED.name()
-                .equals(currentStatus)) {
-            return;
-        }
-
-        if (!RandomBoxStatus.UNOPENED.name().equals(currentStatus)
-                && !RandomBoxStatus.OPENED.name().equals(currentStatus)) {
-
-            // 랜덤박스가 이미 개봉되어 회수 할 수 없습니다.
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
-            );
-        }
-
-        /*
-         * 먼저 상태를 REVOKED로 변경한다.
-         *
-         * WHERE box_status = expectedStatus 조건 때문에
-         * 동일 취소 요청이 동시에 들어와도 한 요청만 성공한다.
-         *
-         * 이후 포인트 취소가 실패하면 @Transactional에 의해
-         * 랜덤박스 상태 변경도 함께 롤백된다.
-         */
-        int updatedCount =
-                randomBoxMapper.revokeRandomBox(
-                        randomBox.getUserRandomBoxId(),
-                        userId,
-                        currentStatus,
-                        RandomBoxRevokeReason.PAYMENT_CANCEL.name()
-                );
-
-        if (updatedCount != 1) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.RANDOM_BOX_ALREADY_PROCESSED,
-                    "랜덤박스가 이미 회수되었거나 다른 요청에서 처리되었습니다."
-            );
-        }
-
-        // 미개봉 랜덤박스는 지급된 포인트가 없으므로 상태만 회수
-        if (RandomBoxStatus.UNOPENED.name()
-                .equals(currentStatus)) {
-            return;
-        }
-
-        Integer rewardPoint = randomBox.getRewardPoint();
-
-        // 개봉된 랜덤박스의 포인트가 0이하이거나, null입니다./
-        if (rewardPoint == null || rewardPoint < 0) {
-            log.error(
-                    "개봉 랜덤박스 보상 포인트 오류 userId={}, userRandomBoxId={}, rewardPoint={}",
-                    userId,
-                    randomBox.getUserRandomBoxId(),
-                    rewardPoint
-            );
-
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
-            );
-        }
-
-        // 보상이 0포인트이면 포인트 거래내역을 만들 수 없으므로 상태만 회수
-        if (rewardPoint == 0) {
-            return;
-        }
-
-        pointWalletService.cancelPoints(
-                userId,
-                rewardPoint,
-                PointReasonType.RANDOM_BOX
-        );
-    }
 
     private RandomBoxIssueResultDTO issueRandomBox(
             Integer userId,
             RandomBoxIssueReason issueReason,
-            Integer sourceId
+            Integer sourceId,
+            Integer targetAccountId
     ) {
         validateIssueRequest(
                 userId,
@@ -288,18 +112,17 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                         .userId(userId)
                         .issueReason(issueReason.name())
                         .sourceId(sourceId)
+                        .targetAccountId(targetAccountId)
                         .boxStatus(RandomBoxStatus.UNOPENED.name())
                         .rewardPoint(null)
                         .openedAt(null)
-                        .revokedAt(null)
-                        .revokeReason(null)
                         .build();
 
         try {
             int insertedCount =
                     randomBoxMapper.insertRandomBox(randomBoxVO);
 
-            // 랜덤박스 지급에 실패했습니다.
+            // 랜덤박스 삽입 실패.
             if (insertedCount != 1) {
                 log.error(
                         "랜덤박스 발급 실패 userId={}, issueReason={}, sourceId={}, insertedCount={}",
@@ -313,11 +136,20 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                         PointWalletErrorCode.INTERNAL_PROCESS_ERROR
                 );
             }
+            // 유니크 키 에러가 일어나면,
         } catch (DuplicateKeyException exception) {
-            /* 복합키 exception
-             * 두 요청이 동시에 사전 중복 검사를 통과해도
-             * DB UNIQUE 제약에서 한 요청을 차단한다.
-             */
+
+            if (issueReason == RandomBoxIssueReason.TRANSFER) {
+                return RandomBoxIssueResultDTO.builder()
+                        .issued(false)
+                        .message("이미 랜덤박스를 지급받은 수취 계좌입니다.")
+                        .userRandomBoxId(null)
+                        .issueReason(RandomBoxIssueReason.TRANSFER.name())
+                        .boxStatus(null)
+                        .issuedAt(null)
+                        .build();
+            }
+
             throw new PointWalletException(
                     PointWalletErrorCode.RANDOM_BOX_ALREADY_ISSUED,
                     exception
@@ -363,35 +195,23 @@ public class RandomBoxServiceImpl implements RandomBoxService {
             Integer userId,
             RandomBoxIssueReason issueReason
     ) {
-        int dailyLimit;
-
-        if (issueReason
-                == RandomBoxIssueReason.FEED_SHARE) {
-
-            dailyLimit =
-                    RandomBoxIssuePolicy.FEED_SHARE_DAILY_LIMIT;
-
-        } else if (issueReason
-                == RandomBoxIssueReason.FEED_RECEIVE_CLAIM) {
-
-            dailyLimit =
-                    RandomBoxIssuePolicy.FEED_RECEIVE_DAILY_LIMIT;
-
-        } else {
+        if (issueReason != RandomBoxIssueReason.FEED_SHARE) {
             return;
         }
 
         int todayIssuedCount =
                 randomBoxMapper.countTodayIssuedByReason(
                         userId,
-                        issueReason.name()
+                        RandomBoxIssueReason.FEED_SHARE.name()
                 );
 
-        // 오늘 발급 가능한 랜덤박스의 최대 개수를 초과했습니다.
-        if (todayIssuedCount >= dailyLimit) {
+        // 피드 송신이 10개이상 인 경우...
+        if (todayIssuedCount
+                >= RandomBoxIssuePolicy.FEED_SHARE_DAILY_LIMIT) {
+
             throw new PointWalletException(
-                    PointWalletErrorCode
-                            .RANDOM_BOX_DAILY_LIMIT_EXCEEDED
+                    PointWalletErrorCode.RANDOM_BOX_DAILY_LIMIT_EXCEEDED,
+                    "피드 송신으로 받을 수 있는 랜덤박스는 하루 최대 10개입니다."
             );
         }
     }
@@ -477,15 +297,6 @@ public class RandomBoxServiceImpl implements RandomBoxService {
             );
         }
 
-        // 회수된 랜덤박스를 개봉하려고 시도하는 경우
-        if (RandomBoxStatus.REVOKED.name()
-                .equals(currentStatus)) {
-
-            throw new PointWalletException(
-                    PointWalletErrorCode.RANDOM_BOX_REVOKED
-            );
-        }
-
 
         // 랜덤박스가 개봉 불가인 상태인 경우
         if (!RandomBoxStatus.UNOPENED.name()
@@ -568,6 +379,7 @@ public class RandomBoxServiceImpl implements RandomBoxService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public int getUnopenedRandomBoxCount(
             Integer userId
     ) {
@@ -633,7 +445,7 @@ public class RandomBoxServiceImpl implements RandomBoxService {
 
         /*
          * 모두 열기 처리 중 다른 요청이 같은 랜덤박스를
-         * 개봉하거나 회수하지 못하도록 미개봉 행을 잠근다.
+         * 동시에 개봉하지 못하도록 row lock을 설정다.
          */
         List<UserRandomBoxVO> unopenedRandomBoxes =
                 randomBoxMapper.selectUnopenedRandomBoxesForUpdate(
@@ -743,6 +555,56 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                 .pointBalance(updatedWallet.getPointBalance())
                 .openedBoxes(openedResults)
                 .build();
+    }
+
+    // 송금시 랜덤박스 지급
+    @Override
+    @Transactional
+    public RandomBoxIssueResultDTO issueForTransfer(
+            Integer userId,
+            Integer transactionId,
+            Integer targetAccountId
+    ) {
+        validatePositiveId(
+                userId,
+                "유효한 사용자 ID가 필요합니다."
+        );
+
+        validatePositiveId(
+                transactionId,
+                "유효한 송금 거래 ID가 필요합니다."
+        );
+
+        validatePositiveId(
+                targetAccountId,
+                "유효한 수취 계좌 ID가 필요합니다."
+        );
+
+        int issuedCount =
+                randomBoxMapper.countTransferRandomBoxByAccount(
+                        userId,
+                        targetAccountId
+                );
+
+        if (issuedCount > 0) {
+            return RandomBoxIssueResultDTO.builder()
+                    .issued(false)
+                    .message("이미 랜덤박스를 지급받은 수취 계좌입니다.")
+                    .userRandomBoxId(null)
+                    .issueReason(RandomBoxIssueReason.TRANSFER.name())
+                    .boxStatus(null)
+                    .issuedAt(null)
+                    .build();
+        }
+
+        // TODO-INTEGRATION: 성공한 송금인지, 현재 사용자의 송금인지,
+        // targetAccountId가 실제 수취 계좌인지 검증
+        return issueRandomBox(
+                userId,
+                RandomBoxIssueReason.TRANSFER,
+                transactionId,
+                targetAccountId
+        );
     }
 
 }

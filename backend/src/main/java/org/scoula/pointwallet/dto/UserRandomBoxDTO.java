@@ -14,7 +14,7 @@ public class UserRandomBoxDTO {
     private Integer userRandomBoxId;
     private Integer userId;
 
-    // 랜덤박스 발급 사유: PAYMENT, ATTENDANCE, FEED_SHARE, FEED_RECEIVE_CLAIM, EVENT
+    // 랜덤박스 발급 사유: 출석, 피드, 송금 거래, 이벤트 참여
     private String issueReason;
 
     // 발급 원인이 된 출석·피드·이벤트 참여 내역의 PK

@@ -15,6 +15,14 @@ public interface RandomBoxMapper {
             @Param("sourceId") Integer sourceId
     );
 
+
+    // 동일 사용자가 해당 수취 계좌로 송금 보상을 받은 적이 있는지 확인
+    int countTransferRandomBoxByAccount(
+            @Param("userId") Integer userId,
+            @Param("targetAccountId") Integer targetAccountId
+    );
+
+
     // 미개봉 랜덤박스 생성
     int insertRandomBox(
             UserRandomBoxVO randomBox
@@ -26,26 +34,22 @@ public interface RandomBoxMapper {
             @Param("userId") Integer userId
     );
 
+    // 사용자의 미개봉 랜덤박스 목록 조회
+    List<UserRandomBoxVO> selectUnopenedRandomBoxes(
+            @Param("userId") Integer userId
+    );
+
+    // 모두 열기 전 미개봉 랜덤박스 row Lock 조회
+    List<UserRandomBoxVO> selectUnopenedRandomBoxesForUpdate(
+            @Param("userId") Integer userId
+    );
+
     // 사용자가 발급사유별 랜덤박스를 몇개 받았는지 조회
     int countTodayIssuedByReason(
             @Param("userId") Integer userId,
             @Param("issueReason") String issueReason
     );
 
-    // 결제 ID나 피드ID로 랜덤박스를 찾기.
-    UserRandomBoxVO selectRandomBoxBySource(
-            @Param("userId") Integer userId,
-            @Param("issueReason") String issueReason,
-            @Param("sourceId") Integer sourceId
-    );
-
-    // 랜덤박스 발급을 취소하는 요청.
-    int revokeRandomBox(
-            @Param("userRandomBoxId") Integer userRandomBoxId,
-            @Param("userId") Integer userId,
-            @Param("expectedStatus") String expectedStatus,
-            @Param("revokeReason") String revokeReason
-    );
 
     // 랜덤박스 개봉 전 잠금 조회
     UserRandomBoxVO selectRandomBoxForUpdate(
@@ -65,13 +69,7 @@ public interface RandomBoxMapper {
             @Param("userId") Integer userId
     );
 
-    // 사용자의 미개봉 랜덤박스 목록 조회
-    List<UserRandomBoxVO> selectUnopenedRandomBoxes(
-            @Param("userId") Integer userId
-    );
 
-    // 모두 열기 전 미개봉 랜덤박스 row Lock 조회
-    List<UserRandomBoxVO> selectUnopenedRandomBoxesForUpdate(
-            @Param("userId") Integer userId
-    );
+
+
 }
