@@ -37,6 +37,8 @@ import javax.sql.DataSource;
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
         "org.scoula.feed.service",
+        "org.scoula.wallet.service",
+        "org.scoula.remittance.service"
         "org.scoula.settlement.service",
         "org.scoula.notification.service",
         "org.scoula.friend.service",
@@ -71,6 +73,7 @@ public class RootConfig {
     public SqlSessionFactory sqlSessionFactory() throws Exception {
         SqlSessionFactoryBean sqlSessionFactory = new SqlSessionFactoryBean();
         sqlSessionFactory.setConfigLocation(applicationContext.getResource("classpath:/mybatis-config.xml"));
+        sqlSessionFactory.setMapperLocations(applicationContext.getResources("classpath:/org/scoula/**/mapper/*.xml"));
         sqlSessionFactory.setDataSource(dataSource());
         return (SqlSessionFactory) sqlSessionFactory.getObject();
     }

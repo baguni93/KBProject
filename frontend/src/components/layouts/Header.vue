@@ -1,7 +1,7 @@
 <template>
-  <div class="jumbotron p-5 bg-primary text-white">
-    <h1>{{ config.title }}</h1>
-    <p>{{ config.subtitle }}</p>
+  <div class="jumbotron p-4 bg-dark text-white rounded-bottom">
+    <h1 class="fw-bold mb-0">{{ config.title }}</h1>
+    <p v-if="config.subtitle" class="mb-0 text-white-50">{{ config.subtitle }}</p>
   </div>
 </template>
 
@@ -11,11 +11,6 @@ import config from '@/config';
 
 <style scoped>
 .jumbotron {
-  background-image: url('@/assets/images/background.jpg');
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-  color: white;
-  padding: 2rem;
+  background-color: #1e1e1e !important;
 }
 </style>
