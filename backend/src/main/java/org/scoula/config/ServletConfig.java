@@ -28,7 +28,7 @@ import org.springframework.web.servlet.view.JstlView;
         "org.scoula.member.controller",
         "org.scoula.feed.controller",
         "org.scoula.wallet.controller",
-        "org.scoula.remittance.controller"
+        "org.scoula.remittance.controller",
         "org.scoula.settlement.controller",
         "org.scoula.notification.controller",
         "org.scoula.friend.controller",
