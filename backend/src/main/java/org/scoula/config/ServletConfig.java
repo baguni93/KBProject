@@ -24,6 +24,11 @@ import org.springframework.web.servlet.view.JstlView;
         "org.scoula.remittance.controller",
         "org.scoula.auth.controller",
         "org.scoula.transaction.controller"
+        "org.scoula.settlement.controller",
+        "org.scoula.notification.controller",
+        "org.scoula.friend.controller",
+        "org.scoula.comment.controller",
+        "org.scoula.like.controller",
 })
 public class ServletConfig implements WebMvcConfigurer {
 

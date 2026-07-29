@@ -4,8 +4,8 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.scoula.feed.mapper.FeedMapper">
     <insert id="create" useGeneratedKeys="true" keyProperty="feedId">
-        insert into feed_tbl(user_id , transaction_id, feed_type, content,visibility)
-        values (#{userId}, #{transactionId},#{feedType},#{content},#{visibility})
+        insert into feed_tbl(user_id , target_id, feed_type, content,visibility)
+        values (#{userId}, #{targetId},#{feedType},#{content},#{visibility})
     </insert>
 
     <resultMap id="transactionMap"
@@ -18,6 +18,8 @@
                 property="spendingCategoryId"/>
         <result column="transaction_type"
                 property="transactionType"/>
+        <association property="receiver" resultMap="receiverProfileMap"/>
+        <association property="category" resultMap="categoryMap"/>
     </resultMap>
 
     <resultMap id="senderProfileMap"
@@ -55,14 +57,13 @@
 
     <resultMap id="feedImagesMap" type="org.scoula.feed.domain.FeedImageVO">
         <id column="image_id" property="imageId"/>
-        <result column="feed_id" property="feedId"/>
         <result column="image_name" property="imageName"/>
     </resultMap>
 
     <resultMap id="feedMap" type="org.scoula.feed.domain.FeedVO">
         <id column="feed_id" property="feedId"/>
         <result column="user_id" property="userId"/>
-        <result column="transaction_id" property="transactionId"/>
+        <result column="target_id" property="targetId"/>
         <result column="feed_type" property="feedType"/>
         <result column="content" property="content"/>
         <result column="visibility" property="visibility"/>
@@ -70,8 +71,7 @@
         <result column="created_at" property="createdAt"/>
         <result column="updated_at" property="updatedAt"/>
         <association property="transaction" resultMap="transactionMap"/>
-        <association property="category" resultMap="categoryMap"/>
-        <association property="receiver" resultMap="receiverProfileMap"/>
+
         <association property="sender" resultMap="senderProfileMap"/>
         <association property="stat" resultMap="statMap"/>
 
@@ -79,16 +79,17 @@
     </resultMap>
 
 
-    <select id="get" resultMap="feedMap">
-        select
+    <select id="getList" resultMap="feedMap">
+        SELECT
             a.feed_id,
             a.user_id,
-            a.transaction_id,
+            a.target_id,
             a.feed_type,
             a.content,
             a.visibility,
             a.created_at,
             a.updated_at,
+
             (
                 SELECT COUNT(*)
                 FROM feed_like_tbl fl
@@ -102,63 +103,125 @@
             ) AS comment_count,
 
             b.image_id,
-            b.feed_id,
             b.image_name,
-            c.transaction_id AS transaction_id,
-            c.receive_id,
-            c.spending_category_id,
-            c.transaction_type,
+
             d.profile_id AS sender_profile_id,
             d.nickname AS sender_nickname,
-            d.stored_name AS sender_profile_image,
-            e.profile_id AS receiver_profile_id,
-            e.nickname AS receiver_nickname,
-            e.stored_name AS receiver_profile_image,
-            f.spending_category_id,
-            f.category_name
-        from feed_tbl a
+            d.stored_name AS sender_profile_image
 
-            left join feed_image_tbl b
-                on a.feed_id = b.feed_id
-            left join  financial_transaction_tbl c
-                on a.transaction_id = c.transaction_id
-            left join profile_tbl d
-                on a.user_id = d.user_id
-            left join profile_tbl e
-                on c.receive_id = e.user_id
-            left join spending_category_tbl f
-                on c.spending_category_id = f.spending_category_id
-        where a.feed_id = #{feedId}
-        order by image_id
+        FROM feed_tbl a
+
+                 LEFT JOIN feed_image_tbl b
+                           ON a.feed_id = b.feed_id
+                 LEFT JOIN profile_tbl d
+                           ON a.user_id = d.user_id
+                 LEFT JOIN friend_tbl e
+                           ON a.user_id = e.friend_user_id
+                               AND e.user_id = #{userId}
+        WHERE
+            a.feed_status = 'ACTIVE'
+          AND
+            (
+                a.visibility = 'PUBLIC'
+                    OR (e.user_id IS NOT NULL AND a.visibility = 'FRIEND')
+                    OR a.user_id = #{userId}
+                )
+        AND(a.visibility != 'PRIVATE')
+        ORDER BY a.created_at DESC
     </select>
 
-    <select id="getList" resultType="org.scoula.feed.domain.FeedVO">
-        SELECT * FROM feed_tbl ORDER BY created_at DESC
-    </select>
-
-    <select id="getMyList" resultType="org.scoula.feed.domain.FeedVO">
-        SELECT * FROM feed_tbl WHERE user_id = #{userId} ORDER BY created_at DESC
-    </select>
-
-    <select id="getFriendList" resultType="org.scoula.feed.domain.FeedVO">
+    <select id="getMyList"  resultMap="feedMap">
         SELECT
-            f.*,
-            u.user_name
-        FROM feed_tbl f
-                 JOIN user_tbl u
-                      ON f.user_id = u.user_id
+            a.feed_id,
+            a.user_id,
+            a.target_id,
+            a.feed_type,
+            a.content,
+            a.visibility,
+            a.created_at,
+            a.updated_at,
+
+            (
+                SELECT COUNT(*)
+                FROM feed_like_tbl fl
+                WHERE fl.feed_id = a.feed_id
+            ) AS like_count,
+
+            (
+                SELECT COUNT(*)
+                FROM feed_comment_tbl fc
+                WHERE fc.feed_id = a.feed_id
+            ) AS comment_count,
+
+            b.image_id,
+            b.image_name,
+
+            d.profile_id AS sender_profile_id,
+            d.nickname AS sender_nickname,
+            d.stored_name AS sender_profile_image
+
+        FROM feed_tbl a
+
+                 LEFT JOIN feed_image_tbl b
+                           ON a.feed_id = b.feed_id
+
+                 LEFT JOIN profile_tbl d
+                           ON a.user_id = d.user_id
+
+        WHERE a.user_id = #{userId}
+        and a.feed_status IN ('ACTIVE')
+        ORDER BY a.created_at DESC
+    </select>
+
+    <select id="getFriendList"  resultMap="feedMap">
+        SELECT
+            a.feed_id,
+            a.user_id,
+            a.target_id,
+            a.feed_type,
+            a.content,
+            a.visibility,
+            a.created_at,
+            a.updated_at,
+
+            (
+                SELECT COUNT(*)
+                FROM feed_like_tbl fl
+                WHERE fl.feed_id = a.feed_id
+            ) AS like_count,
+
+            (
+                SELECT COUNT(*)
+                FROM feed_comment_tbl fc
+                WHERE fc.feed_id = a.feed_id
+            ) AS comment_count,
+
+            b.image_id,
+            b.image_name,
+
+            d.profile_id AS sender_profile_id,
+            d.nickname AS sender_nickname,
+            d.stored_name AS sender_profile_image
+
+        FROM feed_tbl a
+                 LEFT JOIN feed_image_tbl b
+                     ON a.feed_id = b.feed_id
+                 LEFT JOIN profile_tbl d
+                     ON a.user_id = d.user_id
                  JOIN friend_tbl fr
-                      ON f.user_id = fr.friend_user_id
+                      ON a.user_id = fr.friend_user_id
         WHERE fr.user_id = #{userId}
-          AND f.visibility IN ('PUBLIC','FRIEND')
-        ORDER BY f.created_at DESC;
+          AND a.visibility IN ('PUBLIC','FRIEND')
+          and  a.feed_status IN ('ACTIVE')
+        ORDER BY a.created_at DESC;
 
     </select>
 
 
     <delete id="delete">
-
-        delete from feed_tbl where feed_id = #{feedId};
+        update feed_tbl set feed_status = 'DELETED',
+                            updated_at = now()
+                        where feed_id = #{feedId};
     </delete>
 
     <insert id="createFeedImage">
@@ -174,5 +237,123 @@
     <select id="getImages" resultType="org.scoula.feed.domain.FeedImageVO">
         select * from feed_image_tbl where feed_id = #{feedId}
     </select>
+
+
+    <resultMap id="feedCommonMap" type="org.scoula.feed.domain.FeedVO">
+        <id column="feed_id" property="feedId"/>
+        <result column="user_id" property="userId"/>
+        <result column="target_id" property="targetId"/>
+        <result column="feed_type" property="feedType"/>
+        <result column="content" property="content"/>
+        <result column="visibility" property="visibility"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+
+        <association property="sender" resultMap="senderProfileMap"/>
+        <association property="stat" resultMap="statMap"/>
+        <collection property="images" resultMap="feedImagesMap"/>
+    </resultMap>
+
+
+    <!--공통조회-->
+    <select id="getFeedCommon" resultMap="feedCommonMap">
+
+        SELECT
+            a.feed_id,
+            a.user_id,
+            a.target_id,
+            a.feed_type,
+            a.content,
+            a.visibility,
+            a.created_at,
+            a.updated_at,
+
+            (
+                SELECT COUNT(*)
+                FROM feed_like_tbl fl
+                WHERE fl.feed_id = a.feed_id
+            ) AS like_count,
+
+            (
+                SELECT COUNT(*)
+                FROM feed_comment_tbl fc
+                WHERE fc.feed_id = a.feed_id
+            ) AS comment_count,
+
+            b.image_id,
+            b.image_name,
+
+            d.profile_id AS sender_profile_id,
+            d.nickname AS sender_nickname,
+            d.stored_name AS sender_profile_image
+
+        FROM feed_tbl a
+
+                 LEFT JOIN feed_image_tbl b
+                           ON a.feed_id = b.feed_id
+
+                 LEFT JOIN profile_tbl d
+                           ON a.user_id = d.user_id
+
+        WHERE a.feed_id = #{feedId}
+
+        ORDER BY a.created_at DESC;
+
+    </select>
+    <select id="getTransaction" resultMap="transactionMap">
+        SELECT
+            a.transaction_id,
+            a.receive_id,
+            a.spending_category_id,
+            a.transaction_type,
+
+            b.profile_id AS receiver_profile_id,
+            b.nickname AS receiver_nickname,
+            b.stored_name AS receiver_profile_image,
+
+            c.spending_category_id,
+            c.category_name
+
+        FROM financial_transaction_tbl a
+                 join profile_tbl b
+                      on a.receive_id = b.user_id
+                 join spending_category_tbl c
+                      on a.spending_category_id = c.spending_category_id
+        WHERE transaction_id = #{targetId}
+    </select>
+
+    <select id="getCard" resultType="org.scoula.feed.domain.CardVO">
+        SELECT
+            a.apply_id,
+            b.custom_image_id as cardImageName
+        FROM card_application_history_tbl a
+                 join custom_image_tbl b
+                      on a.custom_image_id = b.custom_image_id
+        WHERE a.apply_id = #{targetId}
+    </select>
+    <select id="getAnalysis" resultType="org.scoula.feed.domain.AnalysisVO">
+        SELECT
+            spending_analysis_id,
+            ai_title,
+            ai_analysis_summary
+        FROM spending_analysis_tbl
+        WHERE spending_analysis_id = #{targetId}
+
+    </select>
+    <select id="getEvent" resultType="org.scoula.feed.domain.EventVO">
+        SELECT
+            a.recv_id as receiveId,
+            a.event_id,
+            a.reward_id,
+            b.reward_point,
+            c.event_img_name as eventImageName
+        FROM event_reward_receive_tbl a
+                 join event_reward_tbl b
+                      on a.reward_id = b.reward_id
+        join event_tbl c
+            on a.event_id = c.event_id
+        WHERE a.recv_id = #{targetId}
+    </select>
+
 
 </mapper>

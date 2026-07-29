@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scoula.settlement.mapper.SettlementMapper">
+
+    <insert id="create" useGeneratedKeys="true" keyProperty="settlementId">
+        insert into settlement_tbl(requester_id , title, content, total_amount,spending_category_id, settlement_type)
+        values (#{requesterId}, #{title},#{content},#{totalAmount},#{spendingCategoryId} , #{settlementType})
+    </insert>
+
+    <insert id="createMember" useGeneratedKeys="true" keyProperty="settlementMemberId">
+        insert into settlement_member_tbl(settlement_id, user_id, amount)
+        values (#{settlementId}, #{userId},#{amount});
+    </insert>
+    <update id="cancelSettlement">
+        update settlement_tbl set status = 'CANCEL' where  settlement_id = #{settlementId};
+    </update>
+    <update id="cancelMemberSettlement">
+        update settlement_member_tbl set status = 'CANCEL'
+                              where settlement_id = #{settlementId};
+    </update>
+
+    <select id="isAllMemberCompleted" resultType="java.lang.Boolean">
+        SELECT NOT EXISTS (
+            SELECT 1
+            FROM settlement_member_tbl
+            WHERE settlement_id = #{settlementId}
+              AND status = 'REQUEST'
+        )
+    </select>
+
+    <select id="canCancelSettlement" resultType="java.lang.Boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM settlement_tbl WHERE settlement_id =#{settlementId} and requester_id = #{userId} and status = 'REQUEST'
+        )
+    </select>
+
+    <update id="completeMemberSettlement">
+        update settlement_member_tbl set status = 'COMPLETE' , completed_at = now()
+                                     where user_id = #{userId} and settlement_id = #{settlementId};
+    </update>
+    <update id="completeSettlement">
+        update settlement_tbl set status = 'COMPLETE' , completed_at = now()
+                                     where settlement_id = #{settlementId};
+    </update>
+    <update id="updateLastReminderDate">
+        update settlement_tbl set last_reminder_date = now()
+        where settlement_id = #{settlementId};
+    </update>
+
+
+    <resultMap id="senderProfileMap"
+               type="org.scoula.feed.domain.ProfileSimpleVO">
+        <id column="sender_profile_id"
+            property="profileId"/>
+        <result column="sender_nickname"
+                property="nickname"/>
+        <result column="sender_profile_image"
+                property="profileImageName"/>
+    </resultMap>
+    <resultMap id="receiverProfileMap"
+               type="org.scoula.feed.domain.ProfileSimpleVO">
+        <id column="receiver_profile_id"
+            property="profileId"/>
+        <result column="receiver_nickname"
+                property="nickname"/>
+        <result column="receiver_profile_image"
+                property="profileImageName"/>
+    </resultMap>
+
+    <resultMap id="categoryMap"
+               type="org.scoula.feed.domain.CategoryVO">
+        <id column="spending_category_id"
+            property="spendingCategoryId"/>
+        <result column="category_name"
+                property="categoryName"/>
+    </resultMap>
+
+    <resultMap id="memberMap" type="org.scoula.settlement.domain.SettlementMemberVO">
+        <id column="settlement_member_id" property="settlementMemberId"/>
+        <result column="settlement_id" property="settlementId"/>
+        <result column="user_id" property="userId"/>
+        <result column="amount" property="amount"/>
+        <result column="status" property="status"/>
+        <result column="memeber_completed_at" property="completedAt"/>
+        <association property="receiver" resultMap="receiverProfileMap"/>
+    </resultMap>
+
+    <resultMap id="settlementMap" type="org.scoula.settlement.domain.SettlementVO">
+        <id column="settlement_id" property="settlementId"/>
+        <result column="requester_id" property="requesterId"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="total_amount" property="totalAmount"/>
+        <result column="settlementStatus" property="status"/>
+        <result column="settlement_type" property="settlementType"/>
+
+        <result column="created_at" property="createdAt"/>
+        <result column="completed_at" property="completedAt"/>
+        <result column="last_reminder_date" property="lastReminderDate"/>
+
+        <association property="category" resultMap="categoryMap"/>
+        <association property="sender" resultMap="senderProfileMap"/>
+
+        <collection property="members" resultMap="memberMap"/>
+    </resultMap>
+    
+    <select id="get" resultMap="settlementMap">
+        select a.settlement_id,
+               a.requester_id,
+               a.title,
+               a.content,
+               a.total_amount,
+               a.status as settlementStatus,
+               a.created_at,
+               a.completed_at,
+               a.last_reminder_date,
+               a.settlement_type,
+
+               b.settlement_member_id,
+               b.settlement_id,
+               b.user_id,
+               b.amount,
+               b.status,
+               b.completed_at as memeber_completed_at,
+
+               c.profile_id as  sender_profile_id,
+               c.nickname as sender_nickname,
+               c.stored_name as sender_profile_image,
+
+               d.profile_id as  receiver_profile_id ,
+               d.nickname as  receiver_nickname,
+               d.stored_name as  receiver_profile_image,
+
+               e.spending_category_id,
+               e.category_name
+
+        from settlement_tbl a
+           left join settlement_member_tbl b
+               on a.settlement_id = b.settlement_id
+           left join profile_tbl c
+               on a.requester_id = c.user_id
+            left join profile_tbl d
+                on  b.user_id = d.user_id
+           left join spending_category_tbl e
+                     on  a.spending_category_id = e.spending_category_id
+        where a.settlement_id = #{settlementId}
+    </select>
+
+
+    <select id="getMyList" resultMap="settlementMap">
+        select a.settlement_id,
+               a.requester_id,
+               a.title,
+               a.content,
+               a.total_amount,
+               a.status as settlementStatus,
+               a.created_at,
+               a.completed_at,
+               a.last_reminder_date,
+               a.settlement_type,
+
+               b.settlement_member_id,
+               b.settlement_id,
+               b.user_id,
+               b.amount,
+               b.status,
+               b.completed_at as memeber_completed_at,
+
+               c.profile_id as  sender_profile_id,
+               c.nickname as sender_nickname,
+               c.stored_name as sender_profile_image,
+
+               d.profile_id as  receiver_profile_id ,
+               d.nickname as  receiver_nickname,
+               d.stored_name as  receiver_profile_image,
+
+               e.spending_category_id,
+               e.category_name
+
+        from settlement_tbl a
+                 left join settlement_member_tbl b
+                           on a.settlement_id = b.settlement_id
+                 left join profile_tbl c
+                           on a.requester_id = c.user_id
+                 left join profile_tbl d
+                           on  b.user_id = d.user_id
+                 left join spending_category_tbl e
+                           on  a.spending_category_id = e.spending_category_id
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM settlement_member_tbl me
+                    WHERE me.settlement_id = a.settlement_id
+                      AND me.user_id = #{userId}
+                ) and a.status = 'REQUEST'
+    </select>
+
+
+
+</mapper>

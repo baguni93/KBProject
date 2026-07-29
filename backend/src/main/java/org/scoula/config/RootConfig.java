@@ -24,6 +24,11 @@ import javax.sql.DataSource;
         "org.scoula.member.mapper",
         "org.scoula.security.account.mapper",
         "org.scoula.feed.mapper",
+        "org.scoula.settlement.mapper",
+        "org.scoula.notification.mapper",
+        "org.scoula.friend.mapper",
+        "org.scoula.comment.mapper",
+        "org.scoula.like.mapper",
         "org.scoula.wallet.mapper",
         "org.scoula.remittance.mapper",
         "org.scoula.auth.mapper",
@@ -34,6 +39,11 @@ import javax.sql.DataSource;
         "org.scoula.feed.service",
         "org.scoula.wallet.service",
         "org.scoula.remittance.service",
+        "org.scoula.settlement.service",
+        "org.scoula.notification.service",
+        "org.scoula.friend.service",
+        "org.scoula.comment.service",
+        "org.scoula.like.service",
         "org.scoula.auth.service",
         "org.scoula.transaction.service"
 })
