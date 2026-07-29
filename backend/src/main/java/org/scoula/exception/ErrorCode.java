@@ -38,6 +38,7 @@ public enum ErrorCode {
     INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "W001", "잔액이 부족합니다.");
 
 
+
     private final HttpStatus status;
     private final String code;
     private final String message;
