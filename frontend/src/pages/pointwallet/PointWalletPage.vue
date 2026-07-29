@@ -1,408 +1,220 @@
 <template>
   <div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
       <div>
-        <h2 class="mb-1">포인트 지갑 API 테스트</h2>
-        <p class="text-muted mb-0">
-          현재 백엔드 컨트롤러 기준 임시 사용자 ID는 1번입니다.
-        </p>
+        <div class="small text-muted mb-1">화면 ID: point-001</div>
+        <h2 class="mb-1">포인트 지갑</h2>
+        <p class="text-muted mb-0">포인트 잔액, 출석 상태와 최근 이용내역을 확인합니다.</p>
       </div>
-      <button class="btn btn-dark" :disabled="loading.dashboard" @click="loadDashboard(false)">
-        <span v-if="loading.dashboard" class="spinner-border spinner-border-sm me-2"></span>
-        전체 새로고침
+      <button type="button" class="btn btn-outline-secondary" :disabled="loading" @click="loadPage">
+        새로고침
       </button>
     </div>
 
-    <div class="row g-3 mb-4">
-      <div class="col-md-4">
-        <div class="card h-100">
-          <div class="card-body">
-            <div class="text-muted small">보유 포인트</div>
-            <div class="fs-3 fw-bold">{{ formatNumber(wallet?.pointBalance) }} P</div>
-            <div class="small text-muted">pointWalletId: {{ wallet?.pointWalletId ?? '-' }}</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card h-100">
-          <div class="card-body">
-            <div class="text-muted small">오늘 출석</div>
-            <div class="fs-3 fw-bold">{{ attendanceStatus?.attendedToday ? '완료' : '미완료' }}</div>
-            <div class="small text-muted">{{ attendanceStatus?.message ?? '조회 전' }}</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card h-100">
-          <div class="card-body">
-            <div class="text-muted small">미개봉 랜덤박스</div>
-            <div class="fs-3 fw-bold">{{ randomBoxCount }}개</div>
-            <div class="small text-muted">GET /api/random-boxes/unopened/count</div>
-          </div>
-        </div>
-      </div>
+    <div v-if="message" :class="['alert', messageType === 'success' ? 'alert-success' : 'alert-danger']">
+      {{ message }}
     </div>
 
-    <div class="row g-4">
-      <div class="col-lg-6">
-        <section class="card mb-4">
-          <div class="card-header fw-bold">출석 체크</div>
-          <div class="card-body">
-            <p class="text-muted small">
-              오늘 출석 여부를 조회하거나 출석을 처리합니다. 중복 출석은 백엔드 오류 응답으로 확인할 수 있습니다.
-            </p>
-            <div class="d-flex gap-2">
-              <button class="btn btn-outline-dark" :disabled="loading.attendance" @click="loadAttendanceStatus">
-                오늘 출석 조회
-              </button>
-              <button class="btn btn-warning" :disabled="loading.attendance" @click="submitAttendance">
-                출석 체크
-              </button>
-            </div>
+    <section class="card mb-4">
+      <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <div>
+            <div class="text-muted small">내 포인트</div>
+            <div class="display-6 fw-bold">{{ formatNumber(wallet?.pointBalance) }} P</div>
+            <div class="small text-muted">최근 수정: {{ wallet?.updatedAt ?? '-' }}</div>
           </div>
-        </section>
 
-        <section class="card mb-4">
-          <div class="card-header fw-bold">포인트 전환</div>
-          <div class="card-body">
-            <form class="row g-2" @submit.prevent="submitConversion">
-              <div class="col-sm-8">
-                <label class="form-label" for="conversionPoint">전환 포인트</label>
-                <input
-                    id="conversionPoint"
-                    v-model.number="conversionPoint"
-                    class="form-control"
-                    type="number"
-                    min="1"
-                    placeholder="예: 1000"
-                    required
-                />
-              </div>
-              <div class="col-sm-4 d-flex align-items-end">
-                <button class="btn btn-warning w-100" :disabled="loading.conversion">
-                  전자지갑으로 전환
-                </button>
-              </div>
-            </form>
+          <div class="d-flex gap-2">
+            <router-link class="btn btn-warning" to="/point-wallet/conversion">
+              포인트 전환
+            </router-link>
+            <router-link class="btn btn-outline-dark" to="/point-wallet/transactions">
+              전체 내역
+            </router-link>
           </div>
-        </section>
+        </div>
 
-        <section class="card mb-4">
-          <div class="card-header fw-bold">포인트 거래내역</div>
-          <div class="card-body">
-            <div class="row g-2 mb-3">
-              <div class="col-sm-7">
-                <select v-model="transactionType" class="form-select">
-                  <option value="">전체 유형</option>
-                  <option value="EARN">EARN</option>
-                  <option value="USE">USE</option>
-                  <option value="EXPIRE">EXPIRE</option>
-                  <option value="CANCEL">CANCEL</option>
-                </select>
-              </div>
-              <div class="col-sm-5 d-grid gap-2 d-sm-flex">
-                <button class="btn btn-outline-dark flex-fill" :disabled="loading.transactions" @click="loadTransactions">
-                  조건 조회
-                </button>
-                <button class="btn btn-outline-secondary flex-fill" :disabled="loading.transactions" @click="loadRecentTransactions">
-                  최근 5건
-                </button>
-              </div>
-            </div>
+        <hr />
 
-            <div v-if="transactions.length" class="table-responsive">
-              <table class="table table-sm align-middle mb-0">
-                <thead>
-                <tr>
-                  <th>유형</th>
-                  <th class="text-end">포인트</th>
-                  <th>사유</th>
-                  <th>일시</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-for="transaction in transactions" :key="transaction.pointTransactionId">
-                  <td>{{ transaction.transactionType }}</td>
-                  <td class="text-end">{{ formatNumber(transaction.pointAmount) }} P</td>
-                  <td>{{ transaction.reasonType }}</td>
-                  <td class="small">{{ transaction.createdAt }}</td>
-                </tr>
-                </tbody>
-              </table>
-            </div>
-            <div v-else class="text-muted small">조회된 거래내역이 없습니다.</div>
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="fw-semibold">미개봉 랜덤박스 {{ randomBoxCount }}개</div>
+            <div class="small text-muted">오래 받은 랜덤박스부터 개봉됩니다.</div>
           </div>
-        </section>
+          <router-link class="btn btn-outline-warning" to="/point-wallet/random-box">
+            열기
+          </router-link>
+        </div>
       </div>
+    </section>
 
-      <div class="col-lg-6">
-        <section class="card mb-4">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <span class="fw-bold">랜덤박스</span>
-            <span class="badge text-bg-dark">미개봉 {{ randomBoxes.length }}개</span>
-          </div>
-          <div class="card-body">
-            <div class="d-flex flex-wrap gap-2 mb-3">
-              <button class="btn btn-outline-dark" :disabled="loading.randomBox" @click="loadRandomBoxes">
-                목록 조회
-              </button>
-              <button class="btn btn-warning" :disabled="loading.randomBox || !randomBoxes.length" @click="openAllRandomBoxes">
-                모두 열기
-              </button>
+    <section class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">출석 체크</span>
+        <span>{{ currentYear }}년 {{ currentMonth }}월</span>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive mb-3">
+          <table class="table table-bordered text-center align-middle mb-0">
+            <thead>
+              <tr>
+                <th v-for="dayName in dayNames" :key="dayName">{{ dayName }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(week, weekIndex) in calendarWeeks" :key="weekIndex">
+                <td
+                  v-for="(day, dayIndex) in week"
+                  :key="`${weekIndex}-${dayIndex}`"
+                  :class="{ 'table-warning': day === todayDate }"
+                >
+                  <template v-if="day">
+                    <div>{{ day }}</div>
+                    <small v-if="day === todayDate && attendanceStatus?.attendedToday" class="fw-bold">출석 완료</small>
+                  </template>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div>
+            <div>{{ attendanceStatus?.message ?? '출석 상태를 조회하고 있습니다.' }}</div>
+            <div class="small text-muted">
+              출석 보상: {{ formatNumber(attendanceStatus?.rewardPoint) }}P · 랜덤박스
+              {{ attendanceStatus?.randomBoxCount ?? 0 }}개
             </div>
+          </div>
+          <button
+            type="button"
+            class="btn btn-warning"
+            :disabled="attendanceLoading || attendanceStatus?.attendedToday"
+            @click="submitAttendance"
+          >
+            {{ attendanceStatus?.attendedToday ? '출석 완료' : '출석 체크하기' }}
+          </button>
+        </div>
+      </div>
+    </section>
 
-            <div v-if="randomBoxes.length" class="list-group">
-              <div
-                  v-for="box in randomBoxes"
-                  :key="box.userRandomBoxId"
-                  class="list-group-item d-flex justify-content-between align-items-center gap-3"
-              >
-                <div>
-                  <div class="fw-bold">랜덤박스 #{{ box.userRandomBoxId }}</div>
-                  <div class="small text-muted">
-                    {{ box.issueReason }} · {{ box.issuedAt }}
-                  </div>
-                </div>
-                <button class="btn btn-sm btn-warning" :disabled="loading.randomBox" @click="openRandomBox(box.userRandomBoxId)">
-                  1개 열기
-                </button>
+    <section class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">최근 이용내역</span>
+        <router-link to="/point-wallet/transactions">전체 보기</router-link>
+      </div>
+      <div class="card-body p-0">
+        <div v-if="recentTransactions.length" class="list-group list-group-flush">
+          <div
+            v-for="transaction in recentTransactions"
+            :key="transaction.pointTransactionId"
+            class="list-group-item d-flex justify-content-between align-items-center"
+          >
+            <div>
+              <div class="fw-semibold">{{ getReasonTypeLabel(transaction.reasonType) }}</div>
+              <div class="small text-muted">
+                {{ getTransactionTypeLabel(transaction.transactionType) }} · {{ transaction.createdAt }}
               </div>
             </div>
-            <div v-else class="text-muted small">미개봉 랜덤박스가 없습니다.</div>
-          </div>
-        </section>
-
-        <section class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <span class="fw-bold">마지막 API 응답</span>
-            <span v-if="lastResult" :class="['badge', lastResult.success ? 'text-bg-success' : 'text-bg-danger']">
-              {{ lastResult.success ? 'SUCCESS' : 'ERROR' }}
-            </span>
-          </div>
-          <div class="card-body">
-            <div v-if="lastResult" class="mb-2 small">
-              <code>{{ lastResult.label }}</code>
+            <div class="fw-bold">
+              {{ getPointSign(transaction.transactionType) }}{{ formatNumber(transaction.pointAmount) }}P
             </div>
-            <pre class="api-result mb-0">{{ prettyLastResult }}</pre>
           </div>
-        </section>
+        </div>
+        <div v-else class="p-4 text-muted">최근 포인트 이용내역이 없습니다.</div>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import pointWalletApi from '@/api/pointWalletApi';
+import {
+  formatNumber,
+  getApiErrorMessage,
+  getPointSign,
+  getReasonTypeLabel,
+  getTransactionTypeLabel,
+} from '@/util/pointWallet';
 
 const wallet = ref(null);
 const attendanceStatus = ref(null);
 const randomBoxCount = ref(0);
-const randomBoxes = ref([]);
 const transactions = ref([]);
-const transactionType = ref('');
-const conversionPoint = ref(500);
-const lastResult = ref(null);
+const loading = ref(false);
+const attendanceLoading = ref(false);
+const message = ref('');
+const messageType = ref('success');
 
-const loading = reactive({
-  dashboard: false,
-  attendance: false,
-  conversion: false,
-  transactions: false,
-  randomBox: false,
-});
+const now = new Date();
+const currentYear = now.getFullYear();
+const currentMonth = now.getMonth() + 1;
+const todayDate = now.getDate();
+const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
 
-const prettyLastResult = computed(() => {
-  if (!lastResult.value) {
-    return '아직 실행한 API가 없습니다.';
+const calendarWeeks = computed(() => {
+  const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
+  const lastDate = new Date(currentYear, currentMonth, 0).getDate();
+  const cells = Array(firstDay).fill(null);
+
+  for (let day = 1; day <= lastDate; day += 1) {
+    cells.push(day);
   }
 
-  return JSON.stringify(lastResult.value.data, null, 2);
-});
-
-const formatNumber = (value) => Number(value ?? 0).toLocaleString('ko-KR');
-
-const normalizeError = (error) => {
-  if (error?.response) {
-    return {
-      status: error.response.status,
-      statusText: error.response.statusText,
-      data: error.response.data,
-    };
+  while (cells.length % 7 !== 0) {
+    cells.push(null);
   }
 
-  return {
-    message: error?.message ?? String(error),
-  };
-};
+  const weeks = [];
+  for (let index = 0; index < cells.length; index += 7) {
+    weeks.push(cells.slice(index, index + 7));
+  }
+  return weeks;
+});
 
-const runApi = async (label, request) => {
+const recentTransactions = computed(() => transactions.value.slice(0, 3));
+
+const loadPage = async () => {
+  loading.value = true;
+  message.value = '';
+
   try {
-    const data = await request();
-    lastResult.value = { success: true, label, data };
-    return { success: true, data };
+    const [walletData, attendanceData, countData, recentData] = await Promise.all([
+      pointWalletApi.getWallet(),
+      pointWalletApi.getTodayAttendanceStatus(),
+      pointWalletApi.getUnopenedRandomBoxCount(),
+      pointWalletApi.getRecentTransactions(),
+    ]);
+
+    wallet.value = walletData;
+    attendanceStatus.value = attendanceData;
+    randomBoxCount.value = countData.unopenedCount ?? 0;
+    transactions.value = recentData;
   } catch (error) {
-    const data = normalizeError(error);
-    lastResult.value = { success: false, label, data };
-    return { success: false, data: null };
-  }
-};
-
-const loadDashboard = async (preserveResult = false) => {
-  loading.dashboard = true;
-
-  const requests = await Promise.allSettled([
-    pointWalletApi.getWallet(),
-    pointWalletApi.getTodayAttendanceStatus(),
-    pointWalletApi.getUnopenedRandomBoxCount(),
-    pointWalletApi.getRecentTransactions(),
-    pointWalletApi.getUnopenedRandomBoxes(),
-  ]);
-
-  const [walletResult, attendanceResult, countResult, transactionsResult, boxesResult] = requests;
-
-  if (walletResult.status === 'fulfilled') wallet.value = walletResult.value;
-  if (attendanceResult.status === 'fulfilled') attendanceStatus.value = attendanceResult.value;
-  if (countResult.status === 'fulfilled') randomBoxCount.value = countResult.value.unopenedCount ?? 0;
-  if (transactionsResult.status === 'fulfilled') transactions.value = transactionsResult.value;
-  if (boxesResult.status === 'fulfilled') randomBoxes.value = boxesResult.value;
-
-  if (!preserveResult) {
-    const rejected = requests.find((result) => result.status === 'rejected');
-    lastResult.value = rejected
-        ? { success: false, label: '대시보드 API 일괄 조회', data: normalizeError(rejected.reason) }
-        : {
-          success: true,
-          label: '대시보드 API 일괄 조회',
-          data: {
-            wallet: wallet.value,
-            attendanceStatus: attendanceStatus.value,
-            randomBoxCount: randomBoxCount.value,
-            recentTransactions: transactions.value,
-            randomBoxes: randomBoxes.value,
-          },
-        };
-  }
-
-  loading.dashboard = false;
-};
-
-const loadAttendanceStatus = async () => {
-  loading.attendance = true;
-  try {
-    const result = await runApi(
-        'GET /api/attendance/today',
-        pointWalletApi.getTodayAttendanceStatus,
-    );
-    if (result.success) attendanceStatus.value = result.data;
+    messageType.value = 'error';
+    message.value = getApiErrorMessage(error, '포인트 지갑 정보를 불러오지 못했습니다.');
   } finally {
-    loading.attendance = false;
+    loading.value = false;
   }
 };
 
 const submitAttendance = async () => {
-  loading.attendance = true;
+  attendanceLoading.value = true;
+  message.value = '';
+
   try {
-    const result = await runApi('POST /api/attendance', pointWalletApi.attend);
-    if (result.success) await loadDashboard(true);
+    const result = await pointWalletApi.attend();
+    await loadPage();
+    messageType.value = 'success';
+    message.value = result.message;
+  } catch (error) {
+    messageType.value = 'error';
+    message.value = getApiErrorMessage(error, '출석 체크에 실패했습니다.');
   } finally {
-    loading.attendance = false;
+    attendanceLoading.value = false;
   }
 };
 
-const submitConversion = async () => {
-  loading.conversion = true;
-  try {
-    const result = await runApi(
-        'POST /api/point-conversions',
-        () => pointWalletApi.convertPoints(conversionPoint.value),
-    );
-    if (result.success) await loadDashboard(true);
-  } finally {
-    loading.conversion = false;
-  }
-};
-
-const loadTransactions = async () => {
-  loading.transactions = true;
-  try {
-    const result = await runApi(
-        `GET /api/point-transactions${transactionType.value ? `?type=${transactionType.value}` : ''}`,
-        () => pointWalletApi.getTransactions(transactionType.value),
-    );
-    if (result.success) transactions.value = result.data;
-  } finally {
-    loading.transactions = false;
-  }
-};
-
-const loadRecentTransactions = async () => {
-  loading.transactions = true;
-  try {
-    const result = await runApi(
-        'GET /api/point-transactions/recent',
-        pointWalletApi.getRecentTransactions,
-    );
-    if (result.success) transactions.value = result.data;
-  } finally {
-    loading.transactions = false;
-  }
-};
-
-const loadRandomBoxes = async () => {
-  loading.randomBox = true;
-  try {
-    const result = await runApi(
-        'GET /api/random-boxes/unopened',
-        pointWalletApi.getUnopenedRandomBoxes,
-    );
-    if (result.success) {
-      randomBoxes.value = result.data;
-      randomBoxCount.value = result.data.length;
-    }
-  } finally {
-    loading.randomBox = false;
-  }
-};
-
-const openRandomBox = async (userRandomBoxId) => {
-  loading.randomBox = true;
-  try {
-    const result = await runApi(
-        `POST /api/random-boxes/${userRandomBoxId}/open`,
-        () => pointWalletApi.openRandomBox(userRandomBoxId),
-    );
-    if (result.success) await loadDashboard(true);
-  } finally {
-    loading.randomBox = false;
-  }
-};
-
-const openAllRandomBoxes = async () => {
-  loading.randomBox = true;
-  try {
-    const result = await runApi(
-        'POST /api/random-boxes/open-all',
-        pointWalletApi.openAllRandomBoxes,
-    );
-    if (result.success) await loadDashboard(true);
-  } finally {
-    loading.randomBox = false;
-  }
-};
-
-onMounted(() => loadDashboard(false));
+onMounted(loadPage);
 </script>
-
-<style scoped>
-.api-result {
-  min-height: 220px;
-  max-height: 520px;
-  overflow: auto;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  background: #f8f9fa;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-</style>
