@@ -27,11 +27,6 @@ export default {
       url: '/auth/login',
       icon: 'fa-regular fa-images',
     },
-    {
-      title: '포인트 지갑',
-      url: '/point-wallet',
-      icon: 'fa-solid fa-coins',
-    },
   ],
   accoutMenus: {
     login: {
