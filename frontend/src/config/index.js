@@ -3,14 +3,29 @@ export default {
   subtitle: '',
   menus: [
     {
-      title: 'KB Pay 지갑',
-      url: '/wallet',
-      icon: 'fa-solid fa-wallet',
+      title: '피드',
+      url: '/feed',
+      icon: 'fa-solid fa-paste',
     },
     {
-      title: '송금하기',
-      url: '/remittance',
-      icon: 'fa-solid fa-paper-plane',
+      title: '송금',
+      url: '/auth/login',
+      icon: 'fa-solid fa-plane-departure',
+    },
+    {
+      title: '결제',
+      url: '/auth/login',
+      icon: 'fa-regular fa-images',
+    },
+    {
+      title: '금융',
+      url: '/auth/login',
+      icon: 'fa-regular fa-images',
+    },
+    {
+      title: '마이',
+      url: '/auth/login',
+      icon: 'fa-regular fa-images',
     },
   ],
   accoutMenus: {
