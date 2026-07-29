@@ -25,7 +25,7 @@ import org.springframework.web.servlet.view.JstlView;
         "org.scoula.pointwallet.controller",
         "org.scoula.pointwallet.exception",
         "org.scoula.auth.controller",
-        "org.scoula.transaction.controller"
+        "org.scoula.transaction.controller",
         "org.scoula.settlement.controller",
         "org.scoula.notification.controller",
         "org.scoula.friend.controller",
