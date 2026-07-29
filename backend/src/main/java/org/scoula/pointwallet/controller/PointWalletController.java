@@ -3,15 +3,13 @@ package org.scoula.pointwallet.controller;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
-import org.scoula.pointwallet.dto.AttendanceResultDTO;
-import org.scoula.pointwallet.dto.PointTransactionDTO;
+
 import org.scoula.pointwallet.dto.PointWalletDTO;
 import org.scoula.pointwallet.service.AttendanceService;
 import org.scoula.pointwallet.service.PointWalletService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 // 스웨거 표기
 @Api(tags = "포인트 지갑 API")

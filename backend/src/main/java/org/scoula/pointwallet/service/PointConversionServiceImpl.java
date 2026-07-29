@@ -12,9 +12,10 @@ import org.scoula.pointwallet.exception.PointWalletErrorCode;
 import org.scoula.pointwallet.exception.PointWalletException;
 import org.scoula.pointwallet.mapper.PointConversionMapper;
 import org.scoula.pointwallet.mapper.PointWalletMapper;
-import org.scoula.pointwallet.mapper.WalletMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.scoula.wallet.dto.WalletDTO;
+import org.scoula.wallet.mapper.WalletMapper;
 
 @Log4j2
 @Service
@@ -58,8 +59,8 @@ public class PointConversionServiceImpl implements PointConversionService {
          * 다른 서비스에서도 두 지갑을 함께 수정한다면
          * 동일한 잠금 순서를 사용해야 한다.
          */
-        WalletVO wallet =
-                walletMapper.selectWalletForUpdate(
+        WalletDTO wallet =
+                walletMapper.getByUserIdForUpdate(
                         userId
                 );
 
@@ -135,7 +136,7 @@ public class PointConversionServiceImpl implements PointConversionService {
         }
 
         int walletUpdatedCount =
-                walletMapper.increaseWalletBalance(
+                walletMapper.addBalanceIfActive(
                         wallet.getWalletId(),
                         pointAmount
                 );
@@ -212,8 +213,8 @@ public class PointConversionServiceImpl implements PointConversionService {
             );
         }
 
-        WalletVO updatedWallet =
-                walletMapper.selectWalletByUserId(
+        WalletDTO updatedWallet =
+                walletMapper.getByUserId(
                         userId
                 );
 

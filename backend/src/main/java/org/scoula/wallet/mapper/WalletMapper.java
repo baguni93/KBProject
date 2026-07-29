@@ -17,4 +17,16 @@ public interface WalletMapper {
     int insertChargeTransaction(WalletChargeDTO chargeDTO);
 
     WalletChargeDTO getChargeById(Integer chargeId);
+
+    // 박준우: 포인트 전환 처리 시 전자지갑 행 잠금 조회
+    WalletDTO getByUserIdForUpdate(
+            @Param("userId") Integer userId
+    );
+
+    // 박준우: 전자지갑 잔액 증가
+    int addBalanceIfActive(
+            @Param("walletId") Integer walletId,
+            @Param("amount") Integer amount
+    );
+
 }

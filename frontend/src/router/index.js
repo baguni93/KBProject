@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import HomePage from '@/pages/HomePage.vue';
 import WalletPage from '@/pages/wallet/WalletPage.vue';
 import RemittancePage from '@/pages/remittance/RemittancePage.vue';
+import PointWalletPage from '@/pages/pointwallet/PointWalletPage.vue';
 import auth from './auth';
 
 const router = createRouter({
@@ -21,6 +22,11 @@ const router = createRouter({
       path: '/remittance',
       name: 'remittance',
       component: RemittancePage,
+    },
+    {
+      path: '/point-wallet',
+      name: 'point-wallet',
+      component: PointWalletPage,
     },
     ...auth,
   ],

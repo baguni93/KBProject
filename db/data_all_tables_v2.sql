@@ -597,7 +597,7 @@ CREATE TABLE point_conversion_history_tbl
             REFERENCES wallet_tbl (wallet_id),
 
     CONSTRAINT chk_point_conversion_point
-        CHECK (converted_point > 100)
+        CHECK (converted_point >= 100)
 );
 
 -- 13. 소비 분석 테이블

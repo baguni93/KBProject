@@ -28,14 +28,17 @@ import javax.sql.DataSource;
         "org.scoula.member.mapper",
         "org.scoula.security.account.mapper",
         "org.scoula.feed.mapper",
-        "org.scoula.pointwallet.mapper",
+        "org.scoula.wallet.mapper",
+        "org.scoula.remittance.mapper",
+        "org.scoula.pointwallet.mapper"
+
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
         "org.scoula.feed.service",
         "org.scoula.wallet.service",
         "org.scoula.remittance.service",
-        "org.scoula.pointwallet.service",
+        "org.scoula.pointwallet.service"
 })
 
 

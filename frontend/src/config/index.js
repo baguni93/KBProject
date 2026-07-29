@@ -12,6 +12,11 @@ export default {
       url: '/remittance',
       icon: 'fa-solid fa-paper-plane',
     },
+    {
+      title: '포인트 지갑',
+      url: '/point-wallet',
+      icon: 'fa-solid fa-coins',
+    },
   ],
   accoutMenus: {
     login: {
@@ -24,5 +29,6 @@ export default {
       title: '회원가입',
       icon: 'fa-solid fa-user-plus',
     },
+
   },
 };
