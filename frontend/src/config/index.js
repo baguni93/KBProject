@@ -9,12 +9,12 @@ export default {
     },
     {
       title: '송금',
-      url: '/auth/login',
+      url: '/remittance',
       icon: 'fa-solid fa-plane-departure',
     },
     {
       title: '결제',
-      url: '/auth/login',
+      url: '/wallet',
       icon: 'fa-regular fa-images',
     },
     {

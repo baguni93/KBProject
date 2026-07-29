@@ -14,10 +14,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
 
-//Root WebApplicationContext(루트 컨테이너) 를 설정하는 클래스.
-//"웹(MVC)과 상관없는 핵심 객체들을 관리하는 곳"
-//Service , Repository(DAO) , DB 연결(DataSource) , MyBatis ,TransactionManager ,공통 Bean
-
 @Configuration
 @PropertySource({
         "classpath:/application.properties",
@@ -39,6 +35,8 @@ import javax.sql.DataSource;
         "org.scoula.like.mapper",
         "org.scoula.wallet.mapper",
         "org.scoula.remittance.mapper",
+        "org.scoula.auth.mapper",
+        "org.scoula.transaction.mapper"
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
@@ -51,6 +49,8 @@ import javax.sql.DataSource;
         "org.scoula.friend.service",
         "org.scoula.comment.service",
         "org.scoula.like.service",
+        "org.scoula.auth.service",
+        "org.scoula.transaction.service"
 })
 
 
