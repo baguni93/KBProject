@@ -57,7 +57,6 @@
 
     <resultMap id="feedImagesMap" type="org.scoula.feed.domain.FeedImageVO">
         <id column="image_id" property="imageId"/>
-        <result column="feed_id" property="feedId"/>
         <result column="image_name" property="imageName"/>
     </resultMap>
 
@@ -104,7 +103,6 @@
             ) AS comment_count,
 
             b.image_id,
-            b.feed_id,
             b.image_name,
 
             d.profile_id AS sender_profile_id,
@@ -128,6 +126,7 @@
                     OR (e.user_id IS NOT NULL AND a.visibility = 'FRIEND')
                     OR a.user_id = #{userId}
                 )
+        AND(a.visibility != 'PRIVATE')
         ORDER BY a.created_at DESC
     </select>
 
@@ -155,7 +154,6 @@
             ) AS comment_count,
 
             b.image_id,
-            b.feed_id,
             b.image_name,
 
             d.profile_id AS sender_profile_id,
@@ -199,7 +197,6 @@
             ) AS comment_count,
 
             b.image_id,
-            b.feed_id,
             b.image_name,
 
             d.profile_id AS sender_profile_id,
@@ -284,7 +281,6 @@
             ) AS comment_count,
 
             b.image_id,
-            b.feed_id,
             b.image_name,
 
             d.profile_id AS sender_profile_id,

@@ -15,7 +15,6 @@ import org.scoula.feed.domain.FeedImageVO;
 public class FeedImageDTO {
 
     private int imageId;
-    private int feedId;
     private String imageName;
 
     public static FeedImageDTO of(FeedImageVO vo) {
@@ -25,7 +24,6 @@ public class FeedImageDTO {
 
         return FeedImageDTO.builder()
                 .imageId(vo.getImageId())
-                .feedId(vo.getFeedId())
                 .imageName(vo.getImageName())
                 .build();
     }

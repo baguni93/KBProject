@@ -73,6 +73,13 @@ public class FeedResponseDTO {
             .card(feedVO.getCard())
             .analysis(feedVO.getAnalysis())
             .event(feedVO.getEvent())
+            .images(
+                    feedVO.getImages() == null
+                            ? null
+                            : feedVO.getImages().stream()
+                            .map(FeedImageDTO::of)
+                            .toList())
             .build();
+
     }
 }

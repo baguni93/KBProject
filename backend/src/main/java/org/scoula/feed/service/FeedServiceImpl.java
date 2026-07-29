@@ -10,6 +10,7 @@ import org.scoula.exception.ErrorCode;
 import org.scoula.feed.domain.FeedImageVO;
 import org.scoula.feed.domain.FeedVO;
 import org.scoula.feed.dto.FeedCreateRequestDTO;
+import org.scoula.feed.dto.FeedImageDTO;
 import org.scoula.feed.dto.FeedResponseDTO;
 import org.scoula.feed.mapper.FeedMapper;
 import org.scoula.settlement.mapper.SettlementMapper;
@@ -43,7 +44,6 @@ public class FeedServiceImpl implements FeedService {
             upload(feedVO.getFeedId(), files);
         }
 
-
         return get(feedVO.getFeedId());
     }
 
@@ -69,7 +69,6 @@ public class FeedServiceImpl implements FeedService {
     public List<FeedResponseDTO> getList(int userId){
 
        List<FeedVO> list = feedMapper.getList(userId);
-        log.info(list);
         return getFeedRespoonseDTOList(list);
     }
 
@@ -103,6 +102,13 @@ public class FeedServiceImpl implements FeedService {
         return responseDTO;
     }
 
+    @Override
+    public FeedImageDTO getImage(int imageId) {
+        FeedImageVO image = feedMapper.getImage(imageId);
+
+        return FeedImageDTO.of(image);
+    }
+
     private List<FeedResponseDTO> getFeedRespoonseDTOList(List<FeedVO> feedList){
 
         if(feedList == null){
@@ -113,7 +119,6 @@ public class FeedServiceImpl implements FeedService {
         for(var feed : feedList){
             enrichFeed(feed);
         }
-
         return feedList.stream().map(FeedResponseDTO::of).toList();
 
     }
@@ -157,7 +162,7 @@ public class FeedServiceImpl implements FeedService {
             if(part.isEmpty()) continue;
             try {
                 String uploadPath = UploadFiles.upload(UploadPathName.getFeedPath(), part);
-                FeedImageVO feedImageVO = FeedImageVO.of(part, feedId, uploadPath);
+                FeedImageVO feedImageVO = FeedImageVO.of(part, uploadPath);
                 feedMapper.createFeedImage(feedImageVO);
             } catch (IOException e) {
                 throw new RuntimeException(e); // @Transactional에서 감지, 자동 rollback
