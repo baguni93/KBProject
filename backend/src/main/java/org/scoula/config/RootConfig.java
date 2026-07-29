@@ -45,7 +45,7 @@ import javax.sql.DataSource;
         "org.scoula.feed.service",
         "org.scoula.wallet.service",
         "org.scoula.remittance.service",
-        "org.scoula.pointwallet.service"
+        "org.scoula.pointwallet.service",
         "org.scoula.settlement.service",
         "org.scoula.notification.service",
         "org.scoula.friend.service",
