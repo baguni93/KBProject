@@ -32,6 +32,8 @@ import javax.sql.DataSource;
         "org.scoula.wallet.mapper",
         "org.scoula.remittance.mapper",
 
+		"org.scoula.user.mapper"
+
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
@@ -44,6 +46,8 @@ import javax.sql.DataSource;
         "org.scoula.comment.service",
         "org.scoula.like.service",
 
+        "org.scoula.member.service",
+        "org.scoula.user.service"
 })
 
 @EnableTransactionManagement
