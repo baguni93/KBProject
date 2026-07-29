@@ -13,5 +13,6 @@ public class TransactionVO {
     private int receiveId;
     private int spendingCategoryId;
     private String transactionType;
-
+    private ProfileSimpleVO receiver;
+    private CategoryVO category;
 }

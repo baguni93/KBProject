@@ -3,15 +3,13 @@ import { useAuthStore } from '@/stores/auth';
 import router from '@/router';
 
 const instance = axios.create({
-  timeout: 1000,
+  timeout: 10000,
 });
 
-const authStore = useAuthStore();
-
 // 요청 인터셉터
-//instance.interceptors.request.use(onSuccess, onError)
 instance.interceptors.request.use(
   (config) => {
+    const authStore = useAuthStore();
     const token = authStore.getToken();
 
     if (token) {
@@ -19,14 +17,13 @@ instance.interceptors.request.use(
       console.log(config.headers.Authorization);
     }
 
-    // config.headers : 요청 헤더
     return config;
   },
   (error) => {
-    // 요청중 에러가난 경우
     return Promise.reject(error);
   },
 );
+
 // 응답 인터셉터
 instance.interceptors.response.use(
   (response) => {
@@ -43,6 +40,7 @@ instance.interceptors.response.use(
 
   async (error) => {
     if (error.response?.status === 401) {
+      const authStore = useAuthStore();
       authStore.logout();
 
       router.push('/auth/login?error=login_required');

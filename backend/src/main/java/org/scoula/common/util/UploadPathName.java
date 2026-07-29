@@ -23,7 +23,7 @@ public class UploadPathName {
     public  static  String getFeedPath(){
 
 
-        return getUploadPath() + "feed/";
+        return getUploadPath() + "/feed/";
 
     }
 }

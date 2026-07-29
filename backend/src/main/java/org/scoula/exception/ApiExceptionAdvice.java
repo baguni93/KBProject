@@ -11,23 +11,37 @@ import java.util.NoSuchElementException;
 
 @RestControllerAdvice
 @Log4j2
-@Order(2)
 public class ApiExceptionAdvice {
 
-    // 404 에러
-    @ExceptionHandler(NoSuchElementException.class)
-    protected ResponseEntity<String> handleIllegalArgumentException(NoSuchElementException e) {
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<ErrorResponseDTO> handle(CustomException e) {
+
+        ErrorCode error = e.getErrorCode();
+
         return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .header("Content-Type", "text/plain;charset=UTF-8")
-                .body("해당 ID의 요소가 없습니다.");
+                .status(error.getStatus())
+                .body(
+                        ErrorResponseDTO.builder()
+                                .status(error.getStatus().value())
+                                .code(error.getCode())
+                                .message(error.getMessage())
+                                .build()
+                );
     }
-    // 500 에러
+
+    // 기타 예외
     @ExceptionHandler(Exception.class)
-    protected ResponseEntity<String> handleException(Exception e) {
+    protected ResponseEntity<ErrorResponseDTO> handleException(Exception e) {
+        log.error(e.getMessage(), e);
+
         return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .header("Content-Type", "text/plain;charset=UTF-8")
-                .body(e.getMessage());
+                .status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus())
+                .body(
+                        ErrorResponseDTO.builder()
+                                .status(500)
+                                .code(ErrorCode.INTERNAL_SERVER_ERROR.getCode())
+                                .message(ErrorCode.INTERNAL_SERVER_ERROR.getMessage())
+                                .build()
+                );
     }
 }

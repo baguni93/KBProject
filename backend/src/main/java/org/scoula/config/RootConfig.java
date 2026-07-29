@@ -14,10 +14,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
 
-//Root WebApplicationContext(루트 컨테이너) 를 설정하는 클래스.
-//"웹(MVC)과 상관없는 핵심 객체들을 관리하는 곳"
-//Service , Repository(DAO) , DB 연결(DataSource) , MyBatis ,TransactionManager ,공통 Bean
-
 @Configuration
 @PropertySource({
         "classpath:/application.properties",
@@ -28,12 +24,26 @@ import javax.sql.DataSource;
         "org.scoula.member.mapper",
         "org.scoula.security.account.mapper",
         "org.scoula.feed.mapper",
-        "org.scoula.pointwallet.mapper"
+        "org.scoula.settlement.mapper",
+        "org.scoula.notification.mapper",
+        "org.scoula.friend.mapper",
+        "org.scoula.comment.mapper",
+        "org.scoula.like.mapper",
+        "org.scoula.wallet.mapper",
+        "org.scoula.remittance.mapper",
+
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
         "org.scoula.feed.service",
-        "org.scoula.pointwallet.service"
+        "org.scoula.wallet.service",
+        "org.scoula.remittance.service",
+        "org.scoula.settlement.service",
+        "org.scoula.notification.service",
+        "org.scoula.friend.service",
+        "org.scoula.comment.service",
+        "org.scoula.like.service",
+
 })
 
 @EnableTransactionManagement
@@ -62,6 +72,7 @@ public class RootConfig {
     public SqlSessionFactory sqlSessionFactory() throws Exception {
         SqlSessionFactoryBean sqlSessionFactory = new SqlSessionFactoryBean();
         sqlSessionFactory.setConfigLocation(applicationContext.getResource("classpath:/mybatis-config.xml"));
+        sqlSessionFactory.setMapperLocations(applicationContext.getResources("classpath:/org/scoula/**/mapper/*.xml"));
         sqlSessionFactory.setDataSource(dataSource());
         return (SqlSessionFactory) sqlSessionFactory.getObject();
     }
