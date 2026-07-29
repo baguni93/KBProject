@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scoula.friend.mapper.FriendMapper">
+
+    <insert id="createRequest" useGeneratedKeys="true" keyProperty="requestId">
+        insert into friend_request_tbl(requester_id, receiver_id)
+        values (#{requesterId}, #{receiverId})
+    </insert>
+    <insert id="createFriend" useGeneratedKeys="true" keyProperty="friendId">
+        insert into friend_tbl(user_id, friend_user_id)
+        VALUES
+            (#{userId}, #{friendUserId}),
+            (#{friendUserId}, #{userId})
+    </insert>
+
+    <update id="acceptRequest">
+        update friend_request_tbl set status = 'ACCEPT' where request_id = #{requesterId};
+    </update>
+    <update id="rejectRequest">
+        update friend_request_tbl set status = 'REJECT' where request_id = #{requesterId};
+    </update>
+    <update id="cancelRequest">
+        update friend_request_tbl set status = 'CANCEL' where request_id = #{requesterId};
+    </update>
+
+
+    <delete id="deleteFriend">
+        delete from friend_tbl where (friend_user_id = #{friendUserId} and user_id =#{userId})
+                                  or (friend_user_id = #{userId} and user_id =#{friendUserId})
+    </delete>
+
+
+    <select id="getList" resultMap="friendMap">
+        select a.friend_id,
+               a.user_id,
+               a.friend_user_id,
+               a.created_at,
+
+               b.profile_id as sender_profile_id,
+               b.nickname as sender_nickname,
+               b.stored_name as sender_profile_image,
+
+               c.profile_id as receiver_profile_id,
+               c.nickname as receiver_nickname,
+               c.stored_name as receiver_profile_image
+        from friend_tbl a
+
+                 left join profile_tbl b
+                           on a.user_id = b.user_id
+
+                 left join profile_tbl c
+                           on a.friend_user_id = c.user_id
+
+        where a.user_id = #{userId}
+        ORDER BY a.created_at DESC;
+
+    </select>
+
+    <select id="getRequestList" resultMap="friendRequestMap">
+        select
+               a.request_id,
+               a.requester_id,
+               a.receiver_id,
+               a.status,
+               a.created_at,
+               a.updated_at,
+
+               b.profile_id as sender_profile_id,
+               b.nickname as sender_nickname,
+               b.stored_name as sender_profile_image ,
+
+               c.profile_id as receiver_profile_id,
+               c.nickname as receiver_nickname,
+               c.stored_name as receiver_profile_image
+        from friend_request_tbl a
+            left join profile_tbl b
+                on a.receiver_id = b.user_id
+            left join profile_tbl c
+                on a.requester_id = c.user_id
+        where receiver_id = #{userId};
+    </select>
+
+    <resultMap id="senderProfileMap"
+               type="org.scoula.feed.domain.ProfileSimpleVO">
+        <id column="sender_profile_id"
+            property="profileId"/>
+        <result column="sender_nickname"
+                property="nickname"/>
+        <result column="sender_profile_image"
+                property="profileImageName"/>
+    </resultMap>
+    <resultMap id="receiverProfileMap"
+               type="org.scoula.feed.domain.ProfileSimpleVO">
+        <id column="receiver_profile_id"
+            property="profileId"/>
+        <result column="receiver_nickname"
+                property="nickname"/>
+        <result column="receiver_profile_image"
+                property="profileImageName"/>
+    </resultMap>
+
+    <resultMap id="friendRequestMap" type="org.scoula.friend.domain.FriendRequestVO">
+        <id column="request_id" property="requestId"/>
+        <result column="requester_id" property="requesterId"/>
+        <result column="receiver_id" property="receiverId"/>
+        <result column="status" property="status"/>
+
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+
+        <association property="receiver" resultMap="receiverProfileMap"/>
+        <association property="sender" resultMap="senderProfileMap"/>
+
+    </resultMap>
+
+
+
+    <resultMap id="friendMap" type="org.scoula.friend.domain.FriendVO">
+        <id column="friend_id" property="friendId"/>
+        <result column="user_id" property="userId"/>
+        <result column="friend_user_id" property="friendUserId"/>
+
+        <result column="created_at" property="createdAt"/>
+
+        <association property="receiver" resultMap="receiverProfileMap"/>
+        <association property="sender" resultMap="senderProfileMap"/>
+
+    </resultMap>
+
+
+    <select id="getRequest" resultMap="friendRequestMap">
+
+        select
+               a.request_id,
+               a.requester_id,
+               a.receiver_id,
+               a.status,
+               a.created_at,
+               a.updated_at,
+
+               b.profile_id as sender_profile_id,
+               b.nickname as sender_nickname,
+               b.stored_name as sender_profile_image ,
+
+               c.profile_id as receiver_profile_id,
+               c.nickname as receiver_nickname,
+               c.stored_name as receiver_profile_image
+        from friend_request_tbl a
+
+            left join profile_tbl b
+                on a.receiver_id = b.user_id
+
+            left join profile_tbl c
+                  on a.requester_id = c.user_id
+
+        where a.request_id = #{requestId}
+
+        ORDER BY a.created_at DESC;
+    </select>
+
+    <select id="getFriend" resultMap="friendMap">
+        select a.friend_id,
+               a.user_id,
+               a.friend_user_id,
+               a.created_at,
+
+               b.profile_id as sender_profile_id,
+               b.nickname as sender_nickname,
+               b.stored_name as sender_profile_image,
+
+               c.profile_id as receiver_profile_id,
+               c.nickname as receiver_nickname,
+               c.stored_name as receiver_profile_image
+        from friend_tbl a
+
+                 left join profile_tbl b
+                           on a.user_id = b.user_id
+
+                 left join profile_tbl c
+                           on a.friend_user_id = c.user_id
+
+        WHERE a.friend_id = #{friendId}
+
+        ORDER BY a.created_at DESC;
+    </select>
+    <select id="getFriends" resultType="org.scoula.friend.domain.FriendVO">
+        select friend_id, user_id , friend_user_id, created_at from friend_tbl where (friend_user_id = #{friendUserId} and user_id =#{userId})
+                                  or (friend_user_id = #{userId} and user_id =#{friendUserId});
+    </select>
+</mapper>

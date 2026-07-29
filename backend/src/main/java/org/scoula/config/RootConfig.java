@@ -30,8 +30,15 @@ import javax.sql.DataSource;
         "org.scoula.feed.mapper",
         "org.scoula.wallet.mapper",
         "org.scoula.remittance.mapper",
-        "org.scoula.pointwallet.mapper"
+        "org.scoula.pointwallet.mapper",
 
+        "org.scoula.settlement.mapper",
+        "org.scoula.notification.mapper",
+        "org.scoula.friend.mapper",
+        "org.scoula.comment.mapper",
+        "org.scoula.like.mapper",
+        "org.scoula.wallet.mapper",
+        "org.scoula.remittance.mapper",
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
@@ -39,6 +46,11 @@ import javax.sql.DataSource;
         "org.scoula.wallet.service",
         "org.scoula.remittance.service",
         "org.scoula.pointwallet.service"
+        "org.scoula.settlement.service",
+        "org.scoula.notification.service",
+        "org.scoula.friend.service",
+        "org.scoula.comment.service",
+        "org.scoula.like.service",
 })
 
 

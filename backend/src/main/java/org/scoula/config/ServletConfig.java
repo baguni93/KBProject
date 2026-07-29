@@ -30,7 +30,12 @@ import org.springframework.web.servlet.view.JstlView;
         "org.scoula.wallet.controller",
         "org.scoula.remittance.controller",
         "org.scoula.pointwallet.controller",
-        "org.scoula.pointwallet.exception"
+        "org.scoula.pointwallet.exception",
+        "org.scoula.settlement.controller",
+        "org.scoula.notification.controller",
+        "org.scoula.friend.controller",
+        "org.scoula.comment.controller",
+        "org.scoula.like.controller",
 })
 public class ServletConfig implements WebMvcConfigurer {
 
