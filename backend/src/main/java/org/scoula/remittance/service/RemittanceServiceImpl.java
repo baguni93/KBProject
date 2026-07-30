@@ -1,6 +1,7 @@
 package org.scoula.remittance.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.scoula.remittance.dto.BankDTO;
 import org.scoula.remittance.dto.BankRemittanceInfoDTO;
 import org.scoula.remittance.dto.RecentAccountDTO;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class RemittanceServiceImpl implements RemittanceService {
 
     private final RemittanceMapper remittanceMapper;
@@ -22,42 +24,74 @@ public class RemittanceServiceImpl implements RemittanceService {
     @Override
     @Transactional
     public boolean sendMoney(RemittanceDTO remittanceDTO) {
+        Integer walletId = remittanceDTO.getWalletId();
+        Integer amount = remittanceDTO.getAmount();
 
-        int result1 = remittanceMapper.subtractBalance(remittanceDTO.getWalletId(), remittanceDTO.getAmount());
-        if (result1 == 0) {
-            throw new RuntimeException("지갑 잔액이 부족하거나 지갑 정보를 찾을 수 없습니다.");
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("송금 금액은 0원보다 커야 합니다.");
         }
 
+        // 1. 현재 지갑 잔액 조회 및 부족 시 자동 충전
+        int currentBalance = remittanceMapper.getWalletBalance(walletId);
+        if (currentBalance < amount) {
+            int shortage = amount - currentBalance;
+            log.info("지갑 잔액 부족 (현재: {}원, 송금액: {}원) -> {}원 자동 충전 진행", currentBalance, amount, shortage);
+
+            // 지갑 잔액 충전 및 충전 거래 이력 기록
+            remittanceMapper.addBalance(walletId, shortage);
+            remittanceMapper.insertChargeTransaction(walletId, shortage);
+        }
+
+        // 2. 내 지갑 잔액 차감
+        int subtracted = remittanceMapper.subtractBalance(walletId, amount);
+        if (subtracted == 0) {
+            throw new RuntimeException("지갑 잔액 차감에 실패했습니다.");
+        }
+
+        // 3. 수신처 잔액 증가 (계좌 송금 vs 지갑/친구 송금)
         if ("ACCOUNT".equals(remittanceDTO.getReceiverType())) {
             remittanceMapper.addAccountBalance(
                     remittanceDTO.getBankCode(),
                     remittanceDTO.getAccountNumber(),
-                    remittanceDTO.getAmount()
+                    amount
             );
         } else {
             remittanceMapper.addBalance(
                     remittanceDTO.getReceiverId(),
-                    remittanceDTO.getAmount()
+                    amount
             );
         }
 
+        // 4. 송금 거래 내역 기록
         remittanceDTO.setStatus("SUCCESS");
         remittanceMapper.insertRemittance(remittanceDTO);
 
-        if (remittanceDTO.getFeedType() == null || remittanceDTO.getFeedType().isEmpty()) {
-            remittanceDTO.setFeedType("REMITTANCE");
-        }
-        if (remittanceDTO.getVisibility() == null || remittanceDTO.getVisibility().isEmpty()) {
-            remittanceDTO.setVisibility("PUBLIC");
-        }
-        if (remittanceDTO.getContent() == null || remittanceDTO.getContent().isEmpty()) {
-            remittanceDTO.setContent(remittanceDTO.getMemo() != null ? remittanceDTO.getMemo() : "송금 완료");
+        // 5. 피드 내역 저장 (feed_tbl chk_feed_type 제약조건: 'TRANSFER', 'PAYMENT', 'SETTLEMENT', 'SHARE' 만 허용됨)
+        String rawFeedType = remittanceDTO.getFeedType();
+        String feedType = "TRANSFER";
+        if (rawFeedType != null && !rawFeedType.isEmpty() && !"REMITTANCE".equalsIgnoreCase(rawFeedType)) {
+            feedType = rawFeedType.toUpperCase();
         }
 
-        if (remittanceDTO.getMemo() != null && !remittanceDTO.getMemo().isEmpty()) {
-            remittanceMapper.insertReceiptMemo(remittanceDTO.getTransactionId(), remittanceDTO.getMemo());
+        String visibility = (remittanceDTO.getVisibility() != null && !remittanceDTO.getVisibility().isEmpty())
+                ? remittanceDTO.getVisibility() : "PUBLIC";
+        String content = (remittanceDTO.getContent() != null && !remittanceDTO.getContent().isEmpty())
+                ? remittanceDTO.getContent() : (remittanceDTO.getMemo() != null ? remittanceDTO.getMemo() : "송금 완료");
+
+        // feed_tbl content는 VARCHAR(20)이므로 20자 초과 시 잘라내기
+        if (content.length() > 20) {
+            content = content.substring(0, 20);
         }
 
+        remittanceMapper.insertFeed(
+                walletId,
+                remittanceDTO.getTransactionId(),
+                feedType,
+                content,
+                visibility
+        );
+
+        log.info("송금 완료 및 피드 등록 성공 - 거래 ID: {}, feedType: {}, 피드 내용: {}", remittanceDTO.getTransactionId(), feedType, content);
         return true;
     }
 
@@ -77,7 +111,6 @@ public class RemittanceServiceImpl implements RemittanceService {
         List<RecentAccountDTO> recentAccounts = remittanceMapper.getRecentAccounts(userId, 3);
         if (recentAccounts == null || recentAccounts.size() < 3) {
             if (recentAccounts == null) recentAccounts = new ArrayList<>();
-            // 최근 거래 이력이 부족할 경우 기본 3개 더미 계좌 보충
             if (recentAccounts.stream().noneMatch(a -> "222-002-000001".equals(a.getAccountNumber()))) {
                 recentAccounts.add(RecentAccountDTO.builder()
                         .bankCode("088").bankName("신한은행").accountNumber("222-002-000001").ownerName("이KB").lastTransferAt(new Date()).build());

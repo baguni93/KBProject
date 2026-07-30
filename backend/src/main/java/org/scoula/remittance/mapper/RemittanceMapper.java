@@ -11,17 +11,25 @@ import java.util.List;
 @Mapper
 public interface RemittanceMapper {
 
+    int getWalletBalance(@Param("walletId") Integer walletId);
+
     int subtractBalance(@Param("walletId") Integer walletId, @Param("amount") Integer amount);
 
     int addBalance(@Param("walletId") Integer walletId, @Param("amount") Integer amount);
 
     int insertRemittance(RemittanceDTO remittanceDTO);
 
+    int insertChargeTransaction(@Param("walletId") Integer walletId, @Param("amount") Integer amount);
+
     int addAccountBalance(@Param("bankCode") String bankCode,
                           @Param("accountNumber") String accountNumber,
                           @Param("amount") Integer amount);
 
-    int insertReceiptMemo(@Param("transactionId") Integer transactionId, @Param("memo") String memo);
+    int insertFeed(@Param("userId") Integer userId,
+                   @Param("transactionId") Integer transactionId,
+                   @Param("feedType") String feedType,
+                   @Param("content") String content,
+                   @Param("visibility") String visibility);
 
     List<BankDTO> getBankList();
 
