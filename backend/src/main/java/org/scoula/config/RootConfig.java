@@ -27,15 +27,11 @@ import javax.sql.DataSource;
         "org.scoula.wallet.mapper",
         "org.scoula.remittance.mapper",
         "org.scoula.pointwallet.mapper",
-
         "org.scoula.settlement.mapper",
         "org.scoula.notification.mapper",
         "org.scoula.friend.mapper",
         "org.scoula.comment.mapper",
-        "org.scoula.like.mapper",
-        "org.scoula.wallet.mapper",
-        "org.scoula.remittance.mapper",
-
+        "org.scoula.like.mapper"
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
@@ -47,10 +43,8 @@ import javax.sql.DataSource;
         "org.scoula.notification.service",
         "org.scoula.friend.service",
         "org.scoula.comment.service",
-        "org.scoula.like.service",
-
+        "org.scoula.like.service"
 })
-
 
 @EnableTransactionManagement
 @EnableAspectJAutoProxy

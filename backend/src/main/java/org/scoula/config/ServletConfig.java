@@ -26,7 +26,7 @@ import org.springframework.web.servlet.config.annotation.*;
         "org.scoula.notification.controller",
         "org.scoula.friend.controller",
         "org.scoula.comment.controller",
-        "org.scoula.like.controller",
+        "org.scoula.like.controller"
 })
 public class ServletConfig implements WebMvcConfigurer {
 

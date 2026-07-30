@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import HomePage from '@/pages/HomePage.vue';
 import WalletPage from '@/pages/wallet/WalletPage.vue';
 import RemittancePage from '@/pages/remittance/RemittancePage.vue';
+import TransactionListPage from '@/pages/transaction/TransactionListPage.vue';
 import auth from './auth';
 import PointWalletPage from '@/pages/pointwallet/PointWalletPage.vue';
 import RandomBoxPage from '@/pages/pointwallet/RandomBoxPage.vue';
@@ -13,8 +13,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomePage,
+      redirect: '/wallet',
     },
     {
       path: '/wallet',
