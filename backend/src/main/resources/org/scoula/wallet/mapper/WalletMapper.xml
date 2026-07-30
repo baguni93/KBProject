@@ -55,4 +55,29 @@
         WHERE transaction_id = #{chargeId}
     </select>
 
+    <!-- 박준우: 포인트 전환 전 전자지갑 조회 -->
+    <select id="getByUserIdForUpdate"
+            resultType="org.scoula.wallet.dto.WalletDTO">
+
+        SELECT
+            wallet_id AS walletId,
+            user_id AS userId,
+            balance,
+            wallet_status AS walletStatus
+        FROM wallet_tbl
+        WHERE user_id = #{userId}
+            FOR UPDATE
+
+    </select>
+
+    <!-- 박준우: ACTIVE 상태인 전자지갑 잔액 증가 -->
+    <update id="addBalanceIfActive">
+
+        UPDATE wallet_tbl
+        SET balance = balance + #{amount}
+        WHERE wallet_id = #{walletId}
+          AND wallet_status = 'ACTIVE'
+
+    </update>
+
 </mapper>

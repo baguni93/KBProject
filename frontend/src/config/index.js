@@ -39,5 +39,6 @@ export default {
       title: '회원가입',
       icon: 'fa-solid fa-user-plus',
     },
+
   },
 };

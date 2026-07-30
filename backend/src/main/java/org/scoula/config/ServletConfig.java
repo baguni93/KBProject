@@ -30,6 +30,8 @@ import java.util.List;
         "org.scoula.feed.controller",
         "org.scoula.wallet.controller",
         "org.scoula.remittance.controller",
+        "org.scoula.pointwallet.controller",
+        "org.scoula.pointwallet.exception",
         "org.scoula.settlement.controller",
         "org.scoula.notification.controller",
         "org.scoula.friend.controller",

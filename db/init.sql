@@ -279,21 +279,11 @@ CREATE TABLE spending_category_tbl (
     CONSTRAINT fk_spending_category_parent
         FOREIGN KEY (parent_category_id)
         REFERENCES spending_category_tbl(spending_category_id)
-        
--- spending_category_id가 AUTO_INCREMENT 컬럼이라 CHECK에서 사용할 수 없습니다. , 코드에서 확인
---     CONSTRAINT chk_spending_category_parent
---         CHECK (
---             parent_category_id IS NULL
---             OR parent_category_id <> spending_category_id
---         )
+
 );
 
 
--- 8.포인트 테이블 
--- NIQUE(point_wallet_id, user_id)는 불필요합니다.
--- point_wallet_id가 PRIMARY KEY이므로 이미 유일합니다.
--- 따라서 (point_wallet_id, user_id) 복합 UNIQUE는 의미가 없습니다.
--- 정의서는 그대로 두더라도 DDL에서는 생략해도 동일한 효과입니다.
+-- 8.포인트 테이블
 
 DROP TABLE IF EXISTS point_wallet_tbl;
 
@@ -335,30 +325,130 @@ CREATE TABLE point_transaction_tbl (
         CHECK (point_amount > 0),
 
     CONSTRAINT chk_point_transaction_reason
-        CHECK (reason_type IN ('EVENT', 'DEPOSIT','ATTENDANCE', 'RANDOM_BOX','CONVERSION',  'EVENT'))
+        CHECK (reason_type IN ('EVENT','ATTENDANCE', 'RANDOM_BOX','CONVERSION'))
 );
 
 -- 10.랜덤박스 테이블
 DROP TABLE IF EXISTS user_random_box_tbl;
 
-CREATE TABLE user_random_box_tbl (
-    user_random_box_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '랜덤박스 PK',
-    user_id INT NOT NULL COMMENT '유저 ID',
-    issue_reason VARCHAR(30) NOT NULL COMMENT '지급사유',
-    box_status VARCHAR(20) NOT NULL COMMENT '개봉상태',
-    reward_point INT NULL COMMENT '결과 포인트',
-    issued_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '랜덤박스 지급일시',
-    opened_at DATETIME NULL COMMENT '랜덤박스 개봉일시',
+CREATE TABLE user_random_box_tbl
+(
+    user_random_box_id INT AUTO_INCREMENT
+        PRIMARY KEY
+        COMMENT '랜덤박스 PK',
+
+    user_id            INT         NOT NULL
+        COMMENT '랜덤박스를 지급받은 사용자 ID',
+
+    issue_reason       VARCHAR(30) NOT NULL
+        COMMENT '랜덤박스 지급 사유',
+
+    source_id          INT         NOT NULL
+        COMMENT '지급 원인이 된 데이터의 PK',
+
+    target_account_id  INT         NULL
+        COMMENT '송금 보상의 수취 계좌 ID',
+
+    box_status         VARCHAR(20) NOT NULL
+        DEFAULT 'UNOPENED'
+        COMMENT '랜덤박스 개봉 상태',
+
+    reward_point       INT         NULL
+        COMMENT '랜덤박스 개봉 결과 포인트',
+
+    issued_at          DATETIME    NOT NULL
+        DEFAULT CURRENT_TIMESTAMP
+        COMMENT '랜덤박스 지급 일시',
+
+    opened_at          DATETIME    NULL
+        COMMENT '랜덤박스 개봉 일시',
+
 
     CONSTRAINT fk_user_random_box_user
         FOREIGN KEY (user_id)
-        REFERENCES user_tbl(user_id),
+            REFERENCES user_tbl (user_id),
+
+    CONSTRAINT fk_random_box_target_wallet
+        FOREIGN KEY (target_account_id)
+            REFERENCES wallet_tbl(wallet_id),
+    -- 출석, 피드공유하기, 송금, 이벤트
+
+    CONSTRAINT chk_user_random_box_issue_reason
+        CHECK (
+            issue_reason IN (
+                             'ATTENDANCE',
+                             'FEED_SHARE',
+                             'TRANSFER',
+                             'EVENT'
+                )
+            ),
 
     CONSTRAINT chk_user_random_box_status
-        CHECK (box_status IN ('UNOPENED', 'OPENED')),
+        CHECK (
+            box_status IN (
+                           'UNOPENED',
+                           'OPENED'
+                )
+            ),
 
     CONSTRAINT chk_user_random_box_reward_point
-        CHECK (reward_point IS NULL OR reward_point >= 0)
+        CHECK (
+            reward_point IS NULL
+                OR reward_point >= 0
+            ),
+
+    CONSTRAINT chk_user_random_box_open_state
+        CHECK (
+            (
+                box_status = 'UNOPENED'
+                    AND reward_point IS NULL
+                    AND opened_at IS NULL
+                )
+                OR
+            (
+                box_status = 'OPENED'
+                    AND reward_point IS NOT NULL
+                    AND opened_at IS NOT NULL
+                )
+            ),
+
+    /*
+     * 출석·피드·송금 거래·이벤트 참여 이력 하나당
+     * 랜덤박스 중복 지급 방지
+     */
+    CONSTRAINT uq_random_box_issue_source
+        UNIQUE (
+                user_id,
+                issue_reason,
+                source_id
+        ),
+
+    /*
+     * 동일 사용자가 동일 수취 계좌로 반복 송금해도
+     * 송금 랜덤박스는 한 번만 지급
+     */
+    CONSTRAINT uq_random_box_transfer_account
+        UNIQUE (
+                user_id,
+                issue_reason,
+                target_account_id
+        ),
+
+    /*
+     * TRANSFER일 때만 target_account_id가 존재해야 한다.
+     */
+    CONSTRAINT chk_random_box_target_account
+        CHECK (
+            (
+                issue_reason = 'TRANSFER'
+                    AND target_account_id IS NOT NULL
+                )
+                OR
+            (
+                issue_reason <> 'TRANSFER'
+                    AND target_account_id IS NULL
+                )
+            )
 );
 
 
@@ -389,28 +479,29 @@ CREATE TABLE attendance_tbl (
 -- 포인트 전환 내역 테이블
 DROP TABLE IF EXISTS point_conversion_history_tbl;
 
-CREATE TABLE point_conversion_history_tbl (
+CREATE TABLE point_conversion_history_tbl
+(
     point_conversion_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '포인트 전환내역 PK',
-    user_id INT NOT NULL COMMENT '유저 ID',
-    point_wallet_id INT NOT NULL COMMENT '포인트 지갑',
-    linked_account_id INT NOT NULL COMMENT '입금계좌번호',
-    converted_point INT NOT NULL COMMENT '변환 금액',
-    converted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '변환 일시',
+    user_id             INT      NOT NULL COMMENT '유저 ID',
+    point_wallet_id     INT      NOT NULL COMMENT '포인트 지갑 ID',
+    wallet_id           INT      NOT NULL COMMENT '충전된 전자지갑 ID',
+    converted_point     INT      NOT NULL COMMENT '전환 포인트',
+    converted_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '전환 일시',
 
     CONSTRAINT fk_point_conversion_user
         FOREIGN KEY (user_id)
-        REFERENCES user_tbl(user_id),
+            REFERENCES user_tbl (user_id),
+
+    CONSTRAINT fk_point_conversion_point_wallet
+        FOREIGN KEY (point_wallet_id)
+            REFERENCES point_wallet_tbl (point_wallet_id),
 
     CONSTRAINT fk_point_conversion_wallet
-        FOREIGN KEY (point_wallet_id)
-        REFERENCES point_wallet_tbl(point_wallet_id),
-
-    CONSTRAINT fk_point_conversion_account
-        FOREIGN KEY (linked_account_id)
-        REFERENCES linked_account_tbl(linked_account_id),
+        FOREIGN KEY (wallet_id)
+            REFERENCES wallet_tbl (wallet_id),
 
     CONSTRAINT chk_point_conversion_point
-        CHECK (converted_point > 0)
+        CHECK (converted_point >= 100)
 );
 
 -- 13. 소비 분석 테이블
@@ -1101,7 +1192,7 @@ CREATE TABLE registered_card_tbl (
     expiry_date CHAR(5) NOT NULL COMMENT '유효기간',
 
     cvv VARCHAR(255) NOT NULL COMMENT 'cvv',
-    
+
     card_password VARCHAR(255) NOT NULL COMMENT '카드 비밀번호 4자리',
 
     represent_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '대표카드여부',
@@ -1181,7 +1272,7 @@ CREATE TABLE receipt_memo_tbl (
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
 
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP 
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
 
     CONSTRAINT fk_receipt_memo_transaction
@@ -1211,7 +1302,7 @@ CREATE TABLE feed_tbl (
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP 
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
 
     CONSTRAINT fk_feed_user
@@ -1295,7 +1386,7 @@ CREATE TABLE feed_comment_tbl (
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP 
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
 
     CONSTRAINT fk_feed_comment_feed
@@ -1420,7 +1511,7 @@ CREATE TABLE card_application_history_tbl (
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
 
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP 
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
 
     CONSTRAINT fk_card_application_history_user
@@ -1564,6 +1655,8 @@ CREATE TABLE event_participation_tbl (
 -- event_id	user_id	reward_id	결과
 -- 1	100	1	가능
 -- 1	100	2	불가능 (이미 해당 이벤트 보상 수령)
+
+DROP TABLE IF EXISTS event_reward_receive_tbl;
 CREATE TABLE event_reward_receive_tbl (
 
     recv_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '리워드수령ID',
@@ -1598,7 +1691,7 @@ CREATE TABLE event_reward_receive_tbl (
 ) COMMENT='이벤트 리워드 수령이력';
 
 -- 47. 이벤트 챌린지 테이블 정의서
-
+DROP TABLE IF EXISTS event_challenge_tbl;
 CREATE TABLE event_challenge_tbl (
 
     challenge_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '챌린지ID',
@@ -1621,6 +1714,7 @@ CREATE TABLE event_challenge_tbl (
 ) COMMENT='이벤트 챌린지';
 
 -- 48. 이벤트 챌린지 참여이력 테이블 정의서
+DROP TABLE IF EXISTS event_challenge_user_tbl;
 CREATE TABLE event_challenge_user_tbl (
 
     user_challenge_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '챌린지참여ID',
@@ -1669,7 +1763,7 @@ DROP TABLE IF EXISTS card_company_tbl;
 
 CREATE TABLE card_company_tbl (
     card_company_code VARCHAR(10) PRIMARY KEY COMMENT '카드사코드',
-    
+
     card_company_name VARCHAR(50) NOT NULL UNIQUE COMMENT '카드사명',
 
     CONSTRAINT chk_card_company_name
@@ -1683,15 +1777,15 @@ DROP TABLE IF EXISTS linked_card_tbl;
 CREATE TABLE linked_card_tbl (
     linked_card_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '연결카드번호',
     user_id INT NOT NULL COMMENT '회원번호',
-    
+
     card_id INT NOT NULL UNIQUE COMMENT '등록카드번호',
-    
+
     card_company_code VARCHAR(10) NOT NULL COMMENT '카드사코드',
-    
+
     card_name VARCHAR(100) NOT NULL COMMENT '카드명',
-    
+
     card_image_name VARCHAR(255) NULL COMMENT '카드이미지파일명',
-    
+
     represent_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '대표카드여부',
 
     CONSTRAINT fk_linked_card_user
