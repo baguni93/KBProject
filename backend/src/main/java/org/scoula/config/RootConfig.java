@@ -31,7 +31,9 @@ import javax.sql.DataSource;
         "org.scoula.notification.mapper",
         "org.scoula.friend.mapper",
         "org.scoula.comment.mapper",
-        "org.scoula.like.mapper"
+        "org.scoula.like.mapper",
+        "org.scoula.auth.mapper",
+        "org.scoula.transaction.mapper"
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
@@ -43,9 +45,10 @@ import javax.sql.DataSource;
         "org.scoula.notification.service",
         "org.scoula.friend.service",
         "org.scoula.comment.service",
-        "org.scoula.like.service"
+        "org.scoula.like.service",
+        "org.scoula.auth.service",
+        "org.scoula.transaction.service"
 })
-
 @EnableTransactionManagement
 @EnableAspectJAutoProxy
 public class RootConfig {
