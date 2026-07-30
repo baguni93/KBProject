@@ -52,7 +52,6 @@ import javax.sql.DataSource;
         "org.scoula.like.service",
 
         "org.scoula.member.service",
-        "org.scoula.user.service"
 })
 
 
