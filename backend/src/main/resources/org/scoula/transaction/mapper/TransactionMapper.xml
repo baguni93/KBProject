@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scoula.transaction.mapper.TransactionMapper">
+
+    <select id="getTransactionList" resultType="org.scoula.transaction.dto.TransactionDTO">
+        SELECT
+            t.transaction_id AS transactionId,
+            t.parent_transaction_id AS parentTransactionId,
+            t.user_id AS userId,
+            t.receive_id AS receiveId,
+            t.transaction_type AS transactionType,
+            t.source_type AS sourceType,
+            t.target_type AS targetType,
+            t.transaction_status AS transactionStatus,
+            t.amount,
+            t.spending_category_id AS spendingCategoryId,
+            t.created_at AS createdAt,
+            m.memo_content AS memo,
+            u.user_name AS receiverName
+        FROM financial_transaction_tbl t
+        LEFT JOIN receipt_memo_tbl m ON t.transaction_id = m.transaction_id
+        LEFT JOIN user_tbl u ON t.receive_id = u.user_id
+        WHERE t.user_id = #{userId}
+        <if test="type != null and type != ''">
+            AND t.transaction_type = #{type}
+        </if>
+        ORDER BY t.transaction_id DESC
+    </select>
+
+    <select id="getTransactionById" resultType="org.scoula.transaction.dto.TransactionDTO">
+        SELECT
+            t.transaction_id AS transactionId,
+            t.parent_transaction_id AS parentTransactionId,
+            t.user_id AS userId,
+            t.receive_id AS receiveId,
+            t.transaction_type AS transactionType,
+            t.source_type AS sourceType,
+            t.target_type AS targetType,
+            t.transaction_status AS transactionStatus,
+            t.amount,
+            t.spending_category_id AS spendingCategoryId,
+            t.created_at AS createdAt,
+            m.memo_content AS memo,
+            u.user_name AS receiverName
+        FROM financial_transaction_tbl t
+        LEFT JOIN receipt_memo_tbl m ON t.transaction_id = m.transaction_id
+        LEFT JOIN user_tbl u ON t.receive_id = u.user_id
+        WHERE t.transaction_id = #{transactionId}
+    </select>
+
+    <update id="updateReceiptMemo">
+        UPDATE receipt_memo_tbl
+        SET memo_content = #{memo}, updated_at = NOW()
+        WHERE transaction_id = #{transactionId}
+    </update>
+
+    <insert id="insertReceiptMemoIfAbsent">
+        INSERT INTO receipt_memo_tbl (transaction_id, memo_content, created_at, updated_at)
+        VALUES (#{transactionId}, #{memo}, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE memo_content = #{memo}, updated_at = NOW()
+    </insert>
+
+</mapper>

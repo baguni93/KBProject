@@ -793,10 +793,12 @@ CREATE TABLE settlement_tbl (
     requester_id INT NOT NULL COMMENT '요청자 ID',
 
     title VARCHAR(20) NULL COMMENT '정산 제목',
+    
+	content VARCHAR(20) NULL COMMENT '피드 내용',
 
     total_amount INT NULL COMMENT '총 정산 금액',
 
-    status VARCHAR(20) NULL COMMENT '정산 상태',
+    status VARCHAR(20) NULL  DEFAULT 'REQUEST' COMMENT '정산 상태',
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
@@ -804,8 +806,10 @@ CREATE TABLE settlement_tbl (
 
     spending_category_id INT NULL COMMENT '소비 카테고리 ID',
 
+    last_reminder_date DATETIME NULL DEFAULT CURRENT_TIMESTAMP COMMENT '마지막으로 리마인드한 날짜',
+    
     completed_at DATETIME NULL COMMENT '완료일시',
-
+    
     CONSTRAINT fk_settlement_requester
         FOREIGN KEY (requester_id)
         REFERENCES user_tbl(user_id),
@@ -843,11 +847,11 @@ CREATE TABLE settlement_member_tbl (
 
     amount INT NULL COMMENT '정산 금액',
 
-    status VARCHAR(20) NULL COMMENT '정산 상태',
+    status VARCHAR(20) NULL  DEFAULT 'REQUEST' COMMENT '정산 상태',
 
     created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
-    last_reminder_date DATETIME NULL DEFAULT CURRENT_TIMESTAMP COMMENT '마지막으로 리마인드한 날짜',
+
 
     completed_at DATETIME NULL COMMENT '완료일시',
 
@@ -888,8 +892,6 @@ CREATE TABLE notification_tbl (
 
     target_id INT NULL COMMENT '대상번호',
 
-    is_read CHAR(1) NOT NULL DEFAULT 'N' COMMENT '읽음여부',
-
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
     CONSTRAINT fk_notification_receiver
@@ -902,12 +904,18 @@ CREATE TABLE notification_tbl (
 
     CONSTRAINT chk_notification_type
         CHECK (
-            notification_type IN ('LIKE', 'COMMENT', 'SETTLEMENT', 'FRIEND_REQUEST')
-        ),
-
-    CONSTRAINT chk_notification_read
-        CHECK (
-            is_read IN ('Y', 'N')
+            notification_type 
+            IN (
+            'LIKE', 
+            'COMMENT',
+            'FRIEND_REQUEST',
+            'FRIEND_ACCEPT',
+            'FRIEND_REJECT',
+			'SETTLEMENT_REQUEST',
+			'SETTLEMENT_PAYMENT',
+			'SETTLEMENT_CANCEL',
+            'SETTLEMENT_COMPLETE'
+            )
         )
 );
 
@@ -1295,13 +1303,15 @@ CREATE TABLE feed_tbl (
 
     user_id INT NOT NULL COMMENT '회원번호',
 
-    transaction_id INT NULL UNIQUE COMMENT '거래번호',
+    target_id INT NULL COMMENT '피드 유형에 따른 대상 ID',
 
-    feed_type VARCHAR(20) NULL COMMENT '피드유형',
+	feed_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '피드상태',
+
+    feed_type VARCHAR(20) NOT NULL COMMENT '피드유형',
 
     content VARCHAR(20) NULL COMMENT '피드내용',
 
-    visibility VARCHAR(20) NULL COMMENT '공개범위',
+    visibility VARCHAR(20) NOT NULL COMMENT '공개범위',
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
@@ -1312,9 +1322,13 @@ CREATE TABLE feed_tbl (
         FOREIGN KEY (user_id)
         REFERENCES user_tbl(user_id),
 
-    CONSTRAINT fk_feed_transaction
-        FOREIGN KEY (transaction_id)
-        REFERENCES financial_transaction_tbl(transaction_id),
+	CONSTRAINT chk_feed_status
+			CHECK (
+				feed_status IN (
+					'ACTIVE',
+					'DELETED'
+				)
+			),
 
     CONSTRAINT chk_feed_type
         CHECK (
@@ -1322,7 +1336,9 @@ CREATE TABLE feed_tbl (
                 'TRANSFER',
                 'PAYMENT',
                 'SETTLEMENT',
-                'SHARE'
+                'CARD',
+                'ANALYSIS',
+                'EVENT'
             )
         ),
 
@@ -1506,7 +1522,7 @@ CREATE TABLE card_application_history_tbl (
 
     custom_image_id INT NOT NULL COMMENT '커스텀이미지 첨부파일ID',
 
-    card_code VARCHAR(20) NULL COMMENT '카드코드',
+    card_id VARCHAR(20) NULL COMMENT '카드코드',
 
     card_name VARCHAR(50) NULL COMMENT '카드명',
 

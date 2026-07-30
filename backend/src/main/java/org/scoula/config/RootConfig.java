@@ -28,14 +28,14 @@ import javax.sql.DataSource;
         "org.scoula.wallet.mapper",
         "org.scoula.remittance.mapper",
         "org.scoula.pointwallet.mapper",
-
         "org.scoula.settlement.mapper",
         "org.scoula.notification.mapper",
         "org.scoula.friend.mapper",
         "org.scoula.comment.mapper",
         "org.scoula.like.mapper",
-        "org.scoula.wallet.mapper",
-        "org.scoula.remittance.mapper",
+        "org.scoula.user.mapper",
+        "org.scoula.auth.mapper",
+        "org.scoula.transaction.mapper"
         "org.scoula.analysis.mapper",
 
 
@@ -55,8 +55,6 @@ import javax.sql.DataSource;
         "org.scoula.member.service",
         "org.scoula.analysis.service",
 })
-
-
 @EnableTransactionManagement
 @EnableAspectJAutoProxy
 public class RootConfig {

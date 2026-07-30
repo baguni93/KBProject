@@ -21,9 +21,14 @@ public class UploadPathName {
     }
 
     public  static  String getFeedPath(){
-
-
         return getUploadPath() + "/feed/";
+    }
 
+    public  static  String getEventPath(){
+        return getUploadPath() + "/event/";
+    }
+
+    public  static  String getCardPath(){
+        return getUploadPath() + "/card/";
     }
 }

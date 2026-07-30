@@ -189,7 +189,7 @@
                            on  b.user_id = d.user_id
                  left join spending_category_tbl e
                            on  a.spending_category_id = e.spending_category_id
-                WHERE EXISTS (
+                WHERE a.requester_id = #{userId} or EXISTS (
                     SELECT 1
                     FROM settlement_member_tbl me
                     WHERE me.settlement_id = a.settlement_id

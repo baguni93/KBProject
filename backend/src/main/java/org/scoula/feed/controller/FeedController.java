@@ -4,6 +4,7 @@ package org.scoula.feed.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.common.util.UploadFiles;
+import org.scoula.common.util.UploadPathName;
 import org.scoula.feed.dto.FeedCreateRequestDTO;
 import org.scoula.feed.dto.FeedImageDTO;
 import org.scoula.feed.dto.FeedResponseDTO;
@@ -63,6 +64,18 @@ public class FeedController {
     public void viewImage(@PathVariable int imageId, HttpServletResponse response) {
         FeedImageDTO image = feedService.getImage(imageId);
         File file = new File(image.getPath());
+        UploadFiles.downloadImage(response, file);
+    }
+
+    @GetMapping("/cardImage/{imageName}")
+    public void viewCardImage(@PathVariable String imageName, HttpServletResponse response) {
+        File file = new File(UploadPathName.getCardPath()+imageName);
+        UploadFiles.downloadImage(response, file);
+    }
+
+    @GetMapping("/eventImage/{imageName}")
+    public void viewEventImage(@PathVariable String imageName, HttpServletResponse response) {
+        File file = new File(UploadPathName.getEventPath()+imageName);
         UploadFiles.downloadImage(response, file);
     }
 
