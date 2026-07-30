@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.analysis.mapper.AnalysisMapper">
+
+    <!--
+        소비 분석 가능 여부 계산을 위한 거래 건수 조회
+
+        대상 조건:
+        1. 현재 사용자 거래
+        2. 결제 거래만 포함
+        3. 성공한 거래만 포함
+        4. 선택 기간 안에 생성된 거래만 포함
+    -->
+<!--   case문이 좀 비효율적이게 보이긴한데, 해봤자 몇십건인데 굳이 튜닝까지는 필요 없을듯?
+   아니 12개월에 한 1000건쯤 되면 함수 검증에서, 좀 문제 있을 수도?
+   개발하다 시간남으면 이부분은 좀 만져봐야겠네
+   mysql에서는 함수가 어떻게 작동할지도 모르겠고. -->
+    <select id="selectAnalysisCount"
+            resultType="org.scoula.analysis.dto.AnalysisCountDTO">
+
+        SELECT
+            COUNT(*) AS total_payment_count,
+            COALESCE(SUM(CASE WHEN spending_category_id IS NOT NULL
+                THEN 1
+                ELSE 0
+                END),0) AS classified_payment_count
+
+
+        FROM financial_transaction_tbl
+        WHERE user_id = #{userId}
+          AND transaction_type = 'PAYMENT'
+          AND transaction_status = 'SUCCESS'
+          AND created_at <![CDATA[ >= ]]> #{startAt}
+          AND created_at <![CDATA[ < ]]> #{endAt}
+
+    </select>
+
+</mapper>

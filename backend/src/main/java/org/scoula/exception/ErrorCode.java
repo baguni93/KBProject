@@ -35,8 +35,10 @@ public enum ErrorCode {
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "C001", "댓글이 존재하지않습니다."),
     
     // Wallet
-    INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "W001", "잔액이 부족합니다.");
+    INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "W001", "잔액이 부족합니다."),
 
+    // Analysis
+    INVALID_ANALYSIS_PERIOD(HttpStatus.BAD_REQUEST,"AN001","분석 기간은 1개월, 3개월, 12개월 중 하나여야 합니다.");
 
 
     private final HttpStatus status;

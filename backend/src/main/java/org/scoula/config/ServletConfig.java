@@ -37,6 +37,7 @@ import java.util.List;
         "org.scoula.friend.controller",
         "org.scoula.comment.controller",
         "org.scoula.like.controller",
+        "org.scoula.analysis.controller",
 })
 public class ServletConfig implements WebMvcConfigurer {
 
