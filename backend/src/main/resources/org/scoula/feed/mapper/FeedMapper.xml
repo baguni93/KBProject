@@ -325,7 +325,7 @@
     <select id="getCard" resultType="org.scoula.feed.domain.CardVO">
         SELECT
             a.apply_id,
-            b.custom_image_id as cardImageName
+            b.custom_image_name as cardImageName
         FROM card_application_history_tbl a
                  join custom_image_tbl b
                       on a.custom_image_id = b.custom_image_id
