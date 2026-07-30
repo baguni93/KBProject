@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import HomePage from '@/pages/HomePage.vue';
 import WalletPage from '@/pages/wallet/WalletPage.vue';
 import RemittancePage from '@/pages/remittance/RemittancePage.vue';
+import TransactionListPage from '@/pages/transaction/TransactionListPage.vue';
 import auth from './auth';
 import feed from './feed';
 import mypage from './mypage';
@@ -15,8 +15,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomePage,
+      redirect: '/wallet',
     },
     {
       path: '/wallet',

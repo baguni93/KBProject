@@ -1,110 +1,131 @@
 <template>
-  <div class="modal-backdrop" @click.self="$emit('close')">
-    <div class="modal-card bg-white rounded-4 shadow-lg overflow-hidden animate__animated animate__fadeInUp">
-      <!-- 헤더 -->
-      <div class="bg-dark text-white p-3 d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-2">
-          <span class="badge bg-warning text-dark fw-bold px-2 py-1">KB Pay</span>
-          <h6 class="fw-bold mb-0">1회용 보안 결제 코드</h6>
-        </div>
-        <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
-      </div>
+  <div>
+    <!-- PIN 6자리 인증 모달 -->
+    <PinAuthModal
+      :show="!isPinVerified"
+      :userId="userId"
+      @close="$emit('close')"
+      @success="handlePinSuccess"
+    />
 
-      <div class="p-4 text-center">
-        <!-- 탭 버튼 (바코드 / QR코드) -->
-        <div class="btn-group w-100 mb-3" role="group">
-          <button
-            type="button"
-            class="btn py-2.5 fw-bold"
-            :class="activeTab === 'barcode' ? 'btn-dark' : 'btn-outline-secondary'"
-            @click="switchTab('barcode')"
-          >
-            <i class="bi bi-upc-scan me-1"></i> 바코드 결제
-          </button>
-          <button
-            type="button"
-            class="btn py-2.5 fw-bold"
-            :class="activeTab === 'qr' ? 'btn-dark' : 'btn-outline-secondary'"
-            @click="switchTab('qr')"
-          >
-            <i class="bi bi-qr-code-scan me-1"></i> QR코드 결제
-          </button>
-        </div>
-
-        <!-- 1. 바코드 결제 화면 -->
-        <div v-if="activeTab === 'barcode'" class="code-box p-3 rounded-4 bg-light mb-3">
-          <div class="text-secondary small mb-2">가맹점 바코드 스캐너에 대어주세요</div>
-
-          <div class="barcode-container my-3 d-flex justify-content-center">
-            <svg class="barcode-svg" viewBox="0 0 280 90" xmlns="http://www.w3.org/2000/svg">
-              <rect width="100%" height="100%" fill="#ffffff" />
-              <g fill="#000000">
-                <rect v-for="(bar, idx) in barcodeBars" :key="idx" :x="bar.x" y="10" :width="bar.w" height="70" />
-              </g>
-            </svg>
-          </div>
-
-          <div class="fs-5 fw-bold text-dark font-monospace tracking-wider">
-            {{ formattedCode }}
-          </div>
-        </div>
-
-        <!-- 2. QR코드 결제 화면 -->
-        <div v-else class="code-box p-3 rounded-4 bg-light mb-3">
-          <div class="text-secondary small mb-2">가맹점 QR 리더기에 스캔해 주세요</div>
-
-          <div class="qr-container my-3 d-flex justify-content-center">
-            <svg class="qr-svg border rounded-3 p-2 bg-white" viewBox="0 0 210 210" width="180" height="180" xmlns="http://www.w3.org/2000/svg">
-              <rect width="100%" height="100%" fill="#ffffff" />
-              <g fill="#000000">
-                <rect v-for="(cell, idx) in qrModules" :key="idx" :x="cell.x" :y="cell.y" width="9.5" height="9.5" />
-              </g>
-              <rect x="80" y="80" width="50" height="50" rx="8" fill="#FFBC00" />
-              <text x="105" y="110" font-size="16" font-weight="900" text-anchor="middle" fill="#000000">KB</text>
-            </svg>
-          </div>
-
-          <div class="small text-muted font-monospace">토큰: {{ rawCode }}</div>
-        </div>
-
-        <!-- 3분 카운트다운 타이머 -->
-        <div class="d-flex justify-content-between align-items-center bg-warning-subtle p-3 rounded-3 mb-3">
+    <!-- PIN 인증 성공 시 결제 코드 모달 활성화 -->
+    <div v-if="isPinVerified" class="modal-backdrop" @click.self="$emit('close')">
+      <div class="modal-card bg-white rounded-4 shadow-lg overflow-hidden animate__animated animate__fadeInUp">
+        <!-- 헤더 -->
+        <div class="bg-dark text-white p-3 d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-clock-history fs-5 text-dark"></i>
-            <span class="text-dark small fw-bold">인증 유효시간</span>
+            <span class="badge bg-warning text-dark fw-bold px-2 py-1">KB Pay</span>
+            <h6 class="fw-bold mb-0">1회용 보안 결제 코드</h6>
           </div>
-          <div class="d-flex align-items-center gap-2">
-            <span class="fs-5 fw-extrabold text-danger font-monospace">{{ timerText }}</span>
-            <button class="btn btn-sm btn-dark rounded-circle px-2 py-1" @click="fetchServerToken" title="토큰 재발급">
-              <i class="bi bi-arrow-clockwise"></i>
+          <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
+        </div>
+
+        <div class="p-4 text-center">
+          <!-- 탭 버튼 (바코드 / QR코드) -->
+          <div class="btn-group w-100 mb-3" role="group">
+            <button
+              type="button"
+              class="btn py-2.5 fw-bold"
+              :class="activeTab === 'barcode' ? 'btn-dark' : 'btn-outline-secondary'"
+              @click="switchTab('barcode')"
+            >
+              <i class="bi bi-upc-scan me-1"></i> 바코드 결제
+            </button>
+            <button
+              type="button"
+              class="btn py-2.5 fw-bold"
+              :class="activeTab === 'qr' ? 'btn-dark' : 'btn-outline-secondary'"
+              @click="switchTab('qr')"
+            >
+              <i class="bi bi-qr-code-scan me-1"></i> QR코드 결제
             </button>
           </div>
-        </div>
 
-        <!-- 하단 안내 문구 -->
-        <p class="text-muted small mb-0" style="font-size: 0.75rem;">
-          <i class="bi bi-shield-check text-warning me-1"></i> 1회용 결제 코드는 3분 후 자동 소멸됩니다.
-        </p>
+          <!-- 1. 바코드 결제 화면 -->
+          <div v-if="activeTab === 'barcode'" class="code-box p-3 rounded-4 bg-light mb-3">
+            <div class="text-secondary small mb-2">가맹점 바코드 스캐너에 대어주세요</div>
+
+            <div class="barcode-container my-3 d-flex justify-content-center">
+              <svg class="barcode-svg" viewBox="0 0 280 90" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100%" height="100%" fill="#ffffff" />
+                <g fill="#000000">
+                  <rect v-for="(bar, idx) in barcodeBars" :key="idx" :x="bar.x" y="10" :width="bar.w" height="70" />
+                </g>
+              </svg>
+            </div>
+
+            <div class="fs-5 fw-bold text-dark font-monospace tracking-wider">
+              {{ formattedCode }}
+            </div>
+          </div>
+
+          <!-- 2. QR코드 결제 화면 -->
+          <div v-else class="code-box p-3 rounded-4 bg-light mb-3">
+            <div class="text-secondary small mb-2">가맹점 QR 리더기에 스캔해 주세요</div>
+
+            <div class="qr-container my-3 d-flex justify-content-center">
+              <svg class="qr-svg border rounded-3 p-2 bg-white" viewBox="0 0 210 210" width="180" height="180" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100%" height="100%" fill="#ffffff" />
+                <g fill="#000000">
+                  <rect v-for="(cell, idx) in qrModules" :key="idx" :x="cell.x" :y="cell.y" width="9.5" height="9.5" />
+                </g>
+                <rect x="80" y="80" width="50" height="50" rx="8" fill="#FFBC00" />
+                <text x="105" y="110" font-size="16" font-weight="900" text-anchor="middle" fill="#000000">KB</text>
+              </svg>
+            </div>
+
+            <div class="small text-muted font-monospace">토큰: {{ rawCode }}</div>
+          </div>
+
+          <!-- 3분 카운트다운 타이머 -->
+          <div class="d-flex justify-content-between align-items-center bg-warning-subtle p-3 rounded-3 mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-clock-history fs-5 text-dark"></i>
+              <span class="text-dark small fw-bold">인증 유효시간</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="fs-5 fw-extrabold text-danger font-monospace">{{ timerText }}</span>
+              <button class="btn btn-sm btn-dark rounded-circle px-2 py-1" @click="fetchServerToken" title="토큰 재발급">
+                <i class="bi bi-arrow-clockwise"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 하단 안내 문구 -->
+          <p class="text-muted small mb-0" style="font-size: 0.75rem;">
+            <i class="bi bi-shield-check text-warning me-1"></i> 1회용 결제 코드는 3분 후 자동 소멸됩니다.
+          </p>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onUnmounted } from 'vue';
 import walletApi from '@/api/walletApi';
+import PinAuthModal from '@/components/auth/PinAuthModal.vue';
 
 const props = defineProps({
-  userId: { type: Number, default: 1 }
+  userId: { type: Number, default: 1 },
+  initialTab: { type: String, default: 'barcode' }
 });
 
 defineEmits(['close']);
 
-const activeTab = ref('barcode'); // 'barcode' | 'qr'
+const isPinVerified = ref(false);
+const activeTab = ref(props.initialTab || 'barcode');
 const rawCode = ref('');
 const timeLeft = ref(180);
 
 let timerInterval = null;
+
+const handlePinSuccess = () => {
+  isPinVerified.value = true;
+  activeTab.value = props.initialTab || 'barcode';
+  fetchServerToken();
+  startTimer();
+};
 
 const formattedCode = computed(() => {
   if (!rawCode.value) return '';
@@ -223,11 +244,6 @@ const startTimer = () => {
     }
   }, 1000);
 };
-
-onMounted(() => {
-  fetchServerToken();
-  startTimer();
-});
 
 onUnmounted(() => {
   if (timerInterval) clearInterval(timerInterval);

@@ -66,17 +66,43 @@
           />
         </div>
 
-        <!-- 3-B. 계좌 송금 -->
+        <!-- 3-B. 계좌 송금 & 최근 송금 계좌 -->
         <div v-else class="mb-4">
-          <label class="form-label text-secondary small fw-bold">입금 은행 및 계좌번호</label>
+          <!-- 최근 송금 계좌 리스트 -->
+          <div class="mb-3">
+            <div class="mb-2">
+              <span class="text-secondary small fw-bold">최근 송금 계좌</span>
+            </div>
+            <div class="d-flex flex-column gap-2">
+              <div
+                v-for="(acc, idx) in recentAccounts"
+                :key="idx"
+                class="p-2.5 rounded-3 border bg-light d-flex align-items-center justify-content-between cursor-pointer recent-acc-item"
+                :class="{ 'border-warning bg-warning-subtle shadow-sm': form.accountNumber === acc.accountNumber }"
+                @click="selectRecentAccount(acc)"
+              >
+                <div class="d-flex align-items-center gap-2.5">
+                  <div class="bank-badge bg-warning text-dark fw-bold rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 0.75rem;">
+                    {{ acc.bankName?.substring(0, 2) || '은행' }}
+                  </div>
+                  <div>
+                    <div class="fw-bold text-dark small mb-0">{{ acc.ownerName }} ({{ acc.bankName }})</div>
+                    <div class="text-secondary font-monospace" style="font-size: 0.8rem;">{{ acc.accountNumber }}</div>
+                  </div>
+                </div>
+                <i class="bi bi-chevron-right text-muted small"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- 입금 은행 및 계좌번호 직접 입력 -->
+          <label class="form-label text-secondary small fw-bold mt-2">입금 은행 및 계좌번호</label>
           <div class="row g-2 mb-2">
             <div class="col-5">
               <select v-model="form.bankCode" class="form-select form-select-lg fs-6 border-2">
-                <option value="004">KB국민</option>
-                <option value="088">신한</option>
-                <option value="020">우리</option>
-                <option value="011">NH농협</option>
-                <option value="090">카카오뱅크</option>
+                <option v-for="b in bankList" :key="b.bankCode" :value="b.bankCode">
+                  {{ b.bankName }}
+                </option>
               </select>
             </div>
             <div class="col-7">
@@ -114,15 +140,25 @@
           </div>
         </div>
 
-        <!-- 5. 받는 분 표기 / 메모 -->
-        <div class="mb-4">
-          <label class="form-label text-secondary small fw-bold">받는 분 내통장 표기 (메모)</label>
+        <!-- 5. 메모 및 피드 공유 설정 -->
+        <div class="mb-3">
+          <label class="form-label text-secondary small fw-bold">송금 메모 (피드 내용)</label>
           <input
             type="text"
             v-model="form.memo"
             class="form-control border-2"
-            placeholder="예: 축의금, 점심값 (선택)"
+            placeholder="예: 축의금, 점심값 송금 완료!"
           />
+        </div>
+
+        <!-- 6. 피드 공개 설정 (visibility) -->
+        <div class="mb-4">
+          <label class="form-label text-secondary small fw-bold">피드 공유 공개 범위 (visibility)</label>
+          <select v-model="form.visibility" class="form-select border-2">
+            <option value="PUBLIC">전체 공개 (PUBLIC)</option>
+            <option value="FRIENDS">친구 공개 (FRIENDS)</option>
+            <option value="PRIVATE">나만 보기 (PRIVATE)</option>
+          </select>
         </div>
 
         <!-- 송금 실행 버튼 -->
@@ -142,6 +178,9 @@
       <div>
         <h6 class="fw-bold mb-1">{{ isSuccess ? '송금이 완료되었습니다.' : '송금 실패' }}</h6>
         <div class="small">{{ statusMessage }}</div>
+        <div v-if="lastTransactionId" class="small text-muted font-monospace mt-1">
+          거래 번호: #{{ lastTransactionId }} | 피드 타입: {{ lastFeedType }} | 공개 범위: {{ lastVisibility }}
+        </div>
       </div>
       <router-link v-if="isSuccess" to="/wallet" class="btn btn-sm btn-dark rounded-pill px-3">지갑 보기</router-link>
     </div>
@@ -149,7 +188,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import remittanceApi from '@/api/remittanceApi';
 import walletApi from '@/api/walletApi';
@@ -159,15 +198,34 @@ const myBalance = ref(0);
 const loading = ref(false);
 const statusMessage = ref('');
 const isSuccess = ref(false);
+const lastTransactionId = ref(null);
+const lastFeedType = ref('REMITTANCE');
+const lastVisibility = ref('PUBLIC');
+
+const defaultAccounts = [
+  { bankCode: '088', bankName: '신한은행', accountNumber: '222-002-000001', ownerName: '이KB' },
+  { bankCode: '004', bankName: 'KB국민은행', accountNumber: '110-111-111111', ownerName: '김국민' },
+  { bankCode: '020', bankName: '우리은행', accountNumber: '1002-345-6789', ownerName: '박스타' },
+];
+
+const recentAccounts = ref([...defaultAccounts]);
+const bankList = ref([
+  { bankCode: '004', bankName: 'KB국민' },
+  { bankCode: '088', bankName: '신한' },
+  { bankCode: '020', bankName: '우리' },
+  { bankCode: '011', bankName: 'NH농협' },
+  { bankCode: '090', bankName: '카카오뱅크' },
+]);
 
 const form = reactive({
   walletId: 1,
   receiverType: 'WALLET',
   receiverId: 2,
-  bankCode: '004',
-  accountNumber: '',
+  bankCode: '088',
+  accountNumber: '222-002-000001',
   amount: 10000,
   memo: '',
+  visibility: 'PUBLIC',
 });
 
 const formatCurrency = (val) => {
@@ -190,6 +248,30 @@ const fetchMyBalance = async () => {
   }
 };
 
+const fetchRecentBankInfo = async () => {
+  try {
+    const data = await remittanceApi.getBankRemittanceInfo(form.walletId);
+    if (data) {
+      if (data.banks && data.banks.length > 0) {
+        bankList.value = data.banks;
+      }
+      if (data.recentAccounts && data.recentAccounts.length > 0) {
+        recentAccounts.value = data.recentAccounts.slice(0, 3);
+      } else {
+        recentAccounts.value = [...defaultAccounts];
+      }
+    }
+  } catch (e) {
+    console.error('Fetch recent bank info error:', e);
+    recentAccounts.value = [...defaultAccounts];
+  }
+};
+
+const selectRecentAccount = (acc) => {
+  form.bankCode = acc.bankCode;
+  form.accountNumber = acc.accountNumber;
+};
+
 const confirmTransfer = async () => {
   if (form.amount > myBalance.value) {
     if (!confirm('지갑 잔액이 부족합니다. 계속 진행하시겠습니까?')) {
@@ -200,12 +282,16 @@ const confirmTransfer = async () => {
   loading.value = true;
   statusMessage.value = '';
   isSuccess.value = false;
+  lastTransactionId.value = null;
 
   const payload = {
     walletId: form.walletId,
     receiverType: form.receiverType,
     amount: form.amount,
     memo: form.memo,
+    feedType: 'TRANSFER',
+    content: form.memo || '송금 완료!',
+    visibility: form.visibility,
   };
 
   if (form.receiverType === 'WALLET') {
@@ -216,11 +302,17 @@ const confirmTransfer = async () => {
   }
 
   try {
-    await remittanceApi.sendMoney(payload);
+    const res = await remittanceApi.sendMoney(payload);
     isSuccess.value = true;
+    if (res) {
+      lastTransactionId.value = res.transactionId;
+      lastFeedType.value = res.feedType || 'REMITTANCE';
+      lastVisibility.value = res.visibility || form.visibility;
+    }
     const targetName = form.receiverType === 'WALLET' ? `친구 #${form.receiverId}` : `계좌(${form.accountNumber})`;
     statusMessage.value = `${targetName}님에게 ${Number(form.amount).toLocaleString('ko-KR')}원을 송금했습니다.`;
     await fetchMyBalance();
+    await fetchRecentBankInfo();
   } catch (err) {
     console.error('Remittance Error:', err);
     isSuccess.value = false;
@@ -230,11 +322,18 @@ const confirmTransfer = async () => {
   }
 };
 
+watch(() => form.receiverType, (newVal) => {
+  if (newVal === 'ACCOUNT') {
+    fetchRecentBankInfo();
+  }
+});
+
 onMounted(() => {
   if (route.query.walletId) {
     form.walletId = Number(route.query.walletId);
   }
   fetchMyBalance();
+  fetchRecentBankInfo();
 });
 </script>
 
@@ -243,5 +342,15 @@ onMounted(() => {
   max-width: 500px;
   margin: 0 auto;
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+.recent-acc-item {
+  transition: all 0.15s ease;
+}
+.recent-acc-item:hover {
+  background-color: #f1f5f9 !important;
+  transform: translateY(-1px);
+}
+.cursor-pointer {
+  cursor: pointer;
 }
 </style>
