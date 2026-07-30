@@ -5,27 +5,27 @@ export default {
     {
       title: '피드',
       url: '/feed',
-      icon: 'fa-solid fa-paste',
+      icon: 'fa-solid fa-house',
     },
     {
       title: '송금',
       url: '/remittance',
-      icon: 'fa-solid fa-plane-departure',
+      icon: 'fa-regular fa-paper-plane',
     },
     {
       title: '결제',
       url: '/wallet',
-      icon: 'fa-regular fa-images',
+      icon: 'fa-solid fa-qrcode',
     },
     {
       title: '금융',
       url: '/auth/login',
-      icon: 'fa-regular fa-images',
+      icon: 'fa-solid fa-chart-column',
     },
     {
       title: '마이',
-      url: '/auth/login',
-      icon: 'fa-regular fa-images',
+      url: '/mypage',
+      icon: 'fa-regular fa-user',
     },
   ],
   accoutMenus: {
@@ -39,6 +39,5 @@ export default {
       title: '회원가입',
       icon: 'fa-solid fa-user-plus',
     },
-
   },
 };
