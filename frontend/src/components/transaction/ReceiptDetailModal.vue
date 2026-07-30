@@ -1,5 +1,5 @@
 <template>
-  <div v-if="show" class="modal-backdrop d-flex align-items-center justify-content-center">
+  <div v-if="show" class="modal-backdrop d-flex align-items-center justify-content-center" @click.self="$emit('close')">
     <div class="modal-dialog modal-dialog-centered w-100 px-3" style="max-width: 400px;">
       <div class="modal-card bg-white rounded-4 shadow-lg p-4 position-relative">
         <!-- 닫기 버튼 -->

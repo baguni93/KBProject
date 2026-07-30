@@ -289,7 +289,7 @@ const confirmTransfer = async () => {
     receiverType: form.receiverType,
     amount: form.amount,
     memo: form.memo,
-    feedType: 'REMITTANCE',
+    feedType: 'TRANSFER',
     content: form.memo || '송금 완료!',
     visibility: form.visibility,
   };

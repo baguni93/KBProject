@@ -61,7 +61,7 @@
     <!-- 3. 현장 결제 코드 퀵 메뉴 -->
     <div class="row g-3 mb-4">
       <div class="col-6">
-        <div class="quick-action-card p-3 rounded-4 bg-white border shadow-sm cursor-pointer" @click="openPaymentModal">
+        <div class="quick-action-card p-3 rounded-4 bg-white border shadow-sm cursor-pointer" @click="openPaymentModal('barcode')">
           <div class="icon-box bg-dark text-warning mb-2 rounded-3 d-flex align-items-center justify-content-center">
             <i class="bi bi-upc-scan fs-4"></i>
           </div>
@@ -70,7 +70,7 @@
         </div>
       </div>
       <div class="col-6">
-        <div class="quick-action-card p-3 rounded-4 bg-white border shadow-sm cursor-pointer" @click="openPaymentModal">
+        <div class="quick-action-card p-3 rounded-4 bg-white border shadow-sm cursor-pointer" @click="openPaymentModal('qr')">
           <div class="icon-box bg-warning-subtle text-warning-emphasis mb-2 rounded-3 d-flex align-items-center justify-content-center">
             <i class="bi bi-qr-code-scan fs-4"></i>
           </div>
@@ -84,6 +84,7 @@
     <PaymentCodeModal
       v-if="showPaymentModal"
       :userId="currentUserId"
+      :initialTab="selectedPaymentMode"
       @close="showPaymentModal = false"
       @paymentSuccess="fetchWallet"
     />
@@ -162,6 +163,7 @@ const loading = ref(false);
 const charging = ref(false);
 const showChargeModal = ref(false);
 const showPaymentModal = ref(false);
+const selectedPaymentMode = ref('barcode'); // 'barcode' | 'qr'
 const statusMessage = ref('');
 const isSuccess = ref(true);
 
@@ -195,7 +197,8 @@ const fetchWallet = async () => {
   }
 };
 
-const openPaymentModal = () => {
+const openPaymentModal = (mode = 'barcode') => {
+  selectedPaymentMode.value = mode;
   showPaymentModal.value = true;
 };
 

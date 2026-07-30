@@ -107,13 +107,14 @@ import walletApi from '@/api/walletApi';
 import PinAuthModal from '@/components/auth/PinAuthModal.vue';
 
 const props = defineProps({
-  userId: { type: Number, default: 1 }
+  userId: { type: Number, default: 1 },
+  initialTab: { type: String, default: 'barcode' }
 });
 
 defineEmits(['close']);
 
 const isPinVerified = ref(false);
-const activeTab = ref('barcode'); // 'barcode' | 'qr'
+const activeTab = ref(props.initialTab || 'barcode');
 const rawCode = ref('');
 const timeLeft = ref(180);
 
@@ -121,6 +122,7 @@ let timerInterval = null;
 
 const handlePinSuccess = () => {
   isPinVerified.value = true;
+  activeTab.value = props.initialTab || 'barcode';
   fetchServerToken();
   startTimer();
 };
