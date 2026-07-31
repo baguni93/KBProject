@@ -2,15 +2,23 @@ package org.scoula.analysis.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.scoula.analysis.dto.AnalysisAvailabilityDTO;
-import org.scoula.analysis.dto.AnalysisCountDTO;
+import org.scoula.analysis.domain.*;
+import org.scoula.analysis.dto.*;
 import org.scoula.analysis.mapper.AnalysisMapper;
 import org.scoula.exception.CustomException;
 import org.scoula.exception.ErrorCode;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+
 
 @Log4j2
 @Service
@@ -22,6 +30,10 @@ public class AnalysisServiceImpl implements AnalysisService {
 
     // 매퍼
     private final AnalysisMapper analysisMapper;
+    private final AnalysisSaveServiceImpl analysisSaveService;
+
+    private final AnalysisNarrativeService analysisNarrativeService;
+
 
     @Override
     public AnalysisAvailabilityDTO getAnalysisAvailability(
@@ -53,7 +65,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                         .plusDays(1)
                         .atStartOfDay();
 
-        AnalysisCountDTO count =
+        AnalysisCountVO count =
                 analysisMapper.selectAnalysisCount(
                         userId,
                         startAt,
@@ -74,7 +86,10 @@ public class AnalysisServiceImpl implements AnalysisService {
                         : count.getClassifiedPaymentCount();
 
         int unclassifiedPaymentCount =
-                totalPaymentCount - classifiedPaymentCount;
+                Math.max(
+                        totalPaymentCount - classifiedPaymentCount,
+                        0
+                );
 
         int remainingCount =
                 Math.max(
@@ -139,4 +154,547 @@ public class AnalysisServiceImpl implements AnalysisService {
     private String createPeriodLabel(Integer period) {
         return "최근 " + period + "개월";
     }
+
+
+    @Override
+    public UnclassifiedTransactionListDTO getUnclassifiedTransactions(
+            Integer userId,
+            Integer period
+    ) {
+        validatePeriod(period);
+
+        LocalDate analysisEndDate = LocalDate.now();
+        LocalDate analysisStartDate =
+                analysisEndDate.minusMonths(period);
+
+        LocalDateTime startAt =
+                analysisStartDate.atStartOfDay();
+
+        LocalDateTime endAt =
+                analysisEndDate
+                        .plusDays(1)
+                        .atStartOfDay();
+
+        List<UnclassifiedTransactionVO> transactionVOList =
+                analysisMapper.selectUnclassifiedTransactions(
+                        userId,
+                        startAt,
+                        endAt
+                );
+
+        List<UnclassifiedTransactionDTO> transactions =
+                transactionVOList.stream()
+                        .map(vo ->
+                                UnclassifiedTransactionDTO.builder()
+                                        .transactionId(
+                                                vo.getTransactionId()
+                                        )
+                                        .merchantName(
+                                                vo.getMerchantName()
+                                        )
+                                        .amount(
+                                                vo.getAmount()
+                                        )
+                                        .createdAt(
+                                                vo.getCreatedAt()
+                                        )
+                                        .build()
+                        )
+                        .collect(Collectors.toList());
+
+        log.info(
+                "미분류 결제 거래 조회 userId={}, period={}, count={}",
+                userId,
+                period,
+                transactions.size()
+        );
+
+        return UnclassifiedTransactionListDTO.builder()
+                .period(period)
+                .periodLabel(createPeriodLabel(period))
+                .analysisStartDate(
+                        analysisStartDate.toString()
+                )
+                .analysisEndDate(
+                        analysisEndDate.toString()
+                )
+                .unclassifiedCount(
+                        transactions.size()
+                )
+                .transactions(
+                        transactions
+                )
+                .build();
+    }
+
+    // 소비 카테고리 조회
+    @Override
+    public SpendingCategoryListDTO getSpendingCategories() {
+
+        List<SpendingCategoryVO> categoryVOList =
+                analysisMapper.selectSpendingCategories();
+
+        List<SpendingCategoryDTO> categories =
+                categoryVOList.stream()
+                        .map(category ->
+                                SpendingCategoryDTO.builder()
+                                        .spendingCategoryId(
+                                                category.getSpendingCategoryId()
+                                        )
+                                        .categoryName(
+                                                category.getCategoryName()
+                                        )
+                                        .parentCategoryId(
+                                                category.getParentCategoryId()
+                                        )
+                                        .build()
+                        )
+                        .collect(Collectors.toList());
+
+        log.info(
+                "소비 카테고리 목록 조회 count={}",
+                categories.size()
+        );
+
+        return SpendingCategoryListDTO.builder()
+                .categoryCount(categories.size())
+                .categories(categories)
+                .build();
+    }
+
+    // 직접 분류 저장하는 기능
+    @Override
+    @Transactional
+    public TransactionClassificationResponseDTO classifyTransaction(
+            Integer userId,
+            Integer transactionId,
+            Integer spendingCategoryId
+    ) {
+        if (spendingCategoryId == null) {
+            throw new CustomException(
+                    ErrorCode.SPENDING_CATEGORY_NOT_FOUND
+            );
+        }
+
+        /*
+         * 사용자가 전달한 카테고리가
+         * 실제 DB에 존재하는지 확인한다.
+         */
+        SpendingCategoryVO category =
+                analysisMapper.selectSpendingCategoryById(
+                        spendingCategoryId
+                );
+
+        if (category == null) {
+            throw new CustomException(
+                    ErrorCode.SPENDING_CATEGORY_NOT_FOUND
+            );
+        }
+
+        /*
+         * 현재 사용자의 성공한 결제 거래에만
+         * 카테고리를 저장한다.
+         */
+        int updatedCount =
+                analysisMapper.updateTransactionCategory(
+                        userId,
+                        transactionId,
+                        spendingCategoryId
+                );
+
+        if (updatedCount == 0) {
+            throw new CustomException(
+                    ErrorCode.CLASSIFICATION_TRANSACTION_NOT_FOUND
+            );
+        }
+
+        log.info(
+                "결제 거래 직접 분류 완료 "
+                        + "userId={}, transactionId={}, "
+                        + "spendingCategoryId={}",
+                userId,
+                transactionId,
+                spendingCategoryId
+        );
+
+        return TransactionClassificationResponseDTO.builder()
+                .transactionId(transactionId)
+                .spendingCategoryId(
+                        category.getSpendingCategoryId()
+                )
+                .categoryName(
+                        category.getCategoryName()
+                )
+                .message(
+                        "소비 카테고리 분류가 완료되었습니다."
+                )
+                .build();
+    }
+
+    //
+    @Override
+    @Transactional
+    public Integer saveAnalysis(
+            SpendingAnalysisVO spendingAnalysis,
+            List<SpendingAnalysisCategoryVO> categories
+    ) {
+        int analysisInsertCount =
+                analysisMapper.insertSpendingAnalysis(
+                        spendingAnalysis
+                );
+
+        if (analysisInsertCount != 1
+                || spendingAnalysis.getSpendingAnalysisId() == null) {
+
+            throw new CustomException(
+                    ErrorCode.ANALYSIS_RESULT_SAVE_FAILED
+            );
+        }
+
+        Integer spendingAnalysisId =
+                spendingAnalysis.getSpendingAnalysisId();
+
+        categories.forEach(category ->
+                category.setSpendingAnalysisId(
+                        spendingAnalysisId
+                )
+        );
+
+        int categoryInsertCount =
+                analysisMapper.insertSpendingAnalysisCategories(
+                        categories
+                );
+
+        if (categoryInsertCount != categories.size()) {
+            throw new CustomException(
+                    ErrorCode.ANALYSIS_RESULT_SAVE_FAILED
+            );
+        }
+
+        log.info(
+                "소비분석 저장 완료 spendingAnalysisId={}, categoryCount={}",
+                spendingAnalysisId,
+                categories.size()
+        );
+
+        return spendingAnalysisId;
+    }
+
+    @Override
+    public AnalysisExecutionResponseDTO executeAnalysis(
+            Integer userId,
+            Integer period
+    ) {
+        validatePeriod(period);
+
+        LocalDate analysisEndDate =
+                LocalDate.now();
+
+        LocalDate analysisStartDate =
+                analysisEndDate.minusMonths(period);
+
+        LocalDateTime startAt =
+                analysisStartDate.atStartOfDay();
+
+        LocalDateTime endAt =
+                analysisEndDate
+                        .plusDays(1)
+                        .atStartOfDay();
+
+        /*
+         * 분류 완료된 성공 결제 거래가
+         * 최소 10건 이상인지 다시 확인한다.
+         *
+         * 화면에서 가능 여부를 먼저 조회했더라도,
+         * 실제 분석 실행 시점에 서버에서 반드시 재검증한다.
+         */
+        AnalysisCountVO count =
+                analysisMapper.selectAnalysisCount(
+                        userId,
+                        startAt,
+                        endAt
+                );
+
+        int classifiedTransactionCount =
+                count == null
+                        || count.getClassifiedPaymentCount() == null
+                        ? 0
+                        : count.getClassifiedPaymentCount();
+
+        if (classifiedTransactionCount
+                < REQUIRED_TRANSACTION_COUNT) {
+
+            throw new CustomException(
+                    ErrorCode
+                            .ANALYSIS_TRANSACTION_COUNT_NOT_ENOUGH
+            );
+        }
+
+        /*
+         * 카테고리별 금액과 건수를 조회한다.
+         *
+         * SQL에서 의료 하위 카테고리는
+         * 부모인 의료 카테고리로 합산된다.
+         */
+        List<AnalysisCategoryAggregateVO> aggregateList =
+                analysisMapper
+                        .selectAnalysisCategoryAggregates(
+                                userId,
+                                startAt,
+                                endAt
+                        );
+
+        if (aggregateList == null
+                || aggregateList.isEmpty()) {
+
+            throw new CustomException(
+                    ErrorCode.ANALYSIS_TOTAL_AMOUNT_ZERO
+            );
+        }
+
+        long totalSpendingAmountLong =
+                aggregateList.stream()
+                        .mapToLong(aggregate ->
+                                aggregate.getSpendingAmount() == null
+                                        ? 0L
+                                        : aggregate.getSpendingAmount()
+                        )
+                        .sum();
+
+        if (totalSpendingAmountLong <= 0) {
+            throw new CustomException(
+                    ErrorCode.ANALYSIS_TOTAL_AMOUNT_ZERO
+            );
+        }
+
+        /*
+         * 현재 DB의 spending_amount가 INT이므로
+         * 범위를 넘어가면 예외를 발생시킨다.
+         */
+        int totalSpendingAmount =
+                Math.toIntExact(totalSpendingAmountLong);
+
+        List<AnalysisCategoryResultDTO> categoryResults =
+                createCategoryResults(
+                        aggregateList,
+                        totalSpendingAmountLong
+                );
+
+        /*
+         * SQL이 금액 내림차순으로 정렬되므로
+         * 첫 번째 항목이 대표 카테고리다.
+         *
+         * 금액이 같다면 거래 건수,
+         * 거래 건수도 같다면 카테고리 ID 순이다.
+         */
+        AnalysisCategoryResultDTO representativeCategory =
+                categoryResults.get(0);
+
+        /*
+         * 현재는 기본 문구 생성 서비스가 호출된다.
+         * 다음 단계에서 이 서비스 구현만 OpenAI로 변경한다.
+         */
+        AnalysisNarrativeDTO narrative =
+                analysisNarrativeService.createNarrative(
+                        period,
+                        totalSpendingAmount,
+                        representativeCategory,
+                        categoryResults
+                );
+
+        SpendingAnalysisVO spendingAnalysis =
+                SpendingAnalysisVO.builder()
+                        .userId(userId)
+                        .analysisPeriod(period)
+                        .representativeCategoryId(
+                                representativeCategory
+                                        .getSpendingCategoryId()
+                        )
+                        .aiTitle(
+                                narrative.getTitle()
+                        )
+                        .aiAnalysisSummary(
+                                narrative.getSummary()
+                        )
+                        .build();
+
+        List<SpendingAnalysisCategoryVO> saveCategories =
+                categoryResults.stream()
+                        .map(category ->
+                                SpendingAnalysisCategoryVO.builder()
+                                        .spendingCategoryId(
+                                                category
+                                                        .getSpendingCategoryId()
+                                        )
+                                        .spendingAmount(
+                                                category
+                                                        .getSpendingAmount()
+                                        )
+                                        .spendingRatio(
+                                                category
+                                                        .getSpendingRatio()
+                                        )
+                                        .transactionCount(
+                                                category
+                                                        .getTransactionCount()
+                                        )
+                                        .build()
+                        )
+                        .collect(Collectors.toList());
+
+        Integer spendingAnalysisId =
+                analysisSaveService.saveAnalysis(
+                        spendingAnalysis,
+                        saveCategories
+                );
+
+        log.info(
+                "소비분석 실행 완료 userId={}, period={}, "
+                        + "spendingAnalysisId={}, "
+                        + "classifiedTransactionCount={}, "
+                        + "totalSpendingAmount={}",
+                userId,
+                period,
+                spendingAnalysisId,
+                classifiedTransactionCount,
+                totalSpendingAmount
+        );
+
+        return AnalysisExecutionResponseDTO.builder()
+                .spendingAnalysisId(
+                        spendingAnalysisId
+                )
+                .period(period)
+                .periodLabel(
+                        createPeriodLabel(period)
+                )
+                .analysisStartDate(
+                        analysisStartDate.toString()
+                )
+                .analysisEndDate(
+                        analysisEndDate.toString()
+                )
+                .totalSpendingAmount(
+                        totalSpendingAmount
+                )
+                .classifiedTransactionCount(
+                        classifiedTransactionCount
+                )
+                .representativeCategoryId(
+                        representativeCategory
+                                .getSpendingCategoryId()
+                )
+                .representativeCategoryName(
+                        representativeCategory
+                                .getCategoryName()
+                )
+                .aiTitle(
+                        narrative.getTitle()
+                )
+                .aiAnalysisSummary(
+                        narrative.getSummary()
+                )
+                .categories(
+                        categoryResults
+                )
+                .message(
+                        "소비 분석이 완료되었습니다."
+                )
+                .build();
+    }
+
+    private List<AnalysisCategoryResultDTO>
+    createCategoryResults(
+            List<AnalysisCategoryAggregateVO> aggregateList,
+            long totalSpendingAmount
+    ) {
+        List<AnalysisCategoryResultDTO> results =
+                new ArrayList<>();
+
+        BigDecimal totalAmount =
+                BigDecimal.valueOf(totalSpendingAmount);
+
+        for (AnalysisCategoryAggregateVO aggregate
+                : aggregateList) {
+
+            long amount =
+                    aggregate.getSpendingAmount() == null
+                            ? 0L
+                            : aggregate.getSpendingAmount();
+
+            long transactionCount =
+                    aggregate.getTransactionCount() == null
+                            ? 0L
+                            : aggregate.getTransactionCount();
+
+            BigDecimal ratio =
+                    BigDecimal.valueOf(amount)
+                            .multiply(
+                                    BigDecimal.valueOf(100)
+                            )
+                            .divide(
+                                    totalAmount,
+                                    2,
+                                    RoundingMode.HALF_UP
+                            );
+
+            results.add(
+                    AnalysisCategoryResultDTO.builder()
+                            .spendingCategoryId(
+                                    aggregate
+                                            .getSpendingCategoryId()
+                            )
+                            .categoryName(
+                                    aggregate.getCategoryName()
+                            )
+                            .spendingAmount(
+                                    Math.toIntExact(amount)
+                            )
+                            .spendingRatio(ratio)
+                            .transactionCount(
+                                    Math.toIntExact(
+                                            transactionCount
+                                    )
+                            )
+                            .build()
+            );
+        }
+
+        /*
+         * 각 비율을 소수점 둘째 자리에서 반올림하면
+         * 합계가 99.99 또는 100.01이 될 수 있다.
+         *
+         * 차이를 대표 카테고리에 반영하여
+         * 최종 합계를 정확히 100.00으로 맞춘다.
+         */
+        BigDecimal ratioSum =
+                results.stream()
+                        .map(
+                                AnalysisCategoryResultDTO
+                                        ::getSpendingRatio
+                        )
+                        .reduce(
+                                BigDecimal.ZERO,
+                                BigDecimal::add
+                        );
+
+        BigDecimal difference =
+                new BigDecimal("100.00")
+                        .subtract(ratioSum);
+
+        AnalysisCategoryResultDTO firstResult =
+                results.get(0);
+
+        firstResult.setSpendingRatio(
+                firstResult.getSpendingRatio()
+                        .add(difference)
+                        .setScale(
+                                2,
+                                RoundingMode.HALF_UP
+                        )
+        );
+
+        return results;
+    }
+
 }
