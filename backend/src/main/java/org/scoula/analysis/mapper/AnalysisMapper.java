@@ -47,7 +47,11 @@ public interface AnalysisMapper {
             @Param("spendingCategoryId") Integer spendingCategoryId
     );
 
-
+    List<AnalysisCategoryAggregateVO> selectAnalysisCategoryAggregates(
+            @Param("userId") Integer userId,
+            @Param("startAt") LocalDateTime startAt,
+            @Param("endAt") LocalDateTime endAt
+    );
 
 
 
