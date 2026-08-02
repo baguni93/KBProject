@@ -71,6 +71,7 @@ DROP TABLE IF EXISTS `bank_tbl`;
 DROP TABLE IF EXISTS `user_tbl`;
 DROP TABLE IF EXISTS `tbl_member_auth`;
 DROP TABLE IF EXISTS `tbl_member`;
+DROP TABLE IF EXISTS `merchant_category_mapping_tbl`;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -467,7 +468,7 @@ CREATE TABLE user_random_box_tbl
 
     CONSTRAINT fk_random_box_target_wallet
         FOREIGN KEY (target_account_id)
-            REFERENCES wallet_tbl(wallet_id),
+            REFERENCES wallet_tbl (wallet_id),
 
     -- 출석, 피드공유하기, 송금, 이벤트
 
@@ -1034,37 +1035,37 @@ CREATE TABLE financial_transaction_tbl
     transaction_id        INT AUTO_INCREMENT PRIMARY KEY
         COMMENT '거래번호',
 
-    parent_transaction_id INT         NULL
+    parent_transaction_id INT          NULL
         COMMENT '상위 거래번호',
 
-    user_id               INT         NOT NULL
+    user_id               INT          NOT NULL
         COMMENT '거래 요청자 회원번호',
 
-    receive_id            INT         NULL
+    receive_id            INT          NULL
         COMMENT '거래 요청을 받는 회원번호',
 
-    transaction_type      VARCHAR(30) NOT NULL
+    transaction_type      VARCHAR(30)  NOT NULL
         COMMENT '거래유형',
 
-    source_type           VARCHAR(20) NOT NULL
+    source_type           VARCHAR(20)  NOT NULL
         COMMENT '거래 출처 유형',
 
-    target_type           VARCHAR(20) NOT NULL
+    target_type           VARCHAR(20)  NOT NULL
         COMMENT '거래 대상 유형',
 
-    transaction_status    VARCHAR(20) NOT NULL
+    transaction_status    VARCHAR(20)  NOT NULL
         COMMENT '거래상태',
 
-    amount                INT         NOT NULL
+    amount                INT          NOT NULL
         COMMENT '거래금액',
 
-    merchant_name VARCHAR(100) NULL
+    merchant_name         VARCHAR(100) NULL
         COMMENT '결제 가맹점명',
 
-    spending_category_id  INT         NULL
+    spending_category_id  INT          NULL
         COMMENT '소비 카테고리 ID',
 
-    created_at            DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at            DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
         COMMENT '생성일시',
 
 
@@ -1940,7 +1941,49 @@ CREATE TABLE linked_card_tbl
         CHECK (represent_yn IN ('Y', 'N'))
 ) COMMENT = '연결카드';
 
+-- 51. 카테고리 분류 저장 테이블
+CREATE TABLE merchant_category_mapping_tbl
+(
+    merchant_category_mapping_id INT AUTO_INCREMENT
+        COMMENT '가맹점 카테고리 매핑 ID',
 
+    merchant_name                VARCHAR(100) NOT NULL
+        COMMENT '매핑 조회용 가맹점명',
+
+    spending_category_id         INT          NOT NULL
+        COMMENT '매핑된 소비 카테고리 ID',
+
+    correction_count             INT          NOT NULL DEFAULT 0
+        COMMENT '사용자의 카테고리 수정 요청 건수',
+
+    created_at                   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+        COMMENT '매핑 생성일시',
+
+    updated_at                   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+        COMMENT '매핑 수정일시',
+
+    PRIMARY KEY (
+                 merchant_category_mapping_id
+        ),
+
+    UNIQUE KEY uk_merchant_category_mapping_name (
+                                                  merchant_name
+        ),
+
+    CONSTRAINT fk_merchant_category_mapping_category
+        FOREIGN KEY (
+                     spending_category_id
+            )
+            REFERENCES spending_category_tbl (
+                                              spending_category_id
+                ),
+
+    CONSTRAINT chk_merchant_mapping_correction_count
+        CHECK (
+            correction_count >= 0
+            )
+);
 
 USE kbproject;
 
@@ -2490,7 +2533,27 @@ VALUES (1, NULL, 1, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 10000, NULL,
        (3, NULL, 2, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 12000, NULL, NULL, '2026-07-21 09:00:00'),
        (4, NULL, 2, 1, 'SETTLEMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 15000, NULL, 1, '2026-07-21 18:00:00'),
        (5, NULL, 3, 1, 'TRANSFER', 'ACCOUNT', 'WALLET', 'SUCCESS', 20000, NULL, NULL, '2026-07-22 11:00:00'),
-       (6, NULL, 3, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 5000, '스타벅스 동성로점', 6, '2026-07-23 08:00:00');
+       (6, NULL, 3, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 5000, '스타벅스 동성로점', 6, '2026-07-23 08:00:00'),
+       (7, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 18500, '배달의민족', 1, '2026-07-24 12:30:00'),
+       (8, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 24000, '동성로 한식당', 1, '2026-07-25 18:20:00'),
+       (9, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 6200, '스타벅스 대구점', 2, '2026-07-26 09:10:00'),
+       (10, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 5500, '투썸플레이스', 2, '2026-07-27 14:40:00'),
+       (11, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 9800, 'CU 계명대점', 3, '2026-07-28 16:15:00'),
+       (12, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 42900, '쿠팡', 4, '2026-07-29 20:30:00'),
+       (13, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 14500, '카카오T', 6, '2026-07-30 22:10:00'),
+       (14, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 65000, '스마일치과', 19, '2026-07-31 11:40:00'),
+        -- 미분류 거래 4건
+       (15, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+        4900, '메가MGC커피', NULL, '2026-08-01 09:20:00'),
+
+       (16, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+        12500, '한솥도시락', NULL, '2026-08-01 12:30:00'),
+
+       (17, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+        27600, '오늘의집', NULL, '2026-08-01 18:40:00'),
+
+       (18, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+        18000, '교보문고', NULL, '2026-08-02 13:10:00');
 
 -- ---------------------------------------------------------------------
 -- 33. account_dummy_tbl (6건)
@@ -2870,4 +2933,57 @@ VALUES (1, 1, 1, 'KB', 'KB 대표카드', 'linked_kb_1.png', 'Y'),
        (5, 3, 5, 'HN', '하나 대표카드', 'linked_hn_3.png', 'Y'),
        (6, 3, 6, 'KB', 'KB 여행카드', 'linked_kb_3.png', 'N');
 
+-- ---------------------------------------------------------------------
+-- 56. merchant_category_mapping_tbl (21건)
+-- ---------------------------------------------------------------------
+
+INSERT INTO merchant_category_mapping_tbl (merchant_name,
+                                           spending_category_id,
+                                           correction_count)
+VALUES
+    -- 식비
+    ('버거킹', 1, 0),
+    ('맥도날드', 1, 0),
+    ('배달의민족', 1, 0),
+
+    -- 카페
+    ('스타벅스', 2, 0),
+    ('투썸플레이스', 2, 0),
+    ('메가커피', 2, 0),
+
+    -- 생활
+    ('이마트', 3, 0),
+    ('다이소', 3, 0),
+
+    -- 온라인쇼핑
+    ('쿠팡', 4, 0),
+    ('무신사', 4, 0),
+
+    -- 뷰티/미용
+    ('올리브영', 5, 0),
+    ('준오헤어', 5, 0),
+
+    -- 교통
+    ('서울교통공사', 6, 0),
+    ('카카오T', 6, 0),
+
+    -- 자동차
+    ('SK에너지', 7, 0),
+
+    -- 주거/통신
+    ('SK텔레콤', 8, 0),
+
+    -- 여행
+    ('야놀자', 10, 0),
+
+    -- 교육
+    ('교보문고', 11, 0),
+
+    -- 반려동물
+    ('펫프렌즈', 12, 0),
+
+    -- 병원 하위 카테고리
+    ('서울내과', 16, 0),
+    ('스마일치과', 19, 0);
 COMMIT;
+

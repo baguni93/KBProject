@@ -5,6 +5,7 @@ import lombok.extern.log4j.Log4j2;
 import org.scoula.analysis.domain.*;
 import org.scoula.analysis.dto.*;
 import org.scoula.analysis.mapper.AnalysisMapper;
+import org.scoula.analysis.mapper.MerchantCategoryMappingMapper;
 import org.scoula.exception.CustomException;
 import org.scoula.exception.ErrorCode;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 
@@ -28,10 +30,13 @@ public class AnalysisServiceImpl implements AnalysisService {
     // 분석에 필요한 최소 카테고리 분류 개수는 10개
     private static final int REQUIRED_TRANSACTION_COUNT = 10;
 
-    // 매퍼
+    // 소비분석 및 거래 조회 Mapper
     private final AnalysisMapper analysisMapper;
-    private final AnalysisSaveServiceImpl analysisSaveService;
 
+    // 가맹점 카테고리 매핑 조회·수정·삭제 Mapper
+    private final MerchantCategoryMappingMapper merchantCategoryMappingMapper;
+
+    private final AnalysisSaveService analysisSaveService;
     private final AnalysisNarrativeService analysisNarrativeService;
 
 
@@ -262,7 +267,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                 .build();
     }
 
-    // 직접 분류 저장하는 기능
+    // 사용자가 결제 거래의 소비 카테고리를 직접 지정하거나 수정
     @Override
     @Transactional
     public TransactionClassificationResponseDTO classifyTransaction(
@@ -270,16 +275,14 @@ public class AnalysisServiceImpl implements AnalysisService {
             Integer transactionId,
             Integer spendingCategoryId
     ) {
+        // 카테고리 ID가 입력되지 않은 경우
         if (spendingCategoryId == null) {
             throw new CustomException(
                     ErrorCode.SPENDING_CATEGORY_NOT_FOUND
             );
         }
 
-        /*
-         * 사용자가 전달한 카테고리가
-         * 실제 DB에 존재하는지 확인한다.
-         */
+        // 사용자가 선택한 카테고리가 실제 DB에 존재하는지 확인
         SpendingCategoryVO category =
                 analysisMapper.selectSpendingCategoryById(
                         spendingCategoryId
@@ -292,8 +295,148 @@ public class AnalysisServiceImpl implements AnalysisService {
         }
 
         /*
-         * 현재 사용자의 성공한 결제 거래에만
-         * 카테고리를 저장한다.
+         * 현재 사용자가 수정할 수 있는 거래인지 먼저 확인한다.
+         *
+         * 조회 조건:
+         * - 현재 사용자 거래
+         * - PAYMENT 거래
+         * - SUCCESS 상태
+         */
+        ClassificationTargetTransactionVO targetTransaction =
+                analysisMapper
+                        .selectClassificationTargetTransaction(
+                                userId,
+                                transactionId
+                        );
+
+        if (targetTransaction == null) {
+            throw new CustomException(
+                    ErrorCode.CLASSIFICATION_TRANSACTION_NOT_FOUND
+            );
+        }
+
+        String merchantName =
+                targetTransaction.getMerchantName();
+
+        /*
+         * 가맹점명이 존재하는 경우에만
+         * 공통 가맹점 매핑의 신뢰도를 처리한다.
+         */
+        if (merchantName != null
+                && !merchantName.isBlank()) {
+
+            // 매핑 조회 기준은 앞뒤 공백만 제거한 가맹점명
+            String trimmedMerchantName =
+                    merchantName.trim();
+
+            MerchantCategoryMappingVO mapping =
+                    merchantCategoryMappingMapper
+                            .selectByMerchantName(
+                                    trimmedMerchantName
+                            );
+
+            /*
+             * 기존 매핑이 존재하고,
+             * 사용자가 선택한 카테고리가 매핑 카테고리와 다르면
+             * 매핑에 대한 수정 요청으로 판단한다.
+             */
+            if (mapping != null
+                    && !Objects.equals(
+                    mapping.getSpendingCategoryId(),
+                    spendingCategoryId
+            )) {
+
+                int increasedCount =
+                        merchantCategoryMappingMapper
+                                .increaseCorrectionCount(
+                                        trimmedMerchantName
+                                );
+
+                if (increasedCount == 1) {
+                    /*
+                     * correction_count 증가 후 최신 값을 다시 조회한다.
+                     * increaseCorrectionCount의 반환값은 수정된 행 개수이므로
+                     * 실제 수정 횟수를 얻으려면 재조회가 필요하다.
+                     */
+                    MerchantCategoryMappingVO updatedMapping =
+                            merchantCategoryMappingMapper
+                                    .selectByMerchantName(
+                                            trimmedMerchantName
+                                    );
+
+                    int correctionCount =
+                            updatedMapping == null
+                                    || updatedMapping
+                                    .getCorrectionCount() == null
+                                    ? 0
+                                    : updatedMapping
+                                    .getCorrectionCount();
+
+                    // 동일 가맹점의 전체 정상 결제 거래 건수
+                    int totalTransactionCount =
+                            analysisMapper
+                                    .countSuccessfulPaymentsByMerchantName(
+                                            trimmedMerchantName
+                                    );
+
+                    /*
+                     * 수정 비율이 정확히 5%이거나 5%를 초과하면
+                     * 해당 가맹점 매핑을 삭제한다.
+                     *
+                     * 소수점 계산 대신 정수 곱셈으로 비교한다.
+                     * correctionCount / totalTransactionCount >= 0.05
+                     */
+                    boolean mappingShouldBeDeleted =
+                            totalTransactionCount > 0
+                                    && correctionCount * 100
+                                    >= totalTransactionCount * 5;
+
+                    boolean mappingDeleted = false;
+
+                    if (mappingShouldBeDeleted) {
+                        int deletedCount =
+                                merchantCategoryMappingMapper
+                                        .deleteByMerchantName(
+                                                trimmedMerchantName
+                                        );
+
+                        mappingDeleted =
+                                deletedCount == 1;
+                    }
+
+                    log.info(
+                            "가맹점 매핑 수정 요청 반영 "
+                                    + "merchantName={}, "
+                                    + "mappingCategoryId={}, "
+                                    + "selectedCategoryId={}, "
+                                    + "correctionCount={}, "
+                                    + "totalTransactionCount={}, "
+                                    + "mappingDeleted={}",
+                            trimmedMerchantName,
+                            mapping.getSpendingCategoryId(),
+                            spendingCategoryId,
+                            correctionCount,
+                            totalTransactionCount,
+                            mappingDeleted
+                    );
+
+                } else {
+                    /*
+                     * 조회 후 다른 요청에서 매핑이 먼저 삭제되는 등
+                     * 매핑 수정 행이 없더라도 현재 거래 분류는 계속 진행한다.
+                     */
+                    log.warn(
+                            "가맹점 매핑 수정 횟수 증가 실패 "
+                                    + "merchantName={}",
+                            trimmedMerchantName
+                    );
+                }
+            }
+        }
+
+        /*
+         * 매핑 삭제 여부와 관계없이 현재 거래에는
+         * 사용자가 직접 선택한 카테고리를 저장한다.
          */
         int updatedCount =
                 analysisMapper.updateTransactionCategory(
@@ -302,7 +445,11 @@ public class AnalysisServiceImpl implements AnalysisService {
                         spendingCategoryId
                 );
 
-        if (updatedCount == 0) {
+        if (updatedCount != 1) {
+            /*
+             * 이 예외가 발생하면 @Transactional에 의해
+             * correction_count 증가와 매핑 삭제도 함께 롤백된다.
+             */
             throw new CustomException(
                     ErrorCode.CLASSIFICATION_TRANSACTION_NOT_FOUND
             );
@@ -311,9 +458,11 @@ public class AnalysisServiceImpl implements AnalysisService {
         log.info(
                 "결제 거래 직접 분류 완료 "
                         + "userId={}, transactionId={}, "
+                        + "previousCategoryId={}, "
                         + "spendingCategoryId={}",
                 userId,
                 transactionId,
+                targetTransaction.getSpendingCategoryId(),
                 spendingCategoryId
         );
 
@@ -331,54 +480,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                 .build();
     }
 
-    //
-    @Override
-    @Transactional
-    public Integer saveAnalysis(
-            SpendingAnalysisVO spendingAnalysis,
-            List<SpendingAnalysisCategoryVO> categories
-    ) {
-        int analysisInsertCount =
-                analysisMapper.insertSpendingAnalysis(
-                        spendingAnalysis
-                );
 
-        if (analysisInsertCount != 1
-                || spendingAnalysis.getSpendingAnalysisId() == null) {
-
-            throw new CustomException(
-                    ErrorCode.ANALYSIS_RESULT_SAVE_FAILED
-            );
-        }
-
-        Integer spendingAnalysisId =
-                spendingAnalysis.getSpendingAnalysisId();
-
-        categories.forEach(category ->
-                category.setSpendingAnalysisId(
-                        spendingAnalysisId
-                )
-        );
-
-        int categoryInsertCount =
-                analysisMapper.insertSpendingAnalysisCategories(
-                        categories
-                );
-
-        if (categoryInsertCount != categories.size()) {
-            throw new CustomException(
-                    ErrorCode.ANALYSIS_RESULT_SAVE_FAILED
-            );
-        }
-
-        log.info(
-                "소비분석 저장 완료 spendingAnalysisId={}, categoryCount={}",
-                spendingAnalysisId,
-                categories.size()
-        );
-
-        return spendingAnalysisId;
-    }
 
     @Override
     public AnalysisExecutionResponseDTO executeAnalysis(
@@ -490,14 +592,10 @@ public class AnalysisServiceImpl implements AnalysisService {
         AnalysisCategoryResultDTO representativeCategory =
                 categoryResults.get(0);
 
-        /*
-         * 현재는 기본 문구 생성 서비스가 호출된다.
-         * 다음 단계에서 이 서비스 구현만 OpenAI로 변경한다.
-         */
+        // 카테고리별 소비 패턴을 기반으로 AI 칭호와 분석 요약을 생성한다
         AnalysisNarrativeDTO narrative =
                 analysisNarrativeService.createNarrative(
                         period,
-                        totalSpendingAmount,
                         representativeCategory,
                         categoryResults
                 );
@@ -695,6 +793,198 @@ public class AnalysisServiceImpl implements AnalysisService {
         );
 
         return results;
+    }
+
+    // 저장된 소비분석 상세 결과 조회
+    @Override
+    public AnalysisDetailResponseDTO getAnalysisDetail(
+            Integer userId,
+            Integer spendingAnalysisId
+    ) {
+        // 소비분석 ID가 없거나 올바르지 않으면 조회하지 않는다.
+        if (spendingAnalysisId == null
+                || spendingAnalysisId <= 0) {
+
+            throw new CustomException(
+                    ErrorCode.ANALYSIS_RESULT_NOT_FOUND
+            );
+        }
+
+        /*
+         * 소비분석 ID와 현재 사용자 ID를 함께 사용해 조회한다.
+         * 다른 사용자의 분석 결과는 조회할 수 없다.
+         */
+        AnalysisDetailVO analysisDetail =
+                analysisMapper.selectAnalysisDetail(
+                        userId,
+                        spendingAnalysisId
+                );
+
+        if (analysisDetail == null) {
+            throw new CustomException(
+                    ErrorCode.ANALYSIS_RESULT_NOT_FOUND
+            );
+        }
+
+        // 저장된 카테고리별 분석 결과 조회
+        List<AnalysisCategoryResultDTO> categories =
+                analysisMapper.selectAnalysisDetailCategories(
+                        spendingAnalysisId
+                );
+
+        /*
+         * MyBatis는 일반적으로 조회 결과가 없으면 빈 List를 반환하지만,
+         * null이 반환되는 경우도 안전하게 처리한다.
+         */
+        if (categories == null) {
+            categories = List.of();
+        }
+
+        /*
+         * 전체 소비 금액은 저장된 카테고리별 소비 금액을 합산한다.
+         * 중간 계산은 long으로 처리한 뒤 Integer로 변환한다.
+         */
+        long totalSpendingAmountLong =
+                categories.stream()
+                        .mapToLong(category ->
+                                category.getSpendingAmount() == null
+                                        ? 0L
+                                        : category.getSpendingAmount()
+                        )
+                        .sum();
+
+        /*
+         * 분석에 포함된 거래 건수도
+         * 카테고리별 거래 건수를 합산해서 구한다.
+         */
+        long classifiedTransactionCountLong =
+                categories.stream()
+                        .mapToLong(category ->
+                                category.getTransactionCount() == null
+                                        ? 0L
+                                        : category.getTransactionCount()
+                        )
+                        .sum();
+
+        int totalSpendingAmount =
+                Math.toIntExact(
+                        totalSpendingAmountLong
+                );
+
+        int classifiedTransactionCount =
+                Math.toIntExact(
+                        classifiedTransactionCountLong
+                );
+
+        /*
+         * 분석 기간의 종료일은 분석 결과가 생성된 날짜로 본다.
+         * 시작일은 종료일에서 분석 개월 수를 뺀 날짜다.
+         */
+        LocalDate analysisEndDate =
+                analysisDetail.getCreatedAt()
+                        .toLocalDate();
+
+        LocalDate analysisStartDate =
+                analysisEndDate.minusMonths(
+                        analysisDetail.getAnalysisPeriod()
+                );
+
+        log.info(
+                "소비분석 상세조회 완료 "
+                        + "userId={}, spendingAnalysisId={}, "
+                        + "period={}, categoryCount={}",
+                userId,
+                spendingAnalysisId,
+                analysisDetail.getAnalysisPeriod(),
+                categories.size()
+        );
+
+        return AnalysisDetailResponseDTO.builder()
+                .spendingAnalysisId(
+                        analysisDetail.getSpendingAnalysisId()
+                )
+                .period(
+                        analysisDetail.getAnalysisPeriod()
+                )
+                .periodLabel(
+                        createPeriodLabel(
+                                analysisDetail.getAnalysisPeriod()
+                        )
+                )
+                .analysisStartDate(
+                        analysisStartDate.toString()
+                )
+                .analysisEndDate(
+                        analysisEndDate.toString()
+                )
+                .totalSpendingAmount(
+                        totalSpendingAmount
+                )
+                .classifiedTransactionCount(
+                        classifiedTransactionCount
+                )
+                .representativeCategoryId(
+                        analysisDetail
+                                .getRepresentativeCategoryId()
+                )
+                .representativeCategoryName(
+                        analysisDetail
+                                .getRepresentativeCategoryName()
+                )
+                .aiTitle(
+                        analysisDetail.getAiTitle()
+                )
+                .aiAnalysisSummary(
+                        analysisDetail.getAiAnalysisSummary()
+                )
+                .createdAt(
+                        analysisDetail.getCreatedAt()
+                )
+                .categories(
+                        categories
+                )
+                .message(
+                        "소비 분석 결과를 조회했습니다."
+                )
+                .build();
+    }
+
+    // 현재 사용자의 가장 최근 소비분석 상세 결과 조회
+    @Override
+    public AnalysisDetailResponseDTO getLatestAnalysisDetail(
+            Integer userId
+    ) {
+        /*
+         * 현재 사용자가 생성한 소비분석 중
+         * 가장 최근 분석 ID를 조회한다.
+         */
+        Integer latestSpendingAnalysisId =
+                analysisMapper.selectLatestAnalysisId(
+                        userId
+                );
+
+        // 생성한 소비분석 결과가 하나도 없는 경우
+        if (latestSpendingAnalysisId == null) {
+            throw new CustomException(
+                    ErrorCode.ANALYSIS_RESULT_NOT_FOUND
+            );
+        }
+
+        log.info(
+                "최근 소비분석 조회 "
+                        + "userId={}, spendingAnalysisId={}",
+                userId,
+                latestSpendingAnalysisId
+        );
+
+        /*
+         * 기본정보 조회, 카테고리 목록 조회 및 합산 로직은
+         * 기존 상세조회 메서드를 그대로 재사용한다.
+         */
+        return getAnalysisDetail(
+                userId,
+                latestSpendingAnalysisId
+        );
     }
 
 }

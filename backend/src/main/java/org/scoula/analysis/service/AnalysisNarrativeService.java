@@ -12,8 +12,9 @@ public interface AnalysisNarrativeService {
 
     AnalysisNarrativeDTO createNarrative(
             Integer period,
-            Integer totalSpendingAmount,
             AnalysisCategoryResultDTO representativeCategory,
             List<AnalysisCategoryResultDTO> categories
     );
+
+
 }

@@ -214,7 +214,130 @@
 
     </insert>
 
+    <!-- 사용자가 카테고리를 수정할 정상 결제 거래 조회 -->
+    <select id="selectClassificationTargetTransaction"
+            resultType="org.scoula.analysis.domain.ClassificationTargetTransactionVO">
 
+        SELECT
+            transaction_id AS transactionId,
+            merchant_name AS merchantName,
+            spending_category_id AS spendingCategoryId
+        FROM financial_transaction_tbl
+        WHERE transaction_id = #{transactionId}
+          AND user_id = #{userId}
+          AND transaction_type = 'PAYMENT'
+          AND transaction_status = 'SUCCESS'
 
+    </select>
+
+    <!-- 동일 가맹점에서 발생한 전체 정상 결제 거래 건수 조회 -->
+    <select id="countSuccessfulPaymentsByMerchantName"
+            resultType="int">
+
+        SELECT COUNT(*)
+        FROM financial_transaction_tbl
+        WHERE merchant_name = #{merchantName}
+          AND transaction_type = 'PAYMENT'
+          AND transaction_status = 'SUCCESS'
+
+    </select>
+
+    <!-- 현재 사용자의 소비분석 기본정보 조회 -->
+    <select id="selectAnalysisDetail"
+            resultType="org.scoula.analysis.domain.AnalysisDetailVO">
+
+        SELECT
+            analysis.spending_analysis_id
+                AS spendingAnalysisId,
+
+            analysis.user_id
+                AS userId,
+
+            analysis.analysis_period
+                AS analysisPeriod,
+
+            analysis.representative_category_id
+                AS representativeCategoryId,
+
+            category.category_name
+                AS representativeCategoryName,
+
+            analysis.ai_title
+                AS aiTitle,
+
+            analysis.ai_analysis_summary
+                AS aiAnalysisSummary,
+
+            analysis.created_at
+                AS createdAt
+
+        FROM spending_analysis_tbl analysis
+
+                 INNER JOIN spending_category_tbl category
+                            ON analysis.representative_category_id
+                                = category.spending_category_id
+
+        WHERE analysis.spending_analysis_id
+            = #{spendingAnalysisId}
+
+          AND analysis.user_id
+            = #{userId}
+
+    </select>
+
+    <!-- 저장된 카테고리별 소비분석 결과 조회 -->
+    <select id="selectAnalysisDetailCategories"
+            resultType="org.scoula.analysis.dto.AnalysisCategoryResultDTO">
+
+        SELECT
+            analysis_category.spending_category_id
+                AS spendingCategoryId,
+
+            category.category_name
+                AS categoryName,
+
+            analysis_category.spending_amount
+                AS spendingAmount,
+
+            analysis_category.spending_ratio
+                AS spendingRatio,
+
+            analysis_category.transaction_count
+                AS transactionCount
+
+        FROM spending_analysis_category_tbl analysis_category
+
+                 INNER JOIN spending_category_tbl category
+                            ON analysis_category.spending_category_id
+                                = category.spending_category_id
+
+        WHERE analysis_category.spending_analysis_id
+                  = #{spendingAnalysisId}
+
+        ORDER BY
+            analysis_category.spending_amount DESC,
+            analysis_category.transaction_count DESC,
+            analysis_category.spending_category_id ASC
+
+    </select>
+
+    <!-- 현재 사용자가 가장 최근에 생성한 소비분석 ID 조회 -->
+    <select id="selectLatestAnalysisId"
+            resultType="java.lang.Integer">
+
+        SELECT
+            spending_analysis_id
+
+        FROM spending_analysis_tbl
+
+        WHERE user_id = #{userId}
+
+        ORDER BY
+            created_at DESC,
+            spending_analysis_id DESC
+
+        LIMIT 1
+
+    </select>
 
 </mapper>

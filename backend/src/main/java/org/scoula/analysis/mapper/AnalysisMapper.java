@@ -2,6 +2,7 @@ package org.scoula.analysis.mapper;
 
 import org.apache.ibatis.annotations.Param;
 import org.scoula.analysis.domain.*;
+import org.scoula.analysis.dto.AnalysisCategoryResultDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,6 +42,18 @@ public interface AnalysisMapper {
             Integer spendingCategoryId
     );
 
+    // 현재 사용자가 수정할 수 있는 정상 결제 거래 조회
+    ClassificationTargetTransactionVO
+    selectClassificationTargetTransaction(
+            @Param("userId") Integer userId,
+            @Param("transactionId") Integer transactionId
+    );
+
+    // 동일 가맹점의 전체 정상 결제 거래 건수 조회
+    int countSuccessfulPaymentsByMerchantName(
+            @Param("merchantName") String merchantName
+    );
+
     int updateTransactionCategory(
             @Param("userId") Integer userId,
             @Param("transactionId") Integer transactionId,
@@ -53,6 +66,21 @@ public interface AnalysisMapper {
             @Param("endAt") LocalDateTime endAt
     );
 
+    // 현재 사용자의 소비분석 기본정보 조회
+    AnalysisDetailVO selectAnalysisDetail(
+            @Param("userId") Integer userId,
+            @Param("spendingAnalysisId") Integer spendingAnalysisId
+    );
+
+    // 저장된 카테고리별 소비분석 결과 조회
+    List<AnalysisCategoryResultDTO> selectAnalysisDetailCategories(
+            @Param("spendingAnalysisId") Integer spendingAnalysisId
+    );
+
+    // 현재 사용자가 가장 최근에 생성한 소비분석 ID 조회
+    Integer selectLatestAnalysisId(
+            @Param("userId") Integer userId
+    );
 
 
 }

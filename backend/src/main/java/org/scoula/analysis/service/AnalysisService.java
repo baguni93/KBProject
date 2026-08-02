@@ -28,15 +28,24 @@ public interface AnalysisService {
             Integer spendingCategoryId
     );
 
-    // 분석 결과 저장
-    Integer saveAnalysis(
-            SpendingAnalysisVO spendingAnalysis, // spending_analysis_tbl에 저장할 분석 본문
-            List<SpendingAnalysisCategoryVO> categories // 카테고리별 분석 결과를 저장
-    );
 
     // 분석 실행
     AnalysisExecutionResponseDTO executeAnalysis(
             Integer userId,
             Integer period
     );
+
+
+    // 저장된 소비분석 상세 결과 조회
+    AnalysisDetailResponseDTO getAnalysisDetail(
+            Integer userId,
+            Integer spendingAnalysisId
+    );
+
+    // 현재 사용자의 가장 최근 소비분석 상세 결과 조회
+    AnalysisDetailResponseDTO getLatestAnalysisDetail(
+            Integer userId
+    );
+
+
 }

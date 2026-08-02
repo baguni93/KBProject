@@ -118,4 +118,41 @@ public class AnalysisController {
                 .status(HttpStatus.CREATED)
                 .body(response);
     }
+
+    @ApiOperation("저장된 소비 분석 상세 결과 조회")
+    @GetMapping("/{spendingAnalysisId}")
+    public ResponseEntity<AnalysisDetailResponseDTO>
+    getAnalysisDetail(
+            @PathVariable("spendingAnalysisId")
+            Integer spendingAnalysisId
+    ) {
+        // TODO-AUTH:
+        // JWT 인증 정보의 로그인 사용자 ID로 변경
+        Integer temporaryUserId = 1;
+
+        AnalysisDetailResponseDTO response =
+                analysisService.getAnalysisDetail(
+                        temporaryUserId,
+                        spendingAnalysisId
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @ApiOperation("가장 최근 소비 분석 상세 결과 조회")
+    @GetMapping("/latest")
+    public ResponseEntity<AnalysisDetailResponseDTO>
+    getLatestAnalysisDetail() {
+        // TODO-AUTH:
+        // JWT 인증 정보의 로그인 사용자 ID로 변경
+        Integer temporaryUserId = 1;
+
+        AnalysisDetailResponseDTO response =
+                analysisService.getLatestAnalysisDetail(
+                        temporaryUserId
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
 }
