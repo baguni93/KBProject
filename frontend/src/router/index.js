@@ -5,6 +5,7 @@ import TransactionListPage from '@/pages/transaction/TransactionListPage.vue';
 import auth from './auth';
 import feed from './feed';
 import mypage from './mypage';
+import analysis from './analysis';
 import PointWalletPage from '@/pages/pointwallet/PointWalletPage.vue';
 import RandomBoxPage from '@/pages/pointwallet/RandomBoxPage.vue';
 import PointConversionPage from '@/pages/pointwallet/PointConversionPage.vue';
@@ -51,6 +52,7 @@ const router = createRouter({
     ...auth,
     ...feed,
     ...mypage,
+    ...analysis,
   ],
 });
 
