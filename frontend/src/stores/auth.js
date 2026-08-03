@@ -1,83 +1,146 @@
-import { ref, computed, reactive } from 'vue';
+import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import axios from 'axios';
 
 const initState = {
-  token: '',
-  user: {
-    username: '',
-    email: '',
-    roles: [],
-  },
+  userId: null,
+  tokenType: '',
+  accessToken: '',
+  refreshToken: '',
+  accessTokenExpiresIn: 0,
 };
 
 export const useAuthStore = defineStore('auth', () => {
   const state = ref({ ...initState });
-  const isLogin = computed(() => !!state.value.user.username);
-  const username = computed(() => state.value.user.username); // 로그인 사용자 ID
-  const email = computed(() => state.value.user.email); // 로그인 사용자 email
 
-  const login = async (member) => {
-    // state.value.token = 'test token';
-    // state.value.user = {
-    //   username: member.username,
-    //   email: member.username + '@test.com',
-    // };
+  // 로그인 여부
+  const isLogin = computed(() => !!state.value.accessToken && !!state.value.userId);
 
-    const { data } = await axios.post('/api/auth/login', member);
-    state.value = { ...data };
-    console.log('suuuuuuuuuuuuu' + data);
-    localStorage.setItem('auth', JSON.stringify(state.value));
-  };
+  // 로그인 회원번호
+  const userId = computed(() => state.value.userId);
 
-  const logout = () => {
-    localStorage.clear();
-    state.value = { ...initState };
-  };
+  // 로그인 사용자 정보
+  const user = computed(() => ({
+    userId: state.value.userId,
+  }));
 
-  const getToken = () => state.value.token;
+  // JWT 정보 해석
+  const decodeToken = (token) => {
+    if (!token) return null;
 
-  const load = () => {
-    const auth = localStorage.getItem('auth');
+    try {
+      const payload = token.split('.')[1];
+      const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const paddedPayload = normalizedPayload.padEnd(Math.ceil(normalizedPayload.length / 4) * 4, '=');
+      const decodedPayload = decodeURIComponent(
+          atob(paddedPayload)
+              .split('')
+              .map((character) => `%${character.charCodeAt(0).toString(16).padStart(2, '0')}`)
+              .join(''),
+      );
 
-    if (auth != null) {
-      state.value = JSON.parse(auth);
-
-      console.log(state.value);
+      return JSON.parse(decodedPayload);
+    } catch (error) {
+      console.error('JWT 정보를 확인할 수 없습니다.', error);
+      return null;
     }
   };
 
-  // 추가
-  //   avatarUpdated 값은 이미지 URL을 변경하여 브라우저 캐시를 무효화하고,
-  // 프로필 이미지가 즉시 다시 로드되도록 하기 위해 사용한다.
-  // changeProfile : 프로필 수정 후 스토어 상태를 업데이트하는 함수
+  // 로그인 정보 저장
+  const setAuth = (tokenData) => {
+    const payload = decodeToken(tokenData.accessToken);
+    const tokenUserId = Number(payload?.userId || tokenData.userId);
 
-  const changeProfile = (member) => {
-    // state.value.user.email = member.email;
-    // 기존 user 정보를 유지하면서 email과 avatarUpdated만 덮어쓴다
-
-    state.value.user = {
-      ...state.value.user, // 기존 username, roles 등 나머지 정보 유지
-      email: member.email, // 수정된 이메일로 교체
-      // Date.now()는 현재 시각을 숫자로 반환한다
-      // 이 값을 이미지 URL 뒤에 붙이면 브라우저가 캐시를 무시하고 새 이미지를 불러온다
-      avatarUpdated: Date.now(),
+    state.value = {
+      userId: tokenUserId || null,
+      tokenType: tokenData.tokenType || 'Bearer',
+      accessToken: tokenData.accessToken || '',
+      refreshToken: tokenData.refreshToken || '',
+      accessTokenExpiresIn: tokenData.accessTokenExpiresIn || 0,
     };
 
-    console.log(member);
-    // 변경된 상태를 localStorage에 저장해서 새로고침 후에도 유지되도록 한다
     localStorage.setItem('auth', JSON.stringify(state.value));
   };
 
+  // PIN 로그인
+  const login = async (loginData) => {
+    const { data } = await axios.post('/api/login', loginData);
+
+    setAuth(data);
+
+    return data;
+  };
+
+  // 재발급된 토큰 저장
+  const updateTokens = (tokenData) => {
+    setAuth(tokenData);
+  };
+
+  // 로그인 정보 삭제
+  const clearAuth = () => {
+    localStorage.removeItem('auth');
+    state.value = { ...initState };
+  };
+
+  // 로그아웃
+  const logout = async () => {
+    const savedRefreshToken = state.value.refreshToken;
+
+    try {
+      if (savedRefreshToken) await axios.post('/api/logout', { refreshToken: savedRefreshToken });
+    } catch (error) {
+      console.error('로그아웃 요청에 실패했습니다.', error);
+    } finally {
+      clearAuth();
+    }
+  };
+
+  // Access Token 반환
+  const getToken = () => state.value.accessToken;
+
+  // Refresh Token 반환
+  const getRefreshToken = () => state.value.refreshToken;
+
+  // 저장된 로그인 정보 불러오기
+  const load = () => {
+    const savedAuth = localStorage.getItem('auth');
+
+    if (!savedAuth) return;
+
+    try {
+      const parsedAuth = JSON.parse(savedAuth);
+      const payload = decodeToken(parsedAuth.accessToken);
+      const tokenUserId = Number(payload?.userId || parsedAuth.userId);
+
+      if (!parsedAuth.accessToken || !parsedAuth.refreshToken || !tokenUserId) {
+        clearAuth();
+        return;
+      }
+
+      state.value = {
+        ...initState,
+        ...parsedAuth,
+        userId: tokenUserId,
+      };
+    } catch (error) {
+      console.error('저장된 로그인 정보를 불러오지 못했습니다.', error);
+      clearAuth();
+    }
+  };
+
   load();
+
   return {
     state,
-    username,
-    email,
+    user,
+    userId,
     isLogin,
-    changeProfile,
     login,
     logout,
+    clearAuth,
+    setAuth,
+    updateTokens,
     getToken,
+    getRefreshToken,
   };
 });

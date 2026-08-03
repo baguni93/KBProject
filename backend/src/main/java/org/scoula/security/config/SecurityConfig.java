@@ -2,7 +2,6 @@ package org.scoula.security.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.mybatis.spring.annotation.MapperScan;
 import org.scoula.security.filter.AuthenticationErrorFilter;
 import org.scoula.security.filter.JwtAuthenticationFilter;
 import org.scoula.security.filter.JwtUsernamePasswordAuthenticationFilter;
@@ -10,7 +9,6 @@ import org.scoula.security.handler.CustomAccessDeniedHandler;
 import org.scoula.security.handler.CustomAuthenticationEntryPoint;
 import org.scoula.security.handler.LoginFailureHandler;
 import org.scoula.security.handler.LoginSuccessHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -25,17 +23,14 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 @EnableWebSecurity
 @Log4j2
-@MapperScan(basePackages = {"org.scoula.security.account.mapper"})
+//@MapperScan(basePackages = {"org.scoula.security.account.mapper"})
 @ComponentScan(basePackages = {
         "org.scoula.security.account.service",
         "org.scoula.security.filter",
@@ -62,9 +57,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .accessDeniedHandler(accessDeniedHandler);
 
 
-        http.addFilterBefore(authenticationErrorFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(jwtFilter(authenticationManager()), UsernamePasswordAuthenticationFilter.class);
+//        http.addFilterBefore(authenticationErrorFilter, UsernamePasswordAuthenticationFilter.class)
+//            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+//            .addFilterBefore(jwtFilter(authenticationManager()), UsernamePasswordAuthenticationFilter.class);
 
         http.httpBasic().disable() // 기본 HTTP 인증 비활성화
                 .csrf().disable() // CSRF 비활성화

@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.login.mapper.LoginMapper">
+
+    <resultMap
+            id="phoneAuthMap"
+            type="org.scoula.login.domain.PhoneAuthVO">
+
+        <id
+                property="verificationId"
+                column="verification_id"/>
+
+        <result
+                property="userId"
+                column="user_id"/>
+
+        <result
+                property="userName"
+                column="user_name"/>
+
+        <result
+                property="birthDate"
+                column="birth_date"/>
+
+        <result
+                property="carrierCode"
+                column="carrier_code"/>
+
+        <result
+                property="phoneNumber"
+                column="phone_number"/>
+
+        <result
+                property="verificationCode"
+                column="verification_code"/>
+
+        <result
+                property="verificationPurpose"
+                column="verification_purpose"/>
+
+        <result
+                property="requestedAt"
+                column="requested_at"/>
+
+        <result
+                property="verifiedYn"
+                column="verified_yn"/>
+
+        <result
+                property="failCount"
+                column="fail_count"/>
+
+    </resultMap>
+
+
+    <!-- 기존 인증 요청 삭제 -->
+    <delete id="deletePhoneAuth">
+        DELETE
+        FROM verification_tbl
+        WHERE phone_number = #{phoneNumber}
+          AND verification_purpose = #{verificationPurpose}
+    </delete>
+
+
+    <!-- 인증번호 저장 -->
+    <insert
+            id="insertPhoneAuth"
+            parameterType="org.scoula.login.domain.PhoneAuthVO"
+            useGeneratedKeys="true"
+            keyProperty="verificationId">
+
+        INSERT INTO verification_tbl
+        (
+            user_id,
+            user_name,
+            birth_date,
+            carrier_code,
+            phone_number,
+            verification_code,
+            verification_purpose,
+            requested_at,
+            verified_yn,
+            fail_count
+        )
+        VALUES
+            (
+                #{userId},
+                #{userName},
+                #{birthDate},
+                #{carrierCode},
+                #{phoneNumber},
+                #{verificationCode},
+                #{verificationPurpose},
+                #{requestedAt},
+                #{verifiedYn},
+                #{failCount}
+            )
+
+    </insert>
+
+
+    <!-- 가장 최근 인증 요청 조회 -->
+    <select
+            id="findLatestPhoneAuth"
+            resultMap="phoneAuthMap">
+
+        SELECT
+            verification_id,
+            user_id,
+            user_name,
+            birth_date,
+            carrier_code,
+            phone_number,
+            verification_code,
+            verification_purpose,
+            requested_at,
+            verified_yn,
+            fail_count
+        FROM verification_tbl
+        WHERE phone_number = #{phoneNumber}
+          AND verification_purpose = #{verificationPurpose}
+        ORDER BY verification_id DESC
+        LIMIT 1
+
+    </select>
+
+
+    <!-- 인증번호 실패 횟수 증가 -->
+    <update id="increaseFailCount">
+
+        UPDATE verification_tbl
+        SET fail_count = fail_count + 1
+        WHERE verification_id = #{verificationId}
+
+    </update>
+
+
+    <!-- 인증 완료 처리 -->
+    <update id="completePhoneAuth">
+
+        UPDATE verification_tbl
+        SET verified_yn = 'Y'
+        WHERE verification_id = #{verificationId}
+          AND verified_yn = 'N'
+
+    </update>
+
+
+    <!-- 가입 회원 여부 확인 -->
+    <select
+            id="countUserByPhoneNumber"
+            resultType="int">
+
+        SELECT COUNT(*)
+        FROM user_tbl
+        WHERE phone_number = #{phoneNumber}
+          AND user_status = 'ACTIVE'
+
+    </select>
+
+    <!-- 인증번호 재발급 -->
+    <update id="updatePhoneAuthCode">
+
+        UPDATE verification_tbl
+        SET verification_code = #{verificationCode},
+            requested_at = #{requestedAt},
+            verified_yn = 'N',
+            fail_count = 0
+        WHERE verification_id = #{verificationId}
+
+    </update>
+
+    <!-- AUTH-005 로그인 회원 조회 -->
+    <select id="findUserByPhoneNumber" resultType="org.scoula.user.domain.UserVO">
+        SELECT
+            u.user_id,
+            u.user_name,
+            u.birth_date,
+            u.phone_number,
+            u.pin_password,
+            p.nickname,
+            u.user_status,
+            u.created_at,
+            u.updated_at,
+            u.withdrawn_at
+        FROM user_tbl u
+                 LEFT JOIN profile_tbl p ON u.user_id = p.user_id
+        WHERE u.phone_number = #{phoneNumber}
+        LIMIT 1
+    </select>
+
+
+    <!-- Refresh Token 저장 -->
+    <insert
+            id="insertRefreshToken"
+            parameterType="org.scoula.login.domain.RefreshTokenVO"
+            useGeneratedKeys="true"
+            keyProperty="refreshTokenId">
+
+        INSERT INTO refresh_token_tbl
+        (
+            user_id,
+            refresh_token,
+            expires_at,
+            issued_at
+        )
+        VALUES
+            (
+                #{userId},
+                #{refreshToken},
+                #{expiresAt},
+                NOW()
+            )
+
+    </insert>
+
+
+    <!-- Refresh Token 조회 -->
+    <select
+            id="findRefreshToken"
+            resultType="org.scoula.login.domain.RefreshTokenVO">
+
+        SELECT
+            refresh_token_id,
+            user_id,
+            refresh_token,
+            expires_at,
+            issued_at
+        FROM refresh_token_tbl
+        WHERE refresh_token = #{refreshToken}
+        LIMIT 1
+
+    </select>
+
+
+    <!-- 회원의 Refresh Token 삭제 -->
+    <delete id="deleteRefreshTokenByUserId">
+
+        DELETE
+        FROM refresh_token_tbl
+        WHERE user_id = #{userId}
+
+    </delete>
+
+
+    <!-- 특정 Refresh Token 삭제 -->
+    <delete id="deleteRefreshToken">
+
+        DELETE
+        FROM refresh_token_tbl
+        WHERE refresh_token = #{refreshToken}
+
+    </delete>
+
+    <!-- PIN_RESET 목적의 인증 완료 기록 조회 -->
+    <select id="findVerifiedPinResetId"
+            resultType="java.lang.Long">
+
+        SELECT verification_id
+        FROM verification_tbl
+        WHERE phone_number = #{phoneNumber}
+          AND verification_purpose = 'PIN_RESET'
+          AND verified_yn = 'Y'
+          AND requested_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+        ORDER BY requested_at DESC
+        LIMIT 1
+
+    </select>
+
+
+    <!-- PIN 재설정에 사용한 인증 기록 삭제 -->
+    <delete id="deleteVerificationById">
+
+        DELETE FROM verification_tbl
+        WHERE verification_id = #{verificationId}
+
+    </delete>
+
+</mapper>

@@ -1,10 +1,16 @@
 import { useAuthStore } from '@/stores/auth';
 
-export const isAuthenticated = (to, from) => {
-  const auth = useAuthStore();
-  if (!auth.isLogin) {
-    console.log('로그인 필요.....');
-    return { name: 'login', query: { next: to.fullPath } };
+export const isAuthenticated = (to) => {
+  const authStore = useAuthStore();
+
+  if (!authStore.isLogin) {
+    // console.log('로그인 필요.....');
+    return {
+      path: '/intro',
+      query: { next: to.fullPath },
+    };
   }
-  console.log('로그인 인증');
+  // console.log('로그인 인증 완료');
+
+  return true;
 };
