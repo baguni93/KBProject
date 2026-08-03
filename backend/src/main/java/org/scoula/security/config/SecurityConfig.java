@@ -2,7 +2,6 @@ package org.scoula.security.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.mybatis.spring.annotation.MapperScan;
 import org.scoula.security.filter.AuthenticationErrorFilter;
 import org.scoula.security.filter.JwtAuthenticationFilter;
 import org.scoula.security.filter.JwtUsernamePasswordAuthenticationFilter;
@@ -31,7 +30,7 @@ import org.springframework.web.filter.CorsFilter;
 @Configuration
 @EnableWebSecurity
 @Log4j2
-@MapperScan(basePackages = {"org.scoula.security.account.mapper"})
+//@MapperScan(basePackages = {"org.scoula.security.account.mapper"})
 @ComponentScan(basePackages = {
         "org.scoula.security.account.service",
         "org.scoula.security.filter",
