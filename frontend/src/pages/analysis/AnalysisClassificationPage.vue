@@ -1,7 +1,7 @@
 <template>
   <div class="kb-mobile-page classification-page">
     <header class="kb-app-header">
-      <router-link class="kb-icon-button" to="/analysis" aria-label="뒤로가기"><i class="fa-solid fa-chevron-left"></i></router-link>
+      <button class="kb-icon-button" type="button" aria-label="뒤로가기" @click="goToCheck"><i class="fa-solid fa-chevron-left"></i></button>
       <h1 class="kb-app-header__title">소비 카테고리 분류</h1>
       <span></span>
     </header>
@@ -50,7 +50,7 @@
       <div class="done-icon"><i class="fa-solid fa-check"></i></div>
       <h2>모든 거래를 분류했어요!</h2>
       <p>분석 화면에서 최신 소비 패턴을 확인해 보세요.</p>
-      <router-link class="kb-primary-button d-flex align-items-center justify-content-center text-decoration-none" to="/analysis">분석 가능 여부 확인하기</router-link>
+      <button type="button" class="kb-primary-button w-100" @click="goToCheck">분석 가능 여부 다시 확인하기</button>
     </section>
   </div>
 </template>
@@ -65,11 +65,12 @@ const period = ref(normalizeAnalysisPeriod(route.query.period)); const categorie
 const currentTransaction = computed(() => unclassifiedData.value?.transactions?.[0] ?? null);
 const topCategories = computed(() => categories.value.filter((category) => category.parentCategoryId == null));
 const periodLabel = computed(() => unclassifiedData.value?.periodLabel ?? `최근 ${period.value}개월`);
+const goToCheck = () => router.push({ name: 'analysis-check', query: { period: period.value } });
 const childCategories = (parentCategoryId) => categories.value.filter((category) => category.parentCategoryId === parentCategoryId);
 const hasChildren = (parentCategoryId) => childCategories(parentCategoryId).length > 0;
-const loadData = async () => { loading.value = true; message.value = ''; selectedCategoryId.value = null; try { const [categoryData, transactionData] = await Promise.all([analysisApi.getCategories(), analysisApi.getUnclassifiedTransactions(period.value)]); categories.value = categoryData.categories ?? []; unclassifiedData.value = transactionData; if (route.query.classified) { messageType.value = 'success'; message.value = `${route.query.classified} 카테고리로 분류했습니다.`; await router.replace({ name:'analysis-classification', query:{ period:period.value } }); } } catch (error) { messageType.value='error'; message.value=getAnalysisErrorMessage(error,'미분류 거래 정보를 불러오지 못했습니다.'); } finally { loading.value=false; } };
+const loadData = async () => { loading.value = true; message.value = ''; selectedCategoryId.value = null; try { const [categoryData, transactionData] = await Promise.all([analysisApi.getCategories(), analysisApi.getUnclassifiedTransactions(period.value)]); categories.value = categoryData.categories ?? []; unclassifiedData.value = transactionData; if (route.query.classified) { messageType.value = 'success'; message.value = `${route.query.classified} 카테고리로 분류했습니다.`; await router.replace({ name:'analysis-classification', query:{ period:period.value, returnTo:route.query.returnTo||'analysis-check' } }); } } catch (error) { messageType.value='error'; message.value=getAnalysisErrorMessage(error,'미분류 거래 정보를 불러오지 못했습니다.'); } finally { loading.value=false; } };
 const classifyCurrentTransaction = async (category) => { if (!currentTransaction.value) return; classifying.value=true; message.value=''; try { const result=await analysisApi.classifyTransaction(currentTransaction.value.transactionId,category.spendingCategoryId); messageType.value='success'; message.value=result.message; unclassifiedData.value=await analysisApi.getUnclassifiedTransactions(period.value); selectedCategoryId.value=null; } catch(error){messageType.value='error';message.value=getAnalysisErrorMessage(error,'소비 카테고리 분류에 실패했습니다.');} finally{classifying.value=false;} };
-const completeSelection = async () => { const category=categories.value.find((item)=>item.spendingCategoryId===selectedCategoryId.value); if(!category)return; if(hasChildren(category.spendingCategoryId)){ await router.push({name:'analysis-subcategory',params:{transactionId:currentTransaction.value.transactionId},query:{period:period.value,parentCategoryId:category.spendingCategoryId}}); return;} await classifyCurrentTransaction(category); };
+const completeSelection = async () => { const category=categories.value.find((item)=>item.spendingCategoryId===selectedCategoryId.value); if(!category)return; if(hasChildren(category.spendingCategoryId)){ await router.push({name:'analysis-subcategory',params:{transactionId:currentTransaction.value.transactionId},query:{period:period.value,parentCategoryId:category.spendingCategoryId,returnTo:route.query.returnTo||'analysis-check'}}); return;} await classifyCurrentTransaction(category); };
 onMounted(loadData);
 </script>
 

@@ -20,6 +20,18 @@ public interface AnalysisService {
             Integer period
     );
 
+    // 현재 사용자의 결제 거래 단건 조회
+    AnalysisTransactionDTO getAnalysisTransaction(
+            Integer userId,
+            Integer transactionId
+    );
+
+    // 저장된 분석 결과의 실제 분석 기간에 포함된 전체 결제 거래 조회
+    AnalysisTransactionListDTO getAnalysisTransactionsByAnalysisId(
+            Integer userId,
+            Integer spendingAnalysisId
+    );
+
     // 미분류 거래내역 조회
     UnclassifiedTransactionListDTO getUnclassifiedTransactions(
             Integer userId,
@@ -48,9 +60,10 @@ public interface AnalysisService {
             Integer spendingAnalysisId
     );
 
-    // 현재 사용자의 가장 최근 소비분석 상세 결과 조회
+    // 현재 사용자의 선택 기간별 가장 최근 소비분석 상세 결과 조회
     AnalysisDetailResponseDTO getLatestAnalysisDetail(
-            Integer userId
+            Integer userId,
+            Integer period
     );
 
 

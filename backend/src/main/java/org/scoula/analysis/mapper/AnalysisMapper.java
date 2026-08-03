@@ -24,6 +24,12 @@ public interface AnalysisMapper {
             @Param("endAt") LocalDateTime endAt
     );
 
+    // 현재 사용자의 정상 결제 거래 단건 조회
+    AnalysisTransactionVO selectAnalysisTransactionById(
+            @Param("userId") Integer userId,
+            @Param("transactionId") Integer transactionId
+    );
+
     // 카테고리 미분류 목록 조회
     List<UnclassifiedTransactionVO> selectUnclassifiedTransactions(
             @Param("userId") Integer userId,
@@ -84,9 +90,10 @@ public interface AnalysisMapper {
             @Param("spendingAnalysisId") Integer spendingAnalysisId
     );
 
-    // 현재 사용자가 가장 최근에 생성한 소비분석 ID 조회
+    // 현재 사용자가 선택 기간에 가장 최근에 생성한 소비분석 ID 조회
     Integer selectLatestAnalysisId(
-            @Param("userId") Integer userId
+            @Param("userId") Integer userId,
+            @Param("period") Integer period
     );
 
 

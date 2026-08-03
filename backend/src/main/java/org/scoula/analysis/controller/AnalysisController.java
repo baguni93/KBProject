@@ -51,6 +51,22 @@ public class AnalysisController {
         );
     }
 
+    @ApiOperation("저장된 분석 결과의 전체 결제 거래 목록 조회")
+    @GetMapping("/{spendingAnalysisId}/transactions")
+    public ResponseEntity<AnalysisTransactionListDTO>
+    getAnalysisResultTransactions(
+            @PathVariable("spendingAnalysisId")
+            Integer spendingAnalysisId
+    ) {
+        Integer temporaryUserId = 1;
+        return ResponseEntity.ok(
+                analysisService.getAnalysisTransactionsByAnalysisId(
+                        temporaryUserId,
+                        spendingAnalysisId
+                )
+        );
+    }
+
     @ApiOperation("미분류 결제 거래 목록 조회")
     @GetMapping("/unclassified-transactions")
     public ResponseEntity<UnclassifiedTransactionListDTO>
@@ -83,6 +99,20 @@ public class AnalysisController {
                 analysisService.getSpendingCategories();
 
         return ResponseEntity.ok(response);
+    }
+
+    @ApiOperation("결제 거래 단건 조회")
+    @GetMapping("/transactions/{transactionId}")
+    public ResponseEntity<AnalysisTransactionDTO> getAnalysisTransaction(
+            @PathVariable("transactionId") Integer transactionId
+    ) {
+        Integer temporaryUserId = 1;
+        return ResponseEntity.ok(
+                analysisService.getAnalysisTransaction(
+                        temporaryUserId,
+                        transactionId
+                )
+        );
     }
 
     @ApiOperation("결제 거래 소비 카테고리 직접 분류")
@@ -150,17 +180,21 @@ public class AnalysisController {
         return ResponseEntity.ok(response);
     }
 
-    @ApiOperation("가장 최근 소비 분석 상세 결과 조회")
+    @ApiOperation("선택 기간의 가장 최근 소비 분석 상세 결과 조회")
     @GetMapping("/latest")
     public ResponseEntity<AnalysisDetailResponseDTO>
-    getLatestAnalysisDetail() {
+    getLatestAnalysisDetail(
+            @RequestParam(value = "period", defaultValue = "1")
+            Integer period
+    ) {
         // TODO-AUTH:
         // JWT 인증 정보의 로그인 사용자 ID로 변경
         Integer temporaryUserId = 1;
 
         AnalysisDetailResponseDTO response =
                 analysisService.getLatestAnalysisDetail(
-                        temporaryUserId
+                        temporaryUserId,
+                        period
                 );
 
         return ResponseEntity.ok(response);

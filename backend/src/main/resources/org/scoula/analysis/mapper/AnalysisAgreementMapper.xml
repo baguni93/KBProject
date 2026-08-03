@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.analysis.mapper.AnalysisAgreementMapper">
+
+    <select id="selectAnalysisAgreements"
+            resultType="org.scoula.analysis.domain.AnalysisAgreementVO">
+        SELECT
+            agreement.agreement_id AS agreementId,
+            agreement.agreement_type AS agreementType,
+            agreement.agreement_name AS agreementName,
+            agreement.agreement_content AS agreementContent,
+            agreement.required_yn AS requiredYn,
+            COALESCE(user_agreement.agreed_yn, 'N') AS agreedYn
+        FROM agreement_tbl agreement
+        LEFT JOIN user_agreement_tbl user_agreement
+               ON user_agreement.user_agreement_id = (
+                    SELECT MAX(latest_agreement.user_agreement_id)
+                    FROM user_agreement_tbl latest_agreement
+                    WHERE latest_agreement.user_id = #{userId}
+                      AND latest_agreement.agreement_id = agreement.agreement_id
+               )
+        WHERE agreement.agreement_type IN (
+                  'ANALYSIS_REQUIRED',
+                  'ANALYSIS_OPTIONAL'
+              )
+          AND agreement.use_yn = 'Y'
+        ORDER BY
+            CASE WHEN agreement.required_yn = 'Y' THEN 0 ELSE 1 END,
+            agreement.agreement_id
+    </select>
+
+    <select id="selectLatestUserAgreementId"
+            resultType="java.lang.Integer">
+        SELECT user_agreement_id
+        FROM user_agreement_tbl
+        WHERE user_id = #{userId}
+          AND agreement_id = #{agreementId}
+        ORDER BY user_agreement_id DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insertUserAgreement">
+        INSERT INTO user_agreement_tbl (
+            user_id,
+            agreement_id,
+            agreed_yn,
+            agreed_at
+        )
+        VALUES (
+            #{userId},
+            #{agreementId},
+            #{agreedYn},
+            NOW()
+        )
+    </insert>
+
+    <update id="updateUserAgreement">
+        UPDATE user_agreement_tbl
+        SET agreed_yn = #{agreedYn},
+            agreed_at = NOW()
+        WHERE user_agreement_id = #{userAgreementId}
+    </update>
+
+</mapper>

@@ -199,6 +199,91 @@ public class AnalysisServiceImpl implements AnalysisService {
     }
 
     @Override
+    public AnalysisTransactionDTO getAnalysisTransaction(
+            Integer userId,
+            Integer transactionId
+    ) {
+        if (transactionId == null || transactionId <= 0) {
+            throw new CustomException(
+                    ErrorCode.CLASSIFICATION_TRANSACTION_NOT_FOUND
+            );
+        }
+
+        AnalysisTransactionVO transaction =
+                analysisMapper.selectAnalysisTransactionById(
+                        userId,
+                        transactionId
+                );
+
+        if (transaction == null) {
+            throw new CustomException(
+                    ErrorCode.CLASSIFICATION_TRANSACTION_NOT_FOUND
+            );
+        }
+
+        return AnalysisTransactionDTO.builder()
+                .transactionId(transaction.getTransactionId())
+                .merchantName(transaction.getMerchantName())
+                .amount(transaction.getAmount())
+                .createdAt(transaction.getCreatedAt())
+                .spendingCategoryId(transaction.getSpendingCategoryId())
+                .categoryName(transaction.getCategoryName())
+                .parentCategoryId(transaction.getParentCategoryId())
+                .parentCategoryName(transaction.getParentCategoryName())
+                .build();
+    }
+
+    @Override
+    public AnalysisTransactionListDTO getAnalysisTransactionsByAnalysisId(
+            Integer userId,
+            Integer spendingAnalysisId
+    ) {
+        if (spendingAnalysisId == null || spendingAnalysisId <= 0) {
+            throw new CustomException(ErrorCode.ANALYSIS_RESULT_NOT_FOUND);
+        }
+
+        AnalysisDetailVO analysisDetail = analysisMapper.selectAnalysisDetail(
+                userId,
+                spendingAnalysisId
+        );
+
+        if (analysisDetail == null) {
+            throw new CustomException(ErrorCode.ANALYSIS_RESULT_NOT_FOUND);
+        }
+
+        LocalDate analysisEndDate = analysisDetail.getCreatedAt().toLocalDate();
+        LocalDate analysisStartDate = analysisEndDate.minusMonths(
+                analysisDetail.getAnalysisPeriod()
+        );
+        LocalDateTime startAt = analysisStartDate.atStartOfDay();
+        LocalDateTime endAt = analysisEndDate.plusDays(1).atStartOfDay();
+
+        List<AnalysisTransactionDTO> transactions =
+                analysisMapper.selectAnalysisTransactions(userId, startAt, endAt)
+                        .stream()
+                        .map(vo -> AnalysisTransactionDTO.builder()
+                                .transactionId(vo.getTransactionId())
+                                .merchantName(vo.getMerchantName())
+                                .amount(vo.getAmount())
+                                .createdAt(vo.getCreatedAt())
+                                .spendingCategoryId(vo.getSpendingCategoryId())
+                                .categoryName(vo.getCategoryName())
+                                .parentCategoryId(vo.getParentCategoryId())
+                                .parentCategoryName(vo.getParentCategoryName())
+                                .build())
+                        .collect(Collectors.toList());
+
+        return AnalysisTransactionListDTO.builder()
+                .period(analysisDetail.getAnalysisPeriod())
+                .periodLabel(createPeriodLabel(analysisDetail.getAnalysisPeriod()))
+                .analysisStartDate(analysisStartDate.toString())
+                .analysisEndDate(analysisEndDate.toString())
+                .transactionCount(transactions.size())
+                .transactions(transactions)
+                .build();
+    }
+
+    @Override
     public UnclassifiedTransactionListDTO getUnclassifiedTransactions(
             Integer userId,
             Integer period
@@ -986,18 +1071,22 @@ public class AnalysisServiceImpl implements AnalysisService {
                 .build();
     }
 
-    // 현재 사용자의 가장 최근 소비분석 상세 결과 조회
+    // 현재 사용자의 선택 기간별 가장 최근 소비분석 상세 결과 조회
     @Override
     public AnalysisDetailResponseDTO getLatestAnalysisDetail(
-            Integer userId
+            Integer userId,
+            Integer period
     ) {
+        validatePeriod(period);
+
         /*
-         * 현재 사용자가 생성한 소비분석 중
+         * 현재 사용자가 선택 기간에 생성한 소비분석 중
          * 가장 최근 분석 ID를 조회한다.
          */
         Integer latestSpendingAnalysisId =
                 analysisMapper.selectLatestAnalysisId(
-                        userId
+                        userId,
+                        period
                 );
 
         // 생성한 소비분석 결과가 하나도 없는 경우
@@ -1008,9 +1097,10 @@ public class AnalysisServiceImpl implements AnalysisService {
         }
 
         log.info(
-                "최근 소비분석 조회 "
-                        + "userId={}, spendingAnalysisId={}",
+                "기간별 최근 소비분석 조회 "
+                        + "userId={}, period={}, spendingAnalysisId={}",
                 userId,
+                period,
                 latestSpendingAnalysisId
         );
 

@@ -17,6 +17,25 @@ export const formatAnalysisDateTime = (value) => {
   return String(value).replace('T', ' ');
 };
 
+export const formatAnalysisExecutionDate = (value, includeTime = true) => {
+  if (!value) return '-';
+
+  const normalized = String(value).replace('T', ' ');
+  const [datePart, timePart = ''] = normalized.split(' ');
+  const dateTokens = datePart.split('-');
+
+  if (dateTokens.length !== 3) {
+    return normalized;
+  }
+
+  const formattedDate = `${dateTokens[0]}.${dateTokens[1]}.${dateTokens[2]}`;
+  if (!includeTime || !timePart) {
+    return formattedDate;
+  }
+
+  return `${formattedDate} ${timePart.slice(0, 5)}`;
+};
+
 export const getAnalysisErrorMessage = (error, fallbackMessage) =>
   error?.response?.data?.message ?? error?.message ?? fallbackMessage;
 
@@ -92,3 +111,40 @@ export const ANALYSIS_CHART_COLORS = [
 export const getAnalysisCategoryColor = (categoryName, fallbackIndex = 0) =>
   ANALYSIS_CATEGORY_COLOR_MAP[categoryName] ??
   ANALYSIS_CHART_COLORS[fallbackIndex % ANALYSIS_CHART_COLORS.length];
+
+
+const toDateOnly = (value) => {
+  if (!value) return null;
+
+  const normalized = String(value).replace('T', ' ');
+  const [datePart] = normalized.split(' ');
+  const [year, month, day] = datePart.split('-').map(Number);
+
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day);
+};
+
+const formatDateOnly = (date) => {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return '-';
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}.${month}.${day}`;
+};
+
+export const formatAnalysisPeriodRange = (value, period = 1) => {
+  const endDate = toDateOnly(value);
+  if (!endDate) return '-';
+
+  const normalizedPeriod = Number(period) || 1;
+  const startDate = new Date(endDate);
+  startDate.setMonth(startDate.getMonth() - normalizedPeriod);
+
+  return `${formatDateOnly(startDate)} ~ ${formatDateOnly(endDate)} (${normalizedPeriod}개월)`;
+};

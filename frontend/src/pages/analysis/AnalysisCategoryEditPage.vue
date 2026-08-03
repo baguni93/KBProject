@@ -51,9 +51,8 @@ import { formatAnalysisDateTime, formatAnalysisNumber, getAnalysisErrorMessage, 
 
 const route = useRoute(); const router = useRouter();
 const transactionId = Number(route.params.transactionId); const period = normalizeAnalysisPeriod(route.query.period);
-const categories = ref([]); const transactions = ref([]); const loading = ref(false); const saving = ref(false); const message = ref(''); const messageType = ref('success');
+const categories = ref([]); const transaction = ref(null); const loading = ref(false); const saving = ref(false); const message = ref(''); const messageType = ref('success');
 const selectedTopCategoryId = ref(null); const selectedCategoryId = ref(null);
-const transaction = computed(() => transactions.value.find((item) => item.transactionId === transactionId));
 const topCategories = computed(() => categories.value.filter((item) => item.parentCategoryId == null));
 const selectedTopCategory = computed(() => topCategories.value.find((item) => item.spendingCategoryId === selectedTopCategoryId.value));
 const childCategories = computed(() => selectedTopCategory.value ? categories.value.filter((item) => item.parentCategoryId === selectedTopCategory.value.spendingCategoryId) : []);
@@ -73,9 +72,12 @@ const initializeSelection = () => {
 const loadData = async () => {
   loading.value = true;
   try {
-    const [categoryData, transactionData] = await Promise.all([analysisApi.getCategories(), analysisApi.getTransactions(period)]);
+    const [categoryData, transactionData] = await Promise.all([
+      analysisApi.getCategories(),
+      analysisApi.getTransaction(transactionId),
+    ]);
     categories.value = categoryData.categories ?? [];
-    transactions.value = transactionData.transactions ?? [];
+    transaction.value = transactionData;
     initializeSelection();
   } catch (error) { messageType.value = 'error'; message.value = getAnalysisErrorMessage(error, '카테고리 수정 정보를 불러오지 못했습니다.'); }
   finally { loading.value = false; }
@@ -87,7 +89,13 @@ const saveCategory = async () => {
   try {
     await analysisApi.classifyTransaction(transactionId, selectedCategoryId.value);
     messageType.value = 'success'; message.value = '카테고리가 수정되었습니다.';
-    setTimeout(() => router.push({ name: 'analysis-main' }), 400);
+    const returnTo = typeof route.query.returnTo === 'string'
+      ? route.query.returnTo
+      : null;
+    setTimeout(() => {
+      if (returnTo) router.push(returnTo);
+      else router.push({ name: 'analysis-main', query: { period } });
+    }, 400);
   } catch (error) { messageType.value = 'error'; message.value = getAnalysisErrorMessage(error, '카테고리 수정에 실패했습니다.'); }
   finally { saving.value = false; }
 };

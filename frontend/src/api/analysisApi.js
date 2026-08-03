@@ -17,6 +17,20 @@ export default {
     return data;
   },
 
+  async getTransaction(transactionId) {
+    const { data } = await api.get(
+      `${SPENDING_ANALYSIS_URL}/transactions/${transactionId}`,
+    );
+    return data;
+  },
+
+  async getAnalysisResultTransactions(spendingAnalysisId) {
+    const { data } = await api.get(
+      `${SPENDING_ANALYSIS_URL}/${spendingAnalysisId}/transactions`,
+    );
+    return data;
+  },
+
   async getUnclassifiedTransactions(period = 1) {
     const { data } = await api.get(
       `${SPENDING_ANALYSIS_URL}/unclassified-transactions`,
@@ -56,8 +70,10 @@ export default {
     return data;
   },
 
-  async getLatestAnalysisDetail() {
-    const { data } = await api.get(`${SPENDING_ANALYSIS_URL}/latest`);
+  async getLatestAnalysisDetail(period = 1) {
+    const { data } = await api.get(`${SPENDING_ANALYSIS_URL}/latest`, {
+      params: { period },
+    });
     return data;
   },
 };
