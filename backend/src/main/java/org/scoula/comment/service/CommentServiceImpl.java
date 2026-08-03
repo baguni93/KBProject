@@ -9,6 +9,10 @@ import org.scoula.comment.dto.CommentResponseDTO;
 import org.scoula.comment.mapper.CommentMapper;
 import org.scoula.exception.CustomException;
 import org.scoula.exception.ErrorCode;
+import org.scoula.feed.domain.FeedVO;
+import org.scoula.feed.dto.FeedResponseDTO;
+import org.scoula.feed.service.FeedService;
+import org.scoula.notification.service.NotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +24,8 @@ import java.util.List;
 public class CommentServiceImpl implements CommentService{
 
     private final CommentMapper commentMapper;
+    private final FeedService feedService;
+    private final NotificationService notificationService;
 
     @Transactional
     @Override
@@ -27,7 +33,11 @@ public class CommentServiceImpl implements CommentService{
 
         CommentVO vo = commentRequestDTO.toVo();
 
+        FeedResponseDTO feedResponseDTO = feedService.get(vo.getFeedId());
+
         commentMapper.create(vo);
+
+        notificationService.createCommentNotification(vo.getUserId(), feedResponseDTO.getUserId() , vo.getFeedId());
 
         return get(vo.getCommentId() , vo.getUserId());
     }
@@ -42,13 +52,10 @@ public class CommentServiceImpl implements CommentService{
     }
 
     @Override
-    public List<CommentResponseDTO> getList(int feedId ,int userId) {
+    public List<CommentResponseDTO> getList(int feedId) {
 
         List<CommentVO> list = commentMapper.getList(feedId);
-
-        return list.stream().map(x -> {
-            return CommentResponseDTO.of(x , x.getUserId());
-        }).toList();
+        return list.stream().map(x -> CommentResponseDTO.of(x , x.getUserId())).toList();
     }
 
     @Transactional

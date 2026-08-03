@@ -16,6 +16,7 @@ public class CommentVO {
 
     private int commentId;
     private int feedId;
+    private int feedOwnerId;
     private int userId;
     private String content;
     private Date createdAt;
