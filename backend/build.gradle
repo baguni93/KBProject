@@ -192,6 +192,11 @@ dependencies {
 
     //postconstruct
     implementation 'javax.annotation:javax.annotation-api:1.3.2'
+
+
+    //redis
+    implementation 'org.springframework.data:spring-data-redis:2.7.18'
+    implementation 'io.lettuce:lettuce-core:6.3.2.RELEASE'
 }
 
 test {
