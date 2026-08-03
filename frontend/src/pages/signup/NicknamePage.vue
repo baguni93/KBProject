@@ -21,9 +21,11 @@ import { useRouter } from 'vue-router';
 import { signup } from '@/api/userApi';
 import NicknameForm from '@/components/auth/NicknameForm.vue';
 import { useSignupStore } from '@/stores/signup';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const signupStore = useSignupStore();
+const authStore = useAuthStore();
 const submitting = ref(false);
 
 // 회원가입
@@ -34,11 +36,14 @@ const handleSignup = async (nickname) => {
     return;
   }
 
+  const phoneNumber = signupStore.phoneAuth.phoneNumber;
+  const pinPassword = signupStore.pin;
+
   const signupData = {
     userName: signupStore.phoneAuth.userName,
     birthDate: signupStore.phoneAuth.birthDate,
-    phoneNumber: signupStore.phoneAuth.phoneNumber,
-    pinPassword: signupStore.pin,
+    phoneNumber,
+    pinPassword,
     nickname,
     agreementIds: signupStore.agreements
         .filter((agreement) => agreement.agreed)
@@ -50,14 +55,20 @@ const handleSignup = async (nickname) => {
 
     const data = await signup(signupData);
 
+    // 회원가입 완료 후 자동 로그인
+    await authStore.login({
+      phoneNumber,
+      pinPassword,
+    });
+
     sessionStorage.setItem('signupUserId', String(data.userId));
+
+    signupStore.reset();
 
     await router.push({
       path: '/signup/complete',
       query: { userId: data.userId },
     });
-
-    signupStore.reset();
   } catch (error) {
     alert(error.response?.data?.message || '회원가입에 실패했습니다.');
   } finally {
