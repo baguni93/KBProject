@@ -29,4 +29,5 @@ public interface WalletMapper {
             @Param("amount") Integer amount
     );
 
+    java.util.List<org.scoula.wallet.dto.RegisteredCardDTO> getUserRegisteredCards(@Param("userId") Integer userId);
 }

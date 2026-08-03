@@ -77,4 +77,9 @@ public class WalletServiceImpl implements WalletService {
         }
         return chargeWallet(chargeDTO);
     }
+
+    @Override
+    public java.util.List<org.scoula.wallet.dto.RegisteredCardDTO> getUserRegisteredCards(Integer userId) {
+        return walletMapper.getUserRegisteredCards(userId);
+    }
 }

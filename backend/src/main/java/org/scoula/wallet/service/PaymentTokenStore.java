@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class PaymentTokenStore {
 
-    private static final long DEFAULT_TTL_SECONDS = 180L;
+    private static final long DEFAULT_TTL_SECONDS = 60L;
 
     private final Map<String, TokenEntry> tokenStore = new ConcurrentHashMap<>();
 

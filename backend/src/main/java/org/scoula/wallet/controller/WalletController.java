@@ -70,4 +70,12 @@ public class WalletController {
         WalletChargeDTO result = walletService.autoChargeWallet(chargeDTO);
         return ResponseEntity.ok(result);
     }
+
+    // registered-cards-001: 회원 등록 실물 카드 목록 조회 (GET /api/wallets/cards/user/{userId})
+    @GetMapping("/cards/user/{userId}")
+    public ResponseEntity<java.util.List<org.scoula.wallet.dto.RegisteredCardDTO>> getUserCards(@PathVariable("userId") Integer userId) {
+        log.info("회원 등록 카드 목록 DB 조회 - 회원 ID: " + userId);
+        java.util.List<org.scoula.wallet.dto.RegisteredCardDTO> cards = walletService.getUserRegisteredCards(userId);
+        return ResponseEntity.ok(cards);
+    }
 }
