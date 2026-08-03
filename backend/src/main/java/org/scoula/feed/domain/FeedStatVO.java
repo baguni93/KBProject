@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FeedStatVO {
 
-    private int likeCount;
+    //레디스 처리 예정
     private int commentCount;
 }

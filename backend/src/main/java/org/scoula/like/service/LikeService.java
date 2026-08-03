@@ -5,7 +5,9 @@ import org.scoula.feed.dto.FeedResponseDTO;
 import java.util.List;
 
 public interface LikeService {
-    void create(int feedId , int userId);
-
-    void delete(int feedId, int userId);
+    boolean toggle(int feedId, int userId);
+    void decreaseLikeCount(int feedId);
+    void increaseLikeCount(int feedId);
+    boolean isLiked(int feedId, int userId);
+    int getLikeCount(int feedId);
 }

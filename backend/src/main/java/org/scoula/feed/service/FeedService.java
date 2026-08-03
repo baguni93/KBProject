@@ -16,4 +16,6 @@ public interface FeedService {
      FeedResponseDTO delete(int feedId);
 
      FeedImageDTO getImage(int imageId);
+
+    List<FeedResponseDTO> geMemberList(int memberUserId, int userId);
 }

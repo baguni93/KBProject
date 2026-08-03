@@ -30,11 +30,21 @@ public class FeedController {
         return ResponseEntity.ok(feedService.getList(userId));
     }
 
-    // 친구 피드
+    // 친구 피드 , 사용 x  추후 피드탭에서 필터 시 사용
     @GetMapping("/friends")
     public ResponseEntity<List<FeedResponseDTO>> getFriendFeedList(@RequestParam int userId) {
         return ResponseEntity.ok(feedService.getFriendList(userId));
     }
+
+
+    //회원 피드 조회
+    @GetMapping("/member/{memberUserId}")
+    public ResponseEntity<List<FeedResponseDTO>> getFriendFeedList(
+            @PathVariable int memberUserId,
+            @RequestParam int userId) {
+        return ResponseEntity.ok(feedService.geMemberList(memberUserId,userId));
+    }
+
 
     // 내 피드
     @GetMapping("/me")
@@ -76,6 +86,12 @@ public class FeedController {
     @GetMapping("/eventImage/{imageName}")
     public void viewEventImage(@PathVariable String imageName, HttpServletResponse response) {
         File file = new File(UploadPathName.getEventPath()+imageName);
+        UploadFiles.downloadImage(response, file);
+    }
+
+    @GetMapping("/profile/{imageName}")
+    public void viewProfileImage(@PathVariable String imageName, HttpServletResponse response) {
+        File file = new File(UploadPathName.getProfilePath()+imageName);
         UploadFiles.downloadImage(response, file);
     }
 

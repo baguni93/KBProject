@@ -13,6 +13,7 @@ import org.scoula.feed.dto.FeedCreateRequestDTO;
 import org.scoula.feed.dto.FeedImageDTO;
 import org.scoula.feed.dto.FeedResponseDTO;
 import org.scoula.feed.mapper.FeedMapper;
+import org.scoula.like.service.LikeService;
 import org.scoula.settlement.mapper.SettlementMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ public class FeedServiceImpl implements FeedService {
 
     private final FeedMapper feedMapper;
     private final SettlementMapper settlementMapper;
+    private final LikeService likeService;
 
     @Transactional
     @Override
@@ -109,6 +111,17 @@ public class FeedServiceImpl implements FeedService {
         return FeedImageDTO.of(image);
     }
 
+    @Override
+    public List<FeedResponseDTO> geMemberList(int memberUserId, int userId) {
+
+        //친구 여부 확인 후
+        //공개 설정 피드 or 공개 + 친구 설정 피드
+        List<FeedVO> list = feedMapper.geMemberList(memberUserId,userId);
+        log.info(list);
+        return getFeedRespoonseDTOList(list);
+
+    }
+
     private List<FeedResponseDTO> getFeedRespoonseDTOList(List<FeedVO> feedList){
 
         if(feedList == null){
@@ -118,10 +131,28 @@ public class FeedServiceImpl implements FeedService {
 
         for(var feed : feedList){
             enrichFeed(feed);
-        }
-        return feedList.stream().map(FeedResponseDTO::of).toList();
 
+        }
+
+        List<FeedResponseDTO> feedResponseDTOList =  feedList.stream().map(FeedResponseDTO::of).toList();
+
+        for(var feedResponseDTO : feedResponseDTOList){
+
+            feedResponseDTO.setLikeCount(
+                    likeService.getLikeCount(feedResponseDTO.getFeedId())
+            );
+
+            feedResponseDTO.setLiked(
+                    likeService.isLiked(
+                            feedResponseDTO.getFeedId(),
+                            feedResponseDTO.getUserId()
+                    )
+            );
+        }
+
+        return feedResponseDTOList;
     }
+
 
 
     private void enrichFeed(FeedVO feed){

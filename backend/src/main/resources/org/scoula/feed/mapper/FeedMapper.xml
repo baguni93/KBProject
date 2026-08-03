@@ -51,7 +51,6 @@
 
     <resultMap id="statMap"
                type="org.scoula.feed.domain.FeedStatVO">
-        <result column="like_count" property="likeCount"/>
         <result column="comment_count" property="commentCount"/>
     </resultMap>
 
@@ -89,12 +88,6 @@
             a.visibility,
             a.created_at,
             a.updated_at,
-
-            (
-                SELECT COUNT(*)
-                FROM feed_like_tbl fl
-                WHERE fl.feed_id = a.feed_id
-            ) AS like_count,
 
             (
                 SELECT COUNT(*)
@@ -143,12 +136,6 @@
 
             (
                 SELECT COUNT(*)
-                FROM feed_like_tbl fl
-                WHERE fl.feed_id = a.feed_id
-            ) AS like_count,
-
-            (
-                SELECT COUNT(*)
                 FROM feed_comment_tbl fc
                 WHERE fc.feed_id = a.feed_id
             ) AS comment_count,
@@ -173,7 +160,8 @@
         ORDER BY a.created_at DESC
     </select>
 
-    <select id="getFriendList"  resultMap="feedMap">
+    <select id="geMemberList" resultMap="feedMap">
+
         SELECT
             a.feed_id,
             a.user_id,
@@ -186,9 +174,57 @@
 
             (
                 SELECT COUNT(*)
-                FROM feed_like_tbl fl
-                WHERE fl.feed_id = a.feed_id
-            ) AS like_count,
+                FROM feed_comment_tbl fc
+                WHERE fc.feed_id = a.feed_id
+            ) AS comment_count,
+
+            b.image_id,
+            b.image_name,
+
+            d.profile_id AS sender_profile_id,
+            d.nickname AS sender_nickname,
+            d.stored_name AS sender_profile_image
+
+        FROM feed_tbl a
+
+                 LEFT JOIN feed_image_tbl b
+                           ON a.feed_id = b.feed_id
+                 LEFT JOIN profile_tbl d
+                           ON a.user_id = d.user_id
+                 LEFT JOIN friend_tbl e
+                           ON (
+                               e.user_id = #{userId}
+                                   AND e.friend_user_id = #{memberUserId}
+                               )
+                                  OR
+                              (
+                                  e.user_id = #{memberUserId}
+                                      AND e.friend_user_id = #{userId}
+                                  )
+        WHERE
+            a.feed_status = 'ACTIVE'
+          AND a.user_id = #{memberUserId}
+
+          AND
+            (
+                a.visibility = 'PUBLIC'
+                    OR (e.user_id IS NOT NULL AND a.visibility = 'FRIEND')
+                )
+        ORDER BY a.created_at DESC
+
+    </select>
+
+
+    <select id="getFriendList"  resultMap="feedMap">
+        SELECT
+            a.feed_id,
+            a.user_id,
+            a.target_id,
+            a.feed_type,
+            a.content,
+            a.visibility,
+            a.created_at,
+            a.updated_at,
 
             (
                 SELECT COUNT(*)
@@ -267,12 +303,6 @@
             a.visibility,
             a.created_at,
             a.updated_at,
-
-            (
-                SELECT COUNT(*)
-                FROM feed_like_tbl fl
-                WHERE fl.feed_id = a.feed_id
-            ) AS like_count,
 
             (
                 SELECT COUNT(*)

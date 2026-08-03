@@ -34,7 +34,8 @@ import javax.sql.DataSource;
         "org.scoula.like.mapper",
         "org.scoula.user.mapper",
         "org.scoula.auth.mapper",
-        "org.scoula.transaction.mapper"
+        "org.scoula.transaction.mapper",
+        "org.scoula.profile.mapper"
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
@@ -48,10 +49,13 @@ import javax.sql.DataSource;
         "org.scoula.comment.service",
         "org.scoula.like.service",
         "org.scoula.auth.service",
-        "org.scoula.transaction.service"
+        "org.scoula.transaction.service",
+        "org.scoula.profile.service",
+        "org.scoula.redis"
 })
 @EnableTransactionManagement
 @EnableAspectJAutoProxy
+@Import(RedisConfig.class)
 public class RootConfig {
     @Value("${jdbc.driver}") String driver;
     @Value("${jdbc.url}") String url;
