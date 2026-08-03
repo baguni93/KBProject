@@ -93,7 +93,7 @@
 
           <!-- 하단 안내 문구 -->
           <p class="text-muted small mb-0" style="font-size: 0.75rem;">
-            <i class="bi bi-shield-check text-warning me-1"></i> 1회용 결제 코드는 3분 후 자동 소멸됩니다.
+            <i class="bi bi-shield-check text-warning me-1"></i> 1회용 결제 코드는 1분 후 자동 소멸됩니다.
           </p>
         </div>
       </div>
@@ -116,7 +116,7 @@ defineEmits(['close']);
 const isPinVerified = ref(false);
 const activeTab = ref(props.initialTab || 'barcode');
 const rawCode = ref('');
-const timeLeft = ref(180);
+const timeLeft = ref(60);
 
 let timerInterval = null;
 
@@ -150,7 +150,7 @@ const fetchServerToken = async () => {
 
     if (data && data.token) {
       rawCode.value = data.token;
-      timeLeft.value = data.expiresInSeconds || 180;
+      timeLeft.value = data.expiresInSeconds || 60;
     }
   } catch (e) {
     console.error('Token fetch error:', e);

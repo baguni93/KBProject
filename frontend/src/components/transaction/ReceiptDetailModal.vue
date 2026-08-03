@@ -63,6 +63,10 @@
             </span>
           </div>
 
+          <button type="button" class="btn btn-warning w-100 py-2.5 fw-bold rounded-3 mb-2 text-dark" @click="startDutchpayFromReceipt">
+            <i class="bi bi-calculator me-1"></i> 이 내역으로 더치페이 정산하기
+          </button>
+
           <button type="button" class="btn btn-dark w-100 py-2.5 fw-bold rounded-3" @click="$emit('close')">
             확인
           </button>
@@ -74,7 +78,10 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import transactionApi from '@/api/transactionApi';
+
+const router = useRouter();
 
 const props = defineProps({
   show: Boolean,
@@ -84,6 +91,19 @@ const props = defineProps({
 const emit = defineEmits(['close', 'updated']);
 
 const transaction = ref(null);
+
+const startDutchpayFromReceipt = () => {
+  if (!transaction.value) return;
+  emit('close');
+  router.push({
+    path: '/remittance',
+    query: {
+      receiverType: 'DUTCHPAY',
+      amount: transaction.value.amount,
+      title: editMemo.value || `결제건 #${transaction.value.transactionId} 더치페이`,
+    },
+  });
+};
 const editMemo = ref('');
 const loading = ref(false);
 const saving = ref(false);
