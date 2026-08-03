@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.notifsetting.mapper.NotificationSettingMapper">
+
+    <resultMap id="notificationSettingMap"
+               type="org.scoula.notifsetting.domain.NotificationSettingVO">
+
+        <id property="notificationSettingId"
+            column="notification_setting_id"/>
+
+        <result property="userId"
+                column="user_id"/>
+
+        <result property="financeNotificationYn"
+                column="finance_notification_yn"/>
+
+        <result property="friendNotificationYn"
+                column="friend_notification_yn"/>
+
+        <result property="rewardNotificationYn"
+                column="reward_notification_yn"/>
+
+        <result property="eventNotificationYn"
+                column="event_notification_yn"/>
+
+        <result property="updatedAt"
+                column="updated_at"/>
+
+    </resultMap>
+
+
+    <!-- 알림 설정 조회 -->
+    <select id="findByUserId"
+            parameterType="long"
+            resultMap="notificationSettingMap">
+
+        SELECT
+        ns.notification_setting_id,
+        ns.user_id,
+        ns.finance_notification_yn,
+        ns.friend_notification_yn,
+        ns.reward_notification_yn,
+        ns.event_notification_yn,
+        ns.updated_at
+        FROM notification_setting_tbl ns
+        INNER JOIN user_tbl u
+        ON ns.user_id = u.user_id
+        WHERE ns.user_id = #{userId}
+        AND u.user_status = 'ACTIVE'
+
+    </select>
+
+
+    <!-- 알림 설정 수정 -->
+    <update id="update"
+            parameterType="org.scoula.notifsetting.domain.NotificationSettingVO">
+
+        UPDATE notification_setting_tbl ns
+        INNER JOIN user_tbl u
+        ON ns.user_id = u.user_id
+        SET
+        ns.finance_notification_yn = #{financeNotificationYn},
+        ns.friend_notification_yn = #{friendNotificationYn},
+        ns.reward_notification_yn = #{rewardNotificationYn},
+        ns.event_notification_yn = #{eventNotificationYn},
+        ns.updated_at = NOW()
+        WHERE ns.user_id = #{userId}
+        AND u.user_status = 'ACTIVE'
+
+    </update>
+
+
+    <!-- 알림 설정 저장 -->
+    <insert id="insert"
+            parameterType="org.scoula.notifsetting.domain.NotificationSettingVO"
+            useGeneratedKeys="true"
+            keyProperty="notificationSettingId"
+            keyColumn="notification_setting_id">
+
+        INSERT INTO notification_setting_tbl (
+        user_id,
+        finance_notification_yn,
+        friend_notification_yn,
+        reward_notification_yn,
+        event_notification_yn,
+        updated_at
+        )
+        VALUES (
+        #{userId},
+        #{financeNotificationYn},
+        #{friendNotificationYn},
+        #{rewardNotificationYn},
+        #{eventNotificationYn},
+        NOW()
+        )
+
+    </insert>
+
+</mapper>

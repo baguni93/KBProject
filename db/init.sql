@@ -25,16 +25,13 @@ CREATE TABLE `tbl_member_auth` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
-
-DROP TABLE IF EXISTS user_tbl;
-
--- 1. 회원 테이블 정의서
+-- 1. 회원 테이블
 DROP TABLE IF EXISTS user_tbl;
 
 CREATE TABLE user_tbl (
     user_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '회원번호',
     user_name VARCHAR(30) NOT NULL COMMENT '이름',
-    birth_date CHAR(8) NOT NULL COMMENT '생년월일',
+    birth_date DATE NOT NULL COMMENT '생년월일',
     phone_number VARCHAR(20) NOT NULL UNIQUE COMMENT '휴대폰번호',
     pin_password VARCHAR(255) NOT NULL COMMENT '암호화된 숫자 6자리 간편비밀번호',
     user_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '회원상태',
@@ -47,9 +44,6 @@ CREATE TABLE user_tbl (
 
     CONSTRAINT chk_user_name_length
         CHECK (CHAR_LENGTH(user_name) BETWEEN 2 AND 30),
-
-    CONSTRAINT chk_user_birth_date
-        CHECK (birth_date REGEXP '^[0-9]{8}$'),
 
     CONSTRAINT chk_user_status
         CHECK (user_status IN ('ACTIVE', 'WITHDRAWN'))
@@ -161,10 +155,10 @@ CREATE TABLE verification_tbl (
     verification_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '인증번호',
     user_id INT NULL COMMENT '회원번호',
     user_name VARCHAR(30) NOT NULL COMMENT '인증이름',
-    birth_date CHAR(8) NOT NULL COMMENT '생년월일',
+    birth_date DATE NOT NULL COMMENT '생년월일',
     carrier_code VARCHAR(20) NOT NULL COMMENT '통신사코드',
     phone_number VARCHAR(20) NOT NULL COMMENT '휴대폰번호',
-    verification_code VARCHAR(255) NOT NULL COMMENT '암호화된 인증코드',
+    verification_code VARCHAR(6) NOT NULL COMMENT '암호화된 인증코드',
     verification_purpose VARCHAR(30) NOT NULL COMMENT '인증목적',
     requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
     verified_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '인증완료여부',
@@ -176,9 +170,6 @@ CREATE TABLE verification_tbl (
 
     CONSTRAINT chk_verification_user_name_length
         CHECK (CHAR_LENGTH(user_name) BETWEEN 2 AND 30),
-
-    CONSTRAINT chk_verification_birth_date
-        CHECK (birth_date REGEXP '^[0-9]{8}$'),
 
     CONSTRAINT chk_verification_carrier
         CHECK (
@@ -197,7 +188,9 @@ CREATE TABLE verification_tbl (
             verification_purpose IN (
                 'SIGN_UP',
                 'PIN_RESET',
-                'WITHDRAWAL'
+                'WITHDRAWAL',
+                'NAME_CHANGE',
+                'PHONE_CHANGE'
             )
         ),
 
@@ -228,28 +221,30 @@ CREATE TABLE profile_tbl (
 );
 
 -- 6-4. 알림설정 테이블
-DROP TABLE IF EXISTS notification_setting_tbl;
-
 CREATE TABLE notification_setting_tbl (
     notification_setting_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림설정번호',
     user_id INT NOT NULL UNIQUE COMMENT '회원번호',
-    finance_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '금융알림여부',
-    reward_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '리워드알림여부',
-    event_benefit_notification_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '이벤트혜택알림여부',
-    updated_at DATETIME NOT NULL COMMENT '수정일시',
+    finance_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '금융알림',
+    friend_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '친구요청알림',
+    reward_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '리워드알림',
+    event_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '이벤트혜택알림',
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '수정일시',
 
     CONSTRAINT fk_notification_setting_user
         FOREIGN KEY (user_id)
         REFERENCES user_tbl(user_id),
 
     CONSTRAINT chk_finance_notification_yn
-        CHECK (finance_notification_yn IN ('Y', 'N')),
+        CHECK (finance_notification_yn IN ('Y','N')),
+
+    CONSTRAINT chk_friend_notification_yn
+        CHECK (friend_notification_yn IN ('Y','N')),
 
     CONSTRAINT chk_reward_notification_yn
-        CHECK (reward_notification_yn IN ('Y', 'N')),
+        CHECK (reward_notification_yn IN ('Y','N')),
 
-    CONSTRAINT chk_event_benefit_notification_yn
-        CHECK (event_benefit_notification_yn IN ('Y', 'N'))
+    CONSTRAINT chk_event_notification_yn
+        CHECK (event_notification_yn IN ('Y','N'))
 );
 
 -- 6-5. 리프레시토큰 테이블
@@ -1825,3 +1820,37 @@ CREATE TABLE linked_card_tbl (
     CONSTRAINT chk_linked_card_represent_yn
         CHECK (represent_yn IN ('Y', 'N'))
 ) COMMENT = '연결카드';
+
+-- 51. 계좌인증 테이블 정의서
+DROP TABLE IF EXISTS account_verification_tbl;
+
+CREATE TABLE account_verification_tbl (
+
+    verification_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '계좌인증번호',
+
+    user_id INT NOT NULL COMMENT '회원번호',
+
+    bank_code VARCHAR(10) NOT NULL COMMENT '은행코드',
+
+    account_number VARCHAR(255) NOT NULL COMMENT '계좌번호',
+
+    account_holder VARCHAR(50) NOT NULL COMMENT '예금주',
+
+    verification_code CHAR(4) NOT NULL COMMENT '입금자명4자리',
+
+    verified_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '인증여부',
+
+    requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
+
+    CONSTRAINT fk_account_verification_user
+        FOREIGN KEY (user_id)
+        REFERENCES user_tbl(user_id),
+
+    CONSTRAINT fk_account_verification_bank
+        FOREIGN KEY (bank_code)
+        REFERENCES bank_tbl(bank_code),
+
+    CONSTRAINT chk_account_verification_verified_yn
+        CHECK (verified_yn IN ('Y', 'N'))
+
+) COMMENT = '계좌인증';

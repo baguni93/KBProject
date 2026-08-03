@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.profile.mapper.ProfileMapper">
+
+    <resultMap id="profileMap"
+               type="org.scoula.profile.domain.ProfileVO">
+
+        <id property="profileId"
+            column="profile_id"/>
+
+        <result property="userId"
+                column="user_id"/>
+
+        <result property="nickname"
+                column="nickname"/>
+
+        <result property="introduction"
+                column="introduction"/>
+
+        <result property="originalName"
+                column="original_name"/>
+
+        <result property="storedName"
+                column="stored_name"/>
+
+        <result property="createdAt"
+                column="created_at"/>
+
+        <result property="updatedAt"
+                column="updated_at"/>
+
+    </resultMap>
+
+
+    <!-- 회원 프로필 조회 -->
+    <select id="findByUserId"
+            parameterType="long"
+            resultMap="profileMap">
+
+        SELECT
+        p.profile_id,
+        p.user_id,
+        p.nickname,
+        p.introduction,
+        p.original_name,
+        p.stored_name,
+        p.created_at,
+        p.updated_at
+        FROM profile_tbl p
+        INNER JOIN user_tbl u
+        ON p.user_id = u.user_id
+        WHERE p.user_id = #{userId}
+        AND u.user_status = 'ACTIVE'
+
+    </select>
+
+
+    <!-- 현재 회원을 제외한 닉네임 중복 확인 -->
+    <select id="countNicknameExceptUser"
+            resultType="int">
+
+        SELECT COUNT(*)
+        FROM profile_tbl p
+        INNER JOIN user_tbl u
+        ON p.user_id = u.user_id
+        WHERE p.nickname = #{nickname}
+        AND p.user_id != #{userId}
+        AND u.user_status = 'ACTIVE'
+
+    </select>
+
+
+    <!-- 프로필 수정 -->
+    <update id="updateProfile"
+            parameterType="org.scoula.profile.domain.ProfileVO">
+
+        UPDATE profile_tbl p
+        INNER JOIN user_tbl u
+        ON p.user_id = u.user_id
+        SET
+        p.nickname = #{nickname},
+        p.introduction = #{introduction},
+        p.updated_at = NOW()
+        WHERE p.user_id = #{userId}
+        AND u.user_status = 'ACTIVE'
+
+    </update>
+
+
+    <!-- 프로필 이미지 등록 및 변경 -->
+    <update id="updateProfileImage">
+
+        UPDATE profile_tbl p
+        INNER JOIN user_tbl u
+        ON p.user_id = u.user_id
+        SET
+        p.original_name = #{originalName},
+        p.stored_name = #{storedName},
+        p.updated_at = NOW()
+        WHERE p.user_id = #{userId}
+        AND u.user_status = 'ACTIVE'
+
+    </update>
+
+</mapper>
