@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.sql.DataSource;
 
 @Configuration
+@Import(OpenAIConfig.class)
 @PropertySource({
         "classpath:/application.properties",
         "classpath:/secret.properties"
@@ -32,9 +33,12 @@ import javax.sql.DataSource;
         "org.scoula.friend.mapper",
         "org.scoula.comment.mapper",
         "org.scoula.like.mapper",
-        "org.scoula.user.mapper",
         "org.scoula.auth.mapper",
-        "org.scoula.transaction.mapper"
+        "org.scoula.transaction.mapper",
+        "org.scoula.analysis.mapper",
+
+
+
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
@@ -48,7 +52,9 @@ import javax.sql.DataSource;
         "org.scoula.comment.service",
         "org.scoula.like.service",
         "org.scoula.auth.service",
-        "org.scoula.transaction.service"
+        "org.scoula.member.service",
+        "org.scoula.analysis.service",
+        "org.scoula.transaction.service",
 })
 @EnableTransactionManagement
 @EnableAspectJAutoProxy

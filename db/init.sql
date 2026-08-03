@@ -956,6 +956,9 @@ CREATE TABLE financial_transaction_tbl (
     amount INT NOT NULL
     COMMENT '거래금액',
 
+    merchant_name VARCHAR(100) NULL
+    COMMENT '결제 가맹점명',
+
     spending_category_id INT NULL
     COMMENT '소비 카테고리 ID',
 

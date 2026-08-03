@@ -574,6 +574,26 @@ INSERT INTO notification_tbl (
 -- ---------------------------------------------------------------------
 -- 32. financial_transaction_tbl (6건)
 -- ---------------------------------------------------------------------
+#사용자 -
+# ├─ 실제 돈 영역 -> 어떤 거래인지 컬럼 조합으로 판단하는 구조.  / 실제 거래발생시에, 상세테이블에 연결하는 구조.
+# │   ├─ financial_transaction_tbl     거래 공통 원장
+# │   │    ├─ account_transaction_tbl  계좌 잔액 변동 상세
+# │   │    └─ wallet_transaction_tbl   전자지갑 잔액 변동 상세
+# │   │
+# │   ├─ account_dummy_tbl             계좌 잔액 -> 더미이거 쓰는거 아니지 않나요?
+# │   └─ wallet_tbl                    전자지갑 잔액
+# │
+# └─ 포인트 영역
+#     ├─ point_wallet_tbl              포인트 잔액
+#     ├─ point_transaction_tbl         포인트 증감 내역
+#     └─ point_conversion_history_tbl  포인트→전자지갑 전환 이력
+#
+# user_id: 누가 거래했는가?
+# trnasaction_type : 무슨 종류의 거래인가?
+# source_type : 돈이 어디에서 나왔는가?
+# target_type: 돈이 어디로 들어갔는가?
+# amount: 금액이 얼마인가?
+# status: 성공여부
 INSERT INTO financial_transaction_tbl (
     transaction_id,
     parent_transaction_id,
@@ -584,15 +604,16 @@ INSERT INTO financial_transaction_tbl (
     target_type,
     transaction_status,
     amount,
+    merchant_name,
     spending_category_id,
     created_at
 ) VALUES
-      (1, NULL, 1, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 10000, NULL, '2026-07-20 09:00:00'),
-      (2, NULL, 1, 2, 'TRANSFER', 'WALLET', 'ACCOUNT', 'SUCCESS', 8000, NULL, '2026-07-20 10:00:00'),
-      (3, NULL, 2, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 12000, NULL, '2026-07-21 09:00:00'),
-      (4, NULL, 2, 1, 'SETTLEMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 15000, 1, '2026-07-21 18:00:00'),
-      (5, NULL, 3, 1, 'TRANSFER', 'ACCOUNT', 'WALLET', 'SUCCESS', 20000, NULL, '2026-07-22 11:00:00'),
-      (6, NULL, 3, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 5000, 6, '2026-07-23 08:00:00');
+      (1, NULL, 1, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 10000, NULL, NULL, '2026-07-20 09:00:00'),
+      (2, NULL, 1, 2, 'TRANSFER', 'WALLET', 'ACCOUNT', 'SUCCESS', 8000, NULL, NULL, '2026-07-20 10:00:00'),
+      (3, NULL, 2, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 12000, NULL, NULL, '2026-07-21 09:00:00'),
+      (4, NULL, 2, 1, 'SETTLEMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 15000, NULL, 1, '2026-07-21 18:00:00'),
+      (5, NULL, 3, 1, 'TRANSFER', 'ACCOUNT', 'WALLET', 'SUCCESS', 20000, NULL, NULL, '2026-07-22 11:00:00'),
+      (6, NULL, 3, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 5000, '스타벅스 동성로점', 6, '2026-07-23 08:00:00');
 
 -- ---------------------------------------------------------------------
 -- 33. account_dummy_tbl (6건)

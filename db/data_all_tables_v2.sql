@@ -1058,6 +1058,9 @@ CREATE TABLE financial_transaction_tbl
     amount                INT         NOT NULL
         COMMENT '거래금액',
 
+    merchant_name VARCHAR(100) NULL
+        COMMENT '결제 가맹점명',
+
     spending_category_id  INT         NULL
         COMMENT '소비 카테고리 ID',
 
@@ -2479,14 +2482,15 @@ INSERT INTO financial_transaction_tbl (transaction_id,
                                        target_type,
                                        transaction_status,
                                        amount,
+                                       merchant_name,
                                        spending_category_id,
                                        created_at)
-VALUES (1, NULL, 1, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 10000, NULL, '2026-07-20 09:00:00'),
-       (2, NULL, 1, 2, 'TRANSFER', 'WALLET', 'ACCOUNT', 'SUCCESS', 8000, NULL, '2026-07-20 10:00:00'),
-       (3, NULL, 2, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 12000, NULL, '2026-07-21 09:00:00'),
-       (4, NULL, 2, 1, 'SETTLEMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 15000, 1, '2026-07-21 18:00:00'),
-       (5, NULL, 3, 1, 'TRANSFER', 'ACCOUNT', 'WALLET', 'SUCCESS', 20000, NULL, '2026-07-22 11:00:00'),
-       (6, NULL, 3, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 5000, 6, '2026-07-23 08:00:00');
+VALUES (1, NULL, 1, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 10000, NULL, NULL, '2026-07-20 09:00:00'),
+       (2, NULL, 1, 2, 'TRANSFER', 'WALLET', 'ACCOUNT', 'SUCCESS', 8000, NULL, NULL, '2026-07-20 10:00:00'),
+       (3, NULL, 2, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 12000, NULL, NULL, '2026-07-21 09:00:00'),
+       (4, NULL, 2, 1, 'SETTLEMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 15000, NULL, 1, '2026-07-21 18:00:00'),
+       (5, NULL, 3, 1, 'TRANSFER', 'ACCOUNT', 'WALLET', 'SUCCESS', 20000, NULL, NULL, '2026-07-22 11:00:00'),
+       (6, NULL, 3, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 5000, '스타벅스 동성로점', 6, '2026-07-23 08:00:00');
 
 -- ---------------------------------------------------------------------
 -- 33. account_dummy_tbl (6건)
