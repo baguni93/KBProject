@@ -4,13 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.feed.dto.FeedResponseDTO;
 import org.scoula.friend.domain.FriendRequestVO;
-import org.scoula.friend.dto.FriendCreateRequestDTO;
-import org.scoula.friend.dto.FriendRequestCreateRequestDTO;
-import org.scoula.friend.dto.FriendRequestResponseDTO;
-import org.scoula.friend.dto.FriendResponseDTO;
+import org.scoula.friend.dto.*;
 import org.scoula.friend.service.FriendService;
 import org.scoula.settlement.dto.SettlementCreateRequestDTO;
 import org.scoula.settlement.dto.SettlementResponseDTO;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +22,16 @@ public class FriendController {
 
     private final FriendService friendService;
 
+    //친구 여부 확인
+    @GetMapping("/{checkUserId}/friendStatus")
+    public ResponseEntity<FriendStatusResponseDTO> getFriendStatus(
+            @PathVariable int checkUserId,
+            @RequestParam int userId
+    ){
+        return ResponseEntity.ok(friendService.getFriendStatus(checkUserId, userId));
+    }
+
+
     @GetMapping
     public ResponseEntity<List<FriendResponseDTO>> getList(@RequestParam int userId){
         return ResponseEntity.ok(friendService.getList(userId));
@@ -32,6 +40,11 @@ public class FriendController {
     @GetMapping("/requests")
     public ResponseEntity<List<FriendRequestResponseDTO>> getRequestList(@RequestParam int userId){
         return ResponseEntity.ok(friendService.getRequestList(userId));
+    }
+
+    @GetMapping("/sendRequests")
+    public ResponseEntity<List<FriendRequestResponseDTO>> getSendRequestList(@RequestParam int userId){
+        return ResponseEntity.ok(friendService.getsendRequestList(userId));
     }
 
     @PostMapping
@@ -65,21 +78,24 @@ public class FriendController {
     }
 
     @PatchMapping("/requests/{requestId}/accept")
-    public ResponseEntity<FriendRequestResponseDTO> acceptRequest
+    public ResponseEntity<HttpStatus> acceptRequest
             (@PathVariable int requestId){
-        return ResponseEntity.ok(friendService.acceptRequest(requestId));
+        friendService.acceptRequest(requestId);
+        return ResponseEntity.ok(HttpStatus.OK);
     }
 
 
     @PatchMapping("/requests/{requestId}/reject")
-    public ResponseEntity<FriendRequestResponseDTO>  rejectRequest
+    public ResponseEntity<HttpStatus>  rejectRequest
             (@PathVariable int requestId){
-        return ResponseEntity.ok(friendService.rejectRequest(requestId));
+        friendService.rejectRequest(requestId);
+        return ResponseEntity.ok(HttpStatus.OK);
     }
 
     @PatchMapping("/requests/{requestId}/cancel")
-    public ResponseEntity<FriendRequestResponseDTO>  cancelRequest
+    public ResponseEntity<HttpStatus>  cancelRequest
             (@PathVariable int requestId){
-        return ResponseEntity.ok(friendService.cancelRequest(requestId));
+        friendService.cancelRequest(requestId);
+        return ResponseEntity.ok(HttpStatus.OK);
     }
 }

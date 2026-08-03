@@ -6,11 +6,9 @@ import org.scoula.common.util.Enum;
 import org.scoula.exception.CustomException;
 import org.scoula.exception.ErrorCode;
 import org.scoula.friend.domain.FriendRequestVO;
+import org.scoula.friend.domain.FriendStatusVO;
 import org.scoula.friend.domain.FriendVO;
-import org.scoula.friend.dto.FriendCreateRequestDTO;
-import org.scoula.friend.dto.FriendRequestCreateRequestDTO;
-import org.scoula.friend.dto.FriendRequestResponseDTO;
-import org.scoula.friend.dto.FriendResponseDTO;
+import org.scoula.friend.dto.*;
 import org.scoula.friend.mapper.FriendMapper;
 import org.scoula.notification.dto.NotificationRequestDTO;
 import org.scoula.notification.service.NotificationService;
@@ -42,6 +40,23 @@ public class FriendServiceImpl implements FriendService{
         List<FriendRequestVO> list = friendMapper.getRequestList(userId);
 
         return list.stream().map(FriendRequestResponseDTO::of).toList();
+    }
+
+
+    @Override
+    public List<FriendRequestResponseDTO> getsendRequestList(int userId) {
+        List<FriendRequestVO> list = friendMapper.getSendRequestList(userId);
+
+        return list.stream().map(FriendRequestResponseDTO::of).toList();
+    }
+
+    @Override
+    public FriendStatusResponseDTO getFriendStatus(int checkUserId, int userId) {
+
+        FriendStatusVO vo = friendMapper.getFriendStatus(userId, checkUserId);
+
+        return FriendStatusResponseDTO.toVo(vo);
+
     }
 
     @Transactional
@@ -90,20 +105,18 @@ public class FriendServiceImpl implements FriendService{
 
         FriendRequestVO friendRequestVO = request.toVo();
 
-
         try {
             friendMapper.createRequest(friendRequestVO);
         } catch (DuplicateKeyException e) {
             throw new CustomException(ErrorCode.FRIEND_REQUEST_ALREADY_EXISTS);
         }
 
+        notificationService.createFriendRequestNotification(
+                friendRequestVO.getRequesterId(),
+                friendRequestVO.getReceiverId(),
+                friendRequestVO.getRequestId()
+        );
 
-        notificationService.create(NotificationRequestDTO.builder()
-                .receiverId(friendRequestVO.getRequesterId())
-                .senderId(friendRequestVO.getReceiverId())
-                .notificationType(Enum.NotificationType.FRIEND_REQUEST)
-                .targetId(friendRequestVO.getRequestId())
-                .build());
 
         return getRequest(friendRequestVO.getRequestId());
     }
@@ -117,57 +130,50 @@ public class FriendServiceImpl implements FriendService{
         if(friendRequestVO ==null) {
             throw new CustomException(ErrorCode.FRIEND_REQUEST_NOT_FOUND);
         }
-
         return FriendRequestResponseDTO.of(friendRequestVO);
     }
 
 
     @Transactional
     @Override
-    public FriendRequestResponseDTO acceptRequest(int requestId) {
+    public void acceptRequest(int requestId) {
 
         FriendRequestVO friendRequestVO = validateFriendRequest(requestId);
 
-        friendMapper.acceptRequest(friendRequestVO);
+        friendMapper.deleteRequest(friendRequestVO);
 
-        notificationService.create(NotificationRequestDTO.builder()
-                .receiverId(friendRequestVO.getReceiverId())
-                .senderId(friendRequestVO.getRequesterId())
-                .notificationType(Enum.NotificationType.FRIEND_ACCEPT)
-                .targetId(friendRequestVO.getRequestId())
-                .build());
+        friendMapper.createFriend(FriendCreateRequestDTO.builder()
+                .userId(friendRequestVO.getRequesterId())
+                .friendUserId(friendRequestVO.getReceiverId())
+                .build().toVo());
 
-        return  getRequest(friendRequestVO.getRequestId());
+
+        notificationService.createFriendAcceptNotification(
+                friendRequestVO.getReceiverId(),
+                friendRequestVO.getRequesterId(),
+                friendRequestVO.getRequestId()
+        );
+
     }
 
     @Transactional
     @Override
-    public FriendRequestResponseDTO cancelRequest(int requestId) {
+    public void cancelRequest(int requestId) {
 
         FriendRequestVO friendRequestVO = validateFriendRequest(requestId);
 
-        friendMapper.cancelRequest(friendRequestVO);
+        friendMapper.deleteRequest(friendRequestVO);
 
-        return  getRequest(friendRequestVO.getRequestId());
     }
 
     @Transactional
     @Override
-    public FriendRequestResponseDTO rejectRequest(int requestId) {
+    public void rejectRequest(int requestId) {
 
         FriendRequestVO friendRequestVO = validateFriendRequest(requestId);
 
-        friendMapper.rejectRequest(friendRequestVO);
+        friendMapper.deleteRequest(friendRequestVO);
 
-
-        notificationService.create(NotificationRequestDTO.builder()
-                .receiverId(friendRequestVO.getReceiverId())
-                .senderId(friendRequestVO.getRequesterId())
-                .notificationType(Enum.NotificationType.FRIEND_REJECT)
-                .targetId(friendRequestVO.getRequestId())
-                .build());
-
-        return  getRequest(friendRequestVO.getRequestId());
     }
 
     private FriendRequestVO validateFriendRequest(int requestId){
@@ -177,17 +183,6 @@ public class FriendServiceImpl implements FriendService{
         if(friendRequestVO ==null) {
             throw new CustomException(ErrorCode.FRIEND_REQUEST_NOT_FOUND);
         }
-
-        if(friendRequestVO.getStatus() == Enum.FriendRequestStatus.ACCEPT){
-            throw new CustomException(ErrorCode.FRIEND_ALREADY_ACCEPT);
-        }
-        if(friendRequestVO.getStatus() == Enum.FriendRequestStatus.REJECT){
-            throw new CustomException(ErrorCode.FRIEND_ALREADY_REJECT);
-        }
-        if(friendRequestVO.getStatus() == Enum.FriendRequestStatus.CANCEL){
-            throw new CustomException(ErrorCode.FRIEND_ALREADY_CANCEL);
-        }
-
         return friendRequestVO;
 
     }
