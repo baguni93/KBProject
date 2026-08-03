@@ -10,6 +10,13 @@ export default {
     return data;
   },
 
+  async getTransactions(period = 1) {
+    const { data } = await api.get(`${SPENDING_ANALYSIS_URL}/transactions`, {
+      params: { period },
+    });
+    return data;
+  },
+
   async getUnclassifiedTransactions(period = 1) {
     const { data } = await api.get(
       `${SPENDING_ANALYSIS_URL}/unclassified-transactions`,

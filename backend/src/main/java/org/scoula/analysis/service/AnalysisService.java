@@ -14,6 +14,12 @@ public interface AnalysisService {
             Integer period
     );
 
+    // 선택 기간의 결제 거래 목록 조회 (카테고리 확인·수정)
+    AnalysisTransactionListDTO getAnalysisTransactions(
+            Integer userId,
+            Integer period
+    );
+
     // 미분류 거래내역 조회
     UnclassifiedTransactionListDTO getUnclassifiedTransactions(
             Integer userId,

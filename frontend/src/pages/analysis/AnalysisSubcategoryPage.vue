@@ -1,188 +1,27 @@
 <template>
-  <div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-      <div>
-        <div class="small text-muted mb-1">화면 ID: analysis-005</div>
-        <h2 class="mb-1">세부 카테고리 선택</h2>
-        <p class="text-muted mb-0">
-          {{ parentCategory?.categoryName ?? '선택한 카테고리' }}의 세부 항목을
-          선택합니다.
-        </p>
-      </div>
-      <button type="button" class="btn btn-outline-secondary" @click="goBack">
-        이전 화면
-      </button>
-    </div>
-
-    <div v-if="message" class="alert alert-danger">{{ message }}</div>
-
-    <section class="card mb-4">
-      <div class="card-header fw-bold">분류 대상 거래</div>
-      <div v-if="loading" class="card-body text-muted">
-        거래 정보와 세부 카테고리를 불러오고 있습니다.
-      </div>
-      <div v-else-if="transaction" class="card-body">
-        <div class="row g-3">
-          <div class="col-md-4">
-            <div class="small text-muted">가맹점</div>
-            <div class="h5 mb-0">{{ transaction.merchantName || '가맹점 정보 없음' }}</div>
-          </div>
-          <div class="col-md-4">
-            <div class="small text-muted">결제 금액</div>
-            <div class="h5 mb-0">{{ formatAnalysisNumber(transaction.amount) }}원</div>
-          </div>
-          <div class="col-md-4">
-            <div class="small text-muted">결제 일시</div>
-            <div class="h5 mb-0">
-              {{ formatAnalysisDateTime(transaction.createdAt) }}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div v-else class="card-body text-muted">
-        현재 분류할 수 있는 거래를 찾지 못했습니다.
-      </div>
-    </section>
-
-    <section v-if="transaction" class="card">
-      <div class="card-header fw-bold">
-        {{ parentCategory?.categoryName ?? '세부' }} 카테고리
-      </div>
-      <div class="card-body">
-        <div v-if="!subcategories.length" class="text-muted">
-          선택할 수 있는 세부 카테고리가 없습니다.
-        </div>
-        <div v-else class="row g-2">
-          <div
-            v-for="category in subcategories"
-            :key="category.spendingCategoryId"
-            class="col-6 col-md-3"
-          >
-            <button
-              type="button"
-              class="btn btn-outline-dark w-100 py-3"
-              :disabled="classifying"
-              @click="classify(category)"
-            >
-              {{ category.categoryName }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
+  <div class="kb-mobile-page subcategory-page">
+    <header class="kb-app-header">
+      <button class="kb-icon-button" type="button" @click="goBack"><i class="fa-solid fa-chevron-left"></i></button>
+      <h1 class="kb-app-header__title">세부 카테고리 선택</h1>
+      <span></span>
+    </header>
+    <div v-if="message" class="kb-toast kb-toast--error">{{ message }}</div>
+    <div v-if="loading" class="kb-card kb-loading"><div class="spinner-border kb-spinner"></div><div>세부 카테고리를 불러오는 중이에요.</div></div>
+    <template v-else-if="transaction">
+      <section class="merchant-card kb-card"><div class="merchant-icon"><i :class="getCategoryIcon(parentCategory?.categoryName)"></i></div><div><span>{{ parentCategory?.categoryName }} 세부 분류</span><strong>{{ transaction.merchantName || '가맹점 정보 없음' }}</strong><small>{{ formatAnalysisDateTime(transaction.createdAt) }}</small></div><strong class="amount">-{{ formatAnalysisNumber(transaction.amount) }}원</strong></section>
+      <section class="kb-section"><div class="kb-section-title-row"><h2 class="kb-section-title">어떤 병원에 방문했나요?</h2></div><div class="subcategory-grid kb-card"><button v-for="category in subcategories" :key="category.spendingCategoryId" type="button" :class="{selected:selectedCategoryId===category.spendingCategoryId}" @click="selectedCategoryId=category.spendingCategoryId"><div><i :class="getCategoryIcon(category.categoryName)"></i></div><span>{{ category.categoryName }}</span></button></div></section>
+      <button type="button" class="kb-primary-button w-100 complete-button" :disabled="!selectedCategoryId || classifying" @click="classifySelected">{{ classifying ? '분류 중...' : '분류 완료' }}</button>
+    </template>
+    <div v-else class="kb-card kb-empty-state"><div class="kb-empty-state__icon"><i class="fa-solid fa-circle-exclamation"></i></div><strong>분류할 거래를 찾지 못했어요.</strong></div>
   </div>
 </template>
-
 <script setup>
-import { computed, onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import analysisApi from '@/api/analysisApi';
-import {
-  formatAnalysisDateTime,
-  formatAnalysisNumber,
-  getAnalysisErrorMessage,
-  normalizeAnalysisPeriod,
-} from '@/util/analysis';
-
-const route = useRoute();
-const router = useRouter();
-
-const transactionId = Number(route.params.transactionId);
-const period = normalizeAnalysisPeriod(route.query.period);
-const requestedParentCategoryId = Number(route.query.parentCategoryId);
-
-const categories = ref([]);
-const unclassifiedTransactions = ref([]);
-const loading = ref(false);
-const classifying = ref(false);
-const message = ref('');
-
-const transaction = computed(() =>
-  unclassifiedTransactions.value.find(
-    (item) => item.transactionId === transactionId,
-  ),
-);
-
-const parentCategory = computed(() => {
-  const requestedParent = categories.value.find(
-    (category) => category.spendingCategoryId === requestedParentCategoryId,
-  );
-
-  if (requestedParent) return requestedParent;
-
-  return categories.value.find((category) =>
-    categories.value.some(
-      (child) => child.parentCategoryId === category.spendingCategoryId,
-    ),
-  );
-});
-
-const subcategories = computed(() => {
-  if (!parentCategory.value) return [];
-
-  return categories.value.filter(
-    (category) =>
-      category.parentCategoryId === parentCategory.value.spendingCategoryId,
-  );
-});
-
-const loadData = async () => {
-  loading.value = true;
-  message.value = '';
-
-  try {
-    const [categoryData, transactionData] = await Promise.all([
-      analysisApi.getCategories(),
-      analysisApi.getUnclassifiedTransactions(period),
-    ]);
-
-    categories.value = categoryData.categories ?? [];
-    unclassifiedTransactions.value = transactionData.transactions ?? [];
-  } catch (error) {
-    message.value = getAnalysisErrorMessage(
-      error,
-      '세부 카테고리 정보를 불러오지 못했습니다.',
-    );
-  } finally {
-    loading.value = false;
-  }
-};
-
-const classify = async (category) => {
-  if (!transaction.value) return;
-
-  classifying.value = true;
-  message.value = '';
-
-  try {
-    await analysisApi.classifyTransaction(
-      transaction.value.transactionId,
-      category.spendingCategoryId,
-    );
-
-    await router.replace({
-      name: 'analysis-classification',
-      query: {
-        period,
-        classified: category.categoryName,
-      },
-    });
-  } catch (error) {
-    message.value = getAnalysisErrorMessage(
-      error,
-      '소비 카테고리 분류에 실패했습니다.',
-    );
-  } finally {
-    classifying.value = false;
-  }
-};
-
-const goBack = () => {
-  router.push({
-    name: 'analysis-classification',
-    query: { period },
-  });
-};
-
-onMounted(loadData);
+import { computed,onMounted,ref } from 'vue';import { useRoute,useRouter } from 'vue-router';import analysisApi from '@/api/analysisApi';import { formatAnalysisDateTime,formatAnalysisNumber,getAnalysisErrorMessage,getCategoryIcon,normalizeAnalysisPeriod } from '@/util/analysis';
+const route=useRoute();const router=useRouter();const transactionId=Number(route.params.transactionId);const period=normalizeAnalysisPeriod(route.query.period);const requestedParentCategoryId=Number(route.query.parentCategoryId);const categories=ref([]);const unclassifiedTransactions=ref([]);const loading=ref(false);const classifying=ref(false);const message=ref('');const selectedCategoryId=ref(null);
+const transaction=computed(()=>unclassifiedTransactions.value.find(item=>item.transactionId===transactionId));const parentCategory=computed(()=>categories.value.find(category=>category.spendingCategoryId===requestedParentCategoryId));const subcategories=computed(()=>parentCategory.value?categories.value.filter(category=>category.parentCategoryId===parentCategory.value.spendingCategoryId):[]);
+const loadData=async()=>{loading.value=true;try{const[categoryData,transactionData]=await Promise.all([analysisApi.getCategories(),analysisApi.getUnclassifiedTransactions(period)]);categories.value=categoryData.categories??[];unclassifiedTransactions.value=transactionData.transactions??[];}catch(error){message.value=getAnalysisErrorMessage(error,'세부 카테고리 정보를 불러오지 못했습니다.');}finally{loading.value=false;}};
+const classifySelected=async()=>{const category=subcategories.value.find(item=>item.spendingCategoryId===selectedCategoryId.value);if(!category||!transaction.value)return;classifying.value=true;message.value='';try{await analysisApi.classifyTransaction(transaction.value.transactionId,category.spendingCategoryId);await router.replace({name:'analysis-classification',query:{period,classified:category.categoryName}});}catch(error){message.value=getAnalysisErrorMessage(error,'소비 카테고리 분류에 실패했습니다.');}finally{classifying.value=false;}};const goBack=()=>router.push({name:'analysis-classification',query:{period}});onMounted(loadData);
 </script>
+<style scoped>
+.merchant-card{padding:15px;display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:11px;box-shadow:none;border:1px solid #eee;}.merchant-icon{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:var(--kb-yellow-soft);color:#d99700;font-size:18px;}.merchant-card span,.merchant-card strong,.merchant-card small{display:block;}.merchant-card span{color:#999;font-size:8px;}.merchant-card>div:nth-child(2)>strong{margin-top:3px;font-size:12px;}.merchant-card small{margin-top:3px;color:#aaa;font-size:8px;}.merchant-card .amount{font-size:13px;color:#e04d4d;}.subcategory-grid{padding:12px;display:grid;grid-template-columns:repeat(2,1fr);gap:9px;box-shadow:none;border:1px solid #eee;}.subcategory-grid button{min-height:76px;border:1px solid transparent;border-radius:13px;background:#fafafa;color:#555;}.subcategory-grid button.selected{border-color:var(--kb-yellow);background:#fff7d8;color:#8e6900;}.subcategory-grid button div{font-size:19px;}.subcategory-grid button span{display:block;margin-top:5px;font-size:10px;font-weight:800;}.complete-button{margin-top:16px;}
+</style>

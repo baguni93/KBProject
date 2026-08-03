@@ -17,6 +17,13 @@ public interface AnalysisMapper {
             @Param("endAt") LocalDateTime endAt
     );
 
+    // 선택 기간의 정상 결제 거래 목록 조회 (카테고리 수정 화면용)
+    List<AnalysisTransactionVO> selectAnalysisTransactions(
+            @Param("userId") Integer userId,
+            @Param("startAt") LocalDateTime startAt,
+            @Param("endAt") LocalDateTime endAt
+    );
+
     // 카테고리 미분류 목록 조회
     List<UnclassifiedTransactionVO> selectUnclassifiedTransactions(
             @Param("userId") Integer userId,

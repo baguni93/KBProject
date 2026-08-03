@@ -2,6 +2,7 @@ import AnalysisMainPage from '@/pages/analysis/AnalysisMainPage.vue';
 import AnalysisClassificationPage from '@/pages/analysis/AnalysisClassificationPage.vue';
 import AnalysisSubcategoryPage from '@/pages/analysis/AnalysisSubcategoryPage.vue';
 import AnalysisResultPage from '@/pages/analysis/AnalysisResultPage.vue';
+import AnalysisCategoryEditPage from '@/pages/analysis/AnalysisCategoryEditPage.vue';
 
 export default [
   {
@@ -18,6 +19,11 @@ export default [
     path: '/analysis/classification/:transactionId/subcategory',
     name: 'analysis-subcategory',
     component: AnalysisSubcategoryPage,
+  },
+  {
+    path: '/analysis/transactions/:transactionId/category',
+    name: 'analysis-category-edit',
+    component: AnalysisCategoryEditPage,
   },
   {
     path: '/analysis/result/:spendingAnalysisId',

@@ -162,6 +162,43 @@ public class AnalysisServiceImpl implements AnalysisService {
 
 
     @Override
+    public AnalysisTransactionListDTO getAnalysisTransactions(
+            Integer userId,
+            Integer period
+    ) {
+        validatePeriod(period);
+
+        LocalDate analysisEndDate = LocalDate.now();
+        LocalDate analysisStartDate = analysisEndDate.minusMonths(period);
+        LocalDateTime startAt = analysisStartDate.atStartOfDay();
+        LocalDateTime endAt = analysisEndDate.plusDays(1).atStartOfDay();
+
+        List<AnalysisTransactionDTO> transactions =
+                analysisMapper.selectAnalysisTransactions(userId, startAt, endAt)
+                        .stream()
+                        .map(vo -> AnalysisTransactionDTO.builder()
+                                .transactionId(vo.getTransactionId())
+                                .merchantName(vo.getMerchantName())
+                                .amount(vo.getAmount())
+                                .createdAt(vo.getCreatedAt())
+                                .spendingCategoryId(vo.getSpendingCategoryId())
+                                .categoryName(vo.getCategoryName())
+                                .parentCategoryId(vo.getParentCategoryId())
+                                .parentCategoryName(vo.getParentCategoryName())
+                                .build())
+                        .collect(Collectors.toList());
+
+        return AnalysisTransactionListDTO.builder()
+                .period(period)
+                .periodLabel(createPeriodLabel(period))
+                .analysisStartDate(analysisStartDate.toString())
+                .analysisEndDate(analysisEndDate.toString())
+                .transactionCount(transactions.size())
+                .transactions(transactions)
+                .build();
+    }
+
+    @Override
     public UnclassifiedTransactionListDTO getUnclassifiedTransactions(
             Integer userId,
             Integer period

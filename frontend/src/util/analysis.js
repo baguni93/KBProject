@@ -23,3 +23,72 @@ export const getAnalysisErrorMessage = (error, fallbackMessage) =>
 export const isAnalysisResultNotFound = (error) =>
   error?.response?.status === 404 &&
   error?.response?.data?.code === 'AN007';
+
+export const getCategoryIcon = (name = '') => {
+  const icons = {
+    식비: 'fa-solid fa-utensils',
+    카페: 'fa-solid fa-mug-hot',
+    생활: 'fa-solid fa-basket-shopping',
+    온라인쇼핑: 'fa-solid fa-cart-shopping',
+    '뷰티/미용': 'fa-solid fa-sparkles',
+    교통: 'fa-solid fa-bus',
+    자동차: 'fa-solid fa-car',
+    '주거/통신': 'fa-solid fa-house-signal',
+    금융: 'fa-solid fa-building-columns',
+    여행: 'fa-solid fa-plane',
+    교육: 'fa-solid fa-book-open',
+    반려동물: 'fa-solid fa-paw',
+    병원: 'fa-solid fa-stethoscope',
+    기타: 'fa-solid fa-ellipsis',
+    산부인과: 'fa-solid fa-person-pregnant',
+    안과: 'fa-solid fa-eye',
+    내과: 'fa-solid fa-stethoscope',
+    정형외과: 'fa-solid fa-bone',
+    한의원: 'fa-solid fa-leaf',
+    치과: 'fa-solid fa-tooth',
+    소아과: 'fa-solid fa-child',
+  };
+  return icons[name] ?? 'fa-solid fa-tag';
+};
+
+/**
+ * 카테고리 순위가 기간마다 달라져도 같은 카테고리는 같은 색으로 보이도록
+ * 이름을 기준으로 고정 색상을 사용한다.
+ */
+export const ANALYSIS_CATEGORY_COLOR_MAP = {
+  식비: '#FFB800',
+  카페: '#FF8A65',
+  생활: '#67C7B0',
+  온라인쇼핑: '#F06A9B',
+  '뷰티/미용': '#B28AE8',
+  교통: '#5CA8E6',
+  자동차: '#7E8EA8',
+  '주거/통신': '#43B5D1',
+  금융: '#6B7FD7',
+  여행: '#42AF8A',
+  교육: '#8BC75C',
+  반려동물: '#E5A35B',
+  병원: '#E57373',
+  기타: '#A5A5A5',
+};
+
+export const ANALYSIS_CHART_COLORS = [
+  '#FFB800',
+  '#FF8A65',
+  '#67C7B0',
+  '#F06A9B',
+  '#B28AE8',
+  '#5CA8E6',
+  '#7E8EA8',
+  '#43B5D1',
+  '#6B7FD7',
+  '#42AF8A',
+  '#8BC75C',
+  '#E5A35B',
+  '#E57373',
+  '#A5A5A5',
+];
+
+export const getAnalysisCategoryColor = (categoryName, fallbackIndex = 0) =>
+  ANALYSIS_CATEGORY_COLOR_MAP[categoryName] ??
+  ANALYSIS_CHART_COLORS[fallbackIndex % ANALYSIS_CHART_COLORS.length];

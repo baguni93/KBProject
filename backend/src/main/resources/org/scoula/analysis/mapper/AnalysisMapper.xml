@@ -38,6 +38,33 @@
 
     </select>
 
+    <!-- 선택 기간의 정상 결제 거래 목록 조회 (분류 확인 및 수정) -->
+    <select id="selectAnalysisTransactions"
+            resultType="org.scoula.analysis.domain.AnalysisTransactionVO">
+
+        SELECT
+            ft.transaction_id AS transactionId,
+            ft.merchant_name AS merchantName,
+            ft.amount,
+            ft.created_at AS createdAt,
+            ft.spending_category_id AS spendingCategoryId,
+            category.category_name AS categoryName,
+            category.parent_category_id AS parentCategoryId,
+            parent_category.category_name AS parentCategoryName
+        FROM financial_transaction_tbl ft
+        LEFT JOIN spending_category_tbl category
+               ON ft.spending_category_id = category.spending_category_id
+        LEFT JOIN spending_category_tbl parent_category
+               ON category.parent_category_id = parent_category.spending_category_id
+        WHERE ft.user_id = #{userId}
+          AND ft.transaction_type = 'PAYMENT'
+          AND ft.transaction_status = 'SUCCESS'
+          AND ft.created_at <![CDATA[ >= ]]> #{startAt}
+          AND ft.created_at <![CDATA[ < ]]> #{endAt}
+        ORDER BY ft.created_at DESC, ft.transaction_id DESC
+
+    </select>
+
 <!--    미분류 거래내역 조회-->
     <select id="selectUnclassifiedTransactions"
             resultType="org.scoula.analysis.domain.UnclassifiedTransactionVO">

@@ -1,99 +1,56 @@
 <template>
-  <div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-      <div>
-        <div class="small text-muted mb-1">화면 ID: analysis-004</div>
-        <h2 class="mb-1">소비 카테고리 분류</h2>
-        <p class="text-muted mb-0">
-          미분류 결제 거래를 하나씩 확인하고 카테고리를 지정합니다.
-        </p>
-      </div>
-      <router-link class="btn btn-outline-secondary" to="/analysis">
-        분석 화면으로
-      </router-link>
-    </div>
+  <div class="kb-mobile-page classification-page">
+    <header class="kb-app-header">
+      <router-link class="kb-icon-button" to="/analysis" aria-label="뒤로가기"><i class="fa-solid fa-chevron-left"></i></router-link>
+      <h1 class="kb-app-header__title">소비 카테고리 분류</h1>
+      <span></span>
+    </header>
 
-    <div
-      v-if="message"
-      :class="['alert', messageType === 'success' ? 'alert-success' : 'alert-danger']"
-    >
-      {{ message }}
-    </div>
+    <div v-if="message" :class="['kb-toast', messageType === 'success' ? 'kb-toast--success' : 'kb-toast--error']">{{ message }}</div>
 
-    <section class="card mb-4">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span class="fw-bold">분류 대상 거래</span>
-        <span class="small text-muted">{{ periodLabel }}</span>
-      </div>
-      <div v-if="loading" class="card-body text-muted">
-        미분류 거래와 카테고리를 불러오고 있습니다.
-      </div>
-      <div v-else-if="currentTransaction" class="card-body">
-        <div class="row g-3">
-          <div class="col-md-4">
-            <div class="small text-muted">가맹점</div>
-            <div class="h5 mb-0">{{ currentTransaction.merchantName || '가맹점 정보 없음' }}</div>
-          </div>
-          <div class="col-md-4">
-            <div class="small text-muted">결제 금액</div>
-            <div class="h5 mb-0">
-              {{ formatAnalysisNumber(currentTransaction.amount) }}원
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="small text-muted">결제 일시</div>
-            <div class="h5 mb-0">
-              {{ formatAnalysisDateTime(currentTransaction.createdAt) }}
-            </div>
-          </div>
+    <div v-if="loading" class="kb-card kb-loading"><div class="spinner-border kb-spinner"></div><div>미분류 거래를 불러오는 중이에요.</div></div>
+
+    <template v-else-if="currentTransaction">
+      <section class="target-card kb-card">
+        <div class="target-question">?</div>
+        <div class="target-info">
+          <span>어떤 카테고리에 해당할까요?</span>
+          <strong>{{ currentTransaction.merchantName || '가맹점 정보 없음' }}</strong>
+          <small>{{ formatAnalysisDateTime(currentTransaction.createdAt) }}</small>
         </div>
-        <hr />
-        <div>
-          남은 미분류 거래:
-          <strong>{{ unclassifiedData?.unclassifiedCount ?? 0 }}건</strong>
-        </div>
-      </div>
-      <div v-else class="card-body">
-        <div class="alert alert-success mb-3">
-          선택한 기간의 미분류 거래를 모두 분류했습니다.
-        </div>
-        <router-link class="btn btn-warning" to="/analysis">
-          분석 가능 여부 확인하기
-        </router-link>
-      </div>
-    </section>
+        <div class="target-amount">-{{ formatAnalysisNumber(currentTransaction.amount) }}원</div>
+      </section>
 
-    <section v-if="currentTransaction" class="card">
-      <div class="card-header fw-bold">카테고리 선택</div>
-      <div class="card-body">
-        <p class="text-muted">
-          하위 카테고리가 있는 항목은 세부 카테고리 선택 화면으로 이동합니다.
-        </p>
+      <div class="remaining-caption"><i class="fa-solid fa-circle-info"></i> {{ periodLabel }} 미분류 거래 {{ unclassifiedData?.unclassifiedCount ?? 0 }}건</div>
 
-        <div v-if="!topCategories.length" class="text-muted">
-          선택할 수 있는 소비 카테고리가 없습니다.
-        </div>
-
-        <div v-else class="row g-2">
-          <div
+      <section class="kb-section">
+        <div class="kb-section-title-row"><h2 class="kb-section-title">카테고리 선택</h2><span>하나를 선택해 주세요</span></div>
+        <div class="category-grid kb-card">
+          <button
             v-for="category in topCategories"
             :key="category.spendingCategoryId"
-            class="col-6 col-md-3"
+            type="button"
+            :class="['category-button', { selected: selectedCategoryId === category.spendingCategoryId }]"
+            :disabled="classifying"
+            @click="selectedCategoryId = category.spendingCategoryId"
           >
-            <button
-              type="button"
-              class="btn btn-outline-dark w-100 h-100 py-3"
-              :disabled="classifying"
-              @click="selectCategory(category)"
-            >
-              <span class="d-block fw-semibold">{{ category.categoryName }}</span>
-              <small v-if="hasChildren(category.spendingCategoryId)" class="text-muted">
-                세부 항목 선택
-              </small>
-            </button>
-          </div>
+            <div class="category-button__icon"><i :class="getCategoryIcon(category.categoryName)"></i></div>
+            <span>{{ category.categoryName }}</span>
+            <small v-if="hasChildren(category.spendingCategoryId)">세부 선택</small>
+          </button>
         </div>
-      </div>
+      </section>
+
+      <button type="button" class="kb-primary-button w-100 complete-button" :disabled="!selectedCategoryId || classifying" @click="completeSelection">
+        {{ classifying ? '분류 중...' : '분류 완료' }}
+      </button>
+    </template>
+
+    <section v-else class="done-card kb-card">
+      <div class="done-icon"><i class="fa-solid fa-check"></i></div>
+      <h2>모든 거래를 분류했어요!</h2>
+      <p>분석 화면에서 최신 소비 패턴을 확인해 보세요.</p>
+      <router-link class="kb-primary-button d-flex align-items-center justify-content-center text-decoration-none" to="/analysis">분석 가능 여부 확인하기</router-link>
     </section>
   </div>
 </template>
@@ -102,119 +59,20 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import analysisApi from '@/api/analysisApi';
-import {
-  formatAnalysisDateTime,
-  formatAnalysisNumber,
-  getAnalysisErrorMessage,
-  normalizeAnalysisPeriod,
-} from '@/util/analysis';
-
-const route = useRoute();
-const router = useRouter();
-
-const period = ref(normalizeAnalysisPeriod(route.query.period));
-const categories = ref([]);
-const unclassifiedData = ref(null);
-const loading = ref(false);
-const classifying = ref(false);
-const message = ref('');
-const messageType = ref('success');
-
-const currentTransaction = computed(
-  () => unclassifiedData.value?.transactions?.[0] ?? null,
-);
-
-const topCategories = computed(() =>
-  categories.value.filter((category) => category.parentCategoryId == null),
-);
-
-const periodLabel = computed(
-  () => unclassifiedData.value?.periodLabel ?? `최근 ${period.value}개월`,
-);
-
-const childCategories = (parentCategoryId) =>
-  categories.value.filter(
-    (category) => category.parentCategoryId === parentCategoryId,
-  );
-
-const hasChildren = (parentCategoryId) =>
-  childCategories(parentCategoryId).length > 0;
-
-const loadData = async () => {
-  loading.value = true;
-  message.value = '';
-
-  try {
-    const [categoryData, transactionData] = await Promise.all([
-      analysisApi.getCategories(),
-      analysisApi.getUnclassifiedTransactions(period.value),
-    ]);
-
-    categories.value = categoryData.categories ?? [];
-    unclassifiedData.value = transactionData;
-
-    if (route.query.classified) {
-      messageType.value = 'success';
-      message.value = `${route.query.classified} 카테고리로 분류했습니다.`;
-      await router.replace({
-        name: 'analysis-classification',
-        query: { period: period.value },
-      });
-    }
-  } catch (error) {
-    messageType.value = 'error';
-    message.value = getAnalysisErrorMessage(
-      error,
-      '미분류 거래 정보를 불러오지 못했습니다.',
-    );
-  } finally {
-    loading.value = false;
-  }
-};
-
-const classifyCurrentTransaction = async (category) => {
-  if (!currentTransaction.value) return;
-
-  classifying.value = true;
-  message.value = '';
-
-  try {
-    const result = await analysisApi.classifyTransaction(
-      currentTransaction.value.transactionId,
-      category.spendingCategoryId,
-    );
-
-    messageType.value = 'success';
-    message.value = result.message;
-    unclassifiedData.value = await analysisApi.getUnclassifiedTransactions(
-      period.value,
-    );
-  } catch (error) {
-    messageType.value = 'error';
-    message.value = getAnalysisErrorMessage(
-      error,
-      '소비 카테고리 분류에 실패했습니다.',
-    );
-  } finally {
-    classifying.value = false;
-  }
-};
-
-const selectCategory = async (category) => {
-  if (hasChildren(category.spendingCategoryId)) {
-    await router.push({
-      name: 'analysis-subcategory',
-      params: { transactionId: currentTransaction.value.transactionId },
-      query: {
-        period: period.value,
-        parentCategoryId: category.spendingCategoryId,
-      },
-    });
-    return;
-  }
-
-  await classifyCurrentTransaction(category);
-};
-
+import { formatAnalysisDateTime, formatAnalysisNumber, getAnalysisErrorMessage, getCategoryIcon, normalizeAnalysisPeriod } from '@/util/analysis';
+const route = useRoute(); const router = useRouter();
+const period = ref(normalizeAnalysisPeriod(route.query.period)); const categories = ref([]); const unclassifiedData = ref(null); const loading = ref(false); const classifying = ref(false); const message = ref(''); const messageType = ref('success'); const selectedCategoryId = ref(null);
+const currentTransaction = computed(() => unclassifiedData.value?.transactions?.[0] ?? null);
+const topCategories = computed(() => categories.value.filter((category) => category.parentCategoryId == null));
+const periodLabel = computed(() => unclassifiedData.value?.periodLabel ?? `최근 ${period.value}개월`);
+const childCategories = (parentCategoryId) => categories.value.filter((category) => category.parentCategoryId === parentCategoryId);
+const hasChildren = (parentCategoryId) => childCategories(parentCategoryId).length > 0;
+const loadData = async () => { loading.value = true; message.value = ''; selectedCategoryId.value = null; try { const [categoryData, transactionData] = await Promise.all([analysisApi.getCategories(), analysisApi.getUnclassifiedTransactions(period.value)]); categories.value = categoryData.categories ?? []; unclassifiedData.value = transactionData; if (route.query.classified) { messageType.value = 'success'; message.value = `${route.query.classified} 카테고리로 분류했습니다.`; await router.replace({ name:'analysis-classification', query:{ period:period.value } }); } } catch (error) { messageType.value='error'; message.value=getAnalysisErrorMessage(error,'미분류 거래 정보를 불러오지 못했습니다.'); } finally { loading.value=false; } };
+const classifyCurrentTransaction = async (category) => { if (!currentTransaction.value) return; classifying.value=true; message.value=''; try { const result=await analysisApi.classifyTransaction(currentTransaction.value.transactionId,category.spendingCategoryId); messageType.value='success'; message.value=result.message; unclassifiedData.value=await analysisApi.getUnclassifiedTransactions(period.value); selectedCategoryId.value=null; } catch(error){messageType.value='error';message.value=getAnalysisErrorMessage(error,'소비 카테고리 분류에 실패했습니다.');} finally{classifying.value=false;} };
+const completeSelection = async () => { const category=categories.value.find((item)=>item.spendingCategoryId===selectedCategoryId.value); if(!category)return; if(hasChildren(category.spendingCategoryId)){ await router.push({name:'analysis-subcategory',params:{transactionId:currentTransaction.value.transactionId},query:{period:period.value,parentCategoryId:category.spendingCategoryId}}); return;} await classifyCurrentTransaction(category); };
 onMounted(loadData);
 </script>
+
+<style scoped>
+.target-card{padding:16px;display:grid;grid-template-columns:46px 1fr auto;align-items:center;gap:11px;box-shadow:none;border:1px solid #eee;}.target-question{width:46px;height:46px;display:flex;align-items:center;justify-content:center;border-radius:16px;background:var(--kb-yellow-soft);color:#d99500;font-size:24px;font-weight:900;}.target-info{min-width:0;}.target-info span,.target-info strong,.target-info small{display:block;}.target-info span{color:#888;font-size:9px;}.target-info strong{margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;}.target-info small{margin-top:3px;color:#aaa;font-size:8px;}.target-amount{font-size:14px;font-weight:900;color:#e04d4d;}.remaining-caption{margin:10px 2px 0;color:#8d7a46;font-size:10px;}.remaining-caption i{margin-right:3px;color:var(--kb-yellow-strong);}.kb-section-title-row>span{color:#999;font-size:9px;}.category-grid{padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;box-shadow:none;border:1px solid #eee;}.category-button{min-height:76px;padding:9px 3px;border:1px solid transparent;border-radius:12px;background:#fafafa;color:#555;}.category-button.selected{border-color:var(--kb-yellow);background:#fff7d7;color:#8c6800;box-shadow:0 0 0 1px var(--kb-yellow) inset;}.category-button__icon{height:29px;display:flex;align-items:center;justify-content:center;font-size:17px;}.category-button span{display:block;margin-top:3px;font-size:9px;font-weight:800;}.category-button small{display:block;margin-top:1px;color:#999;font-size:7px;}.complete-button{margin-top:16px;}.done-card{margin-top:18px;padding:38px 22px;text-align:center;box-shadow:none;border:1px solid #eee;}.done-icon{width:68px;height:68px;margin:0 auto 15px;display:flex;align-items:center;justify-content:center;border-radius:24px;background:#eaf8f1;color:#1f9d62;font-size:29px;}.done-card h2{font-size:18px;font-weight:900;}.done-card p{margin:7px 0 20px;color:#777;font-size:11px;}@media(max-width:380px){.category-grid{grid-template-columns:repeat(3,1fr)}}
+</style>

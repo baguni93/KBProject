@@ -1,127 +1,114 @@
 <template>
-  <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-start mb-4">
-      <div>
-        <div class="small text-muted mb-1">화면 ID: point-001</div>
-        <h2 class="mb-1">포인트 지갑</h2>
-        <p class="text-muted mb-0">포인트 잔액, 출석 상태와 최근 이용내역을 확인합니다.</p>
-      </div>
-      <button type="button" class="btn btn-outline-secondary" :disabled="loading" @click="loadPage">
-        새로고침
-      </button>
-    </div>
+  <div class="kb-mobile-page point-wallet-page">
+    <header class="kb-app-header">
+      <span></span>
+      <h1 class="kb-app-header__title">포인트 지갑</h1>
+      <span></span>
+    </header>
 
-    <div v-if="message" :class="['alert', messageType === 'success' ? 'alert-success' : 'alert-danger']">
+    <div v-if="message" :class="['kb-toast', messageType === 'success' ? 'kb-toast--success' : 'kb-toast--error']">
       {{ message }}
     </div>
 
-    <section class="card mb-4">
-      <div class="card-body">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-          <div>
-            <div class="text-muted small">내 포인트</div>
-            <div class="display-6 fw-bold">{{ formatNumber(wallet?.pointBalance) }} P</div>
-            <div class="small text-muted">최근 수정: {{ wallet?.updatedAt ?? '-' }}</div>
-          </div>
-
-          <div class="d-flex gap-2">
-            <router-link class="btn btn-warning" to="/point-wallet/conversion">
-              포인트 전환
-            </router-link>
-            <router-link class="btn btn-outline-dark" to="/point-wallet/transactions">
-              전체 내역
-            </router-link>
-          </div>
-        </div>
-
-        <hr />
-
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <div class="fw-semibold">미개봉 랜덤박스 {{ randomBoxCount }}개</div>
-            <div class="small text-muted">오래 받은 랜덤박스부터 개봉됩니다.</div>
-          </div>
-          <router-link class="btn btn-outline-warning" to="/point-wallet/random-box">
-            열기
-          </router-link>
-        </div>
+    <section class="balance-card kb-card">
+      <div>
+        <div class="balance-label">내 포인트</div>
+        <div class="balance-value">{{ formatNumber(wallet?.pointBalance) }}<span>P</span></div>
+        <div class="balance-sub">현금처럼 전환해서 사용할 수 있어요</div>
       </div>
+      <div class="point-symbol">P</div>
     </section>
 
-    <section class="card mb-4">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span class="fw-bold">출석 체크</span>
-        <span>{{ currentYear }}년 {{ currentMonth }}월</span>
+    <section class="quick-card kb-card">
+      <router-link to="/point-wallet/random-box" class="quick-item">
+        <div class="quick-icon gift"><i class="fa-solid fa-gift"></i></div>
+        <div>
+          <strong>랜덤박스</strong>
+          <span>{{ randomBoxCount }}개</span>
+        </div>
+        <i class="fa-solid fa-chevron-right quick-arrow"></i>
+      </router-link>
+      <div class="quick-divider"></div>
+      <router-link to="/point-wallet/conversion" class="quick-item">
+        <div class="quick-icon exchange"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+        <div>
+          <strong>포인트 전환</strong>
+        </div>
+        <i class="fa-solid fa-chevron-right quick-arrow"></i>
+      </router-link>
+    </section>
+
+    <section class="kb-section">
+      <div class="kb-section-title-row">
+        <h2 class="kb-section-title">출석 체크</h2>
+        <span class="calendar-month">{{ currentYear }}.{{ String(currentMonth).padStart(2, '0') }}</span>
       </div>
-      <div class="card-body">
-        <div class="table-responsive mb-3">
-          <table class="table table-bordered text-center align-middle mb-0">
-            <thead>
-              <tr>
-                <th v-for="dayName in dayNames" :key="dayName">{{ dayName }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(week, weekIndex) in calendarWeeks" :key="weekIndex">
-                <td
-                  v-for="(day, dayIndex) in week"
-                  :key="`${weekIndex}-${dayIndex}`"
-                  :class="{ 'table-warning': day === todayDate }"
-                >
-                  <template v-if="day">
-                    <div>{{ day }}</div>
-                    <small v-if="day === todayDate && attendanceStatus?.attendedToday" class="fw-bold">출석 완료</small>
-                  </template>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+
+      <div class="attendance-card kb-card">
+        <div class="calendar-grid calendar-head">
+          <span v-for="dayName in dayNames" :key="dayName">{{ dayName }}</span>
+        </div>
+        <div class="calendar-grid calendar-body">
+          <template v-for="(week, weekIndex) in calendarWeeks" :key="weekIndex">
+            <div
+              v-for="(day, dayIndex) in week"
+              :key="`${weekIndex}-${dayIndex}`"
+              :class="['calendar-day', getCalendarDayClass(day)]"
+            >
+              <template v-if="day">
+                <span class="calendar-date-number">{{ day }}</span>
+                <span v-if="day === todayDate" class="calendar-today-label">오늘</span>
+              </template>
+            </div>
+          </template>
         </div>
 
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="attendance-info">
           <div>
-            <div>{{ attendanceStatus?.message ?? '출석 상태를 조회하고 있습니다.' }}</div>
-            <div class="small text-muted">
-              출석 보상: {{ formatNumber(attendanceStatus?.rewardPoint) }}P · 랜덤박스
-              {{ attendanceStatus?.randomBoxCount ?? 0 }}개
-            </div>
+            <strong>{{ attendanceStatus?.attendedToday ? '오늘 출석 완료!' : '오늘도 출석하고 보상 받기' }}</strong>
+            <span>{{ formatNumber(attendanceStatus?.rewardPoint) }}P + 랜덤박스 {{ attendanceStatus?.randomBoxCount ?? 0 }}개</span>
           </div>
           <button
             type="button"
-            class="btn btn-warning"
+            class="attendance-button"
             :disabled="attendanceLoading || attendanceStatus?.attendedToday"
             @click="submitAttendance"
           >
-            {{ attendanceStatus?.attendedToday ? '출석 완료' : '출석 체크하기' }}
+            {{ attendanceStatus?.attendedToday ? '완료' : '출석' }}
           </button>
         </div>
       </div>
     </section>
 
-    <section class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span class="fw-bold">최근 이용내역</span>
-        <router-link to="/point-wallet/transactions">전체 보기</router-link>
+    <section class="kb-section">
+      <div class="kb-section-title-row">
+        <h2 class="kb-section-title">최근 이용내역</h2>
+        <router-link class="kb-section-link" to="/point-wallet/transactions">전체 보기 <i class="fa-solid fa-chevron-right"></i></router-link>
       </div>
-      <div class="card-body p-0">
-        <div v-if="recentTransactions.length" class="list-group list-group-flush">
-          <div
-            v-for="transaction in recentTransactions"
-            :key="transaction.pointTransactionId"
-            class="list-group-item d-flex justify-content-between align-items-center"
-          >
-            <div>
-              <div class="fw-semibold">{{ getReasonTypeLabel(transaction.reasonType) }}</div>
-              <div class="small text-muted">
-                {{ getTransactionTypeLabel(transaction.transactionType) }} · {{ transaction.createdAt }}
-              </div>
+
+      <div class="transaction-card kb-card">
+        <div v-if="loading" class="kb-loading">
+          <div class="spinner-border kb-spinner" role="status"></div>
+          <div>포인트 정보를 불러오는 중이에요.</div>
+        </div>
+        <div v-else-if="recentTransactions.length" class="transaction-list">
+          <div v-for="transaction in recentTransactions" :key="transaction.pointTransactionId" class="transaction-row">
+            <div :class="['transaction-icon', transaction.transactionType === 'EARN' ? 'earn' : 'use']">
+              <i :class="getTransactionIcon(transaction.reasonType)"></i>
             </div>
-            <div class="fw-bold">
+            <div class="transaction-content">
+              <strong>{{ getReasonTypeLabel(transaction.reasonType) }}</strong>
+              <span>{{ formatDate(transaction.createdAt) }} · {{ getTransactionTypeLabel(transaction.transactionType) }}</span>
+            </div>
+            <div :class="['transaction-amount', transaction.transactionType === 'EARN' ? 'kb-amount-positive' : 'kb-amount-negative']">
               {{ getPointSign(transaction.transactionType) }}{{ formatNumber(transaction.pointAmount) }}P
             </div>
           </div>
         </div>
-        <div v-else class="p-4 text-muted">최근 포인트 이용내역이 없습니다.</div>
+        <div v-else class="kb-empty-state">
+          <div class="kb-empty-state__icon"><i class="fa-solid fa-receipt"></i></div>
+          <strong>최근 포인트 이용내역이 없어요.</strong>
+        </div>
       </div>
     </section>
   </div>
@@ -142,6 +129,7 @@ const wallet = ref(null);
 const attendanceStatus = ref(null);
 const randomBoxCount = ref(0);
 const transactions = ref([]);
+const attendedDateKeys = ref(new Set());
 const loading = ref(false);
 const attendanceLoading = ref(false);
 const message = ref('');
@@ -157,40 +145,81 @@ const calendarWeeks = computed(() => {
   const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
   const lastDate = new Date(currentYear, currentMonth, 0).getDate();
   const cells = Array(firstDay).fill(null);
-
-  for (let day = 1; day <= lastDate; day += 1) {
-    cells.push(day);
-  }
-
-  while (cells.length % 7 !== 0) {
-    cells.push(null);
-  }
-
+  for (let day = 1; day <= lastDate; day += 1) cells.push(day);
+  while (cells.length % 7 !== 0) cells.push(null);
   const weeks = [];
-  for (let index = 0; index < cells.length; index += 7) {
-    weeks.push(cells.slice(index, index + 7));
-  }
+  for (let index = 0; index < cells.length; index += 7) weeks.push(cells.slice(index, index + 7));
   return weeks;
 });
 
-const recentTransactions = computed(() => transactions.value.slice(0, 3));
+const recentTransactions = computed(() =>
+  transactions.value
+    .filter((transaction) => ['EARN', 'USE'].includes(transaction.transactionType))
+    .slice(0, 5),
+);
+
+
+const toDateKey = (value) => {
+  if (!value) return '';
+  const normalized = String(value).replace(' ', 'T');
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return String(value).slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getCalendarDayClass = (day) => {
+  if (!day) return {};
+
+  const dateKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const isToday = day === todayDate;
+  const isAttended = attendedDateKeys.value.has(dateKey)
+    || (isToday && attendanceStatus.value?.attendedToday);
+
+  return {
+    today: isToday,
+    attended: isAttended,
+    'today-attended': isToday && isAttended,
+  };
+};
+
+const formatDate = (value) => {
+  if (!value) return '-';
+  const date = new Date(String(value).replace(' ', 'T'));
+  if (Number.isNaN(date.getTime())) return value;
+  return `${date.getMonth() + 1}.${String(date.getDate()).padStart(2, '0')}`;
+};
+
+const getTransactionIcon = (reasonType) => ({
+  ATTENDANCE: 'fa-solid fa-calendar-check',
+  RANDOM_BOX: 'fa-solid fa-gift',
+  CONVERSION: 'fa-solid fa-arrow-right-arrow-left',
+  EVENT: 'fa-solid fa-star',
+}[reasonType] ?? 'fa-solid fa-coins');
 
 const loadPage = async () => {
   loading.value = true;
   message.value = '';
-
   try {
-    const [walletData, attendanceData, countData, recentData] = await Promise.all([
+    const [walletData, attendanceData, countData, recentData, earnedTransactions] = await Promise.all([
       pointWalletApi.getWallet(),
       pointWalletApi.getTodayAttendanceStatus(),
       pointWalletApi.getUnopenedRandomBoxCount(),
       pointWalletApi.getRecentTransactions(),
+      pointWalletApi.getTransactions('EARN'),
     ]);
-
     wallet.value = walletData;
     attendanceStatus.value = attendanceData;
     randomBoxCount.value = countData.unopenedCount ?? 0;
-    transactions.value = recentData;
+    transactions.value = recentData ?? [];
+    attendedDateKeys.value = new Set(
+      (earnedTransactions ?? [])
+        .filter((transaction) => transaction.reasonType === 'ATTENDANCE')
+        .map((transaction) => toDateKey(transaction.createdAt))
+        .filter(Boolean),
+    );
   } catch (error) {
     messageType.value = 'error';
     message.value = getApiErrorMessage(error, '포인트 지갑 정보를 불러오지 못했습니다.');
@@ -202,7 +231,6 @@ const loadPage = async () => {
 const submitAttendance = async () => {
   attendanceLoading.value = true;
   message.value = '';
-
   try {
     const result = await pointWalletApi.attend();
     await loadPage();
@@ -218,3 +246,81 @@ const submitAttendance = async () => {
 
 onMounted(loadPage);
 </script>
+
+<style scoped>
+.point-wallet-page { padding-bottom: 30px; }
+.balance-card { min-height: 126px; padding: 22px; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #fff4c6 0%, #fffaf0 100%); }
+.balance-label { color: #6c654f; font-size: 13px; font-weight: 600; }
+.balance-value { margin-top: 2px; font-size: 32px; line-height: 1.2; font-weight: 900; letter-spacing: -1px; }
+.balance-value span { margin-left: 3px; font-size: 17px; font-weight: 800; }
+.balance-sub { margin-top: 6px; color: #827b68; font-size: 11px; }
+.point-symbol { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--kb-yellow); color: #fff; font-size: 28px; font-weight: 900; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08); }
+.quick-card { margin-top: 12px; display: grid; grid-template-columns: 1fr 1px 1fr; align-items: center; padding: 13px 12px; box-shadow: 0 2px 12px rgba(30,30,30,.05); }
+.quick-item { min-width: 0; padding: 4px 8px; display: grid; grid-template-columns: 38px 1fr 12px; align-items: center; gap: 8px; color: var(--kb-ink); text-decoration: none; }
+.quick-item strong, .quick-item span { display: block; }
+.quick-item strong { font-size: 13px; }
+.quick-item span { margin-top: 2px; color: var(--kb-subtext); font-size: 10px; }
+.quick-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 16px; }
+.quick-icon.gift { background: #fff0c2; color: #ef9c00; }
+.quick-icon.exchange { background: #f1f2f4; color: #555; }
+.quick-divider { width: 1px; height: 34px; background: var(--kb-line); }
+.quick-arrow { color: #bbb; font-size: 10px; }
+.calendar-month { color: #777; font-size: 12px; font-weight: 600; }
+.attendance-card { padding: 16px 14px 14px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.calendar-head { margin-bottom: 7px; color: #999; font-size: 10px; text-align: center; }
+.calendar-head span:first-child { color: #ec6c6c; }
+.calendar-body { row-gap: 3px; }
+.calendar-day {
+  position: relative;
+  height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: 11px;
+}
+.calendar-date-number {
+  width: 27px;
+  height: 27px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #222;
+  line-height: 1;
+}
+.calendar-day.attended .calendar-date-number {
+  background: var(--kb-yellow);
+  color: #222;
+  font-weight: 800;
+}
+.calendar-today-label {
+  margin-top: 1px;
+  color: #555;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.2px;
+}
+.calendar-day.today .calendar-date-number {
+  font-weight: 800;
+}
+.attendance-info { margin-top: 14px; padding-top: 13px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--kb-line); }
+.attendance-info strong, .attendance-info span { display: block; }
+.attendance-info strong { font-size: 13px; }
+.attendance-info span { margin-top: 3px; color: var(--kb-subtext); font-size: 10px; }
+.attendance-button { min-width: 62px; height: 34px; border: 0; border-radius: 10px; background: var(--kb-yellow); color: #222; font-size: 12px; font-weight: 800; }
+.attendance-button:disabled { background: #ececec; color: #999; }
+.transaction-card { overflow: hidden; }
+.transaction-row { min-height: 68px; padding: 12px 15px; display: flex; align-items: center; gap: 11px; border-bottom: 1px solid #f0f0f0; }
+.transaction-row:last-child { border-bottom: 0; }
+.transaction-icon { width: 38px; height: 38px; flex: 0 0 38px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 15px; }
+.transaction-icon.earn { background: var(--kb-yellow-soft); color: #e39a00; }
+.transaction-icon.use { background: #f1f2f4; color: #555; }
+.transaction-content { min-width: 0; flex: 1; }
+.transaction-content strong, .transaction-content span { display: block; }
+.transaction-content strong { font-size: 13px; }
+.transaction-content span { margin-top: 3px; color: var(--kb-subtext); font-size: 10px; }
+.transaction-amount { white-space: nowrap; font-size: 13px; font-weight: 900; }
+</style>

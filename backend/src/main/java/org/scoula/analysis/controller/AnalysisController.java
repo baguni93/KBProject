@@ -40,6 +40,17 @@ public class AnalysisController {
         return ResponseEntity.ok(response);
     }
 
+    @ApiOperation("소비 분석용 결제 거래 목록 조회")
+    @GetMapping("/transactions")
+    public ResponseEntity<AnalysisTransactionListDTO> getAnalysisTransactions(
+            @RequestParam(value = "period", defaultValue = "1") Integer period
+    ) {
+        Integer temporaryUserId = 1;
+        return ResponseEntity.ok(
+                analysisService.getAnalysisTransactions(temporaryUserId, period)
+        );
+    }
+
     @ApiOperation("미분류 결제 거래 목록 조회")
     @GetMapping("/unclassified-transactions")
     public ResponseEntity<UnclassifiedTransactionListDTO>
