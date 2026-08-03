@@ -10,34 +10,99 @@
         values (#{receiverId}, #{senderId} , #{notificationType},#{targetId})
     </insert>
 
-    <delete id="read">
-        delete from notification_tbl where notification_id = #{notificationId};
-    </delete>
 
-    <delete id="readAll">
-        delete from notification_tbl where receiver_id = #{userId};
-    </delete>
+    <update id="read">
+        update notification_tbl set status ='READ' where notification_id =#{notificationId};
+    </update>
+
+    <update id="readAll">
+        update notification_tbl set status ='READ' where receiver_id =#{user_id} ;
+    </update>
 
 
-    <select id="get" resultType="org.scoula.notification.domain.NotificationVO">
+    <resultMap id="senderProfileMap"
+               type="org.scoula.feed.domain.ProfileSimpleVO">
+        <id column="sender_profile_id"
+            property="profileId"/>
+        <result column="sender_nickname"
+                property="nickname"/>
+        <result column="sender_profile_image"
+                property="profileImageName"/>
+    </resultMap>
+
+    <resultMap id="notificationMap" type="org.scoula.notification.domain.NotificationVO">
+        <id column="notification_id" property="notificationId"/>
+        <result column="notification_type" property="notificationType"/>
+        <result column="status" property="status"/>
+        <result column="target_id" property="targetId"/>
+        <result column="receiver_id" property="receiverId"/>
+        <result column="target_id" property="senderId"/>
+        <result column="created_at" property="createdAt"/>
+        <association property="sender" resultMap="senderProfileMap"/>
+
+    </resultMap>
+
+
+    <select id="get" resultMap="notificationMap">
         select
-            notification_id,
-            receiver_id,
-            sender_id,
-            notification_type,
-            target_id,
-            created_at
-        from notification_tbl where notification_id = #{notificationId};
+            a.notification_id,
+            a.notification_type,
+            a.target_id,
+            a.created_at,
+            a.receiver_id,
+            a.sender_id,
+            a.status,
+
+            b.profile_id as  sender_profile_id,
+            b.nickname as sender_nickname,
+            b.stored_name as sender_profile_image
+
+        from notification_tbl  a
+            left join profile_tbl b
+                on  a.sender_id = b.user_id
+        where a.notification_id = #{notificationId}  and a.status = 'UNREAD' ;
+
     </select>
 
-    <select id="getList" resultType="org.scoula.notification.domain.NotificationVO">
+    <select id="getList" resultMap="notificationMap">
         select
-            notification_id,
-            receiver_id,
-            sender_id,
-            notification_type,
-            target_id,
-            created_at
-        from notification_tbl where receiver_id = #{userId};
+            a.notification_id,
+            a.notification_type,
+            a.target_id,
+            a.created_at,
+            a.receiver_id,
+            a.sender_id,
+            a.status,
+
+            b.profile_id as  sender_profile_id,
+            b.nickname as sender_nickname,
+            b.stored_name as sender_profile_image
+
+        from notification_tbl  a
+            left join profile_tbl b
+                on  a.sender_id = b.user_id
+            where a.receiver_id = #{userId} and status = 'UNREAD'
+        ORDER by a.created_at desc;
     </select>
+
+    <select id="existsLikeNotification" resultType="java.lang.Boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM notification_tbl
+            WHERE sender_id = #{userId}
+              AND receiver_id = #{receiverId}
+              AND target_id = #{feedId}
+              AND notification_type = 'LIKE'
+        )
+    </select>
+    <select id="existsFriendRequestNotification" resultType="java.lang.Boolean">
+        SELECT EXISTS(
+                   SELECT 1
+                   FROM notification_tbl
+                   WHERE sender_id = #{userId}
+                     AND receiver_id = #{receiverId}
+                     AND notification_type = 'FRIEND_REQUEST'
+                     AND status = 'UNREAD');
+    </select>
+
 </mapper>
