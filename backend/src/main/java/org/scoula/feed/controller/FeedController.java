@@ -8,7 +8,9 @@ import org.scoula.common.util.UploadPathName;
 import org.scoula.feed.dto.FeedCreateRequestDTO;
 import org.scoula.feed.dto.FeedImageDTO;
 import org.scoula.feed.dto.FeedResponseDTO;
+import org.scoula.feed.dto.FeedUpdateRequestDTO;
 import org.scoula.feed.service.FeedService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,6 +38,12 @@ public class FeedController {
         return ResponseEntity.ok(feedService.getFriendList(userId));
     }
 
+    @PutMapping
+    public ResponseEntity<HttpStatus> update(FeedUpdateRequestDTO feedUpdateRequestDTO){
+
+        feedService.updateFeed(feedUpdateRequestDTO);
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
 
     //회원 피드 조회
     @GetMapping("/member/{memberUserId}")
@@ -65,8 +73,9 @@ public class FeedController {
     }
 
     @PatchMapping("/{feedId}")
-    public ResponseEntity<FeedResponseDTO> delete(@PathVariable int feedId){
-        return ResponseEntity.ok(feedService.delete(feedId));
+    public ResponseEntity<HttpStatus> delete(@PathVariable int feedId){
+        feedService.delete(feedId);
+        return ResponseEntity.ok(HttpStatus.OK);
     }
 
 

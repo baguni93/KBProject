@@ -32,4 +32,7 @@ public interface FeedMapper {
     List<FeedVO> geMemberList(@Param("memberUserId") int memberUserId,
                               @Param("userId") int userId);
 
+    void deleteImage(Integer imageId);
+
+    void update(FeedVO vo);
 }

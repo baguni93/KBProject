@@ -15,23 +15,22 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FeedCreateRequestDTO  {
+public class FeedUpdateRequestDTO {
 
-    private int userId;
-    private int targetId;
-    private Enum.FeedType feedType;
+
+    private int feedId;
     private String content;
     private Enum.VisibilityType visibility;
 
     @Builder.Default // 사용자가 form에서 업로드한 실제 파일 목록
     private List<MultipartFile> files = new ArrayList<>();
 
+    @Builder.Default
+    private List<Integer> deleteFiles = new ArrayList<>();
 
     public FeedVO toVo(){
         return FeedVO.builder()
-                .userId(userId)
-                .targetId(targetId)
-                .feedType(feedType)
+                .feedId(feedId)
                 .content(content)
                 .visibility(visibility)
                 .build();

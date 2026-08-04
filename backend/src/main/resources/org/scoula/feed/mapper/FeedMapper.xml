@@ -8,6 +8,17 @@
         values (#{userId}, #{targetId},#{feedType},#{content},#{visibility})
     </insert>
 
+
+    <update id="update">
+
+        update feed_tbl set
+                            visibility = #{visibility},
+                             content = #{content},
+                             updated_at = now()
+        where feed_id = #{feedId};
+
+    </update>
+
     <resultMap id="transactionMap"
                type="org.scoula.feed.domain.TransactionVO">
         <id column="transaction_id"
@@ -258,6 +269,9 @@
         update feed_tbl set feed_status = 'DELETED',
                             updated_at = now()
                         where feed_id = #{feedId};
+    </delete>
+    <delete id="deleteImage">
+        delete from feed_image_tbl where image_id = #{imageId}
     </delete>
 
     <insert id="createFeedImage">
