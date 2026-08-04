@@ -1,19 +1,21 @@
 <template>
-  <Transition name="bottom">
-    <div v-if="modelValue" class="modal-background" @click="close">
-      <div class="bottom-sheet" @click.stop>
-        <button class="menu-item" @click="edit">
-          <i class="fa-solid fa-pen"></i>
-          수정하기
-        </button>
+  <Teleport to="#app-container">
+    <Transition name="bottom">
+      <div v-if="modelValue" class="modal-background" @click="close">
+        <div class="bottom-sheet" @click.stop>
+          <button class="menu-item" @click="edit">
+            <i class="fa-solid fa-pen"></i>
+            수정하기
+          </button>
 
-        <button class="menu-item delete" @click="remove">
-          <i class="fa-solid fa-trash"></i>
-          삭제하기
-        </button>
+          <button class="menu-item delete" @click="remove">
+            <i class="fa-solid fa-trash"></i>
+            삭제하기
+          </button>
+        </div>
       </div>
-    </div>
-  </Transition>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
@@ -63,10 +65,13 @@ const remove = () => {
 }
 
 .modal-background {
-  position: fixed;
+  position: absolute;
   inset: 0;
 
   background: rgba(0, 0, 0, 0.35);
+
+  display: flex;
+  align-items: flex-end;
 
   z-index: 1000;
 }

@@ -1,17 +1,68 @@
-// 만약 src/api/index.js가 있다면 자동으로 index.js를 찾아서 import합니다.
 import api from '@/api';
+
 const BASE_URL = '/api/feeds';
+const headers = { 'Content-Type': 'multipart/form-data' };
+
 export default {
-  async getList(params) {
-    const { data } = await api.get(BASE_URL, { params });
-    console.log('GET LIST:', data);
+  //  피드 조회
+  async getFeed(feedId) {
+    const { data } = await api.get(`${BASE_URL}/${feedId}`);
+
     return data;
   },
 
+  // 전체 피드 조회
+  async getList(params) {
+    const { data } = await api.get(BASE_URL, {
+      params,
+    });
+    return data;
+  },
+
+  // 내 피드 조회
   async getMyList(params) {
-    console.log(`${BASE_URL}/me`);
-    const { data } = await api.get(`${BASE_URL}/me`, { params });
-    console.log('GET MY LIST:', data);
+    const { data } = await api.get(`${BASE_URL}/me`, {
+      params,
+    });
+
+    return data;
+  },
+
+  // 회원 피드 조회
+  async getMemberList(params) {
+    const { data } = await api.get(
+      `${BASE_URL}/member/${params.memberUserId}`,
+      {
+        params: {
+          userId: params.userId,
+        },
+      },
+    );
+
+    return data;
+  },
+
+  async updateFeed(formData) {
+    const { data } = await api.put(BASE_URL, formData, {
+      headers,
+    });
+
+    return data;
+  },
+
+  async delete(feedId) {
+    const { data } = await api.patch(`${BASE_URL}/${feedId}`, null);
+    return data;
+  },
+
+  // 피드 좋아요 토글
+  async toggleLike(params) {
+    const { data } = await api.post(`/api/like/${params.feedId}`, null, {
+      params: {
+        userId: params.userId,
+      },
+    });
+
     return data;
   },
 };

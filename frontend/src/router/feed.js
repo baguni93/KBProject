@@ -3,21 +3,25 @@ import { isAuthenticated } from '@/util/guards';
 export default [
   {
     path: '/feed',
+    name: 'feed',
     component: () => import('../pages/feed/FeedMain.vue'),
-    children: [
-      {
-        path: '',
-        redirect: { name: 'public' },
-      },
-
-      {
-        path: 'public',
-        name: 'public',
-        component: () => import('../pages/feed/FeedList.vue'),
-      },
-    ],
   },
-
+  {
+    path: '/feed/edit/:feedId',
+    name: 'feed/edit/:feedId',
+    component: () => import('@/pages/feed/FeedEditPage.vue'),
+    meta: {
+      showBottomNav: false,
+    },
+  },
+  {
+    path: '/feed/detail/:feedId',
+    name: 'feed/detail/:feedId',
+    component: () => import('@/pages/feed/FeedDetailPage.vue'),
+    meta: {
+      showBottomNav: false,
+    },
+  },
   //   {
   //     path: '/feed/detail/:no',
   //     name: 'feed/detail',

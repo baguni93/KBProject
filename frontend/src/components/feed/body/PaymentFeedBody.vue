@@ -1,6 +1,9 @@
 <template>
   <FeedImageSlider v-if="feed.images?.length" :images="feed.images" />
-  <FeedTags :feed="feed" />
+  <!-- <FeedTags
+    v-if="feed.transaction?.category"
+    :categoryName="feed.transaction.category.categoryName"
+  /> -->
 </template>
 
 <script setup>

@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   feed: {
     type: Object,
     required: true,
@@ -30,7 +30,6 @@ defineProps({
 
 const goEvent = () => {
   console.log('이벤트 페이지 이동');
-
   // router.push('/event')
 };
 </script>
