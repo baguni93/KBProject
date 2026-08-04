@@ -2,15 +2,11 @@ export const transactionTypeOptions = [
     { value: 'ALL', label: '전체' },
     { value: 'EARN', label: '적립' },
     { value: 'USE', label: '사용' },
-    { value: 'EXPIRE', label: '만료' },
-    { value: 'CANCEL', label: '취소/복구' },
 ];
-// expire는 프로젝트에서 사용하지 않는다.
+
 const transactionTypeLabels = {
     EARN: '적립',
     USE: '사용',
-    EXPIRE: '만료',
-    CANCEL: '취소/복구',
 };
 
 const reasonTypeLabels = {
@@ -28,7 +24,7 @@ export const getReasonTypeLabel = (reason) => reasonTypeLabels[reason] ?? reason
 
 export const getPointSign = (type) => {
     if (type === 'EARN') return '+';
-    if (type === 'USE' || type === 'EXPIRE') return '-';
+    if (type === 'USE') return '-';
     return '';
 };
 

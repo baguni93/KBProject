@@ -21,7 +21,7 @@ import { useSettlementStore } from '@/stores/settlement';
 const route = useRoute();
 
 const showBottomNav = computed(() => {
-  return route.meta.showBottomNav !== false;
+  return route.meta.showBottomNav == true;
 });
 
 const settlementStore = useSettlementStore();

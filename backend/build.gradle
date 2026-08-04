@@ -64,13 +64,13 @@ dependencies {
     // ==================== Logging ====================
 
     // Log4j2 API
-    implementation 'org.apache.logging.log4j:log4j-api:2.18.0'
+    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
 
-    // Log4j2 실제 구현체
-    implementation 'org.apache.logging.log4j:log4j-core:2.18.0'
+// Log4j2 실제 구현체
+    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
 
-    // SLF4J → Log4j2 연결
-    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.18.0'
+// SLF4J 2.x → Log4j2 연결
+    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0'
 
 
     // ==================== SQL Logging ====================
@@ -162,7 +162,7 @@ dependencies {
     // ==================== OpenAI ====================
 
     // ChatGPT API 호출용 SDK
-    //implementation 'com.openai:openai-java:4.6.1'
+    implementation 'com.openai:openai-java:4.6.1'
 
 
     // ==================== swagger2 ====================

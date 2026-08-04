@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.analysis.mapper.MerchantCategoryMappingMapper">
+
+    <!-- 조회 결과와 VO의 속성 매핑 -->
+    <resultMap id="merchantCategoryMappingResultMap"
+               type="org.scoula.analysis.domain.MerchantCategoryMappingVO">
+
+        <id property="merchantCategoryMappingId"
+            column="merchant_category_mapping_id"/>
+
+        <result property="merchantName"
+                column="merchant_name"/>
+
+        <result property="spendingCategoryId"
+                column="spending_category_id"/>
+
+        <result property="categoryName"
+                column="category_name"/>
+
+        <result property="correctionCount"
+                column="correction_count"/>
+
+        <result property="createdAt"
+                column="created_at"/>
+
+        <result property="updatedAt"
+                column="updated_at"/>
+
+    </resultMap>
+
+
+    <!-- 가맹점명으로 조회 -->
+    <select id="selectByMerchantName"
+            resultMap="merchantCategoryMappingResultMap">
+
+<!--        가맹점명, 소비카테고리 ID, 카테고리명, 수정횟수 -->
+        SELECT
+        mapping.merchant_category_mapping_id,
+        mapping.merchant_name,
+        mapping.spending_category_id,
+        category.category_name,
+        mapping.correction_count,
+        mapping.created_at,
+        mapping.updated_at
+        FROM merchant_category_mapping_tbl mapping
+        JOIN spending_category_tbl category
+        ON mapping.spending_category_id
+        = category.spending_category_id
+        WHERE mapping.merchant_name = #{merchantName}
+
+    </select>
+
+
+    <!-- AI가 새로 분류한 가맹점 매핑 저장 -->
+    <insert id="insertMapping"
+            parameterType="org.scoula.analysis.domain.MerchantCategoryMappingVO"
+            useGeneratedKeys="true"
+            keyProperty="merchantCategoryMappingId"
+            keyColumn="merchant_category_mapping_id">
+
+        INSERT INTO merchant_category_mapping_tbl (
+        merchant_name,
+        spending_category_id
+        )
+        VALUES (
+        #{merchantName},
+        #{spendingCategoryId}
+        )
+
+    </insert>
+
+
+    <!-- 사용자 카테고리 수정 요청 횟수 증가 -->
+    <update id="increaseCorrectionCount">
+
+        UPDATE merchant_category_mapping_tbl
+        SET correction_count = correction_count + 1
+        WHERE merchant_name = #{merchantName}
+
+    </update>
+
+
+    <!-- 오류 의심률이 5% 이상인 매핑 삭제 -->
+    <delete id="deleteByMerchantName">
+
+        DELETE
+        FROM merchant_category_mapping_tbl
+        WHERE merchant_name = #{merchantName}
+
+    </delete>
+
+
+</mapper>
