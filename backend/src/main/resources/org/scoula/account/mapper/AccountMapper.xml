@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.account.mapper.AccountMapper">
+
+    <resultMap id="linkedAccountMap" type="org.scoula.account.domain.LinkedAccountVO">
+        <id property="linkedAccountId" column="linked_account_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="bankCode" column="bank_code"/>
+        <result property="bankName" column="bank_name"/>
+        <result property="bankLogoName" column="bank_logo_name"/>
+        <result property="accountNumber" column="account_number"/>
+        <result property="accountHolder" column="account_holder"/>
+        <result property="primaryYn" column="primary_yn"/>
+        <result property="connectionStatus" column="connection_status"/>
+    </resultMap>
+
+    <resultMap id="accountVerificationMap" type="org.scoula.account.domain.AccountVerificationVO">
+        <id property="verificationId" column="verification_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="bankCode" column="bank_code"/>
+        <result property="accountNumber" column="account_number"/>
+        <result property="accountHolder" column="account_holder"/>
+        <result property="verificationCode" column="verification_code"/>
+        <result property="verifiedYn" column="verified_yn"/>
+        <result property="requestedAt" column="requested_at"/>
+    </resultMap>
+
+    <!-- 연결 계좌 목록 조회 -->
+    <select id="findAccountsByUserId" parameterType="long" resultMap="linkedAccountMap">
+        SELECT
+        la.linked_account_id,
+        la.user_id,
+        la.bank_code,
+        b.bank_name,
+        b.bank_logo_name,
+        la.account_number,
+        la.account_holder,
+        la.primary_yn,
+        la.connection_status
+        FROM linked_account_tbl la
+        INNER JOIN bank_tbl b
+        ON la.bank_code = b.bank_code
+        WHERE la.user_id = #{userId}
+        AND la.connection_status = 'CONNECTED'
+        ORDER BY
+        CASE WHEN la.primary_yn = 'Y' THEN 0 ELSE 1 END,
+        la.linked_account_id
+    </select>
+
+    <!-- 연결 계좌 단건 조회 -->
+    <select id="findAccountById" resultMap="linkedAccountMap">
+        SELECT
+        la.linked_account_id,
+        la.user_id,
+        la.bank_code,
+        b.bank_name,
+        b.bank_logo_name,
+        la.account_number,
+        la.account_holder,
+        la.primary_yn,
+        la.connection_status
+        FROM linked_account_tbl la
+        INNER JOIN bank_tbl b
+        ON la.bank_code = b.bank_code
+        WHERE la.user_id = #{userId}
+        AND la.linked_account_id = #{linkedAccountId}
+        AND la.connection_status = 'CONNECTED'
+    </select>
+
+    <!-- 연결된 계좌 개수 조회 -->
+    <select id="countConnectedAccounts" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM linked_account_tbl
+        WHERE user_id = #{userId}
+        AND connection_status = 'CONNECTED'
+    </select>
+
+    <!-- 중복 연결 계좌 조회 -->
+    <select id="countConnectedAccount" resultType="int">
+        SELECT COUNT(*)
+        FROM linked_account_tbl
+        WHERE user_id = #{userId}
+        AND bank_code = #{bankCode}
+        AND account_number = #{accountNumber}
+        AND connection_status = 'CONNECTED'
+    </select>
+
+    <!-- 사용 중인 은행 존재 여부 조회 -->
+    <select id="countActiveBank" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM bank_tbl
+        WHERE bank_code = #{bankCode}
+        AND use_yn = 'Y'
+    </select>
+
+    <!-- 계좌 인증 정보 저장 -->
+    <insert id="insertVerification"
+            parameterType="org.scoula.account.domain.AccountVerificationVO"
+            useGeneratedKeys="true"
+            keyProperty="verificationId"
+            keyColumn="verification_id">
+
+        INSERT INTO account_verification_tbl (
+        user_id,
+        bank_code,
+        account_number,
+        account_holder,
+        verification_code,
+        verified_yn,
+        requested_at
+        )
+        VALUES (
+        #{userId},
+        #{bankCode},
+        #{accountNumber},
+        #{accountHolder},
+        #{verificationCode},
+        'N',
+        NOW()
+        )
+    </insert>
+
+    <!-- 계좌 인증 정보 조회 -->
+    <select id="findVerificationById" resultMap="accountVerificationMap">
+        SELECT
+        verification_id,
+        user_id,
+        bank_code,
+        account_number,
+        account_holder,
+        verification_code,
+        verified_yn,
+        requested_at
+        FROM account_verification_tbl
+        WHERE verification_id = #{verificationId}
+        AND user_id = #{userId}
+    </select>
+
+    <!-- 계좌 인증 성공 처리 -->
+    <update id="verifyAccount">
+        UPDATE account_verification_tbl
+        SET verified_yn = 'Y'
+        WHERE verification_id = #{verificationId}
+        AND user_id = #{userId}
+        AND verified_yn = 'N'
+    </update>
+
+    <!-- 계좌 인증 정보 삭제 -->
+    <delete id="deleteVerification">
+        DELETE FROM account_verification_tbl
+        WHERE verification_id = #{verificationId}
+        AND user_id = #{userId}
+    </delete>
+
+    <!-- 연결 계좌 저장 -->
+    <insert id="insertAccount"
+            parameterType="org.scoula.account.domain.LinkedAccountVO"
+            useGeneratedKeys="true"
+            keyProperty="linkedAccountId"
+            keyColumn="linked_account_id">
+
+        INSERT INTO linked_account_tbl (
+        user_id,
+        bank_code,
+        account_number,
+        account_holder,
+        primary_yn,
+        connection_status
+        )
+        VALUES (
+        #{userId},
+        #{bankCode},
+        #{accountNumber},
+        #{accountHolder},
+        #{primaryYn},
+        'CONNECTED'
+        )
+    </insert>
+
+    <!-- 기존 대표계좌 해제 -->
+    <update id="clearPrimaryAccount" parameterType="long">
+        UPDATE linked_account_tbl
+        SET primary_yn = 'N'
+        WHERE user_id = #{userId}
+        AND connection_status = 'CONNECTED'
+    </update>
+
+    <!-- 대표계좌 설정 -->
+    <update id="setPrimaryAccount">
+        UPDATE linked_account_tbl
+        SET primary_yn = 'Y'
+        WHERE user_id = #{userId}
+        AND linked_account_id = #{linkedAccountId}
+        AND connection_status = 'CONNECTED'
+    </update>
+
+    <!-- 계좌 연결 해제 -->
+    <update id="disconnectAccount">
+        UPDATE linked_account_tbl
+        SET
+        primary_yn = 'N',
+        connection_status = 'DISCONNECTED'
+        WHERE user_id = #{userId}
+        AND linked_account_id = #{linkedAccountId}
+        AND connection_status = 'CONNECTED'
+    </update>
+
+    <!-- 다른 연결 계좌 한 건 조회 -->
+    <select id="findAnotherConnectedAccount" resultMap="linkedAccountMap">
+        SELECT
+        la.linked_account_id,
+        la.user_id,
+        la.bank_code,
+        b.bank_name,
+        b.bank_logo_name,
+        la.account_number,
+        la.account_holder,
+        la.primary_yn,
+        la.connection_status
+        FROM linked_account_tbl la
+        INNER JOIN bank_tbl b
+        ON la.bank_code = b.bank_code
+        WHERE la.user_id = #{userId}
+        AND la.linked_account_id != #{linkedAccountId}
+        AND la.connection_status = 'CONNECTED'
+        ORDER BY la.linked_account_id
+        LIMIT 1
+    </select>
+
+</mapper>

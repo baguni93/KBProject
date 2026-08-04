@@ -2,28 +2,31 @@ package org.scoula.card.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.scoula.card.dto.CardRegisterDTO;
-import org.scoula.card.dto.PrimaryCardResponseDTO;
-import org.scoula.wallet.dto.RegisteredCardDTO;
+import org.scoula.card.domain.LinkedCardVO;
 
 import java.util.List;
 
 @Mapper
 public interface CardMapper {
 
-    PrimaryCardResponseDTO getPrimaryCardByUserId(@Param("userId") Integer userId);
+    // 연결 카드 목록 조회
+    List<LinkedCardVO> findCardsByUserId(Long userId);
 
-    List<RegisteredCardDTO> getCardsByUserId(@Param("userId") Integer userId);
+    // 연결 카드 단건 조회
+    LinkedCardVO findCardById(@Param("userId") Long userId, @Param("linkedCardId") Long linkedCardId);
 
-    int countCardsByUserId(@Param("userId") Integer userId);
+    // 연결 카드 개수 조회
+    int countLinkedCards(Long userId);
 
-    int countPrimaryCardsByUserId(@Param("userId") Integer userId);
+    // 기존 대표카드 해제
+    int clearRepresentCard(Long userId);
 
-    int insertCard(CardRegisterDTO cardRegisterDTO);
+    // 대표카드 설정
+    int setRepresentCard(@Param("userId") Long userId, @Param("linkedCardId") Long linkedCardId);
 
-    int resetPrimaryCardByUserId(@Param("userId") Integer userId);
+    // 연결 카드 삭제
+    int deleteLinkedCard(@Param("userId") Long userId, @Param("linkedCardId") Long linkedCardId);
 
-    int setPrimaryCard(@Param("cardId") Integer cardId, @Param("userId") Integer userId);
-
-    int insertUserAgreement(@Param("userId") Integer userId, @Param("agreementId") Integer agreementId, @Param("agreedYn") String agreedYn);
+    // 다른 연결 카드 한 건 조회
+    LinkedCardVO findAnotherLinkedCard(@Param("userId") Long userId, @Param("linkedCardId") Long linkedCardId);
 }

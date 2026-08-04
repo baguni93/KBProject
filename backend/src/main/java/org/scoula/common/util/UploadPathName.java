@@ -31,4 +31,12 @@ public class UploadPathName {
     public  static  String getCardPath(){
         return getUploadPath() + "/card/";
     }
+
+    public static String getProfilePath() {
+        return getUploadPath() + "/profile/";
+    }
+
+    public static String getBankPath() {
+        return getUploadPath() + "/bank/";
+    }
 }
