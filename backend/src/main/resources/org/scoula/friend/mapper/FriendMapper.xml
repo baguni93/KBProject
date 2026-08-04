@@ -265,40 +265,5 @@
             ) AS requestId
 
     </select>
-    <!--    <select id="existsFriend" resultType="boolean">-->
 
-<!--        SELECT EXISTS (-->
-<!--            SELECT 1-->
-<!--            FROM friend_tbl-->
-<!--            WHERE user_id = #{userId}-->
-<!--              AND friend_user_id = #{checkUserId}-->
-<!--        )-->
-
-<!--    </select>-->
-
-<!--    &lt;!&ndash; 내가 요청한 상태인지 &ndash;&gt;-->
-<!--    <select id="existsRequest" resultType="boolean">-->
-
-<!--        SELECT EXISTS (-->
-<!--            SELECT 1-->
-<!--            FROM friend_request_tbl-->
-<!--            WHERE requester_id = #{userId}-->
-<!--              AND receiver_id = #{checkUserId}-->
-<!--              AND status = 'REQUEST'-->
-<!--        )-->
-
-<!--    </select>-->
-
-<!--    &lt;!&ndash; 상대가 나에게 요청한 상태인지 &ndash;&gt;-->
-<!--    <select id="existsReceivedRequest" resultType="boolean">-->
-
-<!--        SELECT EXISTS (-->
-<!--            SELECT 1-->
-<!--            FROM friend_request_tbl-->
-<!--            WHERE requester_id = #{checkUserId}-->
-<!--              AND receiver_id = #{userId}-->
-<!--              AND status = 'REQUEST'-->
-<!--        )-->
-
-<!--    </select>-->
 </mapper>
