@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.agreement.mapper.AgreementMapper">
+
+    <!-- 조회 결과 매핑 -->
+    <resultMap
+            id="agreementResultMap"
+            type="org.scoula.agreement.domain.AgreementVO">
+
+        <id property="agreementId"
+            column="agreement_id"/>
+
+        <result property="agreementType"
+                column="agreement_type"/>
+
+        <result property="agreementName"
+                column="agreement_name"/>
+
+        <result property="agreementContent"
+                column="agreement_content"/>
+
+        <result property="requiredYn"
+                column="required_yn"/>
+
+        <result property="useYn"
+                column="use_yn"/>
+
+    </resultMap>
+
+
+    <!-- 약관 공통 조회 컬럼 -->
+    <sql id="agreementColumns">
+        agreement_id,
+        agreement_type,
+        agreement_name,
+        agreement_content,
+        required_yn,
+        use_yn
+    </sql>
+
+
+    <!-- 사용 중인 약관 목록 조회 -->
+    <select
+            id="findAllActive"
+            resultMap="agreementResultMap">
+
+        SELECT
+        <include refid="agreementColumns"/>
+        FROM agreement_tbl
+        WHERE use_yn = 'Y'
+        ORDER BY agreement_id
+
+    </select>
+
+
+    <!-- 약관 유형으로 상세 조회 -->
+    <select
+            id="findByAgreementType"
+            parameterType="string"
+            resultMap="agreementResultMap">
+
+        SELECT
+        <include refid="agreementColumns"/>
+        FROM agreement_tbl
+        WHERE agreement_type = #{agreementType}
+        AND use_yn = 'Y'
+        LIMIT 1
+
+    </select>
+
+
+    <!-- 약관 ID로 조회 -->
+    <select
+            id="findById"
+            parameterType="long"
+            resultMap="agreementResultMap">
+
+        SELECT
+        <include refid="agreementColumns"/>
+        FROM agreement_tbl
+        WHERE agreement_id = #{agreementId}
+        AND use_yn = 'Y'
+        LIMIT 1
+
+    </select>
+
+
+    <!-- 회원의 해당 약관 동의 내역 존재 여부 -->
+    <select
+            id="countUserAgreement"
+            resultType="int">
+
+        SELECT COUNT(*)
+        FROM user_agreement_tbl
+        WHERE user_id = #{userId}
+          AND agreement_id = #{agreementId}
+
+    </select>
+
+
+    <!-- 약관 동의 신규 저장 -->
+    <insert id="insertConsent">
+
+        INSERT INTO user_agreement_tbl (
+            user_id,
+            agreement_id,
+            agreed_yn,
+            agreed_at
+        )
+        VALUES (
+                   #{userId},
+                   #{agreementId},
+                   #{agreedYn},
+                   NOW()
+               )
+
+    </insert>
+
+
+    <!-- 기존 약관 동의 변경 -->
+    <update id="updateConsent">
+
+        UPDATE user_agreement_tbl
+        SET agreed_yn = #{agreedYn},
+            agreed_at = NOW()
+        WHERE user_id = #{userId}
+          AND agreement_id = #{agreementId}
+
+    </update>
+
+</mapper>

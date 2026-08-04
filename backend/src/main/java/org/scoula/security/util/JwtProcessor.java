@@ -22,7 +22,12 @@ public class JwtProcessor {
 
     private Key key;
 
+    // Access Token 유효시간: 1시간
     private static final long TOKEN_VALID_MILISECOND = 1000L * 60 * 60;
+
+    // Refresh Token 유효시간: 14일
+    private static final long REFRESH_TOKEN_VALID_MILISECOND =
+            1000L * 60 * 60 * 24 * 14;
 
     // @Value 주입은 객체 생성(new) 이후에 일어난다.
     // 따라서 필드 선언 시점에는 secretKey가 아직 null이라
@@ -45,9 +50,35 @@ public class JwtProcessor {
                 .compact();
     }
 
-// JWT Subject(username) 추출 - 해석 불가인 경우 예외 발생
-// 예외 ExpiredJwtException, UnsupportedJwtException, MalformedJwtException, SignatureException,
-// IllegalArgumentException
+    // Access Token 생성
+    public String generateAccessToken(String subject, Long userId) {
+        return Jwts.builder()
+                .setHeaderParam("typ", "JWT")
+                .setSubject(subject)
+                .claim("userId", userId)
+                .claim("tokenType", "ACCESS")
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(new Date().getTime() + TOKEN_VALID_MILISECOND))
+                .signWith(key)
+                .compact();
+    }
+
+    // Refresh Token 생성
+    public String generateRefreshToken(String subject, Long userId) {
+        return Jwts.builder()
+                .setHeaderParam("typ", "JWT")
+                .setSubject(subject)
+                .claim("userId", userId)
+                .claim("tokenType", "REFRESH")
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(new Date().getTime() + REFRESH_TOKEN_VALID_MILISECOND))
+                .signWith(key)
+                .compact();
+    }
+
+    // JWT Subject(username) 추출 - 해석 불가인 경우 예외 발생
+    // 예외 ExpiredJwtException, UnsupportedJwtException, MalformedJwtException, SignatureException,
+    // IllegalArgumentException
     public String getUsername(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
@@ -55,6 +86,32 @@ public class JwtProcessor {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+    // JWT 토큰 종류 추출
+    public String getTokenType(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("tokenType", String.class);
+    }
+
+    // JWT 회원번호 추출
+    public Long getUserId(String token) {
+        Number userId = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("userId", Number.class);
+
+        if (userId == null) {
+            throw new IllegalArgumentException("토큰에 회원번호가 없습니다.");
+        }
+
+        return userId.longValue();
     }
 
     // JWT 검증(유효 기간 검증) - 해석 불가인 경우 예외 발생
@@ -66,4 +123,13 @@ public class JwtProcessor {
         return true;
     }
 
+    // Access Token 유효시간 반환
+    public long getAccessTokenValidSeconds() {
+        return TOKEN_VALID_MILISECOND / 1000;
+    }
+
+    // Refresh Token 유효시간 반환
+    public long getRefreshTokenValidSeconds() {
+        return REFRESH_TOKEN_VALID_MILISECOND / 1000;
+    }
 }
