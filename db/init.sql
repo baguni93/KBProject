@@ -892,6 +892,8 @@ CREATE TABLE notification_tbl (
 
     target_id INT NULL COMMENT '대상번호',
 
+    status VARCHAR(10) NOT NULL DEFAULT 'UNREAD' COMMENT '읽음상태',
+
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
     CONSTRAINT fk_notification_receiver
@@ -911,14 +913,22 @@ CREATE TABLE notification_tbl (
             'FRIEND_REQUEST',
             'FRIEND_ACCEPT',
             'FRIEND_REJECT',
-			'SETTLEMENT_REQUEST',
-			'SETTLEMENT_PAYMENT',
-			'SETTLEMENT_CANCEL',
-            'SETTLEMENT_COMPLETE'
+            'SETTLEMENT_REQUEST',
+            'SETTLEMENT_PAYMENT',
+            'SETTLEMENT_CANCEL',
+            'SETTLEMENT_COMPLETE',
+            'SETTLEMENT_REMIND'
+            )
+        ),
+
+    CONSTRAINT chk_notification_status
+        CHECK (
+            status IN (
+                'READ',
+                'UNREAD'
             )
         )
 );
-
 
 -- 26. 통합 거래 원장 테이블
 -- ============================================
