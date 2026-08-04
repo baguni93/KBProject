@@ -1,4 +1,4 @@
-package org.scoula.profile.domain;
+package org.scoula.profileTest.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

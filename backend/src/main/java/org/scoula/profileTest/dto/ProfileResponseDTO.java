@@ -1,13 +1,11 @@
-package org.scoula.profile.dto;
+package org.scoula.profileTest.dto;
 
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.scoula.common.util.UploadPathName;
-import org.scoula.profile.domain.ProfileVO;
+import org.scoula.profileTest.domain.ProfileVO;
 
 @Data
 @NoArgsConstructor

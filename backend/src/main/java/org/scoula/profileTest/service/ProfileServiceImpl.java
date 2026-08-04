@@ -1,10 +1,10 @@
-package org.scoula.profile.service;
+package org.scoula.profileTest.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.scoula.profile.domain.ProfileVO;
-import org.scoula.profile.dto.ProfileResponseDTO;
-import org.scoula.profile.mapper.ProfileMapper;
+import org.scoula.profileTest.domain.ProfileVO;
+import org.scoula.profileTest.dto.ProfileResponseDTO;
+import org.scoula.profileTest.mapper.ProfileTestMapper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,11 +12,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements  ProfileService{
 
-    private final ProfileMapper profileMapper;
+    private final ProfileTestMapper profileTestMapper;
 
     @Override
     public ProfileResponseDTO get(int userId) {
-        ProfileVO vo =   profileMapper.get(userId);
+        ProfileVO vo =   profileTestMapper.get(userId);
 
         return ProfileResponseDTO.of(vo);
     }

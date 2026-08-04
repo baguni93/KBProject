@@ -1,18 +1,16 @@
-package org.scoula.profile.controller;
+package org.scoula.profileTest.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.common.util.UploadFiles;
 import org.scoula.common.util.UploadPathName;
-import org.scoula.profile.dto.ProfileResponseDTO;
-import org.scoula.profile.service.ProfileService;
-import org.scoula.settlement.dto.SettlementResponseDTO;
+import org.scoula.profileTest.dto.ProfileResponseDTO;
+import org.scoula.profileTest.service.ProfileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.util.List;
 
 @RestController
 @Log4j2

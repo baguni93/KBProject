@@ -19,7 +19,6 @@ import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
-import org.springframework.web.servlet.config.annotation.*;
 
 @Log4j2
 @Configuration
@@ -40,7 +39,7 @@ import org.springframework.web.servlet.config.annotation.*;
         "org.scoula.like.controller",
         "org.scoula.auth.controller",
         "org.scoula.transaction.controller",
-        "org.scoula.profile.controller",
+        "org.scoula.profileTest.controller",
         "org.scoula.search.controller",
         "org.scoula.redis"
 })
