@@ -36,9 +36,7 @@ import javax.sql.DataSource;
         "org.scoula.auth.mapper",
         "org.scoula.transaction.mapper",
         "org.scoula.analysis.mapper",
-
-
-
+        "org.scoula.card.mapper"
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
@@ -55,6 +53,7 @@ import javax.sql.DataSource;
         "org.scoula.member.service",
         "org.scoula.analysis.service",
         "org.scoula.transaction.service",
+        "org.scoula.card.service"
 })
 @EnableTransactionManagement
 @EnableAspectJAutoProxy

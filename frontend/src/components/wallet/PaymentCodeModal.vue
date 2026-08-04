@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!-- PIN 6자리 인증 모달 -->
+    <!-- PIN 인증 모달 -->
     <PinAuthModal
       :show="!isPinVerified"
       :userId="userId"
@@ -8,7 +8,7 @@
       @success="handlePinSuccess"
     />
 
-    <!-- PIN 인증 성공 시 결제 코드 모달 활성화 -->
+    <!-- 결제 코드 모달 -->
     <div v-if="isPinVerified" class="modal-backdrop" @click.self="$emit('close')">
       <div class="modal-card bg-white rounded-4 shadow-lg overflow-hidden animate__animated animate__fadeInUp">
         <!-- 헤더 -->
@@ -21,7 +21,7 @@
         </div>
 
         <div class="p-4 text-center">
-          <!-- 탭 버튼 (바코드 / QR코드) -->
+          <!-- 탭 버튼 -->
           <div class="btn-group w-100 mb-3" role="group">
             <button
               type="button"

@@ -39,153 +39,136 @@
 
     <!-- ==================== [MODE A] 무선 카드 결제 화면 ==================== -->
     <div v-if="activePaymentTab === 'CARD'" class="card-payment-section animate__animated animate__fadeIn">
-      
-      <!-- 상단 상태 배지 -->
-      <div class="text-center mb-4">
-        <span 
-          v-if="userCards.length > 0 && isPinAuthenticated"
-          class="badge bg-warning-subtle text-dark border border-warning px-3 py-2 rounded-pill fw-bold"
-          style="font-size: 0.825rem;"
-        >
-          <i class="bi bi-broadcast me-1 text-warning-emphasis spin-subtle"></i>
-          대표 카드 ({{ currentCardIndex + 1 }}/{{ userCards.length }}) 결제 신호 송신 중
-        </span>
-        <span 
-          v-else-if="userCards.length > 0 && !isPinAuthenticated"
-          class="badge bg-secondary-subtle text-dark border border-secondary px-3 py-2 rounded-pill fw-bold"
-          style="font-size: 0.825rem;"
-        >
-          <i class="bi bi-lock-fill me-1 text-danger"></i>
-          PIN 비밀번호 6자리 인증 필요 (결제 대기)
-        </span>
-        <span 
-          v-else
-          class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill fw-bold"
-          style="font-size: 0.825rem;"
-        >
-          <i class="bi bi-exclamation-triangle-fill me-1"></i>
-          무선 카드 결제 대기 중 (카드 없음)
-        </span>
-      </div>
 
       <!-- CASE 1: 카드가 등록되어 있는 경우 (다중 카드 덱 UI) -->
       <div v-if="userCards.length > 0" class="card-deck-container mb-4">
-        <div class="d-flex align-items-center justify-content-center gap-3 my-3">
+        
+        <!-- 상단 카드 갯수 및 추가 버튼 -->
+        <div class="d-flex justify-content-between align-items-center mb-3 px-1">
+          <span class="text-secondary small fw-bold">
+            등록 카드 ({{ currentCardIndex + 1 }}/{{ userCards.length }})
+          </span>
+          
+          <button 
+            class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold d-flex align-items-center gap-1"
+            @click="openAddCardModal"
+          >
+            <i class="bi bi-plus-lg"></i>
+            <span>카드 추가</span>
+          </button>
+        </div>
+
+        <!-- 좌우 카드 네비게이션 슬라이더 -->
+        <div class="d-flex align-items-center justify-content-center gap-2 my-2">
           <!-- 이전 카드 버튼 -->
           <button 
-            class="btn btn-light rounded-circle shadow-sm p-2 nav-arrow-btn"
+            class="btn btn-light rounded-circle shadow-sm p-2 nav-arrow-btn transition-all"
+            :class="{ 'opacity-25 border-0 bg-transparent': currentCardIndex === 0 }"
             :disabled="currentCardIndex === 0"
             @click="prevCard"
+            title="이전 카드"
           >
-            <i class="bi bi-chevron-left fs-5 text-dark"></i>
+            <i class="bi bi-chevron-left fs-4 text-dark"></i>
           </button>
 
-          <!-- 메인 카드 (깔끔한 네모 박스) -->
+          <!-- 메인 카드 박스 -->
           <div class="card-deck-wrapper position-relative">
             <div 
-              class="simple-card-box p-3.5 rounded-3 border border-2 shadow-sm text-dark position-relative d-flex flex-column justify-content-between"
-              :class="currentCard.representYn === 'Y' ? 'bg-warning border-warning' : 'bg-light border-secondary-subtle'"
-              style="width: 260px; height: 150px;"
+              class="simple-card-box p-3.5 rounded-4 border border-2 shadow-sm text-dark position-relative d-flex flex-column justify-content-between cursor-pointer"
+              :class="currentCard.representYn === 'Y' ? 'bg-warning border-warning' : 'bg-white border-secondary-subtle'"
+              style="width: 270px; height: 160px;"
             >
               <div class="d-flex justify-content-between align-items-center">
                 <span class="fw-bold fs-6">{{ currentCard.cardName }}</span>
                 <span 
                   v-if="currentCard.representYn === 'Y'" 
-                  class="badge bg-dark text-warning px-2 py-1 rounded-2 fw-bold"
+                  class="badge bg-dark text-warning px-2.5 py-1 rounded-2 fw-bold"
                   style="font-size: 0.75rem;"
                 >
-                  대표
+                  대표 카드
                 </span>
+                <button 
+                  v-else 
+                  class="btn btn-xs btn-outline-dark px-2 py-0.5 rounded-2 fw-bold"
+                  style="font-size: 0.7rem;"
+                  @click.stop="makePrimaryCard(currentCard.cardId)"
+                >
+                  대표로 설정
+                </button>
               </div>
 
-              <div class="my-2">
-                <div class="fs-5 fw-bold font-monospace text-center tracking-wide">
+              <div class="my-2 text-center">
+                <div class="fs-5 fw-extrabold font-monospace text-dark tracking-wide">
                   {{ currentCard.cardNum }}
                 </div>
               </div>
 
               <div class="d-flex justify-content-between align-items-center text-secondary small">
-                <span>{{ currentCard.holderName }}</span>
-                <i class="bi bi-wifi fs-5" :class="{ 'text-danger': !isPinAuthenticated }"></i>
+                <span class="fw-medium">{{ currentCard.holderName }}</span>
+                <i class="bi bi-credit-card-2-front-fill fs-5 text-dark opacity-75"></i>
               </div>
             </div>
           </div>
 
           <!-- 다음 카드 버튼 -->
           <button 
-            class="btn btn-light rounded-circle shadow-sm p-2 nav-arrow-btn"
+            class="btn btn-light rounded-circle shadow-sm p-2 nav-arrow-btn transition-all"
+            :class="{ 'opacity-25 border-0 bg-transparent': currentCardIndex === userCards.length - 1 }"
             :disabled="currentCardIndex === userCards.length - 1"
             @click="nextCard"
+            title="다음 카드"
           >
-            <i class="bi bi-chevron-right fs-5 text-dark"></i>
+            <i class="bi bi-chevron-right fs-4 text-dark"></i>
           </button>
         </div>
 
-        <!-- 카드 슬라이드 인디케이터 -->
-        <div class="text-center mt-3">
-          <div class="d-inline-flex gap-1.5 align-items-center mb-1">
+        <!-- 카드 슬라이드 인디케이터 도트 -->
+        <div class="text-center mt-2 mb-3">
+          <div class="d-inline-flex gap-1.5 align-items-center">
             <span 
               v-for="(c, idx) in userCards" 
               :key="c.cardId" 
-              class="indicator-dot rounded-circle transition-all"
+              class="indicator-dot rounded-circle transition-all cursor-pointer"
               :class="idx === currentCardIndex ? 'bg-warning active-dot' : 'bg-secondary opacity-25'"
+              @click="currentCardIndex = idx"
             ></span>
           </div>
-          <p class="text-muted small mb-0">
-            DB 등록 카드 {{ userCards.length }}장 중 {{ currentCardIndex + 1 }}번째 (좌우 스와이프)
-          </p>
         </div>
 
-        <!-- 하단 NFC 결제 단말기 안내 및 PIN 인증 박스 -->
-        <div v-if="isPinAuthenticated" class="nfc-terminal-box p-3.5 rounded-4 bg-warning-subtle border border-warning text-center mt-4 shadow-sm animate__animated animate__fadeIn">
-          <h6 class="fw-bold text-dark mb-1">
-            <i class="bi bi-phone-vibrate text-warning me-1"></i>
-            결제 단말기에 스마트폰 뒷면을 대어주세요
-          </h6>
-          <p class="text-secondary small mb-0">
-            신호 송수신 대기 중... 남은 시간 
-            <strong class="text-danger font-monospace fs-6">{{ formattedTimer }}</strong>
-          </p>
-        </div>
-
-        <!-- PIN 인증 전 잠금 박스 -->
-        <div v-else class="pin-lock-box p-3.5 rounded-4 bg-light border text-center mt-4 shadow-sm">
-          <h6 class="fw-bold text-dark mb-2">
-            <i class="bi bi-shield-lock-fill text-danger me-1"></i>
-            결제 신호 송수신 차단됨
-          </h6>
-          <p class="text-muted small mb-3">
-            보안을 위해 PIN 비밀번호 6자리를 인증해야 결제 신호가 활성화됩니다.
-          </p>
+        <!-- 심플한 [결제하기] 버튼 1개 -->
+        <div class="mt-4">
           <button 
-            class="btn btn-warning w-100 py-2.5 rounded-3 fw-bold text-dark shadow-sm"
+            class="btn btn-warning w-100 py-3 rounded-4 fw-bold fs-5 text-dark shadow-sm d-flex align-items-center justify-content-center gap-2"
             @click="openPinModal"
           >
-            <i class="bi bi-key-fill me-1"></i>
-            PIN 6자리 인증 후 결제 시작하기
+            <i class="bi bi-credit-card-fill"></i>
+            <span>결제하기</span>
           </button>
         </div>
       </div>
 
-      <!-- CASE 2: 대표 카드가 없는 경우 -->
+      <!-- CASE 2: 등록된 카드가 없는 경우 -->
       <div v-else class="no-card-container text-center py-4">
         <!-- 원형 점선 가이드 -->
-        <div class="dotted-circle-box mx-auto my-4 d-flex flex-column align-items-center justify-content-center border border-2 border-dashed rounded-circle bg-white text-muted shadow-sm">
-          <i class="bi bi-plus-lg fs-3 mb-1"></i>
-          <span class="small fw-bold">대표 카드 지정 필요</span>
+        <div 
+          class="dotted-circle-box mx-auto my-4 d-flex flex-column align-items-center justify-content-center border border-2 border-dashed rounded-circle bg-white text-muted shadow-sm cursor-pointer hover-scale"
+          @click="openAddCardModal"
+        >
+          <i class="bi bi-plus-lg fs-2 text-warning mb-1"></i>
+          <span class="small fw-bold text-dark">카드 추가하기</span>
         </div>
 
         <div class="alert alert-light border rounded-4 p-3 text-center mb-4 shadow-sm">
-          <p class="text-dark fw-medium mb-1">결제를 하려면 먼저 실물 카드를 등록해 주세요</p>
-          <span class="text-danger small fw-bold">대표 카드가 지정되지 않았습니다.</span>
+          <p class="text-dark fw-medium mb-1">등록된 카드가 없습니다.</p>
+          <span class="text-secondary small">실물 카드를 추가하여 간편 결제를 이용해 보세요.</span>
         </div>
 
         <button 
           class="btn btn-dark w-100 py-3 rounded-4 fw-bold fs-6 shadow-sm d-flex align-items-center justify-content-center gap-2"
-          @click="addCard"
+          @click="openAddCardModal"
         >
-          <i class="bi bi-plus-circle-fill text-warning"></i>
-          결제 카드 등록하기
+          <i class="bi bi-plus-circle-fill text-warning fs-5"></i>
+          <span>결제 카드 등록하기</span>
         </button>
       </div>
 
@@ -338,7 +321,60 @@
       </div>
     </div>
 
-    <!-- 공통 PIN 6자리 보안 인증 모달 (QR / 바코드와 100% 동일) -->
+    <!-- 카드 신규 등록 모달 -->
+    <div v-if="showAddCardModal" class="kb-modal-backdrop" @click.self="showAddCardModal = false">
+      <div class="kb-modal-content bg-white rounded-4 shadow-lg p-4 animate__animated animate__fadeInUp">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-dark mb-0">신규 결제 카드 등록</h5>
+          <button type="button" class="btn-close" @click="showAddCardModal = false"></button>
+        </div>
+
+        <form @submit.prevent="submitAddCard">
+          <div class="mb-3">
+            <label class="form-label text-secondary small fw-bold">카드 상품 선택</label>
+            <select v-model="newCardForm.cardName" class="form-select border-2">
+              <option value="KB국민 My WE:SH 카드">KB국민 My WE:SH 카드</option>
+              <option value="KB국민 톡톡O 카드">KB국민 톡톡O 카드</option>
+              <option value="KB국민 노리2 체크카드">KB국민 노리2 체크카드</option>
+              <option value="KB국민 직장인보너스체크카드">KB국민 직장인보너스체크카드</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label text-secondary small fw-bold">카드 번호 (16자리)</label>
+            <input 
+              type="text" 
+              v-model="newCardForm.cardNum" 
+              class="form-control font-monospace border-2"
+              placeholder="9410-1234-5678-0000" 
+              required
+            />
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label text-secondary small fw-bold">유효기간 (MM/YY)</label>
+              <input type="text" v-model="newCardForm.expiryDate" class="form-control text-center" placeholder="12/28" required />
+            </div>
+            <div class="col-6">
+              <label class="form-label text-secondary small fw-bold">CVC (3자리)</label>
+              <input type="password" v-model="newCardForm.cvv" class="form-control text-center" maxlength="3" placeholder="•••" required />
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label text-secondary small fw-bold">카드 비밀번호 (4자리)</label>
+            <input type="password" v-model="newCardForm.cardPassword" class="form-control" maxlength="4" placeholder="비밀번호 4자리" required />
+          </div>
+
+          <button type="submit" class="btn btn-warning w-100 py-3 fw-bold rounded-3 fs-6 shadow-sm">
+            카드 등록 완료하기
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- PIN 인증 모달 -->
     <PinAuthModal
       :show="showPinModal"
       :userId="currentUserId"
@@ -346,7 +382,7 @@
       @success="handlePinSuccess"
     />
 
-    <!-- 알림 메시지 (Toast) -->
+    <!-- 알림 메시지 -->
     <div v-if="statusMessage" :class="['alert', isSuccess ? 'alert-success' : 'alert-danger', 'rounded-3 shadow-sm border-0 mb-3 d-flex align-items-center justify-content-between']">
       <span>{{ statusMessage }}</span>
       <button type="button" class="btn-close ms-2" @click="statusMessage = ''"></button>
@@ -357,40 +393,43 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import walletApi from '@/api/walletApi';
+import cardApi from '@/api/cardApi';
 import PaymentCodeModal from '@/components/wallet/PaymentCodeModal.vue';
 import PinAuthModal from '@/components/auth/PinAuthModal.vue';
 
-// 1. 상태 설정
+// 기본 상태
 const currentUserId = ref(1);
 const walletData = ref(null);
+const cardStatus = ref(null);
+const primaryCard = ref(null);
 const loading = ref(false);
 const charging = ref(false);
 const showChargeModal = ref(false);
 const showPaymentModal = ref(false);
 const showPinModal = ref(false);
+const showAddCardModal = ref(false);
 const isPinAuthenticated = ref(false);
 
 const selectedPaymentMode = ref('barcode'); 
 const statusMessage = ref('');
 const isSuccess = ref(true);
 
-// 시작 화면 설정 ('WALLET' | 'CARD')
+// 시작 화면 설정
 const startScreenMode = ref(localStorage.getItem('kb_pay_start_mode') || 'WALLET');
-// 현재 활성화된 결제 탭 ('CARD' | 'WALLET')
 const activePaymentTab = ref(startScreenMode.value === 'CARD' ? 'CARD' : 'WALLET');
 
-// DB 조회 카드 덱 상태
+// 카드 목록
 const currentCardIndex = ref(0);
 const userCards = ref([]);
 
 const currentCard = computed(() => userCards.value[currentCardIndex.value] || {});
 
-// NFC 신호 송수신 카운트다운 타이머 (60초 / 1분 통일)
+// 결제 타이머
 const timerSeconds = ref(60);
 let timerInterval = null;
 
 const formattedTimer = computed(() => {
-  if (timerSeconds.value <= 0) return '00:00 (만료)';
+  if (timerSeconds.value <= 0) return '00:00';
   const m = Math.floor(timerSeconds.value / 60).toString().padStart(2, '0');
   const s = (timerSeconds.value % 60).toString().padStart(2, '0');
   return `${m}:${s}`;
@@ -403,7 +442,7 @@ const startTimer = () => {
     if (timerSeconds.value > 0) {
       timerSeconds.value--;
     } else {
-      timerSeconds.value = 60; // 타이머 초기화 리셋
+      timerSeconds.value = 60;
     }
   }, 1000);
 };
@@ -463,16 +502,59 @@ const nextCard = () => {
   }
 };
 
-const addCard = () => {
-  userCards.value.push({
-    cardId: Date.now(),
-    cardName: 'KB국민 신규 등록 카드',
-    holderName: '김국민',
-    cardNum: '•••• ' + Math.floor(1000 + Math.random() * 9000),
-    representYn: userCards.value.length === 0 ? 'Y' : 'N',
-    bgColor: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-  });
-  currentCardIndex.value = userCards.value.length - 1;
+const newCardForm = reactive({
+  cardName: 'KB국민 My WE:SH 카드',
+  cardNum: '',
+  expiryDate: '',
+  cvv: '',
+  cardPassword: '',
+});
+
+const openAddCardModal = () => {
+  newCardForm.cardName = 'KB국민 My WE:SH 카드';
+  newCardForm.cardNum = '';
+  newCardForm.expiryDate = '';
+  newCardForm.cvv = '';
+  newCardForm.cardPassword = '';
+  showAddCardModal.value = true;
+};
+
+const submitAddCard = async () => {
+  try {
+    const payload = {
+      userId: currentUserId.value,
+      accountId: 1,
+      cardNum: newCardForm.cardNum,
+      expiryDate: newCardForm.expiryDate,
+      cvv: newCardForm.cvv,
+      cardPassword: newCardForm.cardPassword,
+      cardName: newCardForm.cardName,
+      representYn: userCards.value.length === 0 ? 'Y' : 'N',
+    };
+
+    await cardApi.registerCard(payload);
+    statusMessage.value = `'${newCardForm.cardName}' 카드가 성공적으로 등록되었습니다!`;
+    isSuccess.value = true;
+    showAddCardModal.value = false;
+    await fetchCardStatusAndCards();
+  } catch (err) {
+    console.error('카드 등록 실패:', err);
+    statusMessage.value = '카드 등록 중 오류가 발생했습니다.';
+    isSuccess.value = false;
+  }
+};
+
+const makePrimaryCard = async (cardId) => {
+  try {
+    await cardApi.setPrimaryCard(cardId, currentUserId.value);
+    statusMessage.value = '대표 카드가 성공적으로 변경되었습니다!';
+    isSuccess.value = true;
+    await fetchCardStatusAndCards();
+  } catch (err) {
+    console.error('대표 카드 변경 실패:', err);
+    statusMessage.value = '대표 카드 변경 처리 중 오류가 발생했습니다.';
+    isSuccess.value = false;
+  }
 };
 
 const chargeForm = reactive({
@@ -496,23 +578,47 @@ const formatCardNumDisplay = (raw) => {
   return raw;
 };
 
-const fetchUserCards = async () => {
+// pay-001 (대표 카드) & pay-002 (카드 상태 및 미등록 가이드) 통합 조회
+const fetchCardStatusAndCards = async () => {
   try {
-    const dbCards = await walletApi.getUserCards(currentUserId.value);
-    if (dbCards && dbCards.length > 0) {
-      userCards.value = dbCards.map(c => ({
-        cardId: c.cardId,
-        cardName: c.cardName || 'KB국민 Custom Card',
-        holderName: c.holderName || '김국민',
-        cardNum: formatCardNumDisplay(c.cardNum),
-        representYn: c.representYn || 'N',
-      }));
+    // 1. pay-002: 카드 등록 상태 및 등록 가이드 메시지 조회
+    const statusRes = await cardApi.getCardStatus(currentUserId.value);
+    cardStatus.value = statusRes;
+
+    if (statusRes && statusRes.hasRegisteredCard) {
+      // 2. 카드가 존재하는 경우 DB 등록 카드 목록 조회
+      const dbCards = await walletApi.getUserCards(currentUserId.value);
+      if (dbCards && dbCards.length > 0) {
+        userCards.value = dbCards.map(c => ({
+          cardId: c.cardId,
+          cardName: c.cardName || 'KB국민 Custom Card',
+          holderName: c.holderName || '김국민',
+          cardNum: formatCardNumDisplay(c.cardNum),
+          representYn: c.representYn || 'N',
+        }));
+
+        // 3. pay-001: 대표 카드 정보 조회하여 현재 대표 카드 인덱스 선택
+        const primaryRes = await cardApi.getPrimaryCard(currentUserId.value);
+        primaryCard.value = primaryRes;
+
+        if (primaryRes && primaryRes.cardId) {
+          const idx = userCards.value.findIndex(c => c.cardId === primaryRes.cardId);
+          if (idx !== -1) {
+            currentCardIndex.value = idx;
+          }
+        }
+      } else {
+        userCards.value = [];
+      }
     } else {
+      // 카드가 없거나 미등록 상태인 경우
       userCards.value = [];
+      primaryCard.value = null;
     }
   } catch (err) {
-    console.error('DB 카드 목록 조회 실패:', err);
+    console.error('카드 상태/목록 조회 실패:', err);
     userCards.value = [];
+    primaryCard.value = null;
   }
 };
 
@@ -522,7 +628,7 @@ const switchUser = (userId) => {
   stopTimer();
   currentCardIndex.value = 0;
   fetchWallet();
-  fetchUserCards();
+  fetchCardStatusAndCards();
 };
 
 const fetchWallet = async () => {
@@ -583,7 +689,7 @@ const executeCharge = async () => {
 
 onMounted(() => {
   fetchWallet();
-  fetchUserCards();
+  fetchCardStatusAndCards();
 });
 
 onUnmounted(() => {

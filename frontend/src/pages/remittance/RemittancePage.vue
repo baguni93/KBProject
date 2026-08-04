@@ -684,6 +684,25 @@ const submitDutchpay = async () => {
     const res = await dutchpayApi.createDutchpay(payload);
     isSuccess.value = true;
     statusMessage.value = `'${dutchForm.title}' 정산방이 성공적으로 생성되었습니다! (참여 인원: ${totalMembers}명)`;
+
+    if (res && attachedFiles.value.length > 0) {
+      try {
+        const formData = new FormData();
+        formData.append('userId', form.walletId);
+        formData.append('targetId', res.settlementId || 1);
+        formData.append('feedType', 'SETTLEMENT');
+        formData.append('content', dutchForm.title || '정산 요청');
+        formData.append('visibility', form.visibility);
+        attachedFiles.value.forEach(file => {
+          formData.append('files', file);
+        });
+
+        await api.post('/api/feeds', formData);
+      } catch (imgErr) {
+        console.warn('정산 피드 이미지 업로드 API 전송 예외:', imgErr);
+      }
+    }
+
     await fetchMyBalance();
   } catch (err) {
     console.error('Dutchpay Error:', err);
@@ -706,25 +725,48 @@ const confirmTransfer = async () => {
   isSuccess.value = false;
   lastTransactionId.value = null;
 
-  const payload = {
-    walletId: form.walletId,
-    receiverType: form.receiverType,
-    amount: form.amount,
-    memo: form.memo,
-    feedType: 'TRANSFER',
-    content: form.memo || '송금 완료!',
-    visibility: form.visibility,
-  };
+  let sendData;
+  if (attachedFiles.value.length > 0) {
+    const formData = new FormData();
+    formData.append('walletId', form.walletId);
+    formData.append('receiverType', form.receiverType);
+    formData.append('amount', form.amount);
+    if (form.memo) formData.append('memo', form.memo);
+    formData.append('feedType', 'TRANSFER');
+    formData.append('content', form.memo || '송금 완료!');
+    formData.append('visibility', form.visibility);
 
-  if (form.receiverType === 'WALLET') {
-    payload.receiverId = form.receiverId;
+    if (form.receiverType === 'WALLET') {
+      formData.append('receiverId', form.receiverId);
+    } else {
+      formData.append('bankCode', form.bankCode);
+      formData.append('accountNumber', form.accountNumber);
+    }
+
+    attachedFiles.value.forEach(file => {
+      formData.append('files', file);
+    });
+    sendData = formData;
   } else {
-    payload.bankCode = form.bankCode;
-    payload.accountNumber = form.accountNumber;
+    sendData = {
+      walletId: form.walletId,
+      receiverType: form.receiverType,
+      amount: form.amount,
+      memo: form.memo,
+      feedType: 'TRANSFER',
+      content: form.memo || '송금 완료!',
+      visibility: form.visibility,
+    };
+    if (form.receiverType === 'WALLET') {
+      sendData.receiverId = form.receiverId;
+    } else {
+      sendData.bankCode = form.bankCode;
+      sendData.accountNumber = form.accountNumber;
+    }
   }
 
   try {
-    const res = await remittanceApi.sendMoney(payload);
+    const res = await remittanceApi.sendMoney(sendData);
     isSuccess.value = true;
     if (res) {
       lastTransactionId.value = res.transactionId;
@@ -745,9 +787,10 @@ const confirmTransfer = async () => {
         attachedFiles.value.forEach(file => {
           formData.append('files', file);
         });
+
         await api.post('/api/feeds', formData);
-      } catch (feedErr) {
-        console.warn('피드 사진 업로드 호출 예외 (기본 송금은 완료됨):', feedErr);
+      } catch (imgErr) {
+        console.warn('DB 피드 이미지 업로드 API 전송 예외:', imgErr);
       }
     }
 

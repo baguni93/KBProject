@@ -16,7 +16,7 @@ public class DutchpayController {
 
     private final SettlementService settlementService;
 
-    // dutch-001: 더치페이 정산방 생성
+    // 더치페이 생성
     @PostMapping("")
     public ResponseEntity<SettlementResponseDTO> createDutchpay(
             @RequestBody SettlementCreateRequestDTO settlementCreateRequestDTO) {
@@ -25,7 +25,7 @@ public class DutchpayController {
         return ResponseEntity.ok(response);
     }
 
-    // dutch-002: 더치페이 정산 금액 분배 (1/N 또는 개별 분배 설정)
+    // 더치페이 분배 설정
     @PostMapping("/{dutchpayId}/splits")
     public ResponseEntity<SettlementResponseDTO> setDutchpaySplits(
             @PathVariable int dutchpayId,

@@ -42,6 +42,7 @@ import org.springframework.web.servlet.config.annotation.*;
         "org.scoula.auth.controller",
         "org.scoula.transaction.controller",
         "org.scoula.analysis.controller",
+        "org.scoula.card.controller",
 })
 public class ServletConfig implements WebMvcConfigurer {
 

@@ -79,7 +79,7 @@
           AND wallet_status = 'ACTIVE'
     </update>
 
-    <!-- 등록된 카드 목록 조회 (registered_card_tbl) -->
+    <!-- 등록 카드 목록 -->
     <select id="getUserRegisteredCards" resultType="org.scoula.wallet.dto.RegisteredCardDTO">
         SELECT
             r.card_id AS cardId,
@@ -89,7 +89,7 @@
             r.expiry_date AS expiryDate,
             r.represent_yn AS representYn,
             COALESCE(c.card_num, CONCAT('KB국민 Custom Card (', r.card_id, ')')) AS cardName,
-            COALESCE(u.name, '김국민') AS holderName
+            COALESCE(u.user_name, '김국민') AS holderName
         FROM registered_card_tbl r
         LEFT JOIN user_tbl u ON r.user_id = u.user_id
         LEFT JOIN card_tbl c ON r.account_id = c.account_id

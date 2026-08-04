@@ -29,8 +29,10 @@ public class UploadFiles {
         // 저장 파일 객체 생성
         File dest = new File(baseDir, fileName);
 
-        // 실제 파일 저장
-        part.transferTo(dest);
+        // 실제 파일 저장 (Files.copy로 톰캣 상대경로 이슈 방지)
+        try (java.io.InputStream is = part.getInputStream()) {
+            java.nio.file.Files.copy(is, dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
 
         // 저장된 파일 경로 반환
         return dest.getPath();

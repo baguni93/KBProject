@@ -69,4 +69,10 @@
         LIMIT #{limit}
     </select>
 
+    <!-- 송금 피드 이미지 등록 (feed_image_tbl) -->
+    <insert id="insertFeedImage">
+        INSERT INTO feed_image_tbl(feed_id, image_name)
+        VALUES (#{feedId}, #{imageName})
+    </insert>
+
 </mapper>
