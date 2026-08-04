@@ -62,7 +62,7 @@ const feedId = computed(() => props.feed.feedId);
 const handleLike = async () => {
   try {
     await feedStore.toggleLike({
-      feedId: feedId,
+      feedId: feedId.value,
       userId,
     });
   } catch (e) {
