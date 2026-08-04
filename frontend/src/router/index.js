@@ -48,25 +48,21 @@ const router = createRouter({
             path: '/point-wallet',
             name: 'point-wallet',
             component: PointWalletPage,
-            meta: { requiresAuth: true },
         },
         {
             path: '/point-wallet/random-box',
             name: 'point-random-box',
             component: RandomBoxPage,
-            meta: { requiresAuth: true },
         },
         {
             path: '/point-wallet/conversion',
             name: 'point-conversion',
             component: PointConversionPage,
-            meta: { requiresAuth: true },
         },
         {
             path: '/point-wallet/transactions',
             name: 'point-transactions',
             component: PointTransactionPage,
-            meta: { requiresAuth: true },
         },
         {
             path: '/signup/nickname',
