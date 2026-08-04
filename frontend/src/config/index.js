@@ -19,7 +19,7 @@ export default {
     },
     {
       title: '금융',
-      url: '/auth/login',
+      url: '/point-wallet',
       icon: 'fa-solid fa-chart-column',
     },
     {
