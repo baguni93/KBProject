@@ -9,6 +9,12 @@ export default {
     return data;
   },
 
+  // remit-friend-001: 송금 대상 친구 목록 조회
+  async getFriends(userId) {
+    const { data } = await api.get('/api/friends', { params: { userId } });
+    return data;
+  },
+
   // remit-003: 송금 실행 (지갑 또는 계좌 송금)
   async sendMoney(remittanceData) {
     const { data } = await api.post(BASE_URL, remittanceData);

@@ -5,7 +5,6 @@
     <div class="content my-5 px-3">
       <slot></slot>
     </div>
-    <BottomNav />
   </div>
 </template>
 
@@ -13,7 +12,6 @@
 import Header from './Header.vue';
 import NavBar from './NavBar.vue';
 import Footer from './Footer.vue';
-import BottomNav from './BottomNav.vue';
 </script>
 
 <style scoped>

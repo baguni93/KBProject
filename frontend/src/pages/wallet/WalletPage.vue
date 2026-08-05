@@ -1,283 +1,253 @@
 <template>
-  <div class="kb-container py-3">
-    <!-- 1. 상단 서비스 헤더 및 시작 화면 설정 버튼 -->
-    <div class="d-flex justify-content-between align-items-center mb-3 px-2">
-      <div>
-        <span class="text-muted small d-block" style="font-size: 0.75rem;">KB Pay 결제 서비스</span>
-        <strong class="text-dark fw-bold fs-5">
-          {{ activePaymentTab === 'CARD' ? '무선 카드 결제' : '결제 서비스' }}
-        </strong>
-      </div>
+  <div class="wallet-root">
 
-      <!-- 시작 화면 전환 설정 버튼 -->
-      <button 
-        class="btn btn-sm btn-outline-warning text-dark border-warning-subtle bg-warning-subtle rounded-pill px-3 fw-bold d-flex align-items-center gap-1 shadow-sm"
-        @click="toggleStartScreenMode"
-      >
-        <i class="bi bi-gear-wide-connected text-dark"></i>
-        <span>시작 화면: {{ startScreenMode === 'WALLET' ? '카드결제로 변경' : '전자지갑으로 변경' }}</span>
-      </button>
-    </div>
-
-    <!-- 2. 결제 방식 선택 세그먼트 버튼 (카드 결제 / 지갑 결제) -->
-    <div class="bg-light p-1 rounded-4 d-flex mb-4 shadow-sm border">
-      <button
-        class="btn flex-fill py-2.5 rounded-3 fw-bold transition-all text-center border-0"
-        :class="activePaymentTab === 'CARD' ? 'bg-white text-dark shadow-sm' : 'text-secondary'"
-        @click="switchPaymentTab('CARD')"
-      >
-        카드 결제
-      </button>
-      <button
-        class="btn flex-fill py-2.5 rounded-3 fw-bold transition-all text-center border-0"
-        :class="activePaymentTab === 'WALLET' ? 'bg-white text-dark shadow-sm' : 'text-secondary'"
-        @click="switchPaymentTab('WALLET')"
-      >
-        지갑 결제
-      </button>
-    </div>
-
-    <!-- ==================== [MODE A] 무선 카드 결제 화면 ==================== -->
-    <div v-if="activePaymentTab === 'CARD'" class="card-payment-section animate__animated animate__fadeIn">
-
-      <!-- CASE 1: 카드가 등록되어 있는 경우 (다중 카드 덱 UI) -->
-      <div v-if="userCards.length > 0" class="card-deck-container mb-4">
-        
-        <!-- 상단 카드 갯수 및 추가 버튼 -->
-        <div class="d-flex justify-content-between align-items-center mb-3 px-1">
-          <span class="text-secondary small fw-bold">
-            등록 카드 ({{ currentCardIndex + 1 }}/{{ userCards.length }})
-          </span>
-          
-          <button 
-            class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold d-flex align-items-center gap-1"
-            @click="openAddCardModal"
-          >
-            <i class="bi bi-plus-lg"></i>
-            <span>카드 추가</span>
+    <!-- ══════════════════════════════════════════
+         상단 히어로 배너 (계정 요약 + 잔액)
+    ══════════════════════════════════════════ -->
+    <div class="hero-banner">
+      <div class="hero-inner">
+        <!-- 상단 타이틀 행 -->
+        <div class="hero-top-row">
+          <div>
+            <p class="hero-sub">KB Pay · 디지털 지갑</p>
+            <h2 class="hero-title">{{ activePaymentTab === 'CARD' ? '카드 결제' : '지갑 결제' }}</h2>
+          </div>
+          <button class="mode-toggle-btn" @click="toggleStartScreenMode">
+            <i class="bi bi-arrow-left-right"></i>
+            <span>{{ startScreenMode === 'WALLET' ? '카드 우선' : '지갑 우선' }}</span>
           </button>
         </div>
 
-        <!-- 좌우 카드 네비게이션 슬라이더 -->
-        <div class="d-flex align-items-center justify-content-center gap-2 my-2">
-          <!-- 이전 카드 버튼 -->
-          <button 
-            class="btn btn-light rounded-circle shadow-sm p-2 nav-arrow-btn transition-all"
-            :class="{ 'opacity-25 border-0 bg-transparent': currentCardIndex === 0 }"
-            :disabled="currentCardIndex === 0"
-            @click="prevCard"
-            title="이전 카드"
+        <!-- 세그먼트 탭 -->
+        <div class="segment-wrap">
+          <button
+            class="segment-btn"
+            :class="{ active: activePaymentTab === 'CARD' }"
+            @click="switchPaymentTab('CARD')"
           >
-            <i class="bi bi-chevron-left fs-4 text-dark"></i>
+            <i class="bi bi-credit-card-2-front-fill"></i> 카드 결제
           </button>
+          <button
+            class="segment-btn"
+            :class="{ active: activePaymentTab === 'WALLET' }"
+            @click="switchPaymentTab('WALLET')"
+          >
+            <i class="bi bi-wallet2"></i> 지갑 결제
+          </button>
+        </div>
+      </div>
+    </div>
 
-          <!-- 메인 카드 박스 -->
-          <div class="card-deck-wrapper position-relative">
-            <div 
-              class="simple-card-box p-3.5 rounded-4 border border-2 shadow-sm text-dark position-relative d-flex flex-column justify-content-between cursor-pointer"
-              :class="currentCard.representYn === 'Y' ? 'bg-warning border-warning' : 'bg-white border-secondary-subtle'"
-              style="width: 270px; height: 160px;"
+    <!-- ══════════════════════════════════════════
+         본문 컨텐츠
+    ══════════════════════════════════════════ -->
+    <div class="page-body">
+
+      <!-- ────────── [MODE A] 카드 결제 ────────── -->
+      <div v-if="activePaymentTab === 'CARD'" class="card-section">
+
+        <!-- 카드 없을 때 -->
+        <div v-if="userCards.length === 0" class="empty-card-box">
+          <div class="empty-icon-wrap">
+            <i class="bi bi-credit-card-2-back-fill"></i>
+          </div>
+          <h5>등록된 카드가 없어요</h5>
+          <p>신용/체크카드를 등록하고<br>간편하게 결제해 보세요</p>
+          <button class="btn-primary-kb" @click="openAddCardModal">
+            <i class="bi bi-plus-lg me-1"></i>카드 등록하기
+          </button>
+        </div>
+
+        <!-- 카드 있을 때 -->
+        <div v-else>
+          <!-- 3D 카드 뷰어 -->
+          <div class="card-stage">
+            <!-- 왼쪽 이전 버튼 -->
+            <button class="card-nav-btn" :disabled="currentCardIndex === 0" @click="prevCard">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+
+            <!-- 카드 플레이트 -->
+            <div
+              class="card-plate"
+              :class="currentCard.representYn === 'Y' ? 'card-gold' : 'card-dark'"
             >
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="fw-bold fs-6">{{ currentCard.cardName }}</span>
-                <span 
-                  v-if="currentCard.representYn === 'Y'" 
-                  class="badge bg-dark text-warning px-2.5 py-1 rounded-2 fw-bold"
-                  style="font-size: 0.75rem;"
-                >
-                  대표 카드
-                </span>
-                <button 
-                  v-else 
-                  class="btn btn-xs btn-outline-dark px-2 py-0.5 rounded-2 fw-bold"
-                  style="font-size: 0.7rem;"
-                  @click.stop="makePrimaryCard(currentCard.cardId)"
-                >
-                  대표로 설정
-                </button>
-              </div>
-
-              <div class="my-2 text-center">
-                <div class="fs-5 fw-extrabold font-monospace text-dark tracking-wide">
-                  {{ currentCard.cardNum }}
+              <!-- 카드 상단 -->
+              <div class="card-plate-top">
+                <div class="card-chip-row">
+                  <div class="chip-icon"></div>
+                  <span class="card-name-label">{{ currentCard.cardName }}</span>
+                </div>
+                <div class="card-badge-wrap">
+                  <span v-if="currentCard.representYn === 'Y'" class="rep-badge">
+                    <i class="bi bi-star-fill"></i> 대표
+                  </span>
+                  <button
+                    v-else
+                    class="set-rep-btn"
+                    @click.stop="makePrimaryCard(currentCard.cardId)"
+                  >
+                    대표 지정
+                  </button>
                 </div>
               </div>
 
-              <div class="d-flex justify-content-between align-items-center text-secondary small">
-                <span class="fw-medium">{{ currentCard.holderName }}</span>
-                <i class="bi bi-credit-card-2-front-fill fs-5 text-dark opacity-75"></i>
+              <!-- 카드 중단: 카드 번호 -->
+              <div class="card-number-row">
+                <span class="card-number">{{ currentCard.cardNum }}</span>
+              </div>
+
+              <!-- 카드 하단 -->
+              <div class="card-plate-bottom">
+                <span class="card-holder">{{ currentCard.holderName || 'KB PAY MEMBER' }}</span>
+                <i class="bi bi-wifi nfc-icon"></i>
               </div>
             </div>
+
+            <!-- 오른쪽 다음 버튼 -->
+            <button class="card-nav-btn" :disabled="currentCardIndex === userCards.length - 1" @click="nextCard">
+              <i class="bi bi-chevron-right"></i>
+            </button>
           </div>
 
-          <!-- 다음 카드 버튼 -->
-          <button 
-            class="btn btn-light rounded-circle shadow-sm p-2 nav-arrow-btn transition-all"
-            :class="{ 'opacity-25 border-0 bg-transparent': currentCardIndex === userCards.length - 1 }"
-            :disabled="currentCardIndex === userCards.length - 1"
-            @click="nextCard"
-            title="다음 카드"
-          >
-            <i class="bi bi-chevron-right fs-4 text-dark"></i>
-          </button>
-        </div>
-
-        <!-- 카드 슬라이드 인디케이터 도트 -->
-        <div class="text-center mt-2 mb-3">
-          <div class="d-inline-flex gap-1.5 align-items-center">
-            <span 
-              v-for="(c, idx) in userCards" 
-              :key="c.cardId" 
-              class="indicator-dot rounded-circle transition-all cursor-pointer"
-              :class="idx === currentCardIndex ? 'bg-warning active-dot' : 'bg-secondary opacity-25'"
-              @click="currentCardIndex = idx"
+          <!-- 카드 인디케이터 -->
+          <div class="card-dots">
+            <span
+              v-for="(c, i) in userCards"
+              :key="i"
+              class="card-dot"
+              :class="{ active: i === currentCardIndex }"
             ></span>
           </div>
-        </div>
 
-        <!-- 심플한 [결제하기] 버튼 1개 -->
-        <div class="mt-4">
-          <button 
-            class="btn btn-warning w-100 py-3 rounded-4 fw-bold fs-5 text-dark shadow-sm d-flex align-items-center justify-content-center gap-2"
-            @click="openPinModal"
-          >
-            <i class="bi bi-credit-card-fill"></i>
-            <span>결제하기</span>
+          <!-- 카드 정보 + 액션 -->
+          <div class="card-actions-box">
+            <div class="card-actions-row">
+              <button class="card-action-btn" @click="openAddCardModal">
+                <span class="action-icon-wrap"><i class="bi bi-plus-circle-fill"></i></span>
+                <span>카드 추가</span>
+              </button>
+              <div class="action-divider"></div>
+              <button class="card-action-btn" @click="openPinModal">
+                <span class="action-icon-wrap accent"><i class="bi bi-contactless"></i></span>
+                <span>결제 시작</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 결제 메인 버튼 -->
+          <button class="big-pay-btn" @click="openPinModal">
+            <i class="bi bi-credit-card-fill me-2"></i>
+            무선 카드 결제 시작하기
+            <i class="bi bi-arrow-right ms-2"></i>
           </button>
         </div>
       </div>
 
-      <!-- CASE 2: 등록된 카드가 없는 경우 -->
-      <div v-else class="no-card-container text-center py-4">
-        <!-- 원형 점선 가이드 -->
-        <div 
-          class="dotted-circle-box mx-auto my-4 d-flex flex-column align-items-center justify-content-center border border-2 border-dashed rounded-circle bg-white text-muted shadow-sm cursor-pointer hover-scale"
-          @click="openAddCardModal"
-        >
-          <i class="bi bi-plus-lg fs-2 text-warning mb-1"></i>
-          <span class="small fw-bold text-dark">카드 추가하기</span>
-        </div>
+      <!-- ────────── [MODE B] 전자지갑 ────────── -->
+      <div v-else class="wallet-section">
 
-        <div class="alert alert-light border rounded-4 p-3 text-center mb-4 shadow-sm">
-          <p class="text-dark fw-medium mb-1">등록된 카드가 없습니다.</p>
-          <span class="text-secondary small">실물 카드를 추가하여 간편 결제를 이용해 보세요.</span>
-        </div>
-
-        <button 
-          class="btn btn-dark w-100 py-3 rounded-4 fw-bold fs-6 shadow-sm d-flex align-items-center justify-content-center gap-2"
-          @click="openAddCardModal"
-        >
-          <i class="bi bi-plus-circle-fill text-warning fs-5"></i>
-          <span>결제 카드 등록하기</span>
-        </button>
-      </div>
-
-    </div>
-
-    <!-- ==================== [MODE B] 전자지갑 결제 화면 ==================== -->
-    <div v-else class="wallet-payment-section animate__animated animate__fadeIn">
-      <!-- 사용자 선택 바 -->
-      <div class="d-flex justify-content-between align-items-center mb-3 px-2">
-        <div class="d-flex align-items-center gap-2">
-          <div class="user-avatar bg-warning text-dark fw-bold rounded-circle d-flex align-items-center justify-content-center">
-            <i class="bi bi-person-fill fs-5"></i>
-          </div>
-          <div>
-            <span class="text-muted small d-block" style="font-size: 0.75rem;">KB Pay 회원</span>
-            <strong class="text-dark fw-bold">사용자 #{{ currentUserId }}</strong>
-          </div>
-        </div>
-
-        <!-- 계정 전환 드롭다운 -->
-        <div class="dropdown">
-          <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 dropdown-toggle text-dark border" type="button" data-bs-toggle="dropdown">
-            계정 전환
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
-            <li><a class="dropdown-item py-2" href="#" @click.prevent="switchUser(1)">User #1 (김국민)</a></li>
-            <li><a class="dropdown-item py-2" href="#" @click.prevent="switchUser(2)">User #2 (이KB)</a></li>
-            <li><a class="dropdown-item py-2" href="#" @click.prevent="switchUser(3)">User #3 (박스타)</a></li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- KB Pay 지갑 카드 -->
-      <div class="kb-card shadow-lg mb-4 text-dark position-relative overflow-hidden">
-        <div class="card-bg-circle"></div>
-        <div class="p-4 position-relative z-1">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="d-flex align-items-center gap-2">
-              <span class="badge bg-dark text-warning px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.7rem;">KB Pay</span>
-              <span class="text-secondary small fw-medium">디지털 지갑</span>
+        <!-- 잔액 카드 -->
+        <div class="balance-card">
+          <div class="balance-card-top">
+            <div class="balance-badge">
+              <i class="bi bi-wallet2 me-1"></i> KB Pay Wallet
             </div>
-            <button class="btn btn-link text-secondary p-0" @click="fetchWallet" title="새로고침">
-              <i class="bi bi-arrow-clockwise fs-5" :class="{ 'spin-icon': loading }"></i>
+            <button class="refresh-btn" @click="fetchWallet">
+              <i class="bi bi-arrow-clockwise"></i>
             </button>
           </div>
 
-          <div class="my-3">
-            <div class="text-secondary small mb-1">지갑 잔액</div>
-            <div class="display-6 fw-extrabold text-dark tracking-tight">
-              {{ formatCurrency(walletData?.balance) }}
-            </div>
+          <div class="balance-display">
+            <p class="balance-label">내 지갑 잔액</p>
+            <h1 class="balance-amount">{{ formatCurrency(walletData?.balance) }}</h1>
           </div>
 
-          <!-- 퀵 버튼 그룹 (충전하기 / 송금하기) -->
-          <div class="d-flex gap-2 mt-4 pt-2">
-            <button class="btn btn-dark flex-fill py-2.5 rounded-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-1.5" @click="openChargeModal">
-              <i class="bi bi-plus-circle-fill text-warning"></i> 충전하기
+          <div class="balance-actions">
+            <button class="balance-action-btn charge" @click="openChargeModal">
+              <i class="bi bi-plus-lg me-1"></i> 충전하기
             </button>
-            <router-link :to="{ path: '/remittance', query: { walletId: walletData?.walletId || 1 } }" class="btn btn-warning flex-fill py-2.5 rounded-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-1.5 text-dark">
-              <i class="bi bi-send-fill"></i> 송금하기
+            <router-link
+              :to="{ path: '/remittance', query: { walletId: walletData?.walletId || 1 } }"
+              class="balance-action-btn send"
+            >
+              <i class="bi bi-send-fill me-1"></i> 송금하기
             </router-link>
           </div>
         </div>
-      </div>
 
-      <!-- 현장 결제 코드 퀵 메뉴 -->
-      <div class="row g-3 mb-4">
-        <div class="col-6">
-          <div class="quick-action-card p-3 rounded-4 bg-white border shadow-sm cursor-pointer" @click="openPaymentModal('barcode')">
-            <div class="icon-box bg-dark text-warning mb-2 rounded-3 d-flex align-items-center justify-content-center">
-              <i class="bi bi-upc-scan fs-4"></i>
-            </div>
-            <h6 class="fw-bold mb-0 text-dark">바코드 결제</h6>
-            <span class="text-muted small" style="font-size: 0.75rem;">1회용 3분 보안 바코드</span>
-          </div>
+        <!-- 빠른 결제 섹션 -->
+        <div class="section-header">
+          <h6 class="section-title">빠른 결제</h6>
         </div>
-        <div class="col-6">
-          <div class="quick-action-card p-3 rounded-4 bg-white border shadow-sm cursor-pointer" @click="openPaymentModal('qr')">
-            <div class="icon-box bg-warning-subtle text-warning-emphasis mb-2 rounded-3 d-flex align-items-center justify-content-center">
-              <i class="bi bi-qr-code-scan fs-4"></i>
+
+        <div class="quick-pay-grid">
+          <!-- 바코드 결제 -->
+          <button class="quick-pay-card" @click="openPaymentModal('barcode')">
+            <div class="qp-icon-wrap yellow">
+              <i class="bi bi-upc-scan"></i>
             </div>
-            <h6 class="fw-bold mb-0 text-dark">QR 코드 결제</h6>
-            <span class="text-muted small" style="font-size: 0.75rem;">1회용 3분 보안 QR코드</span>
+            <div class="qp-text">
+              <strong>바코드 결제</strong>
+              <span>1회용 보안 코드</span>
+            </div>
+            <i class="bi bi-chevron-right qp-arrow"></i>
+          </button>
+
+          <!-- QR코드 결제 -->
+          <button class="quick-pay-card" @click="openPaymentModal('qr')">
+            <div class="qp-icon-wrap dark">
+              <i class="bi bi-qr-code-scan"></i>
+            </div>
+            <div class="qp-text">
+              <strong>QR 코드 결제</strong>
+              <span>1회용 보안 코드</span>
+            </div>
+            <i class="bi bi-chevron-right qp-arrow"></i>
+          </button>
+        </div>
+
+        <!-- 안내 배너 -->
+        <div class="info-banner">
+          <i class="bi bi-shield-check info-icon"></i>
+          <div>
+            <p class="info-title">보안 결제 시스템</p>
+            <p class="info-desc">결제 코드는 1분마다 자동 갱신되어 안전합니다</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 1회용 QR / 바코드 결제 모달 -->
-    <PaymentCodeModal
-      v-if="showPaymentModal"
-      :userId="currentUserId"
-      :initialTab="selectedPaymentMode"
-      @close="showPaymentModal = false"
-      @paymentSuccess="fetchWallet"
-    />
+    <!-- 알림 메시지 (토스트) -->
+    <transition name="toast">
+      <div v-if="statusMessage" :class="['toast-msg', isSuccess ? 'success' : 'error']">
+        <i :class="['bi me-2', isSuccess ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill']"></i>
+        <span>{{ statusMessage }}</span>
+        <button class="toast-close" @click="statusMessage = ''">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+    </transition>
 
-    <!-- 충전 모달 -->
-    <div v-if="showChargeModal" class="kb-modal-backdrop" @click.self="showChargeModal = false">
-      <div class="kb-modal-content bg-white rounded-4 shadow-lg p-4 animate__animated animate__fadeInUp">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="fw-bold text-dark mb-0">지갑 머니 충전</h5>
-          <button type="button" class="btn-close" @click="showChargeModal = false"></button>
+    <!-- ══════════════════════════════════════════
+         충전 바텀시트
+    ══════════════════════════════════════════ -->
+    <div v-if="showChargeModal" class="backdrop" @click.self="showChargeModal = false">
+      <div class="bottom-sheet animate-up">
+        <div class="sheet-handle" @click="showChargeModal = false"></div>
+
+        <div class="sheet-header">
+          <div class="sheet-title-wrap">
+            <div class="sheet-icon yellow"><i class="bi bi-lightning-fill"></i></div>
+            <h5 class="sheet-title">지갑 충전</h5>
+          </div>
+          <button class="btn-close shadow-none" @click="showChargeModal = false"></button>
         </div>
 
-        <form @submit.prevent="executeCharge">
-          <div class="mb-3">
-            <label class="form-label text-secondary small fw-bold">출금 계좌 선택</label>
-            <select v-model="chargeForm.bankCode" class="form-select form-select-lg fs-6 border-2">
+        <form @submit.prevent="executeCharge" class="sheet-body">
+          <div class="form-group-kb">
+            <label class="form-label-kb">출금 계좌</label>
+            <select v-model="chargeForm.bankCode" class="select-kb">
               <option value="004">KB국민은행 (123-456-7890)</option>
               <option value="088">신한은행 (110-234-5678)</option>
               <option value="020">우리은행 (1002-345-6789)</option>
@@ -286,53 +256,61 @@
             </select>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label text-secondary small fw-bold">충전 금액</label>
-            <div class="input-group input-group-lg">
+          <div class="form-group-kb">
+            <label class="form-label-kb">충전 금액</label>
+            <div class="amount-input-wrap">
               <input
                 type="number"
                 v-model.number="chargeForm.amount"
-                class="form-control fw-bold border-2"
-                placeholder="충전할 금액 입력"
+                class="amount-input"
+                placeholder="0"
                 min="1000"
                 step="1000"
                 required
               />
-              <span class="input-group-text bg-light fw-bold">원</span>
+              <span class="amount-unit">원</span>
             </div>
-            <div class="d-flex gap-1.5 mt-2">
-              <button type="button" class="btn btn-sm btn-outline-dark rounded-pill flex-fill" @click="addChargeAmount(10000)">+1만원</button>
-              <button type="button" class="btn btn-sm btn-outline-dark rounded-pill flex-fill" @click="addChargeAmount(30000)">+3만원</button>
-              <button type="button" class="btn btn-sm btn-outline-dark rounded-pill flex-fill" @click="addChargeAmount(50000)">+5만원</button>
-              <button type="button" class="btn btn-sm btn-outline-dark rounded-pill flex-fill" @click="addChargeAmount(100000)">+10만원</button>
+            <div class="quick-amount-row">
+              <button type="button" class="quick-amt-btn" @click="addChargeAmount(10000)">+1만</button>
+              <button type="button" class="quick-amt-btn" @click="addChargeAmount(30000)">+3만</button>
+              <button type="button" class="quick-amt-btn" @click="addChargeAmount(50000)">+5만</button>
+              <button type="button" class="quick-amt-btn" @click="addChargeAmount(100000)">+10만</button>
             </div>
           </div>
 
-          <div class="mb-4">
-            <label class="form-label text-secondary small fw-bold">메모 (선택)</label>
-            <input type="text" v-model="chargeForm.memo" class="form-control" placeholder="예: 용돈 충전" />
+          <div class="form-group-kb">
+            <label class="form-label-kb">메모 <span class="optional-tag">선택</span></label>
+            <input type="text" v-model="chargeForm.memo" class="input-kb" placeholder="예: 용돈 충전" />
           </div>
 
-          <button type="submit" class="btn btn-warning w-100 py-3 fw-bold rounded-3 fs-6 shadow-sm" :disabled="charging">
+          <button type="submit" class="submit-btn" :disabled="charging">
             <span v-if="charging" class="spinner-border spinner-border-sm me-2"></span>
+            <i v-else class="bi bi-lightning-fill me-2"></i>
             충전 완료하기
           </button>
         </form>
       </div>
     </div>
 
-    <!-- 카드 신규 등록 모달 -->
-    <div v-if="showAddCardModal" class="kb-modal-backdrop" @click.self="showAddCardModal = false">
-      <div class="kb-modal-content bg-white rounded-4 shadow-lg p-4 animate__animated animate__fadeInUp">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="fw-bold text-dark mb-0">신규 결제 카드 등록</h5>
-          <button type="button" class="btn-close" @click="showAddCardModal = false"></button>
+    <!-- ══════════════════════════════════════════
+         카드 등록 바텀시트
+    ══════════════════════════════════════════ -->
+    <div v-if="showAddCardModal" class="backdrop" @click.self="showAddCardModal = false">
+      <div class="bottom-sheet animate-up">
+        <div class="sheet-handle" @click="showAddCardModal = false"></div>
+
+        <div class="sheet-header">
+          <div class="sheet-title-wrap">
+            <div class="sheet-icon dark"><i class="bi bi-credit-card-fill"></i></div>
+            <h5 class="sheet-title">카드 등록</h5>
+          </div>
+          <button class="btn-close shadow-none" @click="showAddCardModal = false"></button>
         </div>
 
-        <form @submit.prevent="submitAddCard">
-          <div class="mb-3">
-            <label class="form-label text-secondary small fw-bold">카드 상품 선택</label>
-            <select v-model="newCardForm.cardName" class="form-select border-2">
+        <form @submit.prevent="submitAddCard" class="sheet-body">
+          <div class="form-group-kb">
+            <label class="form-label-kb">카드 상품</label>
+            <select v-model="newCardForm.cardName" class="select-kb">
               <option value="KB국민 My WE:SH 카드">KB국민 My WE:SH 카드</option>
               <option value="KB국민 톡톡O 카드">KB국민 톡톡O 카드</option>
               <option value="KB국민 노리2 체크카드">KB국민 노리2 체크카드</option>
@@ -340,39 +318,49 @@
             </select>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label text-secondary small fw-bold">카드 번호 (16자리)</label>
-            <input 
-              type="text" 
-              v-model="newCardForm.cardNum" 
-              class="form-control font-monospace border-2"
-              placeholder="9410-1234-5678-0000" 
+          <div class="form-group-kb">
+            <label class="form-label-kb">카드 번호 (16자리)</label>
+            <input
+              type="text"
+              v-model="newCardForm.cardNum"
+              class="input-kb font-monospace"
+              placeholder="9410-1234-5678-0000"
               required
             />
           </div>
 
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label text-secondary small fw-bold">유효기간 (MM/YY)</label>
-              <input type="text" v-model="newCardForm.expiryDate" class="form-control text-center" placeholder="12/28" required />
+          <div class="form-row-2">
+            <div class="form-group-kb">
+              <label class="form-label-kb">유효기간</label>
+              <input type="text" v-model="newCardForm.expiryDate" class="input-kb text-center" placeholder="MM/YY" required />
             </div>
-            <div class="col-6">
-              <label class="form-label text-secondary small fw-bold">CVC (3자리)</label>
-              <input type="password" v-model="newCardForm.cvv" class="form-control text-center" maxlength="3" placeholder="•••" required />
+            <div class="form-group-kb">
+              <label class="form-label-kb">CVC</label>
+              <input type="password" v-model="newCardForm.cvv" class="input-kb text-center" maxlength="3" placeholder="•••" required />
             </div>
           </div>
 
-          <div class="mb-4">
-            <label class="form-label text-secondary small fw-bold">카드 비밀번호 (4자리)</label>
-            <input type="password" v-model="newCardForm.cardPassword" class="form-control" maxlength="4" placeholder="비밀번호 4자리" required />
+          <div class="form-group-kb">
+            <label class="form-label-kb">카드 비밀번호 앞 2자리</label>
+            <input type="password" v-model="newCardForm.cardPassword" class="input-kb" maxlength="4" placeholder="••••" required />
           </div>
 
-          <button type="submit" class="btn btn-warning w-100 py-3 fw-bold rounded-3 fs-6 shadow-sm">
-            카드 등록 완료하기
+          <button type="submit" class="submit-btn">
+            <i class="bi bi-shield-check me-2"></i>
+            카드 안전 등록하기
           </button>
         </form>
       </div>
     </div>
+
+    <!-- 결제 코드 모달 -->
+    <PaymentCodeModal
+      v-if="showPaymentModal"
+      :userId="currentUserId"
+      :initialTab="selectedPaymentMode"
+      @close="showPaymentModal = false"
+      @paymentSuccess="fetchWallet"
+    />
 
     <!-- PIN 인증 모달 -->
     <PinAuthModal
@@ -381,24 +369,19 @@
       @close="showPinModal = false"
       @success="handlePinSuccess"
     />
-
-    <!-- 알림 메시지 -->
-    <div v-if="statusMessage" :class="['alert', isSuccess ? 'alert-success' : 'alert-danger', 'rounded-3 shadow-sm border-0 mb-3 d-flex align-items-center justify-content-between']">
-      <span>{{ statusMessage }}</span>
-      <button type="button" class="btn-close ms-2" @click="statusMessage = ''"></button>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
+import { useAuthStore } from '@/stores/auth';
 import walletApi from '@/api/walletApi';
 import cardApi from '@/api/cardApi';
 import PaymentCodeModal from '@/components/wallet/PaymentCodeModal.vue';
 import PinAuthModal from '@/components/auth/PinAuthModal.vue';
 
-// 기본 상태
-const currentUserId = ref(1);
+const authStore = useAuthStore();
+const currentUserId = computed(() => authStore.userId || 1);
 const walletData = ref(null);
 const cardStatus = ref(null);
 const primaryCard = ref(null);
@@ -410,105 +393,64 @@ const showPinModal = ref(false);
 const showAddCardModal = ref(false);
 const isPinAuthenticated = ref(false);
 
-const selectedPaymentMode = ref('barcode'); 
+const selectedPaymentMode = ref('barcode');
 const statusMessage = ref('');
 const isSuccess = ref(true);
 
-// 시작 화면 설정
 const startScreenMode = ref(localStorage.getItem('kb_pay_start_mode') || 'WALLET');
 const activePaymentTab = ref(startScreenMode.value === 'CARD' ? 'CARD' : 'WALLET');
 
-// 카드 목록
 const currentCardIndex = ref(0);
 const userCards = ref([]);
 
 const currentCard = computed(() => userCards.value[currentCardIndex.value] || {});
 
-// 결제 타이머
 const timerSeconds = ref(60);
 let timerInterval = null;
-
-const formattedTimer = computed(() => {
-  if (timerSeconds.value <= 0) return '00:00';
-  const m = Math.floor(timerSeconds.value / 60).toString().padStart(2, '0');
-  const s = (timerSeconds.value % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
-});
 
 const startTimer = () => {
   stopTimer();
   timerSeconds.value = 60;
   timerInterval = setInterval(() => {
-    if (timerSeconds.value > 0) {
-      timerSeconds.value--;
-    } else {
-      timerSeconds.value = 60;
-    }
+    if (timerSeconds.value > 0) timerSeconds.value--;
+    else timerSeconds.value = 60;
   }, 1000);
 };
 
 const stopTimer = () => {
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 };
 
-const openPinModal = () => {
-  showPinModal.value = true;
-};
+const openPinModal = () => { showPinModal.value = true; };
 
 const handlePinSuccess = () => {
   isPinAuthenticated.value = true;
   showPinModal.value = false;
-  statusMessage.value = 'PIN 보안 인증 성공! 무선 카드 결제 신호 송신이 시작되었습니다.';
+  statusMessage.value = 'PIN 인증 성공! 무선 결제가 시작되었습니다.';
   isSuccess.value = true;
   startTimer();
+  setTimeout(() => { statusMessage.value = ''; }, 3000);
 };
 
-// 시작 화면 전환 버튼 클릭
 const toggleStartScreenMode = () => {
-  if (startScreenMode.value === 'WALLET') {
-    startScreenMode.value = 'CARD';
-    activePaymentTab.value = 'CARD';
-  } else {
-    startScreenMode.value = 'WALLET';
-    activePaymentTab.value = 'WALLET';
-  }
+  startScreenMode.value = startScreenMode.value === 'WALLET' ? 'CARD' : 'WALLET';
+  activePaymentTab.value = startScreenMode.value === 'CARD' ? 'CARD' : 'WALLET';
   localStorage.setItem('kb_pay_start_mode', startScreenMode.value);
-  statusMessage.value = `시작 화면이 '${startScreenMode.value === 'CARD' ? '카드 결제' : '전자 지갑'}'로 설정되었습니다.`;
+  statusMessage.value = `시작 화면: '${startScreenMode.value === 'CARD' ? '카드 결제' : '지갑 결제'}' 우선`;
   isSuccess.value = true;
+  setTimeout(() => { statusMessage.value = ''; }, 2000);
 };
 
-// 결제 탭 변경
 const switchPaymentTab = (tab) => {
   activePaymentTab.value = tab;
-  if (tab === 'CARD') {
-    startTimer();
-  } else {
-    stopTimer();
-  }
+  if (tab === 'CARD') startTimer();
+  else stopTimer();
 };
 
-const prevCard = () => {
-  if (currentCardIndex.value > 0) {
-    currentCardIndex.value--;
-  }
-};
+const prevCard = () => { if (currentCardIndex.value > 0) currentCardIndex.value--; };
+const nextCard = () => { if (currentCardIndex.value < userCards.value.length - 1) currentCardIndex.value++; };
 
-const nextCard = () => {
-  if (currentCardIndex.value < userCards.value.length - 1) {
-    currentCardIndex.value++;
-  }
-};
-
-const newCardForm = reactive({
-  cardName: 'KB국민 My WE:SH 카드',
-  cardNum: '',
-  expiryDate: '',
-  cvv: '',
-  cardPassword: '',
-});
+const newCardForm = reactive({ cardName: 'KB국민 My WE:SH 카드', cardNum: '', expiryDate: '', cvv: '', cardPassword: '' });
 
 const openAddCardModal = () => {
   newCardForm.cardName = 'KB국민 My WE:SH 카드';
@@ -531,12 +473,12 @@ const submitAddCard = async () => {
       cardName: newCardForm.cardName,
       representYn: userCards.value.length === 0 ? 'Y' : 'N',
     };
-
     await cardApi.registerCard(payload);
-    statusMessage.value = `'${newCardForm.cardName}' 카드가 성공적으로 등록되었습니다!`;
+    statusMessage.value = `'${newCardForm.cardName}' 등록 완료!`;
     isSuccess.value = true;
     showAddCardModal.value = false;
     await fetchCardStatusAndCards();
+    setTimeout(() => { statusMessage.value = ''; }, 3000);
   } catch (err) {
     console.error('카드 등록 실패:', err);
     statusMessage.value = '카드 등록 중 오류가 발생했습니다.';
@@ -547,46 +489,34 @@ const submitAddCard = async () => {
 const makePrimaryCard = async (cardId) => {
   try {
     await cardApi.setPrimaryCard(cardId, currentUserId.value);
-    statusMessage.value = '대표 카드가 성공적으로 변경되었습니다!';
+    statusMessage.value = '대표 카드가 변경되었습니다!';
     isSuccess.value = true;
     await fetchCardStatusAndCards();
+    setTimeout(() => { statusMessage.value = ''; }, 2500);
   } catch (err) {
-    console.error('대표 카드 변경 실패:', err);
-    statusMessage.value = '대표 카드 변경 처리 중 오류가 발생했습니다.';
+    statusMessage.value = '대표 카드 변경 실패';
     isSuccess.value = false;
   }
 };
 
-const chargeForm = reactive({
-  bankCode: '004',
-  accountNumber: '123-456-7890',
-  amount: 50000,
-  memo: '',
-});
+const chargeForm = reactive({ bankCode: '004', accountNumber: '123-456-7890', amount: 50000, memo: '' });
 
 const formatCurrency = (val) => {
-  if (val === undefined || val === null) return '0 원';
-  return Number(val).toLocaleString('ko-KR') + ' 원';
+  if (val === undefined || val === null) return '₩0';
+  return '₩' + Number(val).toLocaleString('ko-KR');
 };
 
 const formatCardNumDisplay = (raw) => {
   if (!raw) return '•••• 9182';
   const clean = String(raw).replace(/\D/g, '');
-  if (clean.length >= 4) {
-    return '•••• ' + clean.slice(-4);
-  }
-  return raw;
+  return clean.length >= 4 ? '•••• •••• •••• ' + clean.slice(-4) : raw;
 };
 
-// pay-001 (대표 카드) & pay-002 (카드 상태 및 미등록 가이드) 통합 조회
 const fetchCardStatusAndCards = async () => {
   try {
-    // 1. pay-002: 카드 등록 상태 및 등록 가이드 메시지 조회
     const statusRes = await cardApi.getCardStatus(currentUserId.value);
     cardStatus.value = statusRes;
-
     if (statusRes && statusRes.hasRegisteredCard) {
-      // 2. 카드가 존재하는 경우 DB 등록 카드 목록 조회
       const dbCards = await walletApi.getUserCards(currentUserId.value);
       if (dbCards && dbCards.length > 0) {
         userCards.value = dbCards.map(c => ({
@@ -596,44 +526,23 @@ const fetchCardStatusAndCards = async () => {
           cardNum: formatCardNumDisplay(c.cardNum),
           representYn: c.representYn || 'N',
         }));
-
-        // 3. pay-001: 대표 카드 정보 조회하여 현재 대표 카드 인덱스 선택
         const primaryRes = await cardApi.getPrimaryCard(currentUserId.value);
         primaryCard.value = primaryRes;
-
         if (primaryRes && primaryRes.cardId) {
           const idx = userCards.value.findIndex(c => c.cardId === primaryRes.cardId);
-          if (idx !== -1) {
-            currentCardIndex.value = idx;
-          }
+          if (idx !== -1) currentCardIndex.value = idx;
         }
-      } else {
-        userCards.value = [];
-      }
-    } else {
-      // 카드가 없거나 미등록 상태인 경우
-      userCards.value = [];
-      primaryCard.value = null;
-    }
+      } else { userCards.value = []; }
+    } else { userCards.value = []; primaryCard.value = null; }
   } catch (err) {
-    console.error('카드 상태/목록 조회 실패:', err);
+    console.error('카드 조회 실패:', err);
     userCards.value = [];
     primaryCard.value = null;
   }
 };
 
-const switchUser = (userId) => {
-  currentUserId.value = userId;
-  isPinAuthenticated.value = false;
-  stopTimer();
-  currentCardIndex.value = 0;
-  fetchWallet();
-  fetchCardStatusAndCards();
-};
-
 const fetchWallet = async () => {
   loading.value = true;
-  statusMessage.value = '';
   try {
     const data = await walletApi.getWalletByUserId(currentUserId.value);
     walletData.value = data;
@@ -655,14 +564,10 @@ const openChargeModal = () => {
   showChargeModal.value = true;
 };
 
-const addChargeAmount = (val) => {
-  chargeForm.amount = (chargeForm.amount || 0) + val;
-};
+const addChargeAmount = (val) => { chargeForm.amount = (chargeForm.amount || 0) + val; };
 
 const executeCharge = async () => {
   charging.value = true;
-  statusMessage.value = '';
-
   try {
     const payload = {
       userId: currentUserId.value,
@@ -672,12 +577,12 @@ const executeCharge = async () => {
       accountNumber: chargeForm.accountNumber,
       memo: chargeForm.memo || 'KB Pay 연동계좌 충전',
     };
-
     await walletApi.chargeWallet(payload);
     isSuccess.value = true;
-    statusMessage.value = `${Number(chargeForm.amount).toLocaleString('ko-KR')}원이 지갑에 충전되었습니다.`;
+    statusMessage.value = `${Number(chargeForm.amount).toLocaleString('ko-KR')}원 충전 완료!`;
     showChargeModal.value = false;
     await fetchWallet();
+    setTimeout(() => { statusMessage.value = ''; }, 3000);
   } catch (err) {
     console.error('Charge error:', err);
     isSuccess.value = false;
@@ -692,113 +597,687 @@ onMounted(() => {
   fetchCardStatusAndCards();
 });
 
-onUnmounted(() => {
-  stopTimer();
-});
+onUnmounted(() => { stopTimer(); });
 </script>
 
 <style scoped>
-.kb-container {
-  max-width: 500px;
-  margin: 0 auto;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+/* ═══════════════════════════════════════
+   루트 레이아웃
+═══════════════════════════════════════ */
+.wallet-root {
+  min-height: 100vh;
+  background: #F4F6FA;
+  padding-bottom: 80px;
 }
-.user-avatar {
-  width: 40px;
-  height: 40px;
+
+/* ═══════════════════════════════════════
+   히어로 배너
+═══════════════════════════════════════ */
+.hero-banner {
+  background: linear-gradient(150deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%);
+  padding: 52px 20px 36px;
+  position: relative;
+  overflow: hidden;
 }
-.kb-card {
-  background: linear-gradient(135deg, #ffbc00 0%, #ffaa00 100%);
-  border-radius: 24px;
-  box-shadow: 0 12px 30px rgba(255, 188, 0, 0.3) !important;
-}
-.card-bg-circle {
+.hero-banner::before {
+  content: '';
   position: absolute;
-  right: -20px;
-  bottom: -30px;
-  width: 180px;
-  height: 180px;
-  background: rgba(255, 255, 255, 0.15);
+  top: -60px;
+  right: -40px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255,188,0,0.18) 0%, transparent 70%);
   border-radius: 50%;
-  pointer-events: none;
 }
-.quick-action-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.hero-inner {
+  max-width: 480px;
+  margin: 0 auto;
 }
-.quick-action-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08) !important;
+.hero-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
 }
-.icon-box {
-  width: 44px;
-  height: 44px;
+.hero-sub {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.72rem;
+  margin-bottom: 4px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+.hero-title {
+  color: #fff;
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+.mode-toggle-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.85);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.mode-toggle-btn:hover {
+  background: rgba(255,188,0,0.2);
+  border-color: rgba(255,188,0,0.4);
+  color: #FFBC00;
 }
 
-/* 카드 덱 UI 스타일 */
-.card-deck-wrapper {
-  width: 260px;
-  height: 150px;
+/* 세그먼트 탭 */
+.segment-wrap {
+  display: flex;
+  background: rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
 }
-.simple-card-box {
-  border-radius: 14px !important;
-}
-.nav-arrow-btn {
-  width: 38px;
-  height: 38px;
+.segment-btn {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #eee;
+  gap: 6px;
 }
-.indicator-dot {
-  width: 8px;
-  height: 8px;
-}
-.indicator-dot.active-dot {
-  width: 18px;
-  border-radius: 4px !important;
+.segment-btn.active {
+  background: #FFBC00;
+  color: #1A1A2E;
+  box-shadow: 0 4px 16px rgba(255,188,0,0.35);
 }
 
-/* 점선 원 박스 (대표 카드 없음) */
-.dotted-circle-box {
-  width: 170px;
+/* ═══════════════════════════════════════
+   본문
+═══════════════════════════════════════ */
+.page-body {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 16px 0;
+}
+
+/* ═══════════════════════════════════════
+   카드 섹션
+═══════════════════════════════════════ */
+.card-section { display: flex; flex-direction: column; gap: 16px; }
+
+/* 카드 없음 */
+.empty-card-box {
+  background: #fff;
+  border-radius: 20px;
+  padding: 48px 24px;
+  text-align: center;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+}
+.empty-icon-wrap {
+  width: 72px; height: 72px;
+  background: #FFF8E1;
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 2rem;
+  color: #FFBC00;
+}
+.empty-card-box h5 { font-size: 1.1rem; font-weight: 800; color: #1A1A2E; margin-bottom: 8px; }
+.empty-card-box p { color: #94A3B8; font-size: 0.875rem; line-height: 1.6; margin-bottom: 24px; }
+
+/* 카드 스테이지 */
+.card-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.card-nav-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: #1A1A2E;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.card-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.card-nav-btn:not(:disabled):hover { background: #FFBC00; box-shadow: 0 4px 16px rgba(255,188,0,0.3); }
+
+/* 카드 플레이트 */
+.card-plate {
+  width: 280px;
   height: 170px;
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+  transition: transform 0.2s ease;
+}
+.card-plate:hover { transform: translateY(-3px); }
+
+.card-gold {
+  background: linear-gradient(135deg, #1A1A2E 0%, #2D2D4A 50%, #1A1A2E 100%);
+  border: 1.5px solid rgba(255,188,0,0.6);
+}
+.card-gold::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,188,0,0.08) 0%, transparent 60%);
 }
 
-.spin-subtle {
-  animation: pulse 1.5s infinite;
-}
-@keyframes pulse {
-  0% { opacity: 0.4; }
-  50% { opacity: 1; }
-  100% { opacity: 0.4; }
+.card-dark {
+  background: linear-gradient(135deg, #2D3748 0%, #1A202C 100%);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
-.kb-modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+.card-plate-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  z-index: 1;
+}
+.card-chip-row { display: flex; align-items: center; gap: 10px; }
+.chip-icon {
+  width: 28px; height: 20px;
+  background: linear-gradient(135deg, #FFE082 0%, #FFB300 100%);
+  border-radius: 4px;
+}
+.card-name-label { color: rgba(255,255,255,0.85); font-size: 0.72rem; font-weight: 700; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-badge-wrap { display: flex; align-items: center; }
+.rep-badge {
+  background: rgba(255,188,0,0.2);
+  color: #FFBC00;
+  border: 1px solid rgba(255,188,0,0.4);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  display: flex; align-items: center; gap: 4px;
+}
+.set-rep-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.7);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.set-rep-btn:hover { background: rgba(255,188,0,0.2); border-color: #FFBC00; color: #FFBC00; }
+
+.card-number-row {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.card-number {
+  color: rgba(255,255,255,0.95);
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+}
+
+.card-plate-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+.card-holder { color: rgba(255,255,255,0.6); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.nfc-icon { color: #FFBC00; font-size: 1.2rem; }
+
+/* 카드 인디케이터 */
+.card-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.card-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #CBD5E1;
+  transition: all 0.2s ease;
+}
+.card-dot.active {
+  background: #FFBC00;
+  width: 18px;
+  border-radius: 3px;
+}
+
+/* 카드 액션 박스 */
+.card-actions-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.card-actions-row {
+  display: flex;
+  align-items: center;
+}
+.card-action-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+  transition: all 0.2s ease;
+  border-radius: 12px;
+}
+.card-action-btn:hover { background: #F8FAFC; color: #1A1A2E; }
+.action-icon-wrap {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: #F1F5F9;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  color: #475569;
+}
+.action-icon-wrap.accent {
+  background: #FFF8E1;
+  color: #FFBC00;
+}
+.action-divider {
+  width: 1px; height: 40px;
+  background: #E2E8F0;
+}
+
+/* 결제 메인 버튼 */
+.big-pay-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #FFBC00 0%, #FF9900 100%);
+  color: #1A1A2E;
+  border: none;
+  border-radius: 16px;
+  padding: 18px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1050;
-  padding: 16px;
+  box-shadow: 0 8px 24px rgba(255,188,0,0.35);
+  transition: all 0.2s ease;
+  letter-spacing: -0.3px;
 }
-.kb-modal-content {
+.big-pay-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(255,188,0,0.45);
+}
+.big-pay-btn:active { transform: translateY(0); }
+
+/* ═══════════════════════════════════════
+   공통 버튼
+═══════════════════════════════════════ */
+.btn-primary-kb {
+  background: linear-gradient(135deg, #FFBC00 0%, #FF9900 100%);
+  color: #1A1A2E;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 32px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(255,188,0,0.3);
+  transition: all 0.2s ease;
+}
+.btn-primary-kb:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(255,188,0,0.4); }
+
+/* ═══════════════════════════════════════
+   지갑 섹션
+═══════════════════════════════════════ */
+.wallet-section { display: flex; flex-direction: column; gap: 16px; }
+
+/* 잔액 카드 */
+.balance-card {
+  background: linear-gradient(135deg, #1A1A2E 0%, #0F3460 100%);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 12px 40px rgba(15,52,96,0.3);
+  position: relative;
+  overflow: hidden;
+}
+.balance-card::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 150px; height: 150px;
+  background: radial-gradient(circle, rgba(255,188,0,0.15) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.balance-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.balance-badge {
+  background: rgba(255,188,0,0.15);
+  color: #FFBC00;
+  border: 1px solid rgba(255,188,0,0.3);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex; align-items: center;
+}
+.refresh-btn {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: rgba(255,255,255,0.7);
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+.refresh-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+
+.balance-display { margin-bottom: 24px; position: relative; z-index: 1; }
+.balance-label { color: rgba(255,255,255,0.5); font-size: 0.78rem; font-weight: 500; margin-bottom: 6px; }
+.balance-amount {
+  color: #fff;
+  font-size: 2.4rem;
+  font-weight: 900;
+  margin: 0;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.balance-actions {
+  display: flex;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+.balance-action-btn {
+  flex: 1;
+  border: none;
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.balance-action-btn.charge {
+  background: #FFBC00;
+  color: #1A1A2E;
+  box-shadow: 0 4px 16px rgba(255,188,0,0.3);
+}
+.balance-action-btn.charge:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,188,0,0.4); }
+.balance-action-btn.send {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.balance-action-btn.send:hover { background: rgba(255,255,255,0.2); }
+
+/* 섹션 헤더 */
+.section-header { padding: 0 4px; }
+.section-title { font-size: 1rem; font-weight: 800; color: #1A1A2E; margin: 0; }
+
+/* 빠른 결제 그리드 */
+.quick-pay-grid { display: flex; flex-direction: column; gap: 10px; }
+
+.quick-pay-card {
+  background: #fff;
+  border: 1px solid #F1F5F9;
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   width: 100%;
-  max-width: 440px;
 }
-.spin-icon {
-  animation: spin 1s linear infinite;
+.quick-pay-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  border-color: #FFBC00;
 }
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.qp-icon-wrap {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
 }
-.cursor-pointer {
+.qp-icon-wrap.yellow { background: #FFF8E1; color: #FFBC00; }
+.qp-icon-wrap.dark { background: #F1F5F9; color: #1A1A2E; }
+.qp-text { flex: 1; }
+.qp-text strong { display: block; font-size: 0.92rem; font-weight: 800; color: #1A1A2E; margin-bottom: 2px; }
+.qp-text span { font-size: 0.75rem; color: #94A3B8; font-weight: 500; }
+.qp-arrow { color: #CBD5E1; font-size: 0.9rem; }
+
+/* 안내 배너 */
+.info-banner {
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.info-icon { font-size: 1.2rem; color: #3B82F6; flex-shrink: 0; margin-top: 2px; }
+.info-title { font-size: 0.82rem; font-weight: 800; color: #1E3A5F; margin-bottom: 2px; }
+.info-desc { font-size: 0.73rem; color: #64748B; margin: 0; }
+
+/* ═══════════════════════════════════════
+   토스트 메시지
+═══════════════════════════════════════ */
+.toast-msg {
+  position: fixed;
+  top: 20px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 40px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  min-width: 220px;
+  max-width: 340px;
+  white-space: nowrap;
+}
+.toast-msg.success { background: #1A1A2E; color: #FFBC00; }
+.toast-msg.error { background: #FEF2F2; color: #EF4444; border: 1px solid #FCA5A5; }
+.toast-close { background: none; border: none; cursor: pointer; font-size: 1.1rem; opacity: 0.6; margin-left: auto; padding: 0; color: inherit; }
+
+.toast-enter-active, .toast-leave-active { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(-12px); }
+
+/* ═══════════════════════════════════════
+   바텀시트 공통
+═══════════════════════════════════════ */
+.backdrop {
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,0.6);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 1060;
+}
+.bottom-sheet {
+  background: #fff;
+  width: 100%; max-width: 480px;
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+  padding-bottom: max(env(safe-area-inset-bottom), 24px);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-up { animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+.sheet-handle {
+  width: 40px; height: 5px;
+  background: #E2E8F0;
+  border-radius: 3px;
+  margin: 14px auto 0;
   cursor: pointer;
 }
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px 4px;
+}
+.sheet-title-wrap { display: flex; align-items: center; gap: 12px; }
+.sheet-icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.sheet-icon.yellow { background: #FFF8E1; color: #FFBC00; }
+.sheet-icon.dark { background: #F1F5F9; color: #1A1A2E; }
+.sheet-title { font-size: 1.05rem; font-weight: 800; color: #1A1A2E; margin: 0; }
+.sheet-body { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 16px; }
+
+/* 폼 요소 */
+.form-group-kb { display: flex; flex-direction: column; gap: 6px; }
+.form-label-kb { font-size: 0.78rem; font-weight: 700; color: #64748B; }
+.optional-tag { font-weight: 500; color: #94A3B8; margin-left: 4px; }
+.input-kb {
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 13px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1A1A2E;
+  outline: none;
+  transition: border-color 0.2s ease;
+  background: #FAFAFA;
+  width: 100%;
+}
+.input-kb:focus { border-color: #FFBC00; background: #fff; box-shadow: 0 0 0 3px rgba(255,188,0,0.12); }
+.select-kb {
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 13px 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1A1A2E;
+  outline: none;
+  background: #FAFAFA;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  width: 100%;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%2394A3B8' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+.select-kb:focus { border-color: #FFBC00; box-shadow: 0 0 0 3px rgba(255,188,0,0.12); }
+
+.amount-input-wrap { position: relative; }
+.amount-input {
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 13px 50px 13px 16px;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #1A1A2E;
+  outline: none;
+  background: #FAFAFA;
+  width: 100%;
+  transition: border-color 0.2s ease;
+}
+.amount-input:focus { border-color: #FFBC00; background: #fff; box-shadow: 0 0 0 3px rgba(255,188,0,0.12); }
+.amount-unit {
+  position: absolute; right: 16px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.9rem; font-weight: 700; color: #94A3B8;
+}
+
+.quick-amount-row { display: flex; gap: 6px; }
+.quick-amt-btn {
+  flex: 1;
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 8px 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.quick-amt-btn:hover { background: #FFF8E1; border-color: #FFBC00; color: #1A1A2E; }
+.quick-amt-btn:active { transform: scale(0.96); }
+
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.submit-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #FFBC00 0%, #FF9900 100%);
+  color: #1A1A2E;
+  border: none;
+  border-radius: 16px;
+  padding: 17px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(255,188,0,0.35);
+  transition: all 0.2s ease;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+.submit-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,188,0,0.45); }
+.submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 </style>

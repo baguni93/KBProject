@@ -3,43 +3,6 @@
   font-family: 'Noto Sans KR';
 }
 
-/* #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
-}
-
-#app {
-  font-weight: normal;
-}
-
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
-}
-
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-}
-
-/* @media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
-} */
-
 .avatar {
   border-radius: 50%;
   border-color: gray;
@@ -61,16 +24,14 @@
 /* 페이지 네이션*/
 .pagination-container {
   display: flex;
-  /* column-gap: 10px; */
 }
 
 .paginate-buttons {
   height: 40px;
   width: 40px;
-  /* border-radius: 20px; */
   cursor: pointer;
-  background-color: white; /*rgb(242, 242, 242);*/
-  border: 1px solid white; /* rgb(217, 217, 217);*/
+  background-color: white;
+  border: 1px solid white;
   color: black;
 }
 
@@ -87,4 +48,14 @@
 }
 .active-page:hover {
   background-color: #2988c8;
+}
+
+/* Glassmorphism card style */
+.glass-card {
+  background: rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
