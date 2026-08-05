@@ -273,7 +273,8 @@
         WHERE user_id = #{userId} AND status = 'PROCESS'
     </update>
 
-<!--  이벤트 - 출석-->
+
+    <!--  이벤트 - 출석-->
     <select id="getParticipationCount" resultType="java.lang.Integer">
         SELECT COUNT(*)
         FROM (
@@ -308,6 +309,126 @@
         WHERE event_id = #{eventId}
           AND reward_id = #{rewardId}
           AND user_id = #{userId}
+    </select>
+
+
+    <insert id="joinEvent">
+        insert event_user_tbl set user_id = #{userId} , event_id = #{eventId};
+    </insert>
+
+    <insert id="joinAttendanceEvent">
+        insert event_attendance_tbl set user_id = #{userId} , event_id = #{eventId};
+    </insert>
+
+
+    <select id="getEvent" resultType="org.scoula.event.domain.EventNormalVO">
+
+        select a.event_id,
+               a.event_name,
+               a.event_desc,
+               a.event_type,
+               a.event_status,
+               a.event_img_name,
+               a.event_target,
+               a.event_level,
+               a.event_daily_limit_count,
+               a.start_at,
+               a.end_at,
+
+
+               b.reward_id,
+               b.reward_point,
+               b.reward_exe,
+
+               (
+                   SELECT COUNT(*)
+                   FROM event_participation_tbl ep
+                   WHERE ep.user_id = #{userId}
+                     AND ep.event_id = a.event_id
+               ) AS currentTargetCount,
+
+               (
+                   SELECT COUNT(*)
+                   FROM event_participation_tbl ep
+                   WHERE ep.user_id = #{userId}
+                     AND ep.event_id = a.event_id
+               ) >= a.event_target AS completed,
+
+            EXISTS (
+                       SELECT 1
+                       FROM event_reward_receive_tbl err
+                       WHERE err.user_id = #{userId}
+                         AND err.event_id = a.event_id
+                   ) AS rewardReceived,
+
+               EXISTS (
+                   SELECT 1
+                   FROM event_user_tbl eu
+                   WHERE eu.user_id = #{userId}
+                     AND eu.event_id = a.event_id
+               ) AS joined
+
+               from event_tbl a
+            left join event_reward_tbl b
+            on a.event_id = b.event_id
+            WHERE a.event_type != 'ATTENDANCE'
+        ORDER BY a.created_at desc;
+    </select>
+
+
+    <select id="getAttendanceEvent" resultType="org.scoula.event.domain.EventAttendanceVO">
+        select a.event_id,
+               a.event_name,
+               a.event_desc,
+               a.event_type,
+               a.event_status,
+               a.event_img_name,
+               a.event_target,
+               a.event_level,
+               a.event_daily_limit_count,
+               a.start_at,
+               a.end_at,
+
+               b.reward_id,
+               b.reward_point,
+               b.reward_exe,
+
+                 EXISTS (
+                    SELECT 1
+                    FROM event_attendance_tbl ea
+                    WHERE ea.event_id = a.event_id
+                      AND ea.user_id = #{userId}
+                      AND  DATE(ea.participated_at) = CURDATE()
+                ) AS todayAttendanceCompleted,
+
+               (
+                   SELECT COUNT(*)
+                   FROM event_attendance_tbl ea
+                   WHERE ea.user_id = #{userId}
+                     AND ea.event_id = a.event_id
+               ) AS currentTargetCount,
+
+               (
+                   SELECT COUNT(*)
+                   FROM event_attendance_tbl ea
+                   WHERE ea.user_id = #{userId}
+                     AND ea.event_id = a.event_id
+               ) >= a.event_target AS completed,
+
+               EXISTS (
+                   SELECT 1
+                   FROM event_reward_receive_tbl err
+                   WHERE err.user_id = #{userId}
+                     AND err.event_id = a.event_id
+               ) AS rewardReceived
+
+
+        from event_tbl a
+                 left join event_reward_tbl b
+                           on a.event_id = b.event_id
+        WHERE a.event_type = 'ATTENDANCE'
+        ORDER BY a.created_at desc;
+
     </select>
 
 </mapper>

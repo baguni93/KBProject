@@ -1,9 +1,7 @@
 package org.scoula.event.mapper;
 
 import org.apache.ibatis.annotations.Param;
-import org.scoula.event.domain.EventChallengeUserVO;
-import org.scoula.event.domain.EventParticipationVO;
-import org.scoula.event.domain.EventRewardReceiveVO;
+import org.scoula.event.domain.*;
 import org.scoula.event.dto.EventResponseDTO;
 import org.scoula.event.dto.UserChallengeDTO;
 
@@ -53,4 +51,12 @@ public interface EventMapper {
 
     // 52번째 줄 수정
     boolean checkRewardAlreadyReceived(@Param("eventId") Integer eventId, @Param("userId") Integer userId, @Param("rewardId") Integer rewardId);
+
+    List<EventNormalVO> getEvent(int userId);
+
+    void joinEvent(@Param("userId") int userId , @Param("eventId") int eventId);
+
+    List<EventAttendanceVO> getAttendanceEvent(int userId);
+
+    void joinAttendanceEvent(@Param("userId")int userId, @Param("eventId") int eventId);
 }
