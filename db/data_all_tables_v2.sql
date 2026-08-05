@@ -48,6 +48,7 @@ DROP TABLE IF EXISTS `friend_request_tbl`;
 DROP TABLE IF EXISTS `kb_insurance_recommendation_tbl`;
 DROP TABLE IF EXISTS `kb_insurance_coverage_tbl`;
 DROP TABLE IF EXISTS `kb_insurance_product_tbl`;
+DROP TABLE IF EXISTS `card_recommendation_detail_tbl`;
 DROP TABLE IF EXISTS `card_recommendation_tbl`;
 DROP TABLE IF EXISTS `card_benefit_tbl`;
 DROP TABLE IF EXISTS `kb_card_product_tbl`;
@@ -104,19 +105,20 @@ CREATE TABLE `tbl_member_auth`
 -- 1. 회원 테이블
 DROP TABLE IF EXISTS user_tbl;
 
-CREATE TABLE user_tbl (
-    user_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '회원번호',
-    user_name VARCHAR(30) NOT NULL COMMENT '이름',
-    birth_date DATE NOT NULL COMMENT '생년월일',
-    phone_number VARCHAR(20) NOT NULL UNIQUE COMMENT '휴대폰번호',
-    pin_password VARCHAR(255) NOT NULL COMMENT '암호화된 숫자 6자리 간편비밀번호',
-    user_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '회원상태',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '가입일시',
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE user_tbl
+(
+    user_id       INT AUTO_INCREMENT PRIMARY KEY COMMENT '회원번호',
+    user_name     VARCHAR(30)  NOT NULL COMMENT '이름',
+    birth_date    DATE         NOT NULL COMMENT '생년월일',
+    phone_number  VARCHAR(20)  NOT NULL UNIQUE COMMENT '휴대폰번호',
+    pin_password  VARCHAR(255) NOT NULL COMMENT '암호화된 숫자 6자리 간편비밀번호',
+    user_status   VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE' COMMENT '회원상태',
+    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '가입일시',
+    updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP
         COMMENT '수정일시',
-    withdrawn_at DATETIME NULL COMMENT '탈퇴일시',
-    last_login_at DATETIME NULL COMMENT '최근접속일시',
+    withdrawn_at  DATETIME     NULL COMMENT '탈퇴일시',
+    last_login_at DATETIME     NULL COMMENT '최근접속일시',
 
     CONSTRAINT chk_user_name_length
         CHECK (CHAR_LENGTH(user_name) BETWEEN 2 AND 30),
@@ -235,16 +237,16 @@ DROP TABLE IF EXISTS verification_tbl;
 CREATE TABLE verification_tbl
 (
     verification_id      INT AUTO_INCREMENT PRIMARY KEY COMMENT '인증번호',
-    user_id              INT          NULL COMMENT '회원번호',
-    user_name            VARCHAR(30)  NOT NULL COMMENT '인증이름',
-    birth_date           DATE	      NOT NULL COMMENT '생년월일',
-    carrier_code         VARCHAR(20)  NOT NULL COMMENT '통신사코드',
-    phone_number         VARCHAR(20)  NOT NULL COMMENT '휴대폰번호',
-    verification_code    VARCHAR(6) NOT NULL COMMENT '암호화된 인증코드',
-    verification_purpose VARCHAR(30)  NOT NULL COMMENT '인증목적',
-    requested_at         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
-    verified_yn          CHAR(1)      NOT NULL DEFAULT 'N' COMMENT '인증완료여부',
-    fail_count           INT          NOT NULL DEFAULT 0 COMMENT '인증실패횟수',
+    user_id              INT         NULL COMMENT '회원번호',
+    user_name            VARCHAR(30) NOT NULL COMMENT '인증이름',
+    birth_date           DATE        NOT NULL COMMENT '생년월일',
+    carrier_code         VARCHAR(20) NOT NULL COMMENT '통신사코드',
+    phone_number         VARCHAR(20) NOT NULL COMMENT '휴대폰번호',
+    verification_code    VARCHAR(6)  NOT NULL COMMENT '암호화된 인증코드',
+    verification_purpose VARCHAR(30) NOT NULL COMMENT '인증목적',
+    requested_at         DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
+    verified_yn          CHAR(1)     NOT NULL DEFAULT 'N' COMMENT '인증완료여부',
+    fail_count           INT         NOT NULL DEFAULT 0 COMMENT '인증실패횟수',
 
     CONSTRAINT fk_verification_user
         FOREIGN KEY (user_id)
@@ -303,30 +305,31 @@ CREATE TABLE profile_tbl
 );
 
 -- 6-4. 알림설정 테이블
-CREATE TABLE notification_setting_tbl (
+CREATE TABLE notification_setting_tbl
+(
     notification_setting_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림설정번호',
-    user_id INT NOT NULL UNIQUE COMMENT '회원번호',
-    finance_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '금융알림',
-    friend_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '친구요청알림',
-    reward_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '리워드알림',
-    event_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '이벤트혜택알림',
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '수정일시',
+    user_id                 INT      NOT NULL UNIQUE COMMENT '회원번호',
+    finance_notification_yn CHAR(1)  NOT NULL DEFAULT 'Y' COMMENT '금융알림',
+    friend_notification_yn  CHAR(1)  NOT NULL DEFAULT 'Y' COMMENT '친구요청알림',
+    reward_notification_yn  CHAR(1)  NOT NULL DEFAULT 'Y' COMMENT '리워드알림',
+    event_notification_yn   CHAR(1)  NOT NULL DEFAULT 'Y' COMMENT '이벤트혜택알림',
+    updated_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '수정일시',
 
     CONSTRAINT fk_notification_setting_user
         FOREIGN KEY (user_id)
-        REFERENCES user_tbl(user_id),
+            REFERENCES user_tbl (user_id),
 
     CONSTRAINT chk_finance_notification_yn
-        CHECK (finance_notification_yn IN ('Y','N')),
+        CHECK (finance_notification_yn IN ('Y', 'N')),
 
     CONSTRAINT chk_friend_notification_yn
-        CHECK (friend_notification_yn IN ('Y','N')),
+        CHECK (friend_notification_yn IN ('Y', 'N')),
 
     CONSTRAINT chk_reward_notification_yn
-        CHECK (reward_notification_yn IN ('Y','N')),
+        CHECK (reward_notification_yn IN ('Y', 'N')),
 
     CONSTRAINT chk_event_notification_yn
-        CHECK (event_notification_yn IN ('Y','N'))
+        CHECK (event_notification_yn IN ('Y', 'N'))
 );
 
 -- 6-5. 리프레시토큰 테이블
@@ -600,13 +603,15 @@ DROP TABLE IF EXISTS spending_analysis_tbl;
 
 CREATE TABLE spending_analysis_tbl
 (
-    spending_analysis_id       INT AUTO_INCREMENT PRIMARY KEY COMMENT '소비분석ID',
-    user_id                    INT          NOT NULL COMMENT '유저 ID',
-    analysis_period            INT          NOT NULL COMMENT '분석 기간',
-    representative_category_id INT          NOT NULL COMMENT '가장 많이 소비한 대표 카테고리',
-    ai_title                   VARCHAR(100) NOT NULL COMMENT 'AI 생성 칭호',
-    ai_analysis_summary        TEXT         NOT NULL COMMENT 'AI가 생성한 소비 분석 요약',
-    created_at                 DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '분석 일자',
+    spending_analysis_id                INT AUTO_INCREMENT PRIMARY KEY COMMENT '소비분석ID',
+    user_id                             INT          NOT NULL COMMENT '유저 ID',
+    analysis_period                     INT          NOT NULL COMMENT '분석 기간',
+    representative_category_id          INT          NOT NULL COMMENT '가장 많이 소비한 대표 카테고리',
+    ai_title                            VARCHAR(100) NOT NULL COMMENT 'AI 생성 칭호',
+    ai_analysis_summary                 TEXT         NOT NULL COMMENT 'AI가 생성한 소비 분석 요약',
+    ai_card_recommendation_summary      TEXT         NULL COMMENT 'AI가 생성한 카드 추천 요약',
+    ai_insurance_recommendation_summary TEXT         NULL COMMENT 'AI가 생성한 보험 추천 요약',
+    created_at                          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '분석 일자',
 
     CONSTRAINT fk_spending_analysis_user
         FOREIGN KEY (user_id)
@@ -751,6 +756,59 @@ CREATE TABLE card_recommendation_tbl
             expected_benefit_amount IS NULL
                 OR expected_benefit_amount >= 0
             )
+);
+
+-- 17-1. 카드 추천 상세 테이블
+DROP TABLE IF EXISTS card_recommendation_detail_tbl;
+
+CREATE TABLE card_recommendation_detail_tbl
+(
+    card_recommendation_detail_id INT AUTO_INCREMENT PRIMARY KEY
+        COMMENT '카드 추천 상세 PK',
+
+    card_recommendation_id        INT      NOT NULL
+        COMMENT '카드 추천 ID',
+
+    card_benefit_id               INT      NOT NULL
+        COMMENT '계산에 적용된 카드 혜택 ID',
+
+    eligible_spending_amount      INT      NOT NULL
+        COMMENT '전월 실적을 충족하여 혜택 계산에 반영된 거래금액 합계',
+
+    eligible_transaction_count    INT      NOT NULL
+        COMMENT '전월 실적을 충족하여 혜택 계산에 반영된 거래 건수',
+
+    eligible_month_count          INT      NOT NULL
+        COMMENT '해당 혜택이 계산에 반영된 월 수',
+
+    expected_benefit_amount       INT      NOT NULL
+        COMMENT '해당 카드 혜택의 연간 예상 할인액',
+
+    created_at                    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        COMMENT '카드 추천 상세 생성일시',
+
+    CONSTRAINT uq_card_recommendation_detail
+        UNIQUE (card_recommendation_id, card_benefit_id),
+
+    CONSTRAINT fk_card_recommendation_detail_recommendation
+        FOREIGN KEY (card_recommendation_id)
+            REFERENCES card_recommendation_tbl (card_recommendation_id),
+
+    CONSTRAINT fk_card_recommendation_detail_benefit
+        FOREIGN KEY (card_benefit_id)
+            REFERENCES card_benefit_tbl (card_benefit_id),
+
+    CONSTRAINT chk_card_recommendation_detail_spending
+        CHECK (eligible_spending_amount >= 0),
+
+    CONSTRAINT chk_card_recommendation_detail_transaction_count
+        CHECK (eligible_transaction_count >= 0),
+
+    CONSTRAINT chk_card_recommendation_detail_month_count
+        CHECK (eligible_month_count >= 0),
+
+    CONSTRAINT chk_card_recommendation_detail_benefit_amount
+        CHECK (expected_benefit_amount >= 0)
 );
 
 
@@ -1960,31 +2018,32 @@ CREATE TABLE linked_card_tbl
 -- 51. 계좌인증 테이블 정의서
 DROP TABLE IF EXISTS account_verification_tbl;
 
-CREATE TABLE account_verification_tbl (
+CREATE TABLE account_verification_tbl
+(
 
-    verification_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '계좌인증번호',
+    verification_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '계좌인증번호',
 
-    user_id INT NOT NULL COMMENT '회원번호',
+    user_id           INT          NOT NULL COMMENT '회원번호',
 
-    bank_code VARCHAR(10) NOT NULL COMMENT '은행코드',
+    bank_code         VARCHAR(10)  NOT NULL COMMENT '은행코드',
 
-    account_number VARCHAR(255) NOT NULL COMMENT '계좌번호',
+    account_number    VARCHAR(255) NOT NULL COMMENT '계좌번호',
 
-    account_holder VARCHAR(50) NOT NULL COMMENT '예금주',
+    account_holder    VARCHAR(50)  NOT NULL COMMENT '예금주',
 
-    verification_code CHAR(4) NOT NULL COMMENT '입금자명4자리',
+    verification_code CHAR(4)      NOT NULL COMMENT '입금자명4자리',
 
-    verified_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '인증여부',
+    verified_yn       CHAR(1)      NOT NULL DEFAULT 'N' COMMENT '인증여부',
 
-    requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
+    requested_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
 
     CONSTRAINT fk_account_verification_user
         FOREIGN KEY (user_id)
-        REFERENCES user_tbl(user_id),
+            REFERENCES user_tbl (user_id),
 
     CONSTRAINT fk_account_verification_bank
         FOREIGN KEY (bank_code)
-        REFERENCES bank_tbl(bank_code),
+            REFERENCES bank_tbl (bank_code),
 
     CONSTRAINT chk_account_verification_verified_yn
         CHECK (verified_yn IN ('Y', 'N'))
@@ -2129,13 +2188,23 @@ INSERT INTO agreement_tbl (agreement_id,
                            agreement_content,
                            required_yn,
                            use_yn)
-VALUES
-(1, 'SERVICE', '서비스 이용약관', '제1조 (목적)\n본 약관은 KB 금융 플랫폼(이하 "서비스")의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항을 규정하는 것을 목적으로 합니다.\n\n제2조 (회원가입)\n1. 회원은 본인 명의의 휴대폰 인증을 통해 가입할 수 있습니다.\n2. 허위 정보 또는 타인의 정보를 이용한 경우 서비스 이용이 제한될 수 있습니다.\n\n제3조 (서비스 이용)\n회원은 다음과 같은 서비스를 이용할 수 있습니다.\n1. 전자지갑 생성 및 이용\n2. 본인 명의 계좌 연결\n3. 포인트 조회 및 이용\n4. 피드 작성 및 조회\n5. 카드 추천 및 관련 서비스 이용\n\n제4조 (회원의 의무)\n회원은 다음 행위를 해서는 안 됩니다.\n1. 타인의 개인정보를 도용하는 행위\n2. 거짓 정보를 입력하거나 제공하는 행위\n3. 서비스의 정상적인 운영을 방해하는 행위\n4. 관련 법령 또는 본 약관을 위반하는 행위\n\n제5조 (서비스 이용 제한)\n회사는 회원이 관련 법령 또는 본 약관을 위반한 경우 서비스 이용을 제한하거나 회원 자격을 정지할 수 있습니다.', 'Y', 'Y'),
-(2, 'PRIVACY', '개인정보 수집 및 이용 동의', '1. 수집하는 개인정보 항목\n회사는 회원가입 및 서비스 제공을 위해 다음 정보를 수집합니다.\n- 이름\n- 휴대폰번호\n- 이메일\n- 암호화된 비밀번호\n- 닉네임\n\n2. 개인정보 수집 및 이용 목적\n수집한 개인정보는 다음 목적으로 이용됩니다.\n- 회원가입 및 본인 확인\n- 회원 식별 및 계정 관리\n- 고객 문의 및 서비스 안내\n- 전자지갑 생성과 금융 서비스 제공\n- 부정 이용 방지 및 서비스 보안\n\n3. 개인정보 보유 및 이용 기간\n회사는 회원 탈퇴 시까지 개인정보를 보유하며, 관계 법령에 따라 보관이 필요한 경우 해당 기간 동안 별도로 보관합니다.\n\n4. 동의 거부 권리 및 불이익\n회원은 개인정보 수집 및 이용에 대한 동의를 거부할 권리가 있습니다. 다만, 필수 정보 수집에 동의하지 않는 경우 회원가입 및 서비스 이용이 제한될 수 있습니다.', 'Y', 'Y'),
-(3, 'ELECTRONIC_FINANCE', '전자금융거래 이용약관', '제1조 (이용 가능한 금융 서비스)\n회원은 다음과 같은 금융 관련 서비스를 이용할 수 있습니다.\n1. 전자지갑 생성 및 이용\n2. 본인 명의 계좌 연결\n3. 포인트 적립 및 사용\n4. 결제 및 송금 서비스\n\n제2조 (전자지갑 생성)\n회원가입이 완료되면 회원의 서비스 이용을 위한 전자지갑이 자동으로 생성될 수 있습니다.\n\n제3조 (계좌 연결)\n회원은 본인 명의의 계좌만 연결할 수 있으며, 계좌 연결 과정에서 추가적인 본인 인증이 요구될 수 있습니다.\n\n제4조 (서비스 이용 제한)\n다음의 경우 금융 서비스 이용이 제한될 수 있습니다.\n1. 본인 인증에 실패한 경우\n2. 비정상적이거나 의심스러운 금융 거래가 확인된 경우\n3. 타인 명의의 계좌를 연결한 경우\n4. 관련 법령 또는 약관을 위반한 경우\n\n제5조 (회원의 책임)\n회원은 본인의 인증정보와 계정정보를 안전하게 관리해야 하며, 이를 타인에게 제공하거나 공유해서는 안 됩니다.', 'Y', 'Y'),
-(4, 'MARKETING', '마케팅 정보 수신 동의', '1. 수신 가능한 마케팅 정보\n회사는 회원의 동의를 받은 경우 다음과 같은 정보를 제공할 수 있습니다.\n- 이벤트 및 프로모션 안내\n- 신규 서비스 및 기능 안내\n- 카드 및 금융상품 관련 정보\n- 맞춤형 금융 혜택\n- 포인트 및 리워드 관련 정보\n\n2. 마케팅 정보 수신 방법\n마케팅 정보는 다음 방법으로 제공될 수 있습니다.\n- 앱 푸시 알림\n- SMS 문자메시지\n- 이메일\n\n3. 동의 거부 및 철회\n회원은 마케팅 정보 수신에 동의하지 않아도 기본 서비스를 이용할 수 있습니다.\n동의 후에도 언제든지 설정 화면에서 수신 여부를 변경하거나 철회할 수 있습니다.\n\n4. 안내사항\n마케팅 수신 동의와 관계없이 서비스 이용, 보안, 거래 내역 등 필수 안내는 제공될 수 있습니다.', 'N', 'Y'),
-(5, 'ANALYSIS_REQUIRED', '소비정보 수집 및 분석 동의','맞춤형 소비 분석을 제공하기 위해 결제 거래의 가맹점명, 결제금액, 결제일시 및 소비 카테고리 정보를 수집·이용합니다. 수집된 정보는 소비 패턴 분석과 분석 결과 제공 목적으로만 사용됩니다.','Y', 'Y'),
-(6, 'ANALYSIS_OPTIONAL', '맞춤형 금융상품 추천 정보 활용 동의','소비 분석 결과를 바탕으로 카드와 보험 등 맞춤형 금융상품을 추천하기 위해 분석 결과를 활용합니다. 선택 약관에 동의하지 않아도 소비 분석 기능은 이용할 수 있습니다.', 'N', 'Y');
+VALUES (1, 'SERVICE', '서비스 이용약관',
+        '제1조 (목적)\n본 약관은 KB 금융 플랫폼(이하 "서비스")의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항을 규정하는 것을 목적으로 합니다.\n\n제2조 (회원가입)\n1. 회원은 본인 명의의 휴대폰 인증을 통해 가입할 수 있습니다.\n2. 허위 정보 또는 타인의 정보를 이용한 경우 서비스 이용이 제한될 수 있습니다.\n\n제3조 (서비스 이용)\n회원은 다음과 같은 서비스를 이용할 수 있습니다.\n1. 전자지갑 생성 및 이용\n2. 본인 명의 계좌 연결\n3. 포인트 조회 및 이용\n4. 피드 작성 및 조회\n5. 카드 추천 및 관련 서비스 이용\n\n제4조 (회원의 의무)\n회원은 다음 행위를 해서는 안 됩니다.\n1. 타인의 개인정보를 도용하는 행위\n2. 거짓 정보를 입력하거나 제공하는 행위\n3. 서비스의 정상적인 운영을 방해하는 행위\n4. 관련 법령 또는 본 약관을 위반하는 행위\n\n제5조 (서비스 이용 제한)\n회사는 회원이 관련 법령 또는 본 약관을 위반한 경우 서비스 이용을 제한하거나 회원 자격을 정지할 수 있습니다.',
+        'Y', 'Y'),
+       (2, 'PRIVACY', '개인정보 수집 및 이용 동의',
+        '1. 수집하는 개인정보 항목\n회사는 회원가입 및 서비스 제공을 위해 다음 정보를 수집합니다.\n- 이름\n- 휴대폰번호\n- 이메일\n- 암호화된 비밀번호\n- 닉네임\n\n2. 개인정보 수집 및 이용 목적\n수집한 개인정보는 다음 목적으로 이용됩니다.\n- 회원가입 및 본인 확인\n- 회원 식별 및 계정 관리\n- 고객 문의 및 서비스 안내\n- 전자지갑 생성과 금융 서비스 제공\n- 부정 이용 방지 및 서비스 보안\n\n3. 개인정보 보유 및 이용 기간\n회사는 회원 탈퇴 시까지 개인정보를 보유하며, 관계 법령에 따라 보관이 필요한 경우 해당 기간 동안 별도로 보관합니다.\n\n4. 동의 거부 권리 및 불이익\n회원은 개인정보 수집 및 이용에 대한 동의를 거부할 권리가 있습니다. 다만, 필수 정보 수집에 동의하지 않는 경우 회원가입 및 서비스 이용이 제한될 수 있습니다.',
+        'Y', 'Y'),
+       (3, 'ELECTRONIC_FINANCE', '전자금융거래 이용약관',
+        '제1조 (이용 가능한 금융 서비스)\n회원은 다음과 같은 금융 관련 서비스를 이용할 수 있습니다.\n1. 전자지갑 생성 및 이용\n2. 본인 명의 계좌 연결\n3. 포인트 적립 및 사용\n4. 결제 및 송금 서비스\n\n제2조 (전자지갑 생성)\n회원가입이 완료되면 회원의 서비스 이용을 위한 전자지갑이 자동으로 생성될 수 있습니다.\n\n제3조 (계좌 연결)\n회원은 본인 명의의 계좌만 연결할 수 있으며, 계좌 연결 과정에서 추가적인 본인 인증이 요구될 수 있습니다.\n\n제4조 (서비스 이용 제한)\n다음의 경우 금융 서비스 이용이 제한될 수 있습니다.\n1. 본인 인증에 실패한 경우\n2. 비정상적이거나 의심스러운 금융 거래가 확인된 경우\n3. 타인 명의의 계좌를 연결한 경우\n4. 관련 법령 또는 약관을 위반한 경우\n\n제5조 (회원의 책임)\n회원은 본인의 인증정보와 계정정보를 안전하게 관리해야 하며, 이를 타인에게 제공하거나 공유해서는 안 됩니다.',
+        'Y', 'Y'),
+       (4, 'MARKETING', '마케팅 정보 수신 동의',
+        '1. 수신 가능한 마케팅 정보\n회사는 회원의 동의를 받은 경우 다음과 같은 정보를 제공할 수 있습니다.\n- 이벤트 및 프로모션 안내\n- 신규 서비스 및 기능 안내\n- 카드 및 금융상품 관련 정보\n- 맞춤형 금융 혜택\n- 포인트 및 리워드 관련 정보\n\n2. 마케팅 정보 수신 방법\n마케팅 정보는 다음 방법으로 제공될 수 있습니다.\n- 앱 푸시 알림\n- SMS 문자메시지\n- 이메일\n\n3. 동의 거부 및 철회\n회원은 마케팅 정보 수신에 동의하지 않아도 기본 서비스를 이용할 수 있습니다.\n동의 후에도 언제든지 설정 화면에서 수신 여부를 변경하거나 철회할 수 있습니다.\n\n4. 안내사항\n마케팅 수신 동의와 관계없이 서비스 이용, 보안, 거래 내역 등 필수 안내는 제공될 수 있습니다.',
+        'N', 'Y'),
+       (5, 'ANALYSIS_REQUIRED', '소비정보 수집 및 분석 동의',
+        '맞춤형 소비 분석을 제공하기 위해 결제 거래의 가맹점명, 결제금액, 결제일시 및 소비 카테고리 정보를 수집·이용합니다. 수집된 정보는 소비 패턴 분석과 분석 결과 제공 목적으로만 사용됩니다.',
+        'Y', 'Y'),
+       (6, 'ANALYSIS_OPTIONAL', '맞춤형 금융상품 추천 정보 활용 동의',
+        '소비 분석 결과를 바탕으로 카드와 보험 등 맞춤형 금융상품을 추천하기 위해 분석 결과를 활용합니다. 선택 약관에 동의하지 않아도 소비 분석 기능은 이용할 수 있습니다.', 'N', 'Y');
 
 -- ---------------------------------------------------------------------
 -- 7. user_agreement_tbl (6건)
@@ -2204,19 +2273,16 @@ VALUES (1, 1, '노랑지갑', '포인트를 모으는 중입니다.', 'profile1.
 -- ---------------------------------------------------------------------
 -- 11. notification_setting_tbl (3건)
 -- ---------------------------------------------------------------------
-INSERT INTO notification_setting_tbl (
-    notification_setting_id,
-    user_id,
-    finance_notification_yn,
-    friend_notification_yn,
-    reward_notification_yn,
-    event_notification_yn,
-    updated_at
-)
-VALUES
-    (1, 1, 'Y', 'Y', 'Y', 'Y', '2026-07-20 12:00:00'),
-    (2, 2, 'Y', 'N', 'N', 'Y', '2026-07-21 12:00:00'),
-    (3, 3, 'N', 'Y', 'Y', 'N', '2026-07-22 12:00:00');
+INSERT INTO notification_setting_tbl (notification_setting_id,
+                                      user_id,
+                                      finance_notification_yn,
+                                      friend_notification_yn,
+                                      reward_notification_yn,
+                                      event_notification_yn,
+                                      updated_at)
+VALUES (1, 1, 'Y', 'Y', 'Y', 'Y', '2026-07-20 12:00:00'),
+       (2, 2, 'Y', 'N', 'N', 'Y', '2026-07-21 12:00:00'),
+       (3, 3, 'N', 'Y', 'Y', 'N', '2026-07-22 12:00:00');
 
 -- ---------------------------------------------------------------------
 -- 12. refresh_token_tbl (6건)
@@ -2346,15 +2412,50 @@ INSERT INTO spending_analysis_tbl (spending_analysis_id,
                                    representative_category_id,
                                    ai_title,
                                    ai_analysis_summary,
+                                   ai_card_recommendation_summary,
+                                   ai_insurance_recommendation_summary,
                                    created_at)
-VALUES (1,1,1,4,'한 달 온라인 쇼핑 탐험가','최근 한 달 동안 온라인쇼핑 지출 비중이 가장 높고 자동차와 생활 지출이 뒤를 잇고 있습니다.','2026-07-01 00:00:00'),
-       (2,1,3,10,'여행에 진심인 소비자','최근 세 달 동안 여행 지출이 가장 높고 온라인쇼핑과 주거·통신 지출도 큰 편입니다.','2026-07-02 00:00:00'),
-       (3, 2, 1, 6, '대중교통 마스터', '교통비 비중이 높고 이동이 잦은 소비 패턴입니다.', '2026-07-03 00:00:00'),
-       (4, 2, 12, 1, '알뜰 식비 관리자', '연간 식비가 안정적으로 관리되고 있습니다.', '2026-07-04 00:00:00'),
-       (5, 3, 3, 2, '커피와 함께하는 사람', '카페와 간식 관련 결제가 많은 편입니다.', '2026-07-05 00:00:00'),
-       (6, 3, 12, 6, '움직이는 저축러', '교통 지출과 저축이 균형을 이루고 있습니다.', '2026-07-06 00:00:00'),
-       (7,1,12,10,'여행에 미친 지갑의 순례자','최근 12개월 동안 여행 지출 비중이 가장 높고, 주거·통신과 교육 지출도 큰 편입니다.','2026-08-03 09:00:00');
-
+VALUES (
+        1, 1, 1, 4,'한 달 온라인 쇼핑 탐험가','최근 한 달 동안 온라인쇼핑 지출 비중이 가장 높고 자동차와 생활 지출이 뒤를 잇고 있습니다.',
+        NULL,
+        NULL,
+        '2026-07-01 00:00:00'),
+       (2, 1, 3, 10,
+        '여행에 진심인 소비자',
+        '최근 세 달 동안 여행 지출이 가장 높고 온라인쇼핑과 주거·통신 지출도 큰 편입니다.',
+        NULL,
+        NULL,
+        '2026-07-02 00:00:00'),
+       (3, 2, 1, 6,
+        '대중교통 마스터',
+        '교통비 비중이 높고 이동이 잦은 소비 패턴입니다.',
+        NULL,
+        NULL,
+        '2026-07-03 00:00:00'),
+       (4, 2, 12, 1,
+        '알뜰 식비 관리자',
+        '연간 식비가 안정적으로 관리되고 있습니다.',
+        NULL,
+        NULL,
+        '2026-07-04 00:00:00'),
+       (5, 3, 3, 2,
+        '커피와 함께하는 사람',
+        '카페와 간식 관련 결제가 많은 편입니다.',
+        NULL,
+        NULL,
+        '2026-07-05 00:00:00'),
+       (6, 3, 12, 6,
+        '움직이는 저축러',
+        '교통 지출과 저축이 균형을 이루고 있습니다.',
+        NULL,
+        NULL,
+        '2026-07-06 00:00:00'),
+       (7, 1, 12, 10,
+        '여행에 미친 지갑의 순례자',
+        '최근 12개월 동안 여행 지출 비중이 가장 높고, 주거·통신과 교육 지출도 큰 편입니다.',
+        '최근 12개월 소비에서 온라인쇼핑과 자동차 관련 지출이 두드러집니다. 신용카드는 온라인쇼핑 할인에 강한 KB국민 톡톡O 카드가, 체크카드는 자동차 관련 할인 혜택이 있는 KB국민 직장인보너스체크카드가 가장 유리합니다.',
+        NULL,
+        '2026-08-03 09:00:00');
 -- ---------------------------------------------------------------------
 -- 20. spending_analysis_category_tbl (6건)
 -- ---------------------------------------------------------------------
@@ -2365,44 +2466,44 @@ INSERT INTO spending_analysis_category_tbl (analysis_category_id,
                                             spending_ratio,
                                             transaction_count,
                                             created_at)
-VALUES     (1, 1, 4, 119000, 23.27, 1, '2026-07-01 00:05:00'),
-           (2, 1, 7,  72000, 14.08, 1, '2026-07-01 00:05:00'),
-           (7, 1, 3,  68400, 13.38, 1, '2026-07-01 00:05:00'),
-           (8, 1, 8,  55000, 10.75, 1, '2026-07-01 00:05:00'),
-           (9, 1, 12, 47000,  9.19, 1, '2026-07-01 00:05:00'),
-           (10, 1, 6, 43800,  8.56, 1, '2026-07-01 00:05:00'),
-           (11, 1, 5, 32900,  6.43, 1, '2026-07-01 00:05:00'),
-           (12, 1, 11, 28000, 5.48, 1, '2026-07-01 00:05:00'),
-           (13, 1, 13, 23500, 4.60, 1, '2026-07-01 00:05:00'),
-           (14, 1, 1, 21800,  4.26, 1, '2026-07-01 00:05:00'),
-           (3, 2, 10, 636000, 37.75, 3, '2026-07-02 00:05:00'),
-           (4, 2, 4,  261800, 15.54, 3, '2026-07-02 00:05:00'),
-           (5, 3, 6, 90000, 75.00, 30, '2026-07-03 00:05:00'),
-           (6, 3, 1, 30000, 25.00, 5, '2026-07-03 00:05:00'),
-           (15, 2, 8, 143000,  8.49, 2, '2026-07-02 00:05:00'),
-           (16, 2, 11, 123000, 7.30, 2, '2026-07-02 00:05:00'),
-           (17, 2, 3,  86700,  5.15, 2, '2026-07-02 00:05:00'),
-           (18, 2, 12, 85500,  5.08, 2, '2026-07-02 00:05:00'),
-           (19, 2, 5,  77900,  4.62, 2, '2026-07-02 00:05:00'),
-           (20, 2, 7,  72000,  4.27, 1, '2026-07-02 00:05:00'),
-           (21, 2, 6,  60600,  3.60, 2, '2026-07-02 00:05:00'),
-           (22, 2, 1,  55800,  3.31, 2, '2026-07-02 00:05:00'),
-           (23, 2, 9,  52000,  3.09, 1, '2026-07-02 00:05:00'),
-           (24, 2, 13, 23500, 1.39, 1, '2026-07-02 00:05:00'),
-           (25, 2, 2,   6900,  0.41, 1, '2026-07-02 00:05:00'),
-           (26, 7, 10, 636000, 17.10, 3, '2026-08-03 09:00:05'),
-           (27, 7, 8,  602000, 16.19, 4, '2026-08-03 09:00:05'),
-           (28, 7, 11, 592000, 15.92, 4, '2026-08-03 09:00:05'),
-           (29, 7, 4,  442700, 11.90, 5, '2026-08-03 09:00:05'),
-           (30, 7, 7,  315000,  8.47, 3, '2026-08-03 09:00:05'),
-           (31, 7, 13, 295500, 7.95, 4, '2026-08-03 09:00:05'),
-           (32, 7, 3,  209500,  5.63, 4, '2026-08-03 09:00:05'),
-           (33, 7, 1,  154300,  4.15, 5, '2026-08-03 09:00:05'),
-           (34, 7, 9,  152000,  4.09, 2, '2026-08-03 09:00:05'),
-           (35, 7, 12, 140500,  3.78, 3, '2026-08-03 09:00:05'),
-           (36, 7, 5,   77900,  2.09, 2, '2026-08-03 09:00:05'),
-           (37, 7, 6,   75100,  2.02, 3, '2026-08-03 09:00:05'),
-           (38, 7, 2,   26400,  0.71, 4, '2026-08-03 09:00:05');
+VALUES (1, 1, 4, 119000, 23.27, 1, '2026-07-01 00:05:00'),
+       (2, 1, 7, 72000, 14.08, 1, '2026-07-01 00:05:00'),
+       (7, 1, 3, 68400, 13.38, 1, '2026-07-01 00:05:00'),
+       (8, 1, 8, 55000, 10.75, 1, '2026-07-01 00:05:00'),
+       (9, 1, 12, 47000, 9.19, 1, '2026-07-01 00:05:00'),
+       (10, 1, 6, 43800, 8.56, 1, '2026-07-01 00:05:00'),
+       (11, 1, 5, 32900, 6.43, 1, '2026-07-01 00:05:00'),
+       (12, 1, 11, 28000, 5.48, 1, '2026-07-01 00:05:00'),
+       (13, 1, 13, 23500, 4.60, 1, '2026-07-01 00:05:00'),
+       (14, 1, 1, 21800, 4.26, 1, '2026-07-01 00:05:00'),
+       (3, 2, 10, 636000, 37.75, 3, '2026-07-02 00:05:00'),
+       (4, 2, 4, 261800, 15.54, 3, '2026-07-02 00:05:00'),
+       (5, 3, 6, 90000, 75.00, 30, '2026-07-03 00:05:00'),
+       (6, 3, 1, 30000, 25.00, 5, '2026-07-03 00:05:00'),
+       (15, 2, 8, 143000, 8.49, 2, '2026-07-02 00:05:00'),
+       (16, 2, 11, 123000, 7.30, 2, '2026-07-02 00:05:00'),
+       (17, 2, 3, 86700, 5.15, 2, '2026-07-02 00:05:00'),
+       (18, 2, 12, 85500, 5.08, 2, '2026-07-02 00:05:00'),
+       (19, 2, 5, 77900, 4.62, 2, '2026-07-02 00:05:00'),
+       (20, 2, 7, 72000, 4.27, 1, '2026-07-02 00:05:00'),
+       (21, 2, 6, 60600, 3.60, 2, '2026-07-02 00:05:00'),
+       (22, 2, 1, 55800, 3.31, 2, '2026-07-02 00:05:00'),
+       (23, 2, 9, 52000, 3.09, 1, '2026-07-02 00:05:00'),
+       (24, 2, 13, 23500, 1.39, 1, '2026-07-02 00:05:00'),
+       (25, 2, 2, 6900, 0.41, 1, '2026-07-02 00:05:00'),
+       (26, 7, 10, 636000, 17.10, 3, '2026-08-03 09:00:05'),
+       (27, 7, 8, 602000, 16.19, 4, '2026-08-03 09:00:05'),
+       (28, 7, 11, 592000, 15.92, 4, '2026-08-03 09:00:05'),
+       (29, 7, 4, 442700, 11.90, 5, '2026-08-03 09:00:05'),
+       (30, 7, 7, 315000, 8.47, 3, '2026-08-03 09:00:05'),
+       (31, 7, 13, 295500, 7.95, 4, '2026-08-03 09:00:05'),
+       (32, 7, 3, 209500, 5.63, 4, '2026-08-03 09:00:05'),
+       (33, 7, 1, 154300, 4.15, 5, '2026-08-03 09:00:05'),
+       (34, 7, 9, 152000, 4.09, 2, '2026-08-03 09:00:05'),
+       (35, 7, 12, 140500, 3.78, 3, '2026-08-03 09:00:05'),
+       (36, 7, 5, 77900, 2.09, 2, '2026-08-03 09:00:05'),
+       (37, 7, 6, 75100, 2.02, 3, '2026-08-03 09:00:05'),
+       (38, 7, 2, 26400, 0.71, 4, '2026-08-03 09:00:05');
 -- ---------------------------------------------------------------------
 -- 21. kb_card_product_tbl (4건)
 -- ---------------------------------------------------------------------
@@ -2448,18 +2549,57 @@ VALUES (1, 1, 2, '카페 이용 할인', NULL, 10.00, 10000, 300000, '스타벅�
 -- ---------------------------------------------------------------------
 -- 23. card_recommendation_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO card_recommendation_tbl (card_recommendation_id,
-                                     spending_analysis_id,
-                                     card_product_id,
-                                     recommendation_rank,
-                                     expected_benefit_amount,
-                                     created_at)
-VALUES (1, 1, 1, 1, 12000, '2026-07-01 01:00:00'),
-       (2, 1, 2, 2, 8000, '2026-07-01 01:00:00'),
-       (3, 2, 1, 1, 15000, '2026-07-02 01:00:00'),
-       (4, 3, 3, 1, 7000, '2026-07-03 01:00:00'),
-       (5, 4, 2, 1, 9000, '2026-07-04 01:00:00'),
-       (6, 5, 3, 1, 6000, '2026-07-05 01:00:00');
+INSERT INTO card_recommendation_tbl
+(
+    card_recommendation_id,
+    spending_analysis_id,
+    card_product_id,
+    recommendation_rank,
+    expected_benefit_amount,
+    created_at
+)
+VALUES
+    -- CREDIT
+    (1, 7, 2, 1, 27355, '2026-08-03 09:10:05'),
+    (2, 7, 1, 2,  2690, '2026-08-03 09:10:05'),
+
+    -- CHECK
+    (3, 7, 4, 1, 13600, '2026-08-03 09:10:05'),
+    (4, 7, 3, 2,  6560, '2026-08-03 09:10:05');
+-- ---------------------------------------------------------------------
+-- 23-1. card_recommendation_detail_tbl (7건)
+-- ---------------------------------------------------------------------
+
+INSERT INTO card_recommendation_detail_tbl
+(
+    card_recommendation_detail_id,
+    card_recommendation_id,
+    card_benefit_id,
+    eligible_spending_amount,
+    eligible_transaction_count,
+    eligible_month_count,
+    expected_benefit_amount,
+    created_at
+)
+VALUES
+    -- card_recommendation_id = 1
+    -- KB국민 톡톡O 카드
+    (1, 1, 3, 261800, 3, 3, 26180, '2026-08-03 09:10:10'),
+    (2, 1, 4,  23500, 1, 1,  1175, '2026-08-03 09:10:10'),
+
+    -- card_recommendation_id = 2
+    -- KB국민 My WE:SH 카드
+    (3, 2, 1,  6900, 1, 1,  690, '2026-08-03 09:10:10'),
+    (4, 2, 2, 55800, 2, 2, 2000, '2026-08-03 09:10:10'),
+
+    -- card_recommendation_id = 3
+    -- KB국민 직장인보너스체크카드
+    (5, 3, 7, 315000, 3, 2, 13600, '2026-08-03 09:10:10'),
+
+    -- card_recommendation_id = 4
+    -- KB국민 노리2 체크카드
+    (6, 4, 5, 60600, 2, 2, 6060, '2026-08-03 09:10:10'),
+    (7, 4, 6,  6900, 1, 1,  500, '2026-08-03 09:10:10');
 
 -- ---------------------------------------------------------------------
 -- 24. kb_insurance_product_tbl (5건)
