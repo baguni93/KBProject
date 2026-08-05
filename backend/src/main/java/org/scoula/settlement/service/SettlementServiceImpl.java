@@ -58,12 +58,10 @@ public class SettlementServiceImpl implements SettlementService{
         List<SettlementMemberRequestDTO> members = request.getMembers();
 
         if(members == null || members.isEmpty()) {
-            throw  new CustomException(ErrorCode.SETTLEMENT_CAN_NOT_CREATE);
-        log.info("정산 생성 완료 - ID: {}", settlementVO.getSettlementId());
-
-        if (members != null && !members.isEmpty()) {
-            createMember(settlementVO, members);
+            throw new CustomException(ErrorCode.SETTLEMENT_CAN_NOT_CREATE);
         }
+
+        log.info("정산 생성 완료 - ID: {}", settlementVO.getSettlementId());
 
         createMember(settlementVO, members);
 

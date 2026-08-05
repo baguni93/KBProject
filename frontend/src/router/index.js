@@ -35,12 +35,6 @@ const router = createRouter({
       path: '/wallet',
       name: 'wallet',
       component: WalletPage,
-    },
-
-    {
-      path: '/wallet',
-      name: 'wallet',
-      component: WalletPage,
       meta: { requiresAuth: true, showBottomNav: true },
     },
 
