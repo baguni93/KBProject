@@ -1,5 +1,7 @@
 package org.scoula.event.service;
 
+import org.scoula.event.dto.EventGetAttendanceResponseDTO;
+import org.scoula.event.dto.EventGetResponseDTO;
 import org.scoula.event.dto.EventMainDTO;
 import org.scoula.event.dto.EventResponseDTO;
 
@@ -24,4 +26,10 @@ public interface EventService {
 
     // 6. 챌린지 참여 처리 및 리워드 수령 처리
     boolean claimChallengeReward(Integer userId,  Integer eventId);
+
+    List<EventGetAttendanceResponseDTO> joinAttendanceEvent(int userId, int eventId);
+    List<EventGetResponseDTO> joinEvent(int userId, int eventId);
+    List<EventGetAttendanceResponseDTO> getAttendanceEventList(int userId);
+    List<EventGetResponseDTO> getEventList(int userId);
+
 }

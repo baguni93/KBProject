@@ -4,6 +4,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.scoula.event.dto.EventGetAttendanceResponseDTO;
+import org.scoula.event.dto.EventGetResponseDTO;
 import org.scoula.event.dto.EventMainDTO;
 import org.scoula.event.dto.EventResponseDTO;
 import org.scoula.event.service.EventService;
@@ -86,12 +88,38 @@ public class EventController {
     // 6. 챌린지 리워드 수령 처리 (이벤트 상단 챌린지 바 관련 영역)
     @ApiOperation("챌린지 리워드 수령 처리 (상단 챌린지 게이지 바 리워드 수령)")
     @PostMapping("/challenges/{challengeId}/reward")
-    public ResponseEntity<Void> claimChallengeReward(
+    public ResponseEntity<HttpStatus> claimChallengeReward(
             @PathVariable("challengeId") Integer challengeId,
             @RequestParam(value = "userId") Integer userId) {
 
         eventService.claimChallengeReward(userId, challengeId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(HttpStatus.OK);
     }
 
+
+    @GetMapping("/eventList")
+    public ResponseEntity<List<EventGetResponseDTO>> getEventList(
+            @RequestParam(value = "userId") int userId) {
+        return ResponseEntity.ok(eventService.getEventList(userId));
+    }
+
+    @GetMapping("/attendanceEvetList")
+    public ResponseEntity<List<EventGetAttendanceResponseDTO>> getAttendanceEventList(
+            @RequestParam(value = "userId") int userId) {
+        return ResponseEntity.ok(eventService.getAttendanceEventList(userId));
+    }
+
+    @PostMapping("/joinEvent/{eventId}")
+    public ResponseEntity<List<EventGetResponseDTO>>  joinEvent(
+            @RequestParam(value = "userId") int userId,
+            @PathVariable int eventId) {
+        return ResponseEntity.ok(eventService.joinEvent(userId, eventId));
+    }
+
+    @PostMapping("/joinAttendanceEvent/{eventId}")
+    public ResponseEntity<List<EventGetAttendanceResponseDTO>>  joinAttendanceEvent(
+            @RequestParam(value = "userId") int userId,
+            @PathVariable int eventId) {
+        return ResponseEntity.ok(eventService.joinAttendanceEvent(userId, eventId));
+    }
 }

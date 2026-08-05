@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS `event_reward_receive_tbl`;
 DROP TABLE IF EXISTS `event_participation_tbl`;
 DROP TABLE IF EXISTS `event_reward_tbl`;
 DROP TABLE IF EXISTS `event_tbl`;
+DROP TABLE IF EXISTS `event_user_tb`;
 DROP TABLE IF EXISTS `card_application_history_tbl`;
 DROP TABLE IF EXISTS `custom_image_tbl`;
 DROP TABLE IF EXISTS `file_image_tbl`;
@@ -1751,15 +1752,9 @@ CREATE TABLE event_reward_tbl
 
     event_id     INT     NOT NULL COMMENT '이벤트ID',
 
-    event_level  INT     NOT NULL DEFAULT 1 COMMENT '이벤트 난이도',
-
     reward_point INT     NULL     DEFAULT 0 COMMENT '리워드포인트',
 
     reward_exe   INT     NULL COMMENT '리워드경험치',
-
-    req_count    INT     NOT NULL COMMENT '레벨별 필요달성치',
-
-    use_yn       CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '사용여부',
 
     CONSTRAINT fk_event_reward_event
         FOREIGN KEY (event_id)
@@ -1773,17 +1768,8 @@ CREATE TABLE event_reward_tbl
     CONSTRAINT chk_event_reward_exe
         CHECK (
             reward_exe >= 0
-            ),
-
-    CONSTRAINT chk_event_reward_req_count
-        CHECK (
-            req_count >= 1
-            ),
-
-    CONSTRAINT chk_event_reward_use_yn
-        CHECK (
-            use_yn IN ('Y', 'N')
             )
+
 );
 -- 49.이벤트 참여이력 테이블
 
@@ -1812,6 +1798,37 @@ CREATE TABLE event_participation_tbl
 );
 
 
+DROP TABLE IF EXISTS event_user_tbl;
+
+CREATE TABLE event_user_tbl
+(
+    -- 이벤트 참여 관리 PK
+    event_user_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    -- 참여한 이벤트 ID
+    event_id INT NOT NULL,
+
+    -- 참여한 사용자 ID
+    user_id INT NOT NULL,
+
+    -- 이벤트 참여 시작 시간
+    joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    -- 이벤트 테이블과 연결
+    CONSTRAINT fk_event_user_event
+        FOREIGN KEY (event_id)
+        REFERENCES event_tbl(event_id),
+
+    -- 사용자 테이블과 연결
+    CONSTRAINT fk_event_user_member
+        FOREIGN KEY (user_id)
+        REFERENCES user_tbl(user_id),
+
+
+    -- 한 사용자는 같은 이벤트에 중복 참여 불가
+    -- ex) user_id = 1, event_id = 10 한번만 저장 가능
+    UNIQUE KEY uk_event_user (event_id, user_id)
+);
 
 -- 50. 이벤트 - 출석체크 참여이력 테이블
 DROP TABLE IF EXISTS event_attendance_tbl;
@@ -1823,7 +1840,7 @@ CREATE TABLE event_attendance_tbl (
 
     user_id INT NOT NULL COMMENT '사용자ID',
 
-    participated_at DATE NOT NULL COMMENT '참여일시',
+    participated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '참여일시',
 
     CONSTRAINT fk_event_attendance_event
         FOREIGN KEY (event_id)
@@ -3070,11 +3087,11 @@ VALUES (1, 1, 1, 'KB-CARD-001', '나만의 옐로우카드', 'REQUEST', '2026-07
     'ATTENDANCE',
     'OPEN',
     'calendar.png',
-    1,
-    1,
+    10,
+    3,
     1,
     '2026-01-01 00:00:00',
-    NULL,
+    '2026-12-01 00:00:00',
     '2026-01-01 00:00:00' 
 ),
 -- 피드 첫 등록 (event_id = 2) 
@@ -3089,42 +3106,12 @@ VALUES (1, 1, 1, 'KB-CARD-001', '나만의 옐로우카드', 'REQUEST', '2026-07
     1,
     1,
     '2026-07-01 00:00:00',
-    NULL,
+	'2026-12-01 00:00:00',
     '2026-07-01 00:00:00' 
-),
--- 피드(송금/결제, 정산, 공유) 등록 (event_id = 3)
-(
-    3,
-    '프로 피드러로 가는 길! 피드 3회 등록',
-    '피드를 3개 등록하여 자유롭게 다른 사람들과 일상을 공유해 보세요.',
-    'PERMANENT', 
-    'OPEN',
-    'social-media.png',
-    3,
-    2,
-    0,
-    '2026-05-01 00:00:00',
-    NULL,
-    '2026-05-01 00:00:00'
-),
--- 다른 사람 피드에 댓글, 하트 달기 (event_id = 4)
-(
-    4,
-    '따뜻한 소통! 댓글과 하트 남기기',
-    '다른 사람의 피드에 방문하여 댓글과 하트를 남기고 소통해 보세요.',
-    'PERMANENT', 
-    'OPEN',
-    'social-media.png',
-    5,
-    1,
-    0,
-    '2026-07-01 00:00:00',
-    NULL,
-    '2026-07-01 00:00:00'
 ),
 -- 커스텀 카드 신규 등록 (event_id = 5)
 (
-    5,
+    3,
     '나만의 스타일, 커스텀 카드 만들기',
     '내 취향대로 디자인하는 커스텀 카드를 신규 등록해 보세요.',
     'PERMANENT', 
@@ -3134,254 +3121,48 @@ VALUES (1, 1, 1, 'KB-CARD-001', '나만의 옐로우카드', 'REQUEST', '2026-07
     2,
     1,
     '2026-07-15 00:00:00',
-    NULL,
+	'2026-12-01 00:00:00',
     '2026-07-01 00:00:00'
-),
--- 지갑 결제 사용 (event_id = 6)
-(
-    6,
-    '스마트한 소비 생활! 지갑 결제 사용해보기',
-    '편의점, 카페 어디서나 편리한 지갑 결제를 5회 이용하고 포인트를 받으세요.',
-    'PERMANENT', 
-    'OPEN',
-    'wallet.png',
-    5,
-    2,
-    0,
-    '2026-07-01 00:00:00',
-    NULL,
-    '2026-07-01 00:00:00'
-),
--- 정산기능 사용 (event_id = 7)
-(
-    7,
-    'N분의 1도 간편하게! 정산하기 체험',
-    '친구들과의 모임 회비를 정산 기능을 통해 편리하게 요청하고 정산해 보세요.',
-    'PERMANENT',
-    'OPEN',
-    'pay.png',
-    1,
-    1,
-    0,
-    '2026-07-01 00:00:00',
-    NULL,
-    '2026-07-01 00:00:00'
-),
--- 랜덤박스 1/3/5회 오픈 (event_id = 8)
-(
-    8,
-    '두근두근 대박 기회! 랜덤박스 열기',
-    '보유 포인트를 사용해 랜덤박스를 3회 열고 숨겨진 고가 경품의 주인공이 되세요.',
-    'LUCKYDRAW',
-    'OPEN',
-    'surprise_box.png',
-    3,
-    3,
-    0,
-    '2026-07-20 10:00:00',
-    '2026-07-27 18:00:00',
-    '2026-07-01 00:00:00'
-),
--- 소비패턴분석 신규 실행 (event_id = 9)
-(
-    9,
-    '자산 관리의 시작, 소비패턴 분석',
-    '소비패턴 분석 서비스를 신규 실행하여 나의 지출 습관을 점검하고 리포트를 받아보세요.',
-    'PERMANENT',
-    'OPEN',
-    'analysis.png',
-    1,
-    1,
-    1,
-    '2026-07-01 00:00:00',
-    NULL,
-    '2026-07-01 00:00:00'
-),
--- 거래 내역 카테고리 분류 신규 실행 (event_id = 10)
-(
-    10,
-    '가계부 정리 왕! 거래 내역 분류하기 ',
-    '내 거래 내역에 딱 맞는 카테고리를 직접 지정하여 스마트하게 자산을 관리해 보세요.',
-    'PERMANENT',
-    'OPEN',
-    'categories.png',
-    1,
-    1,
-    1,
-    '2026-07-01 00:00:00',
-    NULL,
-    '2026-07-01 00:00:00'
-),
--- 칭호 신규 획득 (event_id = 11)
-(
-    11,
-    '도전 과제 달성! 특별한 마스터 칭호 획득',
-    '새로운 고유 칭호를 최초 획득하고 프로필을 꾸며보세요.',
-    'PERMANENT',
-    'OPEN',
-    'badge.png',
-    1,
-    3,
-    1,
-    '2026-07-01 00:00:00',
-    NULL,
-    '2026-07-01 00:00:00'
-),
--- 한달 동안 n번 출석체크 (event_id = 12)
-(
-    12,
-    '이달의 성실왕! 한 달 출석 챌린지',
-    '이번 한 달 동안 총 20회 이상 출석체크를 달성하여 만점 보상에 도전하세요.',
-    'LIMITED',
-    'OPEN',
-    'calendar.png',
-    20,
-    2,
-    1,
-    '2026-07-01 00:00:00',
-    '2026-08-31 23:59:59',
-    '2026-07-01 00:00:00'
-),
--- 한달 동안 결제/송금 n회 (event_id = 13)
-(
-    13,
-    '한 달간의 금융 빌드업! 결제&송금 미션',
-    '한 달 동안 친구 송금 및 온/오프라인 결제를 총 10회 이상 이용해 보세요.',
-    'LIMITED',
-    'OPEN',
-    'payment.png',
-    10,
-    2,
-    1,
-    '2026-07-01 00:00:00',
-    '2026-08-31 23:59:59',
-    '2026-07-01 00:00:00'
-),
--- 한달 동안 정산 n회 (event_id = 14)
-(
-    14,
-    '총무 가이드! 한 달 모임 정산 마스터',
-    '지정된 기간 동안 정산하기 기능을 5회 이상 사용하여 모임 회비를 깔끔하게 정산하세요.',
-    'LIMITED',
-    'OPEN',
-    'pay.png',
-    5,
-    2,
-    1,
-    '2026-07-01 00:00:00',
-    '2026-08-31 23:59:59',
-    '2026-07-01 00:00:00'
-),
--- 한달 동안 다른 사람 피드 활동 (event_id = 15)
-(
-    15,
-    '이달의 인플루언서! 소통 강화 프로모션',
-    '한 달 동안 이웃 피드에 방문해 활발한 소통 활동(댓글/좋아요) 30회를 달성하세요.',
-    'SEASON',
-    'OPEN',
-    'social-media.png',
-    30,
-    1,
-    1,
-    '2026-07-01 00:00:00',
-    '2026-08-31 23:59:59',
-    '2026-07-01 00:00:00'
-),
--- 연속출석(일주일/한달) (event_id = 16)
-(
-    16,
-    '멈추지 않는 도전! 무기한 연속 출석 챌린지',
-    '끊김 없이 일주일, 나아가 한 달 동안 연속 출석을 달성하여 장기 유저 전용 배지를 획득하세요.',
-    'PERMANENT',
-    'OPEN',
-    'calendar.png',
-    7,
-    3,
-    1,
-    '2026-01-01 00:00:00',
-    NULL,
-    '2026-07-01 00:00:00'
-),
--- 15. 여름 한정 매일 출석 미션
-(
-    17,
-    '2026 SUMMER SEASON 출석체크 챌린지', 
-    '무더운 이번 여름 출석체크 하고 리워드 받아가세요!', 
-    'SEASON', 
-    'OPEN', 
-    'island.png', 
-    7, 
-    2, 
-    1,
-    '2026-07-01 00:00:00', 
-    '2026-08-31 23:59:59', 
-    '2026-07-20 00:00:00'
-),
-(18, '7월 출석 이벤트', '매일 출석하고 포인트를 받으세요.', 'ATTENDANCE', 'OPEN', 'attendance_july.png', 20, 3, 1,'2026-07-01 00:00:00', '2026-07-31 23:59:59', '2026-06-25 09:00:00'),
-(19, '주말 출석 이벤트', '주말 출석 시 추가 포인트를 제공합니다.', 'ATTENDANCE', 'OPEN', 'attendance_weekend.png', 8, 2, 1, '2026-07-01 00:00:00', '2026-07-31 23:59:59', '2026-06-25 09:10:00'),
-(20, '6월 출석 이벤트', '지난달 출석 이벤트입니다.', 'ATTENDANCE', 'CLOSE', 'attendance_june.png', 20, 3, 1, '2026-06-01 00:00:00', '2026-06-30 23:59:59', '2026-05-25 09:00:00');
-
+);
 
 -- ---------------------------------------------------------------------
 -- 48. event_reward_tbl (5건)
 -- ---------------------------------------------------------------------
 INSERT INTO event_reward_tbl (reward_id,
                               event_id,
-                              event_level,
                               reward_point,
-                              reward_exe,
-                              req_count,
-                              use_yn)
-VALUES (1, 1, 1, 100, 10, 1, 'Y'),
-       (2, 2, 1, 200, 20, 2, 'Y'),
-       (3, 2, 2, 500, 50, 6, 'Y'),
-       (4, 3, 1, 100, 10, 3, 'Y'),
-       (5, 3, 2, 300, 30, 5, 'N'),
-       (6, 4, 1, 100, 10, 3, 'Y'),
-       (7, 4, 2, 300, 30, 7, 'Y'), 
-       (8, 5, 1, 50, 5, 1, 'Y'),     
-       (9, 6, 1, 150, 15, 2, 'Y'),
-       (10, 6, 2, 400, 40, 5, 'Y'),
-       (11, 7, 1, 100, 10, 1, 'Y'),
-       (12, 8, 1, 200, 20, 3, 'Y'),
-       (13, 9, 1, 100, 10, 1, 'Y'),
-       (14, 10, 1, 200, 20, 5, 'Y'),
-       (15, 10, 2, 500, 50, 15, 'Y'),
-       (16, 10, 3, 1000, 100, 30, 'Y'), 
-       (17, 11, 1, 150, 15, 2, 'Y'),
-       (18, 12, 1, 100, 10, 1, 'Y'),
-       (19, 13, 1, 300, 30, 4, 'Y'),
-       (20, 14, 1, 50, 5, 1, 'Y'),
-       (21, 15, 1, 200, 20, 3, 'Y'),
-       (22, 16, 1, 500, 50, 10, 'N'),
-       (23, 17, 1, 150, 15, 1, 'Y');
+                              reward_exe)
+VALUES (1, 1, 100, 10),
+       (2, 2,  200, 20),
+       (3, 3,  500, 50);
+
        
 
 -- ---------------------------------------------------------------------
 -- 49. event_participation_tbl (5건)
 -- ---------------------------------------------------------------------
-INSERT INTO event_participation_tbl (participation_id,
-                                     event_id,
-                                     user_id,
-                                     participated_at)
-VALUES (1, 1, 1, '2026-07-01 08:00:00'),
-	(2, 2, 1, '2026-07-01 08:20:00'),
-	(3, 2, 2, '2026-08-01 08:00:00'),
-	(4, 3, 1, '2026-07-05 08:10:00'),
-            (5, 1, 2, '2026-08-01 08:20:00');
+-- INSERT INTO event_participation_tbl (participation_id,
+--                                      event_id,
+--                                      user_id,
+--                                      participated_at)
+-- VALUES (1, 1, 1, '2026-07-01 08:00:00'),
+-- 	(2, 2, 1, '2026-07-01 08:20:00'),
+-- 	(3, 2, 2, '2026-08-01 08:00:00'),
+-- 	(4, 3, 1, '2026-07-05 08:10:00'),
+-- 	(5, 1, 2, '2026-08-01 08:20:00');
 
 -- ---------------------------------------------------------------------
 -- 51. event_reward_receive_tbl (4건)
 -- ---------------------------------------------------------------------
-INSERT INTO event_reward_receive_tbl (recv_id,
-                                      event_id,
-                                      reward_id,
-                                      user_id,
-                                      received_at)
-VALUES (1, 1, 1, 1, '2026-07-01 08:10:00'),
-	(2, 1, 1, 2, '2026-07-01 08:25:00'),
-	(3, 2, 2, 1, '2026-07-01 08:50:00'),
-	(4, 2, 2, 2, '2026-07-05 09:00:00');
+-- INSERT INTO event_reward_receive_tbl (recv_id,
+--                                       event_id,
+--                                       reward_id,
+--                                       user_id,
+--                                       received_at)
+-- VALUES (1, 1, 1, 1, '2026-07-01 08:10:00'),
+-- 	(2, 1, 1, 2, '2026-07-01 08:25:00'),
+-- 	(3, 2, 2, 1, '2026-07-01 08:50:00'),
+-- 	(4, 2, 2, 2, '2026-07-05 09:00:00');
 
 -- ---------------------------------------------------------------------
 -- 52. event_challenge_tbl (4건)
@@ -3394,10 +3175,7 @@ INSERT INTO event_challenge_tbl (challenge_id,
                                  start_date,
                                  end_date,
                                  created_at)
-VALUES (1, 'SUMMER SEASON 이벤트 챌린지', 5000, 5, 20, '2026-07-01 00:00:00', '2026-08-31 23:59:59', '2026-07-01 00:00:00'),
-       (2, '한 달 출석 챌린지', 1000, 3, 20, '2026-07-01 00:00:00', '2026-07-31 23:59:59', '2026-06-25 10:00:00'),
-       (3, '절약 소비 챌린지', 1500, 5, 10, '2026-07-01 00:00:00', '2026-07-31 23:59:59', '2026-06-25 10:10:00'),
-       (4, '친구 정산 챌린지', 800, 2, 5, '2026-07-01 00:00:00', '2026-07-31 23:59:59', '2026-06-25 10:20:00');
+VALUES (1, 'SUMMER SEASON 이벤트 챌린지', 5000, 5, 20, '2026-07-01 00:00:00', '2026-08-31 23:59:59', '2026-07-01 00:00:00');
 
 -- ---------------------------------------------------------------------
 -- 53. event_challenge_user_tbl (6건)
@@ -3409,12 +3187,8 @@ INSERT INTO event_challenge_user_tbl (user_challenge_id,
                                       current_target,
                                       status,
                                       updated_at)
-VALUES (1, 1, 1, 2, 12, 'PROCESS', '2026-07-24 08:00:00'),
-       (2, 1, 2, 3, 6, 'PROCESS', '2026-07-24 08:10:00'),
-       (3, 2, 1, 3, 20, 'COMPLETE', '2026-07-24 08:20:00'),
-       (4, 2, 3, 2, 5, 'REWARDED', '2026-07-24 08:30:00'),
-       (5, 3, 2, 1, 2, 'PROCESS', '2026-07-24 08:40:00'),
-       (6, 3, 3, 1, 3, 'PROCESS', '2026-07-24 08:50:00');
+VALUES (1, 1, 1, 2, 12, 'PROCESS', '2026-07-24 08:00:00');
+
 
 -- ---------------------------------------------------------------------
 -- 54. card_company_tbl (3건)
