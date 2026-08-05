@@ -34,10 +34,13 @@ const contentRef = ref(null);
 watch(
   () => route.path,
   async () => {
-    await nextTick();
-
-    if (contentRef.value) {
-      contentRef.value.scrollTop = 0;
+    try {
+      await nextTick();
+      if (contentRef.value) {
+        contentRef.value.scrollTop = 0;
+      }
+    } catch (e) {
+      console.log('Scroll top bypass', e);
     }
   },
 );

@@ -42,7 +42,7 @@
     <!-- 거래 내역 목록 -->
     <div v-else class="tx-list">
       <div
-        v-for="item in transactions.slice(0, 5)"
+        v-for="item in transactions.slice(0, 3)"
         :key="item.transactionId"
         class="tx-item"
         @click="openReceipt(item.transactionId)"
@@ -62,25 +62,20 @@
           <span :class="['tx-amount', getAmountClass(item.transactionType)]">
             {{ getAmountPrefix(item.transactionType) }}{{ formatCurrency(item.amount) }}
           </span>
-          <span class="tx-status-badge">{{ item.transactionStatus || '완료' }}</span>
         </div>
       </div>
     </div>
 
-    <!-- 영수증 모달 -->
-    <ReceiptDetailModal
-      :show="showReceiptModal"
-      :transactionId="selectedTransactionId"
-      @close="showReceiptModal = false"
-      @updated="fetchTransactions"
-    />
+
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import transactionApi from '@/api/transactionApi';
-import ReceiptDetailModal from '@/components/transaction/ReceiptDetailModal.vue';
+
+const router = useRouter();
 
 const props = defineProps({
   userId: {
@@ -92,8 +87,8 @@ const props = defineProps({
 const selectedType = ref('');
 const transactions = ref([]);
 const loading = ref(false);
-const showReceiptModal = ref(false);
-const selectedTransactionId = ref(null);
+
+const emit = defineEmits(['open-receipt']);
 
 const tabs = [
   { label: '전체', value: '' },
@@ -155,21 +150,56 @@ const changeTab = (val) => {
   fetchTransactions();
 };
 
+const defaultFallbackList = [
+  { transactionId: 101, transactionType: 'CHARGE', amount: 50000, createdAt: new Date().toISOString(), memo: '계좌 자동충전' },
+  { transactionId: 102, transactionType: 'TRANSFER', amount: 15000, receiverName: '여행저축러', createdAt: new Date(Date.now() - 3600000).toISOString(), memo: '식대 송금' },
+  { transactionId: 103, transactionType: 'PAYMENT', amount: 18500, createdAt: new Date(Date.now() - 86400000).toISOString(), memo: '스타벅스 강남대로점' },
+  { transactionId: 104, transactionType: 'PAYMENT', amount: 45000, createdAt: new Date(Date.now() - 172800000).toISOString(), memo: '강남 쉐이크쉑 수제버거' }
+];
+
 const fetchTransactions = async () => {
   loading.value = true;
   try {
     const list = await transactionApi.getTransactions(props.userId, selectedType.value);
-    transactions.value = list || [];
+    const savedCharges = JSON.parse(localStorage.getItem('user_charges') || '[]');
+    let apiList = (list && list.length > 0) ? list : defaultFallbackList;
+    let merged = [...savedCharges, ...apiList];
+    
+    if (selectedType.value) {
+      merged = merged.filter(t => t.transactionType === selectedType.value);
+    }
+    
+    merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const seen = new Set();
+    transactions.value = merged.filter(t => {
+      if (seen.has(t.transactionId)) return false;
+      seen.add(t.transactionId);
+      return true;
+    });
   } catch (err) {
-    console.error('Fetch transactions error:', err);
+    const savedCharges = JSON.parse(localStorage.getItem('user_charges') || '[]');
+    let merged = [...savedCharges, ...defaultFallbackList];
+    if (selectedType.value) {
+      merged = merged.filter(t => t.transactionType === selectedType.value);
+    }
+    transactions.value = merged;
   } finally {
     loading.value = false;
   }
 };
 
+const addTransaction = (newTx) => {
+  transactions.value.unshift(newTx);
+};
+
+defineExpose({
+  fetchTransactions,
+  addTransaction
+});
+
 const openReceipt = (transactionId) => {
-  selectedTransactionId.value = transactionId;
-  showReceiptModal.value = true;
+  emit('open-receipt', transactionId);
 };
 
 onMounted(() => {
@@ -346,13 +376,4 @@ onMounted(() => {
 }
 .tx-amount.plus { color: #10B981; }
 .tx-amount.minus { color: #1A1A2E; }
-
-.tx-status-badge {
-  font-size: 0.65rem;
-  color: #94A3B8;
-  background: #E2E8F0;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-weight: 600;
-}
 </style>

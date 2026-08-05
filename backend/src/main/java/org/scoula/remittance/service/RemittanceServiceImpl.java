@@ -74,63 +74,56 @@ public class RemittanceServiceImpl implements RemittanceService {
         remittanceDTO.setStatus("SUCCESS");
         remittanceMapper.insertRemittance(remittanceDTO);
 
-        // 5. 팀원 요청 반영: FeedService.create()를 호출하여 피드 등록
-        String content = (remittanceDTO.getContent() != null && !remittanceDTO.getContent().isEmpty())
-                ? remittanceDTO.getContent() : (remittanceDTO.getMemo() != null ? remittanceDTO.getMemo() : "송금 완료");
+        // 5. 계좌이체(ACCOUNT)가 아닌 친구/지갑 송금인 경우에만 FeedService.create() 피드 및 이미지 등록
+        org.scoula.feed.dto.FeedResponseDTO feedRes = null;
+        if (!"ACCOUNT".equalsIgnoreCase(remittanceDTO.getReceiverType())) {
+            String content = (remittanceDTO.getContent() != null && !remittanceDTO.getContent().isEmpty())
+                    ? remittanceDTO.getContent() : (remittanceDTO.getMemo() != null ? remittanceDTO.getMemo() : "송금 완료");
 
-        if (content.length() > 20) {
-            content = content.substring(0, 20);
-        }
+            if (content.length() > 20) {
+                content = content.substring(0, 20);
+            }
 
-        Enum.VisibilityType visibility = Enum.VisibilityType.PUBLIC;
-        if ("FRIENDS".equalsIgnoreCase(remittanceDTO.getVisibility()) || "FRIEND".equalsIgnoreCase(remittanceDTO.getVisibility())) {
-            visibility = Enum.VisibilityType.FRIEND;
-        } else if ("PRIVATE".equalsIgnoreCase(remittanceDTO.getVisibility())) {
-            visibility = Enum.VisibilityType.PRIVATE;
-        }
+            Enum.VisibilityType visibility = Enum.VisibilityType.PUBLIC;
+            if ("FRIENDS".equalsIgnoreCase(remittanceDTO.getVisibility()) || "FRIEND".equalsIgnoreCase(remittanceDTO.getVisibility())) {
+                visibility = Enum.VisibilityType.FRIEND;
+            } else if ("PRIVATE".equalsIgnoreCase(remittanceDTO.getVisibility())) {
+                visibility = Enum.VisibilityType.PRIVATE;
+            }
 
-        FeedCreateRequestDTO feedRequest = FeedCreateRequestDTO.builder()
-                .userId(walletId)
-                .targetId(remittanceDTO.getTransactionId()) // 생성된 송금 거래 PK (target_id)
-                .feedType(Enum.FeedType.TRANSFER)
-                .content(content)
-                .visibility(visibility)
-                .build();
+            FeedCreateRequestDTO feedRequest = FeedCreateRequestDTO.builder()
+                    .userId(walletId)
+                    .targetId(remittanceDTO.getTransactionId()) // 생성된 송금 거래 PK (target_id)
+                    .feedType(Enum.FeedType.TRANSFER)
+                    .content(content)
+                    .visibility(visibility)
+                    .build();
 
-        org.scoula.feed.dto.FeedResponseDTO feedRes = feedService.create(feedRequest);
-        System.out.println("========== [송금 디버그] feedService.create() 완료, feedRes: " + feedRes);
+            feedRes = feedService.create(feedRequest);
+            System.out.println("========== [송금 디버그] feedService.create() 완료, feedRes: " + feedRes);
 
-        if (feedRes != null) {
-            System.out.println("========== [송금 디버그] 생성된 피드 ID: " + feedRes.getFeedId());
-        }
-        if (remittanceDTO.getFiles() != null) {
-            System.out.println("========== [송금 디버그] 전달받은 files 크기: " + remittanceDTO.getFiles().size());
-        } else {
-            System.out.println("========== [송금 디버그] remittanceDTO.getFiles() 가 null 입니다!");
-        }
-
-        // 사용자의 송금 영역 직속 피드 이미지 DB 저장 로직 (feed_image_tbl INSERT)
-        if (feedRes != null && remittanceDTO.getFiles() != null && !remittanceDTO.getFiles().isEmpty()) {
-            for (org.springframework.web.multipart.MultipartFile part : remittanceDTO.getFiles()) {
-                if (part == null || part.isEmpty()) {
-                    System.out.println("========== [송금 디버그] MultipartFile part가 empty 상태입니다.");
-                    continue;
-                }
-                try {
-                    String uploadPath = org.scoula.common.util.UploadFiles.upload(org.scoula.common.util.UploadPathName.getFeedPath(), part);
-                    String savedFileName = new java.io.File(uploadPath).getName();
-                    int insertedRow = remittanceMapper.insertFeedImage(feedRes.getFeedId(), savedFileName);
-                    System.out.println("========== [송금 디버그] remittanceMapper.insertFeedImage 실행 결과 row: " + insertedRow + ", FeedID: " + feedRes.getFeedId() + ", File: " + savedFileName);
-                    log.info("송금 피드 이미지 DB 입력 성공 - FeedID: {}, Image: {}", feedRes.getFeedId(), savedFileName);
-                } catch (Exception imgE) {
-                    System.out.println("========== [송금 디버그] 이미지 저장 중 예외 발생!");
-                    imgE.printStackTrace();
-                    log.error("송금 이미지 저장 예외 발생 (송금 거래는 유지): ", imgE);
+            if (feedRes != null && remittanceDTO.getFiles() != null && !remittanceDTO.getFiles().isEmpty()) {
+                for (org.springframework.web.multipart.MultipartFile part : remittanceDTO.getFiles()) {
+                    if (part == null || part.isEmpty()) {
+                        System.out.println("========== [송금 디버그] MultipartFile part가 empty 상태입니다.");
+                        continue;
+                    }
+                    try {
+                        String uploadPath = org.scoula.common.util.UploadFiles.upload(org.scoula.common.util.UploadPathName.getFeedPath(), part);
+                        String savedFileName = new java.io.File(uploadPath).getName();
+                        int insertedRow = remittanceMapper.insertFeedImage(feedRes.getFeedId(), savedFileName);
+                        System.out.println("========== [송금 디버그] remittanceMapper.insertFeedImage 실행 결과 row: " + insertedRow + ", FeedID: " + feedRes.getFeedId() + ", File: " + savedFileName);
+                        log.info("송금 피드 이미지 DB 입력 성공 - FeedID: {}, Image: {}", feedRes.getFeedId(), savedFileName);
+                    } catch (Exception imgE) {
+                        System.out.println("========== [송금 디버그] 이미지 저장 중 예외 발생!");
+                        imgE.printStackTrace();
+                        log.error("송금 이미지 저장 예외 발생 (송금 거래는 유지): ", imgE);
+                    }
                 }
             }
         }
 
-        log.info("송금 완료 및 FeedService.create() 피드 등록 성공 - 거래 ID: {}, 피드 내용: {}", remittanceDTO.getTransactionId(), content);
+        log.info("송금 완료 처리 성공 - 거래 ID: {}", remittanceDTO.getTransactionId());
         return true;
     }
 

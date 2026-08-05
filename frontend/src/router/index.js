@@ -59,6 +59,12 @@ const router = createRouter({
       meta: { requiresAuth: true, showBottomNav: true },
     },
     {
+      path: '/wallet/card/add',
+      name: 'card-add',
+      component: () => import('@/pages/wallet/CardAddPage.vue'),
+      meta: { requiresAuth: true, showBottomNav: false },
+    },
+    {
       path: '/signup/nickname',
       name: 'signup-nickname',
       component: NicknamePage,
