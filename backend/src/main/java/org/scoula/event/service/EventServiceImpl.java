@@ -2,12 +2,11 @@ package org.scoula.event.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.scoula.event.domain.EventAttendanceVO;
+import org.scoula.event.domain.EventNormalVO;
 import org.scoula.event.domain.EventParticipationVO;
 import org.scoula.event.domain.EventRewardReceiveVO;
-import org.scoula.event.dto.EventMainDTO;
-import org.scoula.event.dto.EventMainResponseDTO;
-import org.scoula.event.dto.EventResponseDTO;
-import org.scoula.event.dto.UserChallengeDTO;
+import org.scoula.event.dto.*;
 import org.scoula.event.mapper.EventMapper;
 import org.scoula.pointwallet.dto.PointWalletDTO;
 import org.scoula.pointwallet.service.PointWalletService;
@@ -15,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 @Log4j2
@@ -103,6 +103,10 @@ public class EventServiceImpl implements EventService{
 
             event.setDDay(displayDday);
         }
+
+        //이벤트 = 출석 이벤트  이벤트'
+
+
 
         return eventList;
     }
@@ -227,4 +231,83 @@ public class EventServiceImpl implements EventService{
     public boolean claimChallengeReward(Integer userId, Integer challengeId) {
         return true;
     }
+
+
+    @Override
+    public List<EventGetResponseDTO> getEventList(int userId){
+
+        //모든 일회성이다
+        //첫 피드 남기기 event level 1 -> 보상 테이블에서 이 이벤트레벨 머냐 물어보고 -> 해당 보상을 준다.
+        //피드를 남긴 유저 있고 , 피드를 안남긴 유저 있다.
+        //기간이 있다.
+
+        List<EventNormalVO> eventNormalVOList =  eventMapper.getEvent(userId); //이거는 출석 제외 이벤트를 조회 합니다.
+
+        Date now = new Date();
+
+        //현재 시간 구분
+        //이벤트 완료 구분
+        //이벤트 보상 수령 구분
+        //등록 순 정렬 완료
+        eventNormalVOList.removeIf(event ->
+                now.before(event.getStartAt()) || now.after(event.getEndAt())
+        );
+
+        log.info("출석 제외 이벤트 상태:" + eventNormalVOList);
+
+        return eventNormalVOList.stream().map(EventGetResponseDTO::of).toList();
+    }
+
+    @Override
+    public List<EventGetAttendanceResponseDTO> getAttendanceEventList(int userId){
+
+        //출석 이벤트 조회
+
+        List<EventAttendanceVO> eventAttendanceVOList =  eventMapper.getAttendanceEvent(userId); //이거는 출석 제외 이벤트를 조회 합니다.
+
+        Date now = new Date();
+
+        //현재 시간 구분
+        //이벤트 완료 구분
+        //이벤트 보상 수령 구분
+        //오늘 출석 여부 구분
+        //등록 순 정렬 완료
+        eventAttendanceVOList.removeIf(event ->
+                now.before(event.getStartAt()) || now.after(event.getEndAt())
+        );
+
+        log.info("출석 이벤트 상태:" + eventAttendanceVOList);
+
+        return eventAttendanceVOList.stream().map(EventGetAttendanceResponseDTO::of).toList();
+
+    }
+
+    @Override
+    @Transactional
+    //이벤트 참여 버튼 눌렷을때
+    public List<EventGetResponseDTO> joinEvent(int userId, int eventId){
+
+        eventMapper.joinEvent(userId, eventId);
+
+        //리펙토링 할 때
+        //일반 이벤트 get return  EventGetResponseDTO
+        //출석 이벤트 get return  EventGetAttendanceResponseDTO
+        return getEventList(userId);
+    }
+
+    @Override
+    @Transactional
+    //출석 참여 버튼 눌렀을때
+    public List<EventGetAttendanceResponseDTO> joinAttendanceEvent(int userId, int eventId){
+
+        eventMapper.joinAttendanceEvent(userId, eventId);
+
+        //리펙토링 할 때
+        //일반 이벤트 get return  EventGetResponseDTO
+        //출석 이벤트 get return  EventGetAttendanceResponseDTO
+        return getAttendanceEventList(userId);
+    }
+
+
+
 }
