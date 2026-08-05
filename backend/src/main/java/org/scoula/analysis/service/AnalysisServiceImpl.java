@@ -1059,6 +1059,12 @@ public class AnalysisServiceImpl implements AnalysisService {
                 .aiAnalysisSummary(
                         analysisDetail.getAiAnalysisSummary()
                 )
+                .aiCardRecommendationSummary(
+                        analysisDetail.getAiCardRecommendationSummary()
+                )
+                .aiInsuranceRecommendationSummary(
+                        analysisDetail.getAiInsuranceRecommendationSummary()
+                )
                 .createdAt(
                         analysisDetail.getCreatedAt()
                 )
