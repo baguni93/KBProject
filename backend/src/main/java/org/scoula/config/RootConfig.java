@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.sql.DataSource;
 
 @Configuration
+@Import({OpenAIConfig.class,
+        RedisConfig.class})
 @PropertySource({
         "classpath:/application.properties",
         "classpath:/secret.properties"
@@ -34,9 +36,8 @@ import javax.sql.DataSource;
         "org.scoula.like.mapper",
         "org.scoula.auth.mapper",
         "org.scoula.transaction.mapper",
-        "org.scoula.profileTest.mapper",
-        "org.scoula.search.mapper",
         "org.scoula.analysis.mapper",
+        "org.scoula.cardrecommendation.mapper",
 
 
 		"org.scoula.user.mapper",
@@ -61,12 +62,9 @@ import javax.sql.DataSource;
         "org.scoula.comment.service",
         "org.scoula.like.service",
         "org.scoula.auth.service",
-        "org.scoula.transaction.service",
-        "org.scoula.profileTest.service",
-        "org.scoula.search.service",
-        "org.scoula.redis",
         "org.scoula.member.service",
         "org.scoula.analysis.service",
+        "org.scoula.cardrecommendation.service",
         "org.scoula.transaction.service",
 
         "org.scoula.user.service",
@@ -82,7 +80,6 @@ import javax.sql.DataSource;
 })
 @EnableTransactionManagement
 @EnableAspectJAutoProxy
-@Import({OpenAIConfig.class, RedisConfig.class})
 public class RootConfig {
     @Value("${jdbc.driver}") String driver;
     @Value("${jdbc.url}") String url;

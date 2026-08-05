@@ -49,7 +49,15 @@ public enum ErrorCode {
     ANALYSIS_RESULT_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR,"AN006","소비 분석 결과 저장에 실패했습니다."),
     ANALYSIS_RESULT_NOT_FOUND(HttpStatus.NOT_FOUND,"AN007","소비 분석 결과를 찾을 수 없습니다."),
     ANALYSIS_AGREEMENT_NOT_CONFIGURED(HttpStatus.INTERNAL_SERVER_ERROR,"AN008","소비 분석 약관이 설정되어 있지 않습니다."),
-    ANALYSIS_REQUIRED_AGREEMENT_MISSING(HttpStatus.BAD_REQUEST,"AN009","필수 소비 분석 약관에 동의해야 합니다.");
+    ANALYSIS_REQUIRED_AGREEMENT_MISSING(HttpStatus.BAD_REQUEST,"AN009","필수 소비 분석 약관에 동의해야 합니다."),
+
+    // Card Recommendation
+    CARD_RECOMMENDATION_REQUIRES_12_MONTH_ANALYSIS(HttpStatus.BAD_REQUEST, "CR001", "카드 추천을 이용하려면 12개월 소비분석이 필요합니다."),
+    CARD_RECOMMENDATION_ANALYSIS_NOT_FOUND(HttpStatus.NOT_FOUND, "CR002", "카드 추천에 사용할 소비분석 결과를 찾을 수 없습니다."),
+    CARD_RECOMMENDATION_PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "CR003", "추천할 수 있는 KB 카드 상품이 없습니다."),
+    CARD_RECOMMENDATION_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CR004", "카드 추천 결과 저장에 실패했습니다."),
+    CARD_RECOMMENDATION_NOT_FOUND(HttpStatus.NOT_FOUND, "CR005", "카드 추천 결과를 찾을 수 없습니다."),
+    INVALID_CARD_RECOMMENDATION_OPTION(HttpStatus.BAD_REQUEST, "CR006", "카드 유형 또는 연회비 적용 옵션이 올바르지 않습니다.");
 
     private final HttpStatus status;
     private final String code;

@@ -43,6 +43,8 @@ public class AnalysisDetailResponseDTO {
     // AI 소비분석 결과
     private String aiTitle;
     private String aiAnalysisSummary;
+    private String aiCardRecommendationSummary;
+    private String aiInsuranceRecommendationSummary;
 
     // 분석 결과 생성일시
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
