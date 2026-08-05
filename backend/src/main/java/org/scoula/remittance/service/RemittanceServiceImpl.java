@@ -165,4 +165,39 @@ public class RemittanceServiceImpl implements RemittanceService {
                 .recentAccounts(recentAccounts)
                 .build();
     }
+
+    @Override
+    @Transactional
+    public boolean refundSettlement(Integer requesterUserId, Integer memberUserId, Integer amount) {
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("환불 금액은 0원보다 커야 합니다.");
+        }
+
+        // 1. 방장(정산 요청자) 지갑 잔액 차감
+        int subtracted = remittanceMapper.subtractBalance(requesterUserId, amount);
+        if (subtracted == 0) {
+            throw new RuntimeException("정산 요청자 지갑 잔액 차감에 실패했습니다. (잔액 부족 등)");
+        }
+
+        // 2. 환불받을 참여자 지갑 잔액 증가
+        int added = remittanceMapper.addBalance(memberUserId, amount);
+        if (added == 0) {
+            throw new RuntimeException("참여자 지갑 잔액 환불 입금에 실패했습니다.");
+        }
+
+        // 3. 거래 내역 기록 (financial_transaction_tbl INSERT)
+        RemittanceDTO refundDTO = RemittanceDTO.builder()
+                .walletId(requesterUserId)
+                .receiverId(memberUserId)
+                .amount(amount)
+                .status("CANCELLED")
+                .receiverType("WALLET")
+                .memo("정산 환불")
+                .build();
+
+        remittanceMapper.insertRemittance(refundDTO);
+
+        log.info("정산 환불 처리 성공 - 방장 ID: {}, 수신자 ID: {}, 금액: {}원", requesterUserId, memberUserId, amount);
+        return true;
+    }
 }

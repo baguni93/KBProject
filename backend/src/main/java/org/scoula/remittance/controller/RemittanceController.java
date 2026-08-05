@@ -91,4 +91,19 @@ public class RemittanceController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    // remit-004: 정산 환불 실행 (POST /api/remittances/refund)
+    @PostMapping("/refund")
+    public ResponseEntity<Boolean> refundSettlement(
+            @RequestParam Integer requesterUserId,
+            @RequestParam Integer memberUserId,
+            @RequestParam Integer amount) {
+        log.info("정산 환불 요청 - 방장 ID: {}, 수신자 ID: {}, 금액: {}원", requesterUserId, memberUserId, amount);
+        boolean result = remittanceService.refundSettlement(requesterUserId, memberUserId, amount);
+        if (result) {
+            return ResponseEntity.ok(true);
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }
