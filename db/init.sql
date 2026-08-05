@@ -1600,8 +1600,6 @@ CREATE TABLE card_application_history_tbl
 
 
 -- 43.이벤트 테이블
--- event_type의 CHECK 조건이 정의서에는 ('ATTENDANCE', )만 존재합니다.
--- → 현재 기준 그대로 작성합니다.
 DROP TABLE IF EXISTS event_tbl;
 
 CREATE TABLE event_tbl
@@ -1622,6 +1620,8 @@ CREATE TABLE event_tbl
 
     event_level    INT          NOT NULL DEFAULT 1 COMMENT '이벤트 최종 난이도',
 
+    event_daily_limit_count INT NOT NULL DEFAULT 0 COMMENT '이벤트 일일 참여 가능 횟수',
+
     start_at       DATETIME     NULL COMMENT '시작일시',
 
     end_at         DATETIME     NULL COMMENT '종료일시',
@@ -1630,14 +1630,20 @@ CREATE TABLE event_tbl
 
     CONSTRAINT chk_event_type
         CHECK (
-            event_type IN ('ATTENDANCE')
+            event_type IN ('ATTENDANCE', 'PERMANENT', 'LIMITED', 'SEASON', 'PROMOTION', 'LUCKYDRAW' )
             ),
 
     CONSTRAINT chk_event_status
         CHECK (
             event_status IN ('OPEN', 'CLOSE')
-            )
+            ),
+
+    CONSTRAINT chk_event_daily_limit_count 
+        CHECK (
+            event_daily_limit_count >= 0
+           )
 );
+
 
 -- 44.이벤트 리워드 테이블
 
@@ -1708,6 +1714,30 @@ CREATE TABLE event_participation_tbl
     CONSTRAINT uk_event_participation
         UNIQUE (event_id, user_id)
 );
+
+-- 45-1. 이벤트 - 출석체크 참여이력 테이블
+DROP TABLE IF EXISTS event_attendance_tbl;
+
+CREATE TABLE event_attendance_tbl (
+    participation_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '참여ID',
+
+    event_id INT NOT NULL COMMENT '이벤트ID',
+
+    user_id INT NOT NULL COMMENT '사용자ID',
+
+    participated_at DATE NOT NULL COMMENT '참여일시',
+
+    CONSTRAINT fk_event_attendance_event
+        FOREIGN KEY (event_id)
+        REFERENCES event_tbl(event_id),
+
+    CONSTRAINT fk_event_attendance_user
+        FOREIGN KEY (user_id)
+        REFERENCES user_tbl(user_id),
+        
+    CONSTRAINT uk_event_attendance_date
+        UNIQUE (event_id, user_id, participated_at)
+) COMMENT='이벤트 - 출석체크 참여이력 테이블';
 
 
 -- 46. 이벤트 리워드 수령이력 테이블 정의서

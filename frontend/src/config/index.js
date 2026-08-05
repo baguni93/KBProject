@@ -19,8 +19,8 @@ export default {
     },
     {
       title: '금융',
-      url: '/point-wallet',
-      icon: 'fa-solid fa-chart-column',
+      url: '/finance',
+      icon: 'fa-regular fa-images',
     },
     {
       title: '마이',

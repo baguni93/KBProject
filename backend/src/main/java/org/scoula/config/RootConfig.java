@@ -47,7 +47,7 @@ import javax.sql.DataSource;
         "org.scoula.account.mapper",
         "org.scoula.notifsetting.mapper",
         "org.scoula.card.mapper",
-
+        "org.scoula.event.mapper",
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
@@ -78,6 +78,7 @@ import javax.sql.DataSource;
         "org.scoula.notifsetting.service",
         "org.scoula.card.service",
 
+        "org.scoula.event.service",
 })
 @EnableTransactionManagement
 @EnableAspectJAutoProxy

@@ -53,6 +53,7 @@ import java.util.List;
         "org.scoula.notifsetting.controller",
         "org.scoula.card.controller",
 
+        "org.scoula.event.controller"
 })
 public class ServletConfig implements WebMvcConfigurer {
 

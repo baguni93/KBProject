@@ -21,6 +21,9 @@ import SignupCompletePage from '@/pages/signup/SignupCompletePage.vue';
 import HomePage from '@/pages/HomePage.vue';
 
 import { isAuthenticated } from '@/util/guards';
+import EventPage from '@/pages/event/EventPage.vue';
+import EventListPage from '@/pages/event/EventListPage.vue';
+import FinancePage from '@/pages/finance/FinancePage.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -134,6 +137,24 @@ const router = createRouter({
         showBottomNav: true,
       },
     },
+    {
+      path: '/finance',
+      name: 'Finance',
+      component: FinancePage,
+    },
+    {
+      path: '/event',
+      name: 'EventMain',
+      component: EventPage,
+    },
+    {
+      path: '/event/list',
+      name: 'EventList',
+      component: EventListPage,
+      alias: '/event/list/joined',
+    },
+
+    ...auth,
   ],
 });
 
