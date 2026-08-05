@@ -904,19 +904,20 @@ CREATE TABLE settlement_member_tbl
 -- 25.알림 테이블
 DROP TABLE IF EXISTS notification_tbl;
 
-CREATE TABLE notification_tbl
-(
-    notification_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림번호',
+CREATE TABLE notification_tbl (
+    notification_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림번호',
 
-    receiver_id       INT         NOT NULL COMMENT '수신자번호',
+    receiver_id INT NOT NULL COMMENT '수신자번호',
 
-    sender_id         INT         NOT NULL COMMENT '발신자번호',
+    sender_id INT NOT NULL COMMENT '발신자번호',
 
     notification_type VARCHAR(30) NULL COMMENT '알림유형',
 
-    target_id         INT         NULL COMMENT '대상번호',
+    target_id INT NULL COMMENT '대상번호',
 
-    created_at        DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    status VARCHAR(10) NOT NULL DEFAULT 'UNREAD' COMMENT '읽음상태',
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
     CONSTRAINT fk_notification_receiver
         FOREIGN KEY (receiver_id)
@@ -928,21 +929,28 @@ CREATE TABLE notification_tbl
 
     CONSTRAINT chk_notification_type
         CHECK (
-            notification_type
-                IN (
-                    'LIKE',
-                    'COMMENT',
-                    'FRIEND_REQUEST',
-                    'FRIEND_ACCEPT',
-                    'FRIEND_REJECT',
-                    'SETTLEMENT_REQUEST',
-                    'SETTLEMENT_PAYMENT',
-                    'SETTLEMENT_CANCEL',
-                    'SETTLEMENT_COMPLETE'
-                )
+            notification_type IN (
+                'LIKE',
+                'COMMENT',
+                'FRIEND_REQUEST',
+                'FRIEND_ACCEPT',
+                'FRIEND_REJECT',
+                'SETTLEMENT_REQUEST',
+                'SETTLEMENT_PAYMENT',
+                'SETTLEMENT_CANCEL',
+                'SETTLEMENT_COMPLETE',
+                'SETTLEMENT_REMIND'
             )
-);
+        ),
 
+    CONSTRAINT chk_notification_status
+        CHECK (
+            status IN (
+                'READ',
+                'UNREAD'
+            )
+        )
+);
 
 -- 26. 통합 거래 원장 테이블
 -- ============================================

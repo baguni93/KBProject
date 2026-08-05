@@ -45,7 +45,7 @@ public class SettlementController {
         return ResponseEntity.ok(settlementService.cancel(settlementId , userId));
     }
 
-    @PatchMapping("{settlementId}/remine")
+    @PatchMapping("/{settlementId}/remine")
     public ResponseEntity<Boolean> remine(@PathVariable int settlementId , @RequestParam int userId){
         return ResponseEntity.ok(settlementService.remine(settlementId , userId));
     }

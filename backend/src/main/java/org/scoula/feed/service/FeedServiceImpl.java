@@ -12,12 +12,15 @@ import org.scoula.feed.domain.FeedVO;
 import org.scoula.feed.dto.FeedCreateRequestDTO;
 import org.scoula.feed.dto.FeedImageDTO;
 import org.scoula.feed.dto.FeedResponseDTO;
+import org.scoula.feed.dto.FeedUpdateRequestDTO;
 import org.scoula.feed.mapper.FeedMapper;
+import org.scoula.like.service.LikeService;
 import org.scoula.settlement.mapper.SettlementMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +32,7 @@ public class FeedServiceImpl implements FeedService {
 
     private final FeedMapper feedMapper;
     private final SettlementMapper settlementMapper;
+    private final LikeService likeService;
 
     @Transactional
     @Override
@@ -109,6 +113,50 @@ public class FeedServiceImpl implements FeedService {
         return FeedImageDTO.of(image);
     }
 
+    @Override
+    public List<FeedResponseDTO> geMemberList(int memberUserId, int userId) {
+
+        //친구 여부 확인 후
+        //공개 설정 피드 or 공개 + 친구 설정 피드
+        List<FeedVO> list = feedMapper.geMemberList(memberUserId,userId);
+        log.info(list);
+        return getFeedRespoonseDTOList(list);
+
+    }
+
+    @Transactional
+    @Override
+    public void updateFeed(FeedUpdateRequestDTO feedUpdateRequestDTO) {
+
+        feedMapper.update(feedUpdateRequestDTO.toVo());
+
+        if(feedUpdateRequestDTO.getDeleteFiles() !=null){
+            for(var imageId : feedUpdateRequestDTO.getDeleteFiles()){
+
+                FeedImageVO imageVO = feedMapper.getImage(imageId);
+
+                if(imageVO != null){
+
+                    File file = new File(UploadPathName.getFeedPath() + imageVO.getImageName());
+                    // 서버에 실제 파일이 있으면 삭제
+                    if (file.exists()) {
+                        file.delete();
+                    }
+
+                    // DB 첨부파일 정보 삭제
+                    feedMapper.deleteImage(imageId);
+                }
+
+            }
+        }
+
+        // 3. 새 첨부파일 추가
+        List<MultipartFile> files = feedUpdateRequestDTO.getFiles();
+        if(files != null && !files.isEmpty()) { // 첨부 파일이 있는 경우
+            upload(feedUpdateRequestDTO.getFeedId(), files);
+        }
+    }
+
     private List<FeedResponseDTO> getFeedRespoonseDTOList(List<FeedVO> feedList){
 
         if(feedList == null){
@@ -118,10 +166,28 @@ public class FeedServiceImpl implements FeedService {
 
         for(var feed : feedList){
             enrichFeed(feed);
-        }
-        return feedList.stream().map(FeedResponseDTO::of).toList();
 
+        }
+
+        List<FeedResponseDTO> feedResponseDTOList =  feedList.stream().map(FeedResponseDTO::of).toList();
+
+        for(var feedResponseDTO : feedResponseDTOList){
+
+            feedResponseDTO.setLikeCount(
+                    likeService.getLikeCount(feedResponseDTO.getFeedId())
+            );
+
+            feedResponseDTO.setLiked(
+                    likeService.isLiked(
+                            feedResponseDTO.getFeedId(),
+                            feedResponseDTO.getUserId()
+                    )
+            );
+        }
+
+        return feedResponseDTOList;
     }
+
 
 
     private void enrichFeed(FeedVO feed){
@@ -161,8 +227,8 @@ public class FeedServiceImpl implements FeedService {
         for(MultipartFile part: files) {
             if(part.isEmpty()) continue;
             try {
-                String uploadPath = UploadFiles.upload(UploadPathName.getFeedPath(), part);
-                FeedImageVO feedImageVO = FeedImageVO.of(part, uploadPath);
+                String fileName =  UploadFiles.uploadAndGetFileName(UploadPathName.getFeedPath(), part);
+                FeedImageVO feedImageVO = FeedImageVO.of(fileName, feedId);
                 feedMapper.createFeedImage(feedImageVO);
             } catch (IOException e) {
                 throw new RuntimeException(e); // @Transactional에서 감지, 자동 rollback

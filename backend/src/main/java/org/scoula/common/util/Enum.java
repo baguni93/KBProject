@@ -44,7 +44,14 @@ public class Enum {
         SETTLEMENT_REQUEST,
         SETTLEMENT_PAYMENT,
         SETTLEMENT_CANCEL,
-        SETTLEMENT_COMPLETE
+        SETTLEMENT_CANCEL_REFUND,
+        SETTLEMENT_COMPLETE,
+        SETTLEMENT_COMPLETE_OWNER,
+        SETTLEMENT_REMIND
+    }
+    public enum NotificationStatusType{
+        READ,
+        UNREAD,
     }
 
     public enum FriendRequestStatus{
@@ -52,5 +59,12 @@ public class Enum {
         ACCEPT,
         REJECT,
         CANCEL
+    }
+
+    public enum FriendStatus{
+        NONE,
+        REQUEST,
+        RECEIVED,
+        FRIEND
     }
 }

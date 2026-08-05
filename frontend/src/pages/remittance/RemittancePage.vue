@@ -12,20 +12,28 @@
     <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
       <form @submit.prevent="confirmTransfer">
         <!-- 1. 보낼 출금 정보 (내 지갑) -->
-        <div class="mb-4 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+        <div
+          class="mb-4 p-3 bg-light rounded-3 d-flex justify-content-between align-items-center"
+        >
           <div>
             <span class="text-secondary small d-block">출금 지갑</span>
-            <strong class="text-dark">KB Pay 지갑 (#{{ form.walletId }})</strong>
+            <strong class="text-dark"
+              >KB Pay 지갑 (#{{ form.walletId }})</strong
+            >
           </div>
           <div class="text-end">
             <span class="text-secondary small d-block">잔액</span>
-            <span class="fw-bold text-dark">{{ formatCurrency(myBalance) }}</span>
+            <span class="fw-bold text-dark">{{
+              formatCurrency(myBalance)
+            }}</span>
           </div>
         </div>
 
         <!-- 2. 송금 유형 선택 (친구 송금 vs 계좌 송금) -->
         <div class="mb-4">
-          <label class="form-label text-secondary small fw-bold">송금 방식</label>
+          <label class="form-label text-secondary small fw-bold"
+            >송금 방식</label
+          >
           <div class="btn-group w-100" role="group">
             <input
               type="radio"
@@ -47,7 +55,10 @@
               value="ACCOUNT"
               v-model="form.receiverType"
             />
-            <label class="btn btn-outline-dark py-2.5 fw-bold" for="typeAccount">
+            <label
+              class="btn btn-outline-dark py-2.5 fw-bold"
+              for="typeAccount"
+            >
               <i class="bi bi-bank me-1"></i> 계좌 송금
             </label>
           </div>
@@ -56,7 +67,9 @@
         <!-- 3. 받으실 분 입력 (유형별 분기) -->
         <!-- 3-A. 친구 송금 -->
         <div v-if="form.receiverType === 'WALLET'" class="mb-4">
-          <label class="form-label text-secondary small fw-bold">받는 친구 (회원 ID)</label>
+          <label class="form-label text-secondary small fw-bold"
+            >받는 친구 (회원 ID)</label
+          >
           <input
             type="number"
             v-model.number="form.receiverId"
@@ -78,16 +91,29 @@
                 v-for="(acc, idx) in recentAccounts"
                 :key="idx"
                 class="p-2.5 rounded-3 border bg-light d-flex align-items-center justify-content-between cursor-pointer recent-acc-item"
-                :class="{ 'border-warning bg-warning-subtle shadow-sm': form.accountNumber === acc.accountNumber }"
+                :class="{
+                  'border-warning bg-warning-subtle shadow-sm':
+                    form.accountNumber === acc.accountNumber,
+                }"
                 @click="selectRecentAccount(acc)"
               >
                 <div class="d-flex align-items-center gap-2.5">
-                  <div class="bank-badge bg-warning text-dark fw-bold rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 0.75rem;">
+                  <div
+                    class="bank-badge bg-warning text-dark fw-bold rounded-circle d-flex align-items-center justify-content-center"
+                    style="width: 36px; height: 36px; font-size: 0.75rem"
+                  >
                     {{ acc.bankName?.substring(0, 2) || '은행' }}
                   </div>
                   <div>
-                    <div class="fw-bold text-dark small mb-0">{{ acc.ownerName }} ({{ acc.bankName }})</div>
-                    <div class="text-secondary font-monospace" style="font-size: 0.8rem;">{{ acc.accountNumber }}</div>
+                    <div class="fw-bold text-dark small mb-0">
+                      {{ acc.ownerName }} ({{ acc.bankName }})
+                    </div>
+                    <div
+                      class="text-secondary font-monospace"
+                      style="font-size: 0.8rem"
+                    >
+                      {{ acc.accountNumber }}
+                    </div>
                   </div>
                 </div>
                 <i class="bi bi-chevron-right text-muted small"></i>
@@ -96,11 +122,20 @@
           </div>
 
           <!-- 입금 은행 및 계좌번호 직접 입력 -->
-          <label class="form-label text-secondary small fw-bold mt-2">입금 은행 및 계좌번호</label>
+          <label class="form-label text-secondary small fw-bold mt-2"
+            >입금 은행 및 계좌번호</label
+          >
           <div class="row g-2 mb-2">
             <div class="col-5">
-              <select v-model="form.bankCode" class="form-select form-select-lg fs-6 border-2">
-                <option v-for="b in bankList" :key="b.bankCode" :value="b.bankCode">
+              <select
+                v-model="form.bankCode"
+                class="form-select form-select-lg fs-6 border-2"
+              >
+                <option
+                  v-for="b in bankList"
+                  :key="b.bankCode"
+                  :value="b.bankCode"
+                >
                   {{ b.bankName }}
                 </option>
               </select>
@@ -119,7 +154,9 @@
 
         <!-- 4. 송금 금액 -->
         <div class="mb-4">
-          <label class="form-label text-secondary small fw-bold">보낼 금액</label>
+          <label class="form-label text-secondary small fw-bold"
+            >보낼 금액</label
+          >
           <div class="input-group input-group-lg">
             <input
               type="number"
@@ -133,16 +170,42 @@
           </div>
           <!-- 퀵 금액 버튼 -->
           <div class="d-flex gap-1.5 mt-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill flex-fill" @click="addAmount(10000)">+1만</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill flex-fill" @click="addAmount(30000)">+3만</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill flex-fill" @click="addAmount(50000)">+5만</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill flex-fill" @click="addAmount(100000)">+10만</button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary rounded-pill flex-fill"
+              @click="addAmount(10000)"
+            >
+              +1만
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary rounded-pill flex-fill"
+              @click="addAmount(30000)"
+            >
+              +3만
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary rounded-pill flex-fill"
+              @click="addAmount(50000)"
+            >
+              +5만
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary rounded-pill flex-fill"
+              @click="addAmount(100000)"
+            >
+              +10만
+            </button>
           </div>
         </div>
 
         <!-- 5. 메모 및 피드 공유 설정 -->
         <div class="mb-3">
-          <label class="form-label text-secondary small fw-bold">송금 메모 (피드 내용)</label>
+          <label class="form-label text-secondary small fw-bold"
+            >송금 메모 (피드 내용)</label
+          >
           <input
             type="text"
             v-model="form.memo"
@@ -153,7 +216,9 @@
 
         <!-- 6. 피드 공개 설정 (visibility) -->
         <div class="mb-4">
-          <label class="form-label text-secondary small fw-bold">피드 공유 공개 범위 (visibility)</label>
+          <label class="form-label text-secondary small fw-bold"
+            >피드 공유 공개 범위 (visibility)</label
+          >
           <select v-model="form.visibility" class="form-select border-2">
             <option value="PUBLIC">전체 공개 (PUBLIC)</option>
             <option value="FRIENDS">친구 공개 (FRIENDS)</option>
@@ -167,22 +232,43 @@
           class="btn btn-warning w-100 py-3 fw-bold rounded-3 fs-6 shadow-sm text-dark"
           :disabled="loading"
         >
-          <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+          <span
+            v-if="loading"
+            class="spinner-border spinner-border-sm me-2"
+          ></span>
           송금하기
         </button>
       </form>
     </div>
 
     <!-- 성공 / 실패 통지 Toast -->
-    <div v-if="statusMessage" :class="['alert', isSuccess ? 'alert-success' : 'alert-danger', 'rounded-3 shadow-sm border-0 mb-3 d-flex align-items-center justify-content-between']">
+    <div
+      v-if="statusMessage"
+      :class="[
+        'alert',
+        isSuccess ? 'alert-success' : 'alert-danger',
+        'rounded-3 shadow-sm border-0 mb-3 d-flex align-items-center justify-content-between',
+      ]"
+    >
       <div>
-        <h6 class="fw-bold mb-1">{{ isSuccess ? '송금이 완료되었습니다.' : '송금 실패' }}</h6>
+        <h6 class="fw-bold mb-1">
+          {{ isSuccess ? '송금이 완료되었습니다.' : '송금 실패' }}
+        </h6>
         <div class="small">{{ statusMessage }}</div>
-        <div v-if="lastTransactionId" class="small text-muted font-monospace mt-1">
-          거래 번호: #{{ lastTransactionId }} | 피드 타입: {{ lastFeedType }} | 공개 범위: {{ lastVisibility }}
+        <div
+          v-if="lastTransactionId"
+          class="small text-muted font-monospace mt-1"
+        >
+          거래 번호: #{{ lastTransactionId }} | 피드 타입: {{ lastFeedType }} |
+          공개 범위: {{ lastVisibility }}
         </div>
       </div>
-      <router-link v-if="isSuccess" to="/wallet" class="btn btn-sm btn-dark rounded-pill px-3">지갑 보기</router-link>
+      <router-link
+        v-if="isSuccess"
+        to="/wallet"
+        class="btn btn-sm btn-dark rounded-pill px-3"
+        >지갑 보기</router-link
+      >
     </div>
   </div>
 </template>
@@ -203,9 +289,24 @@ const lastFeedType = ref('REMITTANCE');
 const lastVisibility = ref('PUBLIC');
 
 const defaultAccounts = [
-  { bankCode: '088', bankName: '신한은행', accountNumber: '222-002-000001', ownerName: '이KB' },
-  { bankCode: '004', bankName: 'KB국민은행', accountNumber: '110-111-111111', ownerName: '김국민' },
-  { bankCode: '020', bankName: '우리은행', accountNumber: '1002-345-6789', ownerName: '박스타' },
+  {
+    bankCode: '088',
+    bankName: '신한은행',
+    accountNumber: '222-002-000001',
+    ownerName: '이KB',
+  },
+  {
+    bankCode: '004',
+    bankName: 'KB국민은행',
+    accountNumber: '110-111-111111',
+    ownerName: '김국민',
+  },
+  {
+    bankCode: '020',
+    bankName: '우리은행',
+    accountNumber: '1002-345-6789',
+    ownerName: '박스타',
+  },
 ];
 
 const recentAccounts = ref([...defaultAccounts]);
@@ -309,24 +410,32 @@ const confirmTransfer = async () => {
       lastFeedType.value = res.feedType || 'REMITTANCE';
       lastVisibility.value = res.visibility || form.visibility;
     }
-    const targetName = form.receiverType === 'WALLET' ? `친구 #${form.receiverId}` : `계좌(${form.accountNumber})`;
+    const targetName =
+      form.receiverType === 'WALLET'
+        ? `친구 #${form.receiverId}`
+        : `계좌(${form.accountNumber})`;
     statusMessage.value = `${targetName}님에게 ${Number(form.amount).toLocaleString('ko-KR')}원을 송금했습니다.`;
     await fetchMyBalance();
     await fetchRecentBankInfo();
   } catch (err) {
     console.error('Remittance Error:', err);
     isSuccess.value = false;
-    statusMessage.value = err.response?.data?.message || '송금 실패: 출금 잔액 및 입력 정보를 확인해 주세요.';
+    statusMessage.value =
+      err.response?.data?.message ||
+      '송금 실패: 출금 잔액 및 입력 정보를 확인해 주세요.';
   } finally {
     loading.value = false;
   }
 };
 
-watch(() => form.receiverType, (newVal) => {
-  if (newVal === 'ACCOUNT') {
-    fetchRecentBankInfo();
-  }
-});
+watch(
+  () => form.receiverType,
+  (newVal) => {
+    if (newVal === 'ACCOUNT') {
+      fetchRecentBankInfo();
+    }
+  },
+);
 
 onMounted(() => {
   if (route.query.walletId) {
@@ -341,7 +450,12 @@ onMounted(() => {
 .kb-container {
   max-width: 500px;
   margin: 0 auto;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family:
+    'Pretendard',
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
 }
 .recent-acc-item {
   transition: all 0.15s ease;

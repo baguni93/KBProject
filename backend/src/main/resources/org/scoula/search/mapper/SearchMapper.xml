@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scoula.search.mapper.SearchMapper">
+
+
+    <select id="searchMember" resultType="org.scoula.search.dto.SearchResponseDTO">
+
+        SELECT
+            a.user_id,
+            a.user_name,
+            b.nickname,
+            b.stored_name as profileImageName,
+            EXISTS (
+                       SELECT 1
+                       FROM friend_tbl f
+                       WHERE (f.user_id = #{userId}
+                         AND f.friend_user_id = a.user_id) or
+                           (f.user_id = a.user_id
+                               AND f.friend_user_id =  #{userId})
+                   ) AS friend
+        FROM user_tbl a
+                 JOIN profile_tbl b
+                      ON a.user_id = b.user_id
+        WHERE (b.nickname LIKE CONCAT('%', #{keyword}, '%'))
+           or (a.user_name LIKE CONCAT('%' , #{keyword} , '%'))
+
+        LIMIT 20
+
+    </select>
+</mapper>

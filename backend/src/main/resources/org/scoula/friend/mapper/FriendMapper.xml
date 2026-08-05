@@ -15,20 +15,12 @@
             (#{friendUserId}, #{userId})
     </insert>
 
-    <update id="acceptRequest">
-        update friend_request_tbl set status = 'ACCEPT' where request_id = #{requesterId};
-    </update>
-    <update id="rejectRequest">
-        update friend_request_tbl set status = 'REJECT' where request_id = #{requesterId};
-    </update>
-    <update id="cancelRequest">
-        update friend_request_tbl set status = 'CANCEL' where request_id = #{requesterId};
-    </update>
-
-
     <delete id="deleteFriend">
         delete from friend_tbl where (friend_user_id = #{friendUserId} and user_id =#{userId})
                                   or (friend_user_id = #{userId} and user_id =#{friendUserId})
+    </delete>
+    <delete id="deleteRequest">
+        delete from friend_request_tbl where request_id = #{requestId};
     </delete>
 
 
@@ -79,7 +71,7 @@
                 on a.receiver_id = b.user_id
             left join profile_tbl c
                 on a.requester_id = c.user_id
-        where receiver_id = #{userId};
+        where a.receiver_id = #{userId} and a.status = 'REQUEST';
     </select>
 
     <resultMap id="senderProfileMap"
@@ -155,9 +147,7 @@
             left join profile_tbl c
                   on a.requester_id = c.user_id
 
-        where a.request_id = #{requestId}
-
-        ORDER BY a.created_at DESC;
+        where a.request_id = #{requestId};
     </select>
 
     <select id="getFriend" resultMap="friendMap">
@@ -189,4 +179,91 @@
         select friend_id, user_id , friend_user_id, created_at from friend_tbl where (friend_user_id = #{friendUserId} and user_id =#{userId})
                                   or (friend_user_id = #{userId} and user_id =#{friendUserId});
     </select>
+    <select id="getSendRequestList" resultMap="friendRequestMap">
+
+        select
+            a.request_id,
+            a.requester_id,
+            a.receiver_id,
+            a.status,
+            a.created_at,
+            a.updated_at,
+
+            b.profile_id as sender_profile_id,
+            b.nickname as sender_nickname,
+            b.stored_name as sender_profile_image ,
+
+            c.profile_id as receiver_profile_id,
+            c.nickname as receiver_nickname,
+            c.stored_name as receiver_profile_image
+        from friend_request_tbl a
+
+                 left join profile_tbl b
+                           on a.receiver_id = b.user_id
+
+                 left join profile_tbl c
+                           on a.requester_id = c.user_id
+
+        where a.requester_id = #{userId} and a.status = 'REQUEST'
+
+        ORDER BY a.created_at DESC;
+    </select>
+    <select id="getFriendStatus"
+            resultType="org.scoula.friend.domain.FriendStatusVO">
+
+        SELECT
+            CASE
+                -- 친구 여부
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM friend_tbl
+                    WHERE
+                        (user_id = #{userId}
+                            AND friend_user_id = #{checkUserId})
+                       OR
+                        (user_id = #{checkUserId}
+                            AND friend_user_id = #{userId})
+                )
+                    THEN 'FRIEND'
+
+                -- 내가 보낸 요청
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM friend_request_tbl
+                    WHERE requester_id = #{userId}
+                      AND receiver_id = #{checkUserId}
+                      AND status = 'REQUEST'
+                )
+                    THEN 'REQUEST'
+
+                -- 상대가 보낸 요청
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM friend_request_tbl
+                    WHERE requester_id = #{checkUserId}
+                      AND receiver_id = #{userId}
+                      AND status = 'REQUEST'
+                )
+                    THEN 'RECEIVED'
+                ELSE 'NONE'
+                END AS friendStatus,
+            (
+                SELECT request_id
+                FROM friend_request_tbl
+                WHERE
+                    (
+                        requester_id = #{userId}
+                            AND receiver_id = #{checkUserId}
+                        )
+                   OR
+                    (
+                        requester_id = #{checkUserId}
+                            AND receiver_id = #{userId}
+                        )
+                        AND status = 'REQUEST'
+                LIMIT 1
+            ) AS requestId
+
+    </select>
+
 </mapper>

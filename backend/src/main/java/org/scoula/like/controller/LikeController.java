@@ -19,17 +19,11 @@ public class LikeController {
     private final LikeService likeService;
 
     @PostMapping("/{feedId}")
-    public ResponseEntity<HttpStatus> create(@PathVariable int feedId, @RequestParam int userId){
-        likeService.create(feedId, userId);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
+    public ResponseEntity<Boolean> toggle(
+            @PathVariable int feedId,
+            @RequestParam int userId) {
 
-    @DeleteMapping("/{feedId}")
-    public ResponseEntity<HttpStatus> delete(@PathVariable int feedId , @RequestParam int userId)
-    {
-        likeService.delete(feedId, userId);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return ResponseEntity.ok(likeService.toggle(feedId, userId));
     }
-
 
 }

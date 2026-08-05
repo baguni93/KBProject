@@ -25,8 +25,8 @@ public class CommentController {
     }
 
     @GetMapping("/{feedId}")
-    private ResponseEntity<List<CommentResponseDTO>>  getList(@PathVariable int feedId, @RequestParam int userId){
-        return ResponseEntity.ok(commentService.getList(feedId, userId));
+    private ResponseEntity<List<CommentResponseDTO>>  getList(@PathVariable int feedId){
+        return ResponseEntity.ok(commentService.getList(feedId));
     }
 
     @DeleteMapping("/{commentId}")

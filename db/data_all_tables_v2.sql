@@ -954,15 +954,19 @@ CREATE TABLE settlement_tbl
 
     title                VARCHAR(20) NULL COMMENT '정산 제목',
 
+    content              VARCHAR(20) NULL COMMENT '피드 내용',
+
     total_amount         INT         NULL COMMENT '총 정산 금액',
 
-    status               VARCHAR(20) NULL COMMENT '정산 상태',
+    status               VARCHAR(20) NULL     DEFAULT 'REQUEST' COMMENT '정산 상태',
 
     created_at           DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
     settlement_type      VARCHAR(10) NOT NULL COMMENT '정산 방식',
 
     spending_category_id INT         NULL COMMENT '소비 카테고리 ID',
+
+    last_reminder_date   DATETIME    NULL     DEFAULT CURRENT_TIMESTAMP COMMENT '마지막으로 리마인드한 날짜',
 
     completed_at         DATETIME    NULL COMMENT '완료일시',
 
@@ -1004,11 +1008,10 @@ CREATE TABLE settlement_member_tbl
 
     amount               INT         NULL COMMENT '정산 금액',
 
-    status               VARCHAR(20) NULL COMMENT '정산 상태',
+    status               VARCHAR(20) NULL DEFAULT 'REQUEST' COMMENT '정산 상태',
 
     created_at           DATETIME    NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
-    last_reminder_date   DATETIME    NULL DEFAULT CURRENT_TIMESTAMP COMMENT '마지막으로 리마인드한 날짜',
 
     completed_at         DATETIME    NULL COMMENT '완료일시',
 
@@ -1038,21 +1041,20 @@ CREATE TABLE settlement_member_tbl
 -- 25.알림 테이블
 DROP TABLE IF EXISTS notification_tbl;
 
-CREATE TABLE notification_tbl
-(
-    notification_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림번호',
+CREATE TABLE notification_tbl (
+    notification_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림번호',
 
-    receiver_id       INT         NOT NULL COMMENT '수신자번호',
+    receiver_id INT NOT NULL COMMENT '수신자번호',
 
-    sender_id         INT         NOT NULL COMMENT '발신자번호',
+    sender_id INT NOT NULL COMMENT '발신자번호',
 
     notification_type VARCHAR(30) NULL COMMENT '알림유형',
 
-    target_id         INT         NULL COMMENT '대상번호',
+    target_id INT NULL COMMENT '대상번호',
 
-    is_read           CHAR(1)     NOT NULL DEFAULT 'N' COMMENT '읽음여부',
+    status VARCHAR(10) NOT NULL DEFAULT 'UNREAD' COMMENT '읽음상태',
 
-    created_at        DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
     CONSTRAINT fk_notification_receiver
         FOREIGN KEY (receiver_id)
@@ -1064,13 +1066,27 @@ CREATE TABLE notification_tbl
 
     CONSTRAINT chk_notification_type
         CHECK (
-            notification_type IN ('LIKE', 'COMMENT', 'SETTLEMENT', 'FRIEND_REQUEST')
-            ),
-
-    CONSTRAINT chk_notification_read
-        CHECK (
-            is_read IN ('Y', 'N')
+            notification_type IN (
+                'LIKE',
+                'COMMENT',
+                'FRIEND_REQUEST',
+                'FRIEND_ACCEPT',
+                'FRIEND_REJECT',
+                'SETTLEMENT_REQUEST',
+                'SETTLEMENT_PAYMENT',
+                'SETTLEMENT_CANCEL',
+                'SETTLEMENT_COMPLETE',
+                'SETTLEMENT_REMIND'
             )
+        ),
+
+    CONSTRAINT chk_notification_status
+        CHECK (
+            status IN (
+                'READ',
+                'UNREAD'
+            )
+        )
 );
 
 
@@ -1459,34 +1475,38 @@ CREATE TABLE receipt_memo_tbl
 -- 비고: 거래당 1개의 피드 생성 UNIQUE(transaction_id)
 -- 따라서 UNIQUE(transaction_id) 적용했습니다.
 -- feed_id가 PK이면서 AUTO_INCREMENT인 구조는 정상입니다.
-DROP TABLE IF EXISTS feed_tbl;
-
 CREATE TABLE feed_tbl
 (
-    feed_id        INT AUTO_INCREMENT PRIMARY KEY COMMENT '피드번호',
+    feed_id     INT AUTO_INCREMENT PRIMARY KEY COMMENT '피드번호',
 
-    user_id        INT         NOT NULL COMMENT '회원번호',
+    user_id     INT         NOT NULL COMMENT '회원번호',
 
-    transaction_id INT         NULL UNIQUE COMMENT '거래번호',
+    target_id   INT         NULL COMMENT '피드 유형에 따른 대상 ID',
 
-    feed_type      VARCHAR(20) NULL COMMENT '피드유형',
+    feed_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '피드상태',
 
-    content        VARCHAR(20) NULL COMMENT '피드내용',
+    feed_type   VARCHAR(20) NOT NULL COMMENT '피드유형',
 
-    visibility     VARCHAR(20) NULL COMMENT '공개범위',
+    content     VARCHAR(20) NULL COMMENT '피드내용',
 
-    created_at     DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    visibility  VARCHAR(20) NOT NULL COMMENT '공개범위',
 
-    updated_at     DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+
+    updated_at  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
 
     CONSTRAINT fk_feed_user
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id),
 
-    CONSTRAINT fk_feed_transaction
-        FOREIGN KEY (transaction_id)
-            REFERENCES financial_transaction_tbl (transaction_id),
+    CONSTRAINT chk_feed_status
+        CHECK (
+            feed_status IN (
+                            'ACTIVE',
+                            'DELETED'
+                )
+            ),
 
     CONSTRAINT chk_feed_type
         CHECK (
@@ -1494,7 +1514,9 @@ CREATE TABLE feed_tbl
                           'TRANSFER',
                           'PAYMENT',
                           'SETTLEMENT',
-                          'SHARE'
+                          'CARD',
+                          'ANALYSIS',
+                          'EVENT'
                 )
             ),
 
@@ -2672,53 +2694,47 @@ VALUES (1, 1, 2, '2026-07-10 10:05:00'),
 -- ---------------------------------------------------------------------
 -- 29. settlement_tbl (3건)
 -- ---------------------------------------------------------------------
-INSERT INTO settlement_tbl (settlement_id,
-                            requester_id,
-                            title,
-                            total_amount,
-                            status,
-                            created_at,
-                            settlement_type,
-                            spending_category_id,
-                            completed_at)
-VALUES (1, 1, '저녁 식사 정산', 30000, 'REQUEST', '2026-07-20 19:00:00', 'EQUAL', 1, NULL),
-       (2, 2, '카페 모임 정산', 24000, 'COMPLETE', '2026-07-21 15:00:00', 'EQUAL', 2, '2026-07-21 18:00:00'),
-       (3, 3, '택시비 정산', 18000, 'CANCEL', '2026-07-22 23:00:00', 'UNEQUAL', 6, NULL);
+INSERT INTO settlement_tbl (
+    settlement_id, requester_id, title, content, total_amount,
+    status, created_at, settlement_type, spending_category_id,
+    last_reminder_date, completed_at
+)
+VALUES
+(1, 1, '저녁 식사 정산', '저녁 식사 정산', 30000, 'REQUEST', '2026-07-20 19:00:00', 'EQUAL', 1, NULL, NULL),
+(2, 2, '카페 모임 정산', '카페 모임 정산', 24000, 'COMPLETE', '2026-07-21 15:00:00', 'EQUAL', 2, '2026-07-21 17:00:00', '2026-07-21 18:00:00'),
+(3, 3, '택시비 정산', '택시비 정산', 18000, 'CANCEL', '2026-07-22 23:00:00', 'UNEQUAL', 6, NULL, NULL);
 
 -- ---------------------------------------------------------------------
 -- 30. settlement_member_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO settlement_member_tbl (settlement_member_id,
-                                   settlement_id,
-                                   user_id,
-                                   amount,
-                                   status,
-                                   created_at,
-                                   last_reminder_date,
-                                   completed_at)
-VALUES (1, 1, 2, 15000, 'REQUEST', '2026-07-20 19:01:00', '2026-07-21 09:00:00', NULL),
-       (2, 1, 3, 15000, 'REQUEST', '2026-07-20 19:01:00', '2026-07-21 09:00:00', NULL),
-       (3, 2, 1, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 16:00:00', '2026-07-21 17:30:00'),
-       (4, 2, 3, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 16:00:00', '2026-07-21 18:00:00'),
-       (5, 3, 1, 8000, 'CANCEL', '2026-07-22 23:01:00', '2026-07-23 09:00:00', NULL),
-       (6, 3, 2, 10000, 'CANCEL', '2026-07-22 23:01:00', '2026-07-23 09:00:00', NULL);
+
+INSERT INTO settlement_member_tbl (
+    settlement_member_id, settlement_id, user_id,
+    amount, status, created_at, completed_at
+)
+VALUES
+(1, 1, 2, 15000, 'REQUEST',  '2026-07-20 19:01:00', NULL),
+(2, 1, 3, 15000, 'REQUEST',  '2026-07-20 19:01:00', NULL),
+(3, 2, 1, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 17:30:00'),
+(4, 2, 3, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 18:00:00'),
+(5, 3, 1,  8000, 'CANCEL',   '2026-07-22 23:01:00', NULL),
+(6, 3, 2, 10000, 'CANCEL',   '2026-07-22 23:01:00', NULL);
 
 -- ---------------------------------------------------------------------
 -- 31. notification_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO notification_tbl (notification_id,
-                              receiver_id,
-                              sender_id,
-                              notification_type,
-                              target_id,
-                              is_read,
-                              created_at)
-VALUES (1, 2, 1, 'FRIEND_REQUEST', 1, 'Y', '2026-07-10 10:00:00'),
-       (2, 3, 1, 'FRIEND_REQUEST', 2, 'N', '2026-07-11 10:00:00'),
-       (3, 2, 1, 'SETTLEMENT', 1, 'N', '2026-07-20 19:01:00'),
-       (4, 3, 2, 'COMMENT', 1, 'Y', '2026-07-21 20:00:00'),
-       (5, 1, 3, 'LIKE', 2, 'N', '2026-07-22 20:00:00'),
-       (6, 1, 2, 'SETTLEMENT', 2, 'Y', '2026-07-23 20:00:00');
+
+INSERT INTO notification_tbl (
+    notification_id, receiver_id, sender_id,
+    notification_type, target_id, status, created_at
+)
+VALUES
+(1, 2, 1, 'FRIEND_REQUEST',    1, 'READ',    '2026-07-10 10:00:00'),
+(2, 3, 1, 'FRIEND_REQUEST',    2, 'UNREAD',  '2026-07-11 10:00:00'),
+(3, 2, 1, 'SETTLEMENT_REQUEST',1, 'UNREAD',  '2026-07-20 19:01:00'),
+(4, 3, 2, 'COMMENT',           1, 'READ',    '2026-07-21 20:00:00'),
+(5, 1, 3, 'LIKE',              2, 'UNREAD',  '2026-07-22 20:00:00'),
+(6, 1, 2, 'SETTLEMENT_REQUEST',2, 'READ',    '2026-07-23 20:00:00');
 
 -- ---------------------------------------------------------------------
 -- 32. financial_transaction_tbl (6건)
@@ -2938,20 +2954,24 @@ VALUES (1, 1, '포인트 지갑 충전', '2026-07-20 09:01:00', '2026-07-20 09:0
 -- ---------------------------------------------------------------------
 -- 40. feed_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO feed_tbl (feed_id,
-                      user_id,
-                      transaction_id,
-                      feed_type,
-                      content,
-                      visibility,
-                      created_at,
-                      updated_at)
-VALUES (1, 1, 1, 'SHARE', '지갑 충전 완료', 'PUBLIC', '2026-07-20 09:05:00', '2026-07-20 09:05:00'),
-       (2, 1, 2, 'TRANSFER', '친구에게 송금', 'FRIEND', '2026-07-20 10:05:00', '2026-07-20 10:05:00'),
-       (3, 2, 3, 'SHARE', '지갑 충전 완료', 'PRIVATE', '2026-07-21 09:05:00', '2026-07-21 09:05:00'),
-       (4, 2, 4, 'SETTLEMENT', '정산 완료', 'FRIEND', '2026-07-21 18:05:00', '2026-07-21 18:05:00'),
-       (5, 3, 5, 'TRANSFER', '여행비 송금', 'PUBLIC', '2026-07-22 11:05:00', '2026-07-22 11:05:00'),
-       (6, 3, 6, 'PAYMENT', '교통비 결제', 'PRIVATE', '2026-07-23 08:05:00', '2026-07-23 08:05:00');
+INSERT INTO feed_tbl (
+    feed_id,
+    user_id,
+    target_id,
+    feed_status,
+    feed_type,
+    content,
+    visibility,
+    created_at,
+    updated_at
+)
+VALUES
+(1, 1, 1, 'ACTIVE', 'PAYMENT',    '지갑 충전 완료', 'PUBLIC',  '2026-07-20 09:05:00', '2026-07-20 09:05:00'),
+(2, 1, 2, 'ACTIVE', 'TRANSFER',   '친구에게 송금', 'FRIEND',  '2026-07-20 10:05:00', '2026-07-20 10:05:00'),
+(3, 2, 3, 'ACTIVE', 'PAYMENT',    '지갑 충전 완료', 'PRIVATE', '2026-07-21 09:05:00', '2026-07-21 09:05:00'),
+(4, 2, 4, 'ACTIVE', 'SETTLEMENT', '정산 완료',     'FRIEND',  '2026-07-21 18:05:00', '2026-07-21 18:05:00'),
+(5, 3, 5, 'ACTIVE', 'TRANSFER',   '여행비 송금',   'PUBLIC',  '2026-07-22 11:05:00', '2026-07-22 11:05:00'),
+(6, 3, 6, 'ACTIVE', 'PAYMENT',    '교통비 결제',   'PRIVATE', '2026-07-23 08:05:00', '2026-07-23 08:05:00');
 
 -- ---------------------------------------------------------------------
 -- 41. feed_image_tbl (6건)

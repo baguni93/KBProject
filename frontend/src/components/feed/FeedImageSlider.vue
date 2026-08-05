@@ -78,7 +78,7 @@ const touchEnd = () => {
 <style scoped>
 .image-slider {
   position: relative;
-  margin-top: 20px;
+  margin-top: 0px;
   width: 100%;
   aspect-ratio: 1/1;
   overflow: hidden;
