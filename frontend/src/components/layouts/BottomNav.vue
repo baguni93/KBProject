@@ -15,7 +15,7 @@
     </RouterLink>
   </nav>
 </template>
-
+<!-- //주석처리 -->
 <script setup>
 import { useRoute } from 'vue-router';
 import config from '@/config';
