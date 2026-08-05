@@ -35,31 +35,29 @@ public class RemittanceServiceImpl implements RemittanceService {
             throw new IllegalArgumentException("송금 금액은 0원보다 커야 합니다.");
         }
 
-        // 1. 현재 지갑 잔액 조회 및 부족 시 자동 충전
+        // 잔액 부족 시 자동 충전
         int currentBalance = remittanceMapper.getWalletBalance(walletId);
         if (currentBalance < amount) {
             int shortage = amount - currentBalance;
-            log.info("지갑 잔액 부족 (현재: {}원, 송금액: {}원) -> {}원 자동 충전 진행", currentBalance, amount, shortage);
+            log.info("지갑 잔액 부족 -> {}원 자동 충전", shortage);
 
-            // 지갑 잔액 충전 및 충전 거래 이력 기록
             remittanceMapper.addBalance(walletId, shortage);
             remittanceMapper.insertChargeTransaction(walletId, shortage);
         }
 
-        // 2. 내 지갑 잔액 차감
+        // 지갑 잔액 차감
         int subtracted = remittanceMapper.subtractBalance(walletId, amount);
         if (subtracted == 0) {
-            throw new RuntimeException("지갑 잔액 차감에 실패했습니다.");
+            throw new RuntimeException("지갑 잔액 차감 실패");
         }
 
-        // 3. 수신처 잔액 증가 (계좌 송금 vs 지갑/친구 송금)
+        // 수신처 입금 (계좌 vs 지갑)
         if ("ACCOUNT".equals(remittanceDTO.getReceiverType())) {
             remittanceMapper.addAccountBalance(
                     remittanceDTO.getBankCode(),
                     remittanceDTO.getAccountNumber(),
                     amount
             );
-            // 계좌 송금인 경우 피드 INNER JOIN 바인딩을 위해 receiverId 기본값 지정
             if (remittanceDTO.getReceiverId() == null) {
                 remittanceDTO.setReceiverId(walletId);
             }
@@ -70,11 +68,11 @@ public class RemittanceServiceImpl implements RemittanceService {
             );
         }
 
-        // 4. 송금 거래 내역 기록 (financial_transaction_tbl INSERT)
+        // 거래 내역 기록
         remittanceDTO.setStatus("SUCCESS");
         remittanceMapper.insertRemittance(remittanceDTO);
 
-        // 5. 계좌이체(ACCOUNT)가 아닌 친구/지갑 송금인 경우에만 FeedService.create() 피드 및 이미지 등록
+        // 지갑/친구 송금 피드 및 이미지 등록
         org.scoula.feed.dto.FeedResponseDTO feedRes = null;
         if (!"ACCOUNT".equalsIgnoreCase(remittanceDTO.getReceiverType())) {
             String content = (remittanceDTO.getContent() != null && !remittanceDTO.getContent().isEmpty())
@@ -93,37 +91,33 @@ public class RemittanceServiceImpl implements RemittanceService {
 
             FeedCreateRequestDTO feedRequest = FeedCreateRequestDTO.builder()
                     .userId(walletId)
-                    .targetId(remittanceDTO.getTransactionId()) // 생성된 송금 거래 PK (target_id)
+                    .targetId(remittanceDTO.getTransactionId())
                     .feedType(Enum.FeedType.TRANSFER)
                     .content(content)
                     .visibility(visibility)
                     .build();
 
+            // 팀원이 작성한 FeedService를 호출하여 피드 생성
             feedRes = feedService.create(feedRequest);
-            System.out.println("========== [송금 디버그] feedService.create() 완료, feedRes: " + feedRes);
 
+            // 첨부파일 저장 (파일 경로 예외 발생 시 피드 및 송금 거래가 롤백되지 않도록 안전 처리)
             if (feedRes != null && remittanceDTO.getFiles() != null && !remittanceDTO.getFiles().isEmpty()) {
                 for (org.springframework.web.multipart.MultipartFile part : remittanceDTO.getFiles()) {
                     if (part == null || part.isEmpty()) {
-                        System.out.println("========== [송금 디버그] MultipartFile part가 empty 상태입니다.");
                         continue;
                     }
                     try {
                         String uploadPath = org.scoula.common.util.UploadFiles.upload(org.scoula.common.util.UploadPathName.getFeedPath(), part);
                         String savedFileName = new java.io.File(uploadPath).getName();
-                        int insertedRow = remittanceMapper.insertFeedImage(feedRes.getFeedId(), savedFileName);
-                        System.out.println("========== [송금 디버그] remittanceMapper.insertFeedImage 실행 결과 row: " + insertedRow + ", FeedID: " + feedRes.getFeedId() + ", File: " + savedFileName);
-                        log.info("송금 피드 이미지 DB 입력 성공 - FeedID: {}, Image: {}", feedRes.getFeedId(), savedFileName);
+                        remittanceMapper.insertFeedImage(feedRes.getFeedId(), savedFileName);
                     } catch (Exception imgE) {
-                        System.out.println("========== [송금 디버그] 이미지 저장 중 예외 발생!");
-                        imgE.printStackTrace();
-                        log.error("송금 이미지 저장 예외 발생 (송금 거래는 유지): ", imgE);
+                        log.error("피드 이미지 저장 실패 (피드 글과 송금 거래는 정상 저장됨): ", imgE);
                     }
                 }
             }
         }
 
-        log.info("송금 완료 처리 성공 - 거래 ID: {}", remittanceDTO.getTransactionId());
+        log.info("송금 완료 성공 - ID: {}", remittanceDTO.getTransactionId());
         return true;
     }
 

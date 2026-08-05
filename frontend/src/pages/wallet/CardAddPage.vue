@@ -77,7 +77,7 @@
           </div>
 
           <div class="row g-2 mb-3">
-            <div class="col-6">
+            <div class="col-4">
               <label class="form-label">유효기간</label>
               <input
                 v-model="cardForm.expiry"
@@ -86,16 +86,28 @@
                 placeholder="MM/YY"
                 maxLength="5"
                 required
+                @input="formatExpiry"
               />
             </div>
-            <div class="col-6">
+            <div class="col-4">
               <label class="form-label">CVC 보안코드</label>
               <input
                 v-model="cardForm.cvc"
                 type="password"
                 class="kb-input"
-                placeholder="뒷면 3자리"
+                placeholder="3자리"
                 maxLength="3"
+                required
+              />
+            </div>
+            <div class="col-4">
+              <label class="form-label">카드 비밀번호</label>
+              <input
+                v-model="cardForm.cardPassword"
+                type="password"
+                class="kb-input"
+                placeholder="앞 2자리"
+                maxLength="4"
                 required
               />
             </div>
@@ -154,6 +166,7 @@ const cardForm = ref({
   cardNum: '',
   expiry: '',
   cvc: '',
+  cardPassword: '',
 });
 
 const cardPreviewImg = ref(kbCardImageMap['KB Pay 노리2 체크카드 (KB국민카드)']);
@@ -167,13 +180,23 @@ const handleImgError = () => {
 };
 
 const isFormValid = computed(() => {
-  return cardForm.value.cardName && cardForm.value.cardNum && agreeTerms.value;
+  return cardForm.value.cardName && cardForm.value.cardNum && cardForm.value.expiry && cardForm.value.cvc && cardForm.value.cardPassword && agreeTerms.value;
 });
 
 const formatCardNum = (e) => {
   let val = e.target.value.replace(/\D/g, '');
   if (val.length > 16) val = val.slice(0, 16);
   cardForm.value.cardNum = val.replace(/(\d{4})(?=\d)/g, '$1-');
+};
+
+const formatExpiry = (e) => {
+  let val = e.target.value.replace(/\D/g, '');
+  if (val.length > 4) val = val.slice(0, 4);
+  if (val.length >= 3) {
+    cardForm.value.expiry = `${val.slice(0, 2)}/${val.slice(2)}`;
+  } else {
+    cardForm.value.expiry = val;
+  }
 };
 
 const submitCard = async () => {
@@ -184,19 +207,11 @@ const submitCard = async () => {
       userId: authStore.userId,
       cardName: cardForm.value.cardName,
       cardNum: cardForm.value.cardNum,
+      expiryDate: cardForm.value.expiry,
+      cvv: cardForm.value.cvc,
+      cardPassword: cardForm.value.cardPassword,
     };
     await cardApi.registerCard(payload);
-
-    // 등록 성공 시 카드번호 → 선택한 카드명/이미지 localStorage에 저장
-    // (백엔드 DB가 cardName을 cardNum 컬럼으로 조회하여 "Custom Card"로 내려오는 문제 보완)
-    const rawNum = cardForm.value.cardNum.replace(/[-\s]/g, '');
-    const saved = JSON.parse(localStorage.getItem('kbCardSelections') || '{}');
-    saved[rawNum] = {
-      name: cardForm.value.cardName,
-      img: cardPreviewImg.value,
-    };
-    localStorage.setItem('kbCardSelections', JSON.stringify(saved));
-
     router.push('/wallet');
   } catch (err) {
     console.error('카드 등록 실패:', err);

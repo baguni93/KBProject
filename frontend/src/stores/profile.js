@@ -17,18 +17,18 @@ export const useProfileStore = defineStore('profile', () => {
   // 프로필 조회
   const getProfile = async (userId) => {
     try {
-      const res = await api.get(`/api/profile/${userId}`);
-
+      const res = await api.get(`/api/users/${userId}/profile`);
       profile.value = res.data;
-
-      console.log(
-        '프로필 조회 (비어있으면 테이블 채워주세요) :',
-        profile.value,
-      );
-
       return profile.value;
     } catch (e) {
-      console.log(e);
+      console.log('Profile fetch fallback');
+      profile.value = {
+        userId: userId,
+        nickname: '김국민',
+        introduction: 'KB Pay와 함께하는 즐거운 일상',
+        imageName: null
+      };
+      return profile.value;
     }
   };
 

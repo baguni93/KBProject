@@ -53,11 +53,15 @@
         <!-- 좌측 이전 카드 화살표 -->
         <button
           v-if="reorderableCards.length > 1"
+          type="button"
           class="card-side-arrow-btn left"
           :disabled="currentCardIndex === 0"
           @click="prevCard"
+          aria-label="이전 카드"
         >
-          <i class="bi bi-chevron-left"></i>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
         </button>
 
         <!-- 카드 슬라이드 플레이트 -->
@@ -116,11 +120,15 @@
         <!-- 우측 다음 카드 화살표 -->
         <button
           v-if="reorderableCards.length > 1"
+          type="button"
           class="card-side-arrow-btn right"
           :disabled="currentCardIndex === reorderableCards.length - 1"
           @click="nextCard"
+          aria-label="다음 카드"
         >
-          <i class="bi bi-chevron-right"></i>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
         </button>
       </div>
 
@@ -365,15 +373,17 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useUserStore } from '@/stores/user';
 import walletApi from '@/api/walletApi';
 import authApi from '@/api/authApi';
 
-const userId = ref(1);
+const userStore = useUserStore();
+const userId = computed(() => userStore.userId || 1);
 const balance = ref(57000);
-const walletId = ref(1);
+const walletId = computed(() => userStore.userId || 1);
 
-// 연결 대표 계좌 잔액 (기본 500,000 원)
-const accountBalance = ref(Number(localStorage.getItem('user_account_balance_1')) || 500000);
+// 연결 대표 계좌 잔액
+const accountBalance = ref(Number(localStorage.getItem(`user_account_balance_${userStore.userId || 1}`)) || 500000);
 
 const currentCardIndex = ref(0);
 
@@ -418,7 +428,7 @@ const displayCardNum = (num) => {
 const reorderableCards = ref([
   { cardId: 'WALLET_MAIN', cardName: 'KB Pay 포인트 머니', cardNum: '잔액', isWalletCard: true },
   { cardId: 101, cardName: 'KB 국민 노리2 체크카드', cardNum: '5584 **** **** 9012', holderName: '테스트회원1', cardImg: '/images/cards/nori2.png' },
-  { cardId: 102, cardName: 'KB 국민 톡톡 my point 카드', cardNum: '4571 **** **** 3456', holderName: '테스트회원1', cardImg: '/images/cards/toktok.jpg' },
+  { cardId: 102, cardName: 'KB국민 톡톡MyPoint 카드', cardNum: '4571 **** **** 3456', holderName: '테스트회원1', cardImg: '/images/cards/toktok.png' },
   { cardId: 'ADD_CARD', cardName: '새 카드 추가하기', isAddCard: true }
 ]);
 
@@ -693,48 +703,71 @@ onMounted(async () => {
     const addCardObj = { cardId: 'ADD_CARD', cardName: '새 카드 추가하기', isAddCard: true };
 
     if (list && list.length > 0) {
-    // 카드 이름 → 이미지 파일 매핑
+    // 카드 이름 → 로컬 static 이미지 파일 매핑
     const cardNameToImg = {
       '노리2': '/images/cards/nori2.png',
+      'nori': '/images/cards/nori2.png',
       '톡톡': '/images/cards/toktok.png',
+      'toktok': '/images/cards/toktok.png',
       '굿데이': '/images/cards/goodday.png',
-      '청춘대로': '/images/cards/chungchun.png',
+      'goodday': '/images/cards/goodday.png',
+      '청춘': '/images/cards/chungchun.png',
+      'chungchun': '/images/cards/chungchun.png',
       'weish': '/images/cards/weish.png',
-      'easy link': '/images/cards/easylink.png',
+      '위시': '/images/cards/weish.png',
+      'easy': '/images/cards/easylink.png',
+      '이지': '/images/cards/easylink.png',
     };
 
-    // 카드 등록 시 저장해둔 카드번호 → {name, img} 맵 불러오기
-    let savedCardMap = {};
-    try {
-      savedCardMap = JSON.parse(localStorage.getItem('kbCardSelections') || '{}');
-    } catch {}
+    const cardImageList = [
+      '/images/cards/nori2.png',
+      '/images/cards/toktok.png',
+      '/images/cards/goodday.png',
+      '/images/cards/chungchun.png',
+      '/images/cards/weish.png',
+      '/images/cards/easylink.png',
+    ];
 
-    const resolveCardImg = (c) => {
+    const imgToCardName = {
+      '/images/cards/nori2.png': 'KB Pay 노리2 체크카드',
+      '/images/cards/toktok.png': 'KB국민 톡톡MyPoint 카드',
+      '/images/cards/goodday.png': 'KB국민 굿데이 ALL 카드',
+      '/images/cards/chungchun.png': 'KB국민 청춘대로 톡톡카드',
+      '/images/cards/weish.png': 'KB국민 My WEISH 카드',
+      '/images/cards/easylink.png': 'KB국민 Easy Link 카드',
+    };
+
+    const resolveCardImg = (c, index) => {
       if (c.cardImg || c.image) return c.cardImg || c.image;
-      // 저장된 선택 정보 우선 (카드번호 기준)
-      const rawNum = (c.cardNum || c.number || '').replace(/[-\s*]/g, '');
-      if (savedCardMap[rawNum]?.img) return savedCardMap[rawNum].img;
-      // 카드 이름 키워드 매핑
       const name = (c.cardName || c.name || '').toLowerCase();
       for (const [key, img] of Object.entries(cardNameToImg)) {
         if (name.includes(key.toLowerCase())) return img;
       }
-      return null; // 이미지 없으면 null (placeholder 표시)
+      // Custom Card 등 백엔드에서 명칭이 범용명으로 반환되는 경우
+      // 카드의 index/cardId 순서에 따라 서로 다른 카드 이미지 할당
+      const idx = typeof index === 'number' ? index : ((c.cardId || 0) % cardImageList.length);
+      return cardImageList[idx % cardImageList.length];
     };
 
-    const resolveCardName = (c) => {
-      const rawNum = (c.cardNum || c.number || '').replace(/[-\s*]/g, '');
-      if (savedCardMap[rawNum]?.name) return savedCardMap[rawNum].name;
-      return displayCardName(c.cardName || c.name);
+    const resolveCardName = (c, img) => {
+      const origName = c.cardName || c.name || '';
+      if (!origName || origName.includes('Custom Card') || origName.includes('CARD-')) {
+        if (imgToCardName[img]) return imgToCardName[img];
+      }
+      return displayCardName(origName);
     };
 
-      const parsedList = list.map((c, i) => ({
-        cardId: c.cardId || c.id || (100 + i),
-        cardName: resolveCardName(c),
-        cardNum: displayCardNum(c.cardNum || c.number),
-        holderName: c.holderName || '테스트회원1',
-        cardImg: resolveCardImg(c)
-      }));
+      const parsedList = list.map((c, i) => {
+        const img = resolveCardImg(c, i);
+        const name = resolveCardName(c, img);
+        return {
+          cardId: c.cardId || c.id || (100 + i),
+          cardName: name,
+          cardNum: displayCardNum(c.cardNum || c.number),
+          holderName: c.holderName || '테스트회원1',
+          cardImg: img
+        };
+      });
 
       const walletCard = reorderableCards.value[0];
       reorderableCards.value = [walletCard, ...parsedList, addCardObj];
@@ -897,23 +930,38 @@ onUnmounted(() => {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: #ffffff;
-  border: 1px solid #cbd5e1;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
   color: #0f172a;
-  z-index: 10;
+  z-index: 50;
   cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.card-side-arrow-btn.left { left: -12px; }
-.card-side-arrow-btn.right { right: -12px; }
-.card-side-arrow-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.card-side-arrow-btn:hover:not(:disabled) {
+  background: #ffbc00;
+  color: #0f172a;
+  border-color: #ffbc00;
+  transform: translateY(-50%) scale(1.12);
+  box-shadow: 0 8px 22px rgba(255, 188, 0, 0.4);
+}
+
+.card-side-arrow-btn.left { left: -14px; }
+.card-side-arrow-btn.right { right: -14px; }
+
+.card-side-arrow-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+  box-shadow: none;
+  background: #f1f5f9;
+}
 
 .deck-indicator-row {
   display: flex;

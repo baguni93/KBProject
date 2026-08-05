@@ -504,8 +504,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useUserStore } from '@/stores/user';
 import remittanceApi from '@/api/remittanceApi';
 import walletApi from '@/api/walletApi';
 import friendApi from '@/api/friend';
@@ -513,10 +514,18 @@ import EmptyList from '@/components/common/EmptyList.vue';
 
 const router = useRouter();
 const route = useRoute();
+const userStore = useUserStore();
 
-const currentUserId = 1;
+const currentUserId = ref(userStore.userId || 1);
 const myBalance = ref(107000);
-const myWalletId = ref(1);
+const myWalletId = ref(userStore.userId || 1);
+
+watch(() => userStore.userId, (newVal) => {
+  if (newVal) {
+    currentUserId.value = newVal;
+    myWalletId.value = newVal;
+  }
+}, { immediate: true });
 
 const currentStep = ref(1);
 const submitting = ref(false);
@@ -541,9 +550,9 @@ const dutchSplitMode = ref('EQUAL'); // EQUAL (1/N 균등) vs CUSTOM (직접 입
 const customFriendAmounts = ref({});
 
 const recentRecipients = ref([
-  { id: 101, type: 'WALLET', name: '여행저축러', detail: 'KB Pay 지갑 #2', targetId: 2 },
+  { id: 101, type: 'WALLET', name: '절약왕', detail: 'KB Pay 지갑 #2', targetId: 2 },
   { id: 102, type: 'ACCOUNT', name: '김국민', detail: 'KB국민 110-111-111111', bankCode: '004', accNum: '110111111111' },
-  { id: 103, type: 'WALLET', name: '절약왕', detail: 'KB Pay 지갑 #3', targetId: 3 }
+  { id: 103, type: 'WALLET', name: '여행저축러', detail: 'KB Pay 지갑 #3', targetId: 3 }
 ]);
 
 const recentPayments = ref([
@@ -555,7 +564,7 @@ const recentPayments = ref([
 const selectedTxIds = ref([]);
 
 const form = ref({
-  walletId: 1,
+  walletId: userStore.userId || 1,
   receiverType: 'WALLET',
   receiverId: null,
   bankCode: '004',
@@ -632,7 +641,8 @@ const toggleSelectTx = (tx) => {
 };
 
 const filteredFriends = computed(() => {
-  let list = friendList.value.filter(f => Number(f.userId) !== currentUserId);
+  const myId = Number(currentUserId.value || userStore.userId || 1);
+  let list = friendList.value.filter(f => Number(f.userId) !== myId);
   const seen = new Set();
   list = list.filter(f => {
     if (seen.has(f.userId)) return false;
@@ -650,7 +660,7 @@ const filteredFriends = computed(() => {
 
 // 더치페이 전용 친구 검색 필터링
 const filteredDutchFriends = computed(() => {
-  let list = friendList.value.filter(f => Number(f.userId) !== currentUserId);
+  let list = friendList.value.filter(f => Number(f.userId) !== currentUserId.value);
   const seen = new Set();
   list = list.filter(f => {
     if (seen.has(f.userId)) return false;
@@ -751,7 +761,7 @@ const submitDutchPayDirectly = async () => {
     }));
 
     const payload = {
-      requesterId: currentUserId,
+      requesterId: currentUserId.value,
       title: dutchForm.value.title || '더치페이',
       content: form.value.memo || '함께한 더치페이입니다.',
       totalAmount: dutchSplitMode.value === 'EQUAL' ? form.value.amount : calculatedCustomTotal.value,
@@ -824,7 +834,7 @@ const submitRemittance = async () => {
     }
 
     const payload = {
-      walletId: myWalletId.value || 1,
+      walletId: userStore.userId || myWalletId.value || 1,
       receiverType: form.value.receiverType || 'WALLET',
       receiverId: form.value.receiverId || 2,
       bankCode: form.value.bankCode || '004',
@@ -842,7 +852,7 @@ const submitRemittance = async () => {
     console.log('Remittance API fallback', err);
   } finally {
     myBalance.value = Math.max(0, myBalance.value - remitAmount);
-    localStorage.setItem('user_balance_1', String(myBalance.value));
+    localStorage.setItem(`user_balance_${userStore.userId || 1}`, String(myBalance.value));
 
     const savedTx = JSON.parse(localStorage.getItem('user_charges') || '[]');
     savedTx.unshift({
@@ -896,44 +906,18 @@ const resetForm = () => {
 const parseFriendList = (list) => {
   if (!list || !Array.isArray(list)) return [];
   return list.map(item => {
-    const friendId = item.friendUserId || (item.receiver ? item.receiver.userId : (item.sender ? item.sender.userId : item.userId));
-    const nickname = item.receiver?.nickname || item.sender?.nickname || item.nickname || item.name || `친구 #${friendId}`;
+    const friendId = item.friendUserId || (item.receiver ? item.receiver.userId : null) || 2;
+    const nickname = item.receiver?.nickname || `친구 #${friendId}`;
+
     return {
-      userId: Number(friendId || 2),
+      userId: Number(friendId),
       nickname: nickname,
       name: nickname
     };
   });
 };
 
-onMounted(async () => {
-  try {
-    const data = await walletApi.getWalletByUserId(currentUserId);
-    if (data) {
-      myBalance.value = data.balance ?? 107000;
-      myWalletId.value = data.walletId ?? data.id ?? 1;
-    }
-  } catch (err) {
-    console.log('Wallet API fallback');
-  }
-
-  try {
-    const list = await friendApi.getFriendList(currentUserId);
-    if (list && list.length > 0) {
-      friendList.value = parseFriendList(list);
-    } else {
-      friendList.value = [
-        { userId: 2, nickname: '여행저축러', name: '여행저축러' },
-        { userId: 3, nickname: '절약왕', name: '절약왕' }
-      ];
-    }
-  } catch (err) {
-    friendList.value = [
-      { userId: 2, nickname: '여행저축러', name: '여행저축러' },
-      { userId: 3, nickname: '절약왕', name: '절약왕' }
-    ];
-  }
-
+const applyRouteQuery = () => {
   if (route.query.type) {
     setReceiverType(route.query.type);
     if (route.query.amount) {
@@ -943,6 +927,41 @@ onMounted(async () => {
       dutchForm.value.title = String(route.query.title);
     }
   }
+};
+
+watch(() => route.query, () => {
+  applyRouteQuery();
+}, { deep: true, immediate: true });
+
+onMounted(async () => {
+  try {
+    const data = await walletApi.getWalletByUserId(currentUserId.value);
+    if (data) {
+      myBalance.value = data.balance ?? 107000;
+      myWalletId.value = data.walletId ?? data.id ?? userStore.userId ?? 1;
+    }
+  } catch (err) {
+    console.log('Wallet API fallback');
+  }
+
+  try {
+    const list = await friendApi.getFriendList(currentUserId.value);
+    if (list && list.length > 0) {
+      friendList.value = parseFriendList(list);
+    } else {
+      friendList.value = [
+        { userId: 2, nickname: '절약왕', name: '절약왕' },
+        { userId: 3, nickname: '여행저축러', name: '여행저축러' }
+      ];
+    }
+  } catch (err) {
+    friendList.value = [
+      { userId: 2, nickname: '절약왕', name: '절약왕' },
+      { userId: 3, nickname: '여행저축러', name: '여행저축러' }
+    ];
+  }
+
+  applyRouteQuery();
 });
 </script>
 

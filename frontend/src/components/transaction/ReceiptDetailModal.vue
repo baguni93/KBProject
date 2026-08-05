@@ -1,25 +1,21 @@
 <template>
   <Teleport to="body">
-    <div
-      v-if="show"
-      class="receipt-modal-backdrop d-flex align-items-center justify-content-center"
-      @click="onBackdropClick"
-    >
-      <div
-        class="modal-dialog modal-dialog-centered w-100 px-3"
-        style="max-width: 420px;"
-        @click.stop
-      >
-        <div class="modal-card bg-white rounded-4 shadow-lg p-4 position-relative" @click.stop>
-          <!-- 닫기 X 버튼 -->
-          <button type="button" class="btn-close position-absolute top-0 end-0 m-3" @click.stop="closeModal"></button>
+    <div v-if="show" class="receipt-modal-root">
+      <!-- 1. 독립 백드롭 레이어 (오직 배경을 누를 때만 닫힘) -->
+      <div class="receipt-modal-backdrop" @click="closeModal"></div>
 
-          <div v-if="loading" class="text-center py-5" @click.stop>
+      <!-- 2. 독립 모달 컨텐츠 레이어 (백드롭과 완전히 분리된 상위 레이어) -->
+      <div class="receipt-modal-container">
+        <div class="modal-card bg-white rounded-4 shadow-lg p-4 position-relative">
+          <!-- 닫기 X 버튼 -->
+          <button type="button" class="btn-close position-absolute top-0 end-0 m-3" @click="closeModal"></button>
+
+          <div v-if="loading" class="text-center py-5">
             <div class="spinner-border text-warning" role="status"></div>
             <div class="small text-secondary mt-2">영수증 정보를 불러오는 중...</div>
           </div>
 
-          <div v-else-if="transaction" class="receipt-body text-center" @click.stop>
+          <div v-else-if="transaction" class="receipt-body text-center">
             <div class="badge bg-warning text-dark fw-bold px-3 py-1.5 rounded-pill mb-2">KB Pay 영수증</div>
             
             <!-- 금액 -->
@@ -31,7 +27,7 @@
             <hr class="my-3 border-dashed" />
 
             <!-- 상세 정보 테이블 -->
-            <div class="text-start small mb-3" @click.stop>
+            <div class="text-start small mb-3">
               <div class="d-flex justify-content-between py-1.5">
                 <span class="text-secondary">거래 번호</span>
                 <span class="fw-bold font-monospace">#{{ transaction.transactionId }}</span>
@@ -52,83 +48,90 @@
 
             <hr class="my-3 border-dashed" />
 
-            <!-- 피드 글 남기기 & 공개 범위 선택 입력 (결제 건 전용 피드) -->
-            <div class="text-start mb-3" @click.stop>
-              <label class="form-label text-dark small fw-bold">
-                <i class="bi bi-chat-heart-fill me-1 text-warning"></i>피드 글 남기기
-              </label>
+            <!-- 결제(PAYMENT) 내역 전용: 피드 글 남기기 및 더치페이하기 기능 -->
+            <template v-if="transaction.transactionType === 'PAYMENT'">
+              <!-- 피드 글 남기기 & 공개 범위 선택 입력 -->
+              <div class="text-start mb-3">
+                <label class="form-label text-dark small fw-bold">
+                  <i class="bi bi-chat-heart-fill me-1 text-warning"></i>피드 글 남기기
+                </label>
 
-              <div class="input-group mb-2" @click.stop>
-                <input
-                  type="text"
-                  v-model="editMemo"
-                  class="form-control border-2"
-                  placeholder="피드 메시지 작성 (예: 오늘 저녁 맛있게 먹었습니다! 😋)"
-                  @click.stop
-                  @keyup.enter.stop="saveMemo"
-                />
-                <button
-                  type="button"
-                  class="btn btn-warning fw-bold px-3 text-dark"
-                  @click.stop.prevent="saveMemo"
-                  :disabled="saving"
-                >
-                  <span v-if="saving" class="spinner-border spinner-border-sm me-1"></span>
-                  게시
-                </button>
-              </div>
+                <div class="input-group mb-2">
+                  <input
+                    type="text"
+                    v-model="editMemo"
+                    class="form-control border-2"
+                    placeholder="피드 메시지 작성 (예: 오늘 저녁 맛있게 먹었습니다! 😋)"
+                    @keyup.enter="saveMemo"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-warning fw-bold px-3 text-dark"
+                    @click="saveMemo"
+                    :disabled="saving"
+                  >
+                    <span v-if="saving" class="spinner-border spinner-border-sm me-1"></span>
+                    게시
+                  </button>
+                </div>
 
-              <!-- 피드 공개 범위 선택 버튼 그룹 -->
-              <label class="form-label text-secondary small fw-bold mt-1 mb-1">
-                <i class="bi bi-shield-lock me-1 text-primary"></i>공개 범위 선택
-              </label>
+                <!-- 피드 공개 범위 선택 버튼 그룹 -->
+                <label class="form-label text-secondary small fw-bold mt-1 mb-1">
+                  <i class="bi bi-shield-lock me-1 text-primary"></i>공개 범위 선택
+                </label>
 
-              <div class="vis-opt-grid d-flex gap-1 mb-2" @click.stop>
-                <button
-                  type="button"
-                  class="vis-chip-btn"
-                  :class="{ active: editVisibility === 'PUBLIC' }"
-                  @click.stop.prevent="editVisibility = 'PUBLIC'"
-                >
-                  🌐 전체 공개
-                </button>
-                <button
-                  type="button"
-                  class="vis-chip-btn"
-                  :class="{ active: editVisibility === 'FRIEND' }"
-                  @click.stop.prevent="editVisibility = 'FRIEND'"
-                >
-                  👥 친구 공개
-                </button>
-                <button
-                  type="button"
-                  class="vis-chip-btn"
-                  :class="{ active: editVisibility === 'PRIVATE' }"
-                  @click.stop.prevent="editVisibility = 'PRIVATE'"
-                >
-                  🔒 나만 보기
-                </button>
-              </div>
+                <div class="vis-opt-grid d-flex gap-1 mb-2">
+                  <button
+                    type="button"
+                    class="vis-chip-btn"
+                    :class="{ active: editVisibility === 'PUBLIC' }"
+                    @click="editVisibility = 'PUBLIC'"
+                  >
+                    🌐 전체 공개
+                  </button>
+                  <button
+                    type="button"
+                    class="vis-chip-btn"
+                    :class="{ active: editVisibility === 'FRIEND' }"
+                    @click="editVisibility = 'FRIEND'"
+                  >
+                    👥 친구 공개
+                  </button>
+                  <button
+                    type="button"
+                    class="vis-chip-btn"
+                    :class="{ active: editVisibility === 'PRIVATE' }"
+                    @click="editVisibility = 'PRIVATE'"
+                  >
+                    🔒 나만 보기
+                  </button>
+                </div>
 
-              <div v-if="savedSuccess" class="alert alert-success py-2 px-3 small fw-bold mt-2 mb-0 d-flex align-items-center gap-2">
-                <i class="bi bi-check-circle-fill text-success fs-6"></i>
-                <div>
-                  피드 글이 성공적으로 게시되었습니다!
-                  <span class="d-block text-secondary font-normal" style="font-size: 11px;">공개 범위: {{ getVisLabel(editVisibility) }}</span>
+                <div v-if="savedSuccess" class="alert alert-success py-2 px-3 small fw-bold mt-2 mb-0 d-flex flex-column gap-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle-fill text-success fs-6"></i>
+                    <div>
+                      피드 글이 성공적으로 게시되었습니다!
+                      <span class="d-block text-secondary font-normal" style="font-size: 11px;">공개 범위: {{ getVisLabel(editVisibility) }}</span>
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline-success w-100 fw-bold" @click="goToFeed">
+                    피드로 이동하여 확인하기 <i class="bi bi-arrow-right ms-1"></i>
+                  </button>
                 </div>
               </div>
-            </div>
 
-            <!-- 이 내역으로 더치페이하기 -->
-            <button
-              type="button"
-              class="btn btn-warning w-100 py-2.5 fw-bold rounded-3 mb-2 text-dark shadow-sm"
-              @click.stop.prevent="startDutchpayFromReceipt"
-            >
-              <i class="bi bi-calculator me-1"></i> 이 내역으로 더치페이하기
-            </button>
+              <!-- 이 내역으로 더치페이하기 -->
+              <button
+                type="button"
+                class="btn btn-warning w-100 py-2.5 fw-bold rounded-3 mb-2 text-dark shadow-sm"
+                @click="startDutchpayFromReceipt"
+              >
+                <i class="bi bi-calculator me-1"></i> 이 내역으로 더치페이하기
+              </button>
+            </template>
 
-            <button type="button" class="btn btn-dark w-100 py-2.5 fw-bold rounded-3" @click.stop.prevent="closeModal">
+            <button type="button" class="btn btn-dark w-100 py-2.5 fw-bold rounded-3" @click="closeModal">
               확인
             </button>
           </div>
@@ -141,9 +144,12 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user';
+import api from '@/api';
 import transactionApi from '@/api/transactionApi';
 
 const router = useRouter();
+const userStore = useUserStore();
 
 const props = defineProps({
   show: Boolean,
@@ -159,13 +165,6 @@ const loading = ref(false);
 const saving = ref(false);
 const savedSuccess = ref(false);
 
-// 백드롭 직접 클릭 시만 닫히도록 억제
-const onBackdropClick = (e) => {
-  if (e.target.classList.contains('receipt-modal-backdrop')) {
-    closeModal();
-  }
-};
-
 const closeModal = () => {
   savedSuccess.value = false;
   emit('close');
@@ -178,24 +177,25 @@ const getVisLabel = (val) => {
   return '전체 공개';
 };
 
-const startDutchpayFromReceipt = (e) => {
-  if (e) e.stopPropagation();
+const goToFeed = async () => {
+  closeModal();
+  await router.push('/feed');
+};
+
+const startDutchpayFromReceipt = async () => {
   const amt = transaction.value ? transaction.value.amount : 5000;
   const merchantName = transaction.value?.receiverName || transaction.value?.memo || '결제건';
   const titleText = `${merchantName} 더치페이`;
   
-  emit('close');
-
-  setTimeout(() => {
-    router.push({
-      path: '/remittance',
-      query: {
-        type: 'DUTCHPAY',
-        amount: amt,
-        title: titleText,
-      },
-    });
-  }, 100);
+  closeModal();
+  await router.push({
+    path: '/remittance',
+    query: {
+      type: 'DUTCHPAY',
+      amount: amt,
+      title: titleText,
+    },
+  });
 };
 
 const formatCurrency = (val) => {
@@ -245,7 +245,6 @@ const fetchDetail = async () => {
       };
     }
   } catch (err) {
-    console.log('Transaction detail fallback');
     transaction.value = {
       transactionId: props.transactionId,
       amount: 18500,
@@ -260,8 +259,7 @@ const fetchDetail = async () => {
   }
 };
 
-const saveMemo = async (e) => {
-  if (e) e.stopPropagation();
+const saveMemo = async () => {
   if (!props.transactionId) return;
   saving.value = true;
   savedSuccess.value = false;
@@ -279,32 +277,27 @@ const saveMemo = async (e) => {
     }
   }
 
-  // 로컬 피드 스토리지에도 새 게시물 보존 저장하여 피드 탭에서 영구 노출
+  // 송금 피드와 동일하게 백엔드 DB(FeedService.create)로 진짜 결제 피드 생성
   try {
-    const userFeeds = JSON.parse(localStorage.getItem('user_created_feeds') || '[]');
-    userFeeds.unshift({
-      feedId: Date.now(),
-      userId: 1,
-      userName: '나',
-      sender: {
-        nickname: '나',
-        profileImageName: null
-      },
+    await api.post('/api/feeds', {
+      userId: userStore.userId || 1,
+      targetId: props.transactionId,
+      feedType: 'PAYMENT',
       content: contentMsg,
-      visibility: editVisibility.value,
-      amount: transaction.value ? transaction.value.amount : 0,
-      createdAt: new Date().toISOString(),
-      transactionId: props.transactionId,
-      merchantName: transaction.value?.receiverName || '가맹점 결제'
+      visibility: editVisibility.value || 'PUBLIC'
     });
-    localStorage.setItem('user_created_feeds', JSON.stringify(userFeeds));
   } catch (e) {
-    console.log('Feed save local cache error');
+    console.log('Payment feed DB save error:', e);
   }
 
   saving.value = false;
   savedSuccess.value = true;
   emit('updated');
+
+  setTimeout(async () => {
+    closeModal();
+    await router.push('/feed');
+  }, 300);
 };
 
 watch(() => props.show, (newVal) => {
@@ -315,16 +308,36 @@ watch(() => props.show, (newVal) => {
 </script>
 
 <style scoped>
-.receipt-modal-backdrop {
+.receipt-modal-root {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 23, 42, 0.65);
-  z-index: 9999;
-  padding: 16px;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+.receipt-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.65);
+  z-index: 1;
+}
+
+.receipt-modal-container {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 420px;
+  padding: 0 16px;
+}
+
 .modal-card {
   width: 100%;
 }
