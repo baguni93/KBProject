@@ -1,8 +1,120 @@
-DROP DATABASE IF EXISTS kbproject;
-
-CREATE DATABASE kbproject;
-
 USE kbproject;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS `linked_card_tbl`;
+
+DROP TABLE IF EXISTS `card_company_tbl`;
+
+DROP TABLE IF EXISTS `event_challenge_user_tbl`;
+
+DROP TABLE IF EXISTS `event_challenge_tbl`;
+
+DROP TABLE IF EXISTS `event_reward_receive_tbl`;
+
+DROP TABLE IF EXISTS `event_participation_tbl`;
+
+DROP TABLE IF EXISTS `event_reward_tbl`;
+
+DROP TABLE IF EXISTS `event_tbl`;
+
+DROP TABLE IF EXISTS `event_user_tb`;
+
+DROP TABLE IF EXISTS `card_application_history_tbl`;
+
+DROP TABLE IF EXISTS `custom_image_tbl`;
+
+DROP TABLE IF EXISTS `file_image_tbl`;
+
+DROP TABLE IF EXISTS `card_asset_tbl`;
+
+DROP TABLE IF EXISTS `feed_comment_tbl`;
+
+DROP TABLE IF EXISTS `feed_like_tbl`;
+
+DROP TABLE IF EXISTS `feed_image_tbl`;
+
+DROP TABLE IF EXISTS `feed_tbl`;
+
+DROP TABLE IF EXISTS `receipt_memo_tbl`;
+
+DROP TABLE IF EXISTS `payment_token_tbl`;
+
+DROP TABLE IF EXISTS `registered_card_tbl`;
+
+DROP TABLE IF EXISTS `card_tbl`;
+
+DROP TABLE IF EXISTS `wallet_transaction_tbl`;
+
+DROP TABLE IF EXISTS `account_transaction_tbl`;
+
+DROP TABLE IF EXISTS `account_dummy_tbl`;
+
+DROP TABLE IF EXISTS `financial_transaction_tbl`;
+
+DROP TABLE IF EXISTS `notification_tbl`;
+
+DROP TABLE IF EXISTS `settlement_member_tbl`;
+
+DROP TABLE IF EXISTS `settlement_tbl`;
+
+DROP TABLE IF EXISTS `friend_tbl`;
+
+DROP TABLE IF EXISTS `friend_request_tbl`;
+
+DROP TABLE IF EXISTS `kb_insurance_recommendation_tbl`;
+
+DROP TABLE IF EXISTS `kb_insurance_coverage_tbl`;
+
+DROP TABLE IF EXISTS `kb_insurance_product_tbl`;
+
+DROP TABLE IF EXISTS `card_recommendation_detail_tbl`;
+
+DROP TABLE IF EXISTS `card_recommendation_tbl`;
+
+DROP TABLE IF EXISTS `card_benefit_tbl`;
+
+DROP TABLE IF EXISTS `kb_card_product_tbl`;
+
+DROP TABLE IF EXISTS `spending_analysis_category_tbl`;
+
+DROP TABLE IF EXISTS `spending_analysis_tbl`;
+
+DROP TABLE IF EXISTS `point_conversion_history_tbl`;
+
+DROP TABLE IF EXISTS `attendance_tbl`;
+
+DROP TABLE IF EXISTS `user_random_box_tbl`;
+
+DROP TABLE IF EXISTS `point_transaction_tbl`;
+
+DROP TABLE IF EXISTS `point_wallet_tbl`;
+
+DROP TABLE IF EXISTS `spending_category_tbl`;
+
+DROP TABLE IF EXISTS `refresh_token_tbl`;
+
+DROP TABLE IF EXISTS `notification_setting_tbl`;
+
+DROP TABLE IF EXISTS `profile_tbl`;
+
+DROP TABLE IF EXISTS `verification_tbl`;
+
+DROP TABLE IF EXISTS `wallet_tbl`;
+
+DROP TABLE IF EXISTS `user_agreement_tbl`;
+
+DROP TABLE IF EXISTS `agreement_tbl`;
+
+DROP TABLE IF EXISTS `account_verification_tbl`;
+
+DROP TABLE IF EXISTS `linked_account_tbl`;
+
+DROP TABLE IF EXISTS `bank_tbl`;
+
+DROP TABLE IF EXISTS `user_tbl`;
+
+DROP TABLE IF EXISTS `merchant_category_mapping_tbl`;
 
 -- 1. 회원 테이블
 DROP TABLE IF EXISTS user_tbl;
@@ -42,7 +154,6 @@ CREATE TABLE bank_tbl
     CONSTRAINT chk_bank_use_yn
         CHECK (use_yn IN ('Y', 'N'))
 );
-
 
 -- 3. 사용자계좌 테이블
 DROP TABLE IF EXISTS linked_account_tbl;
@@ -110,7 +221,6 @@ CREATE TABLE user_agreement_tbl
     CONSTRAINT chk_user_agreement_agreed_yn
         CHECK (agreed_yn IN ('Y', 'N'))
 );
-
 
 -- 6. 전자지갑 테이블
 DROP TABLE IF EXISTS wallet_tbl;
@@ -186,7 +296,6 @@ CREATE TABLE verification_tbl
         CHECK (fail_count >= 0)
 ) COMMENT = '휴대폰인증';
 
-
 -- 8. 프로필 테이블
 DROP TABLE IF EXISTS profile_tbl;
 
@@ -250,7 +359,6 @@ CREATE TABLE refresh_token_tbl
             REFERENCES user_tbl (user_id)
 );
 
-
 -- 11. 소비 카테고리 테이블
 DROP TABLE IF EXISTS spending_category_tbl;
 
@@ -271,7 +379,6 @@ CREATE TABLE spending_category_tbl
 --             OR parent_category_id <> spending_category_id
 --         )
 );
-
 
 -- 12.포인트 테이블 
 -- UNIQUE(point_wallet_id, user_id)는 불필요합니다.
@@ -296,7 +403,6 @@ CREATE TABLE point_wallet_tbl
     CONSTRAINT chk_point_balance
         CHECK (point_balance >= 0)
 );
-
 
 -- 13.포인트거래내역 테이블
 DROP TABLE IF EXISTS point_transaction_tbl;
@@ -451,7 +557,6 @@ CREATE TABLE user_random_box_tbl
 
 );
 
-
 -- 15. 출석 내역 테이블
 DROP TABLE IF EXISTS attendance_tbl;
 
@@ -468,7 +573,6 @@ CREATE TABLE attendance_tbl
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id)
 );
-
 
 -- 16. 포인트 전환 내역 테이블 정의서
 
@@ -526,7 +630,6 @@ CREATE TABLE spending_analysis_tbl
     CONSTRAINT chk_spending_analysis_period
         CHECK (analysis_period IN (1, 3, 12))
 );
-
 
 -- 18. 분석결과저장 테이블
 DROP TABLE IF EXISTS spending_analysis_category_tbl;
@@ -626,7 +729,6 @@ CREATE TABLE card_benefit_tbl
             )
 );
 
-
 -- 21. 카드 추천 테이블
 DROP TABLE IF EXISTS card_recommendation_tbl;
 
@@ -661,6 +763,8 @@ CREATE TABLE card_recommendation_tbl
 );
 
 -- 22. 카드 추천 상세 테이블
+DROP TABLE IF EXISTS card_recommendation_detail_tbl;
+
 CREATE TABLE card_recommendation_detail_tbl
 (
     card_recommendation_detail_id INT AUTO_INCREMENT PRIMARY KEY
@@ -711,7 +815,6 @@ CREATE TABLE card_recommendation_detail_tbl
         CHECK (expected_benefit_amount >= 0)
 );
 
-
 -- 23.KB 보험 상품 테이블
 DROP TABLE IF EXISTS kb_insurance_product_tbl;
 
@@ -757,7 +860,6 @@ CREATE TABLE kb_insurance_coverage_tbl
             )
 );
 
-
 -- 25. KB 보험 추천 결과 테이블
 DROP TABLE IF EXISTS kb_insurance_recommendation_tbl;
 
@@ -780,7 +882,6 @@ CREATE TABLE kb_insurance_recommendation_tbl
         FOREIGN KEY (insurance_product_id)
             REFERENCES kb_insurance_product_tbl (insurance_product_id)
 );
-
 
 -- 26. 친구 요청 테이블
 DROP TABLE IF EXISTS friend_request_tbl;
@@ -988,6 +1089,7 @@ CREATE TABLE notification_tbl (
             )
         )
 );
+
 -- ============================================
 
 
@@ -1145,7 +1247,6 @@ CREATE TABLE account_dummy_tbl
             )
 );
 
-
 -- 33.계좌 거래 상세 테이블
 DROP TABLE IF EXISTS account_transaction_tbl;
 
@@ -1239,7 +1340,6 @@ CREATE TABLE wallet_transaction_tbl
             balance_after >= 0
             )
 );
-
 
 -- 35. 카드 더미 테이블
 DROP TABLE IF EXISTS card_tbl;
@@ -1497,7 +1597,6 @@ CREATE TABLE feed_comment_tbl
             REFERENCES user_tbl (user_id)
 );
 
-
 -- 43.커스텀 도구 에셋 테이블
 DROP TABLE IF EXISTS card_asset_tbl;
 
@@ -1535,7 +1634,6 @@ CREATE TABLE card_asset_tbl
             )
 );
 
-
 -- 44.이미지 첨부파일 테이블
 
 DROP TABLE IF EXISTS file_image_tbl;
@@ -1556,7 +1654,6 @@ CREATE TABLE file_image_tbl
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id)
 );
-
 
 -- 45.커스텀 이미지 테이블
 
@@ -1634,7 +1731,6 @@ CREATE TABLE card_application_history_tbl
             )
 );
 
-
 -- 47.이벤트 테이블
 DROP TABLE IF EXISTS event_tbl;
 
@@ -1690,15 +1786,9 @@ CREATE TABLE event_reward_tbl
 
     event_id     INT     NOT NULL COMMENT '이벤트ID',
 
-    event_level  INT     NOT NULL DEFAULT 1 COMMENT '이벤트 난이도',
-
     reward_point INT     NULL     DEFAULT 0 COMMENT '리워드포인트',
 
     reward_exe   INT     NULL COMMENT '리워드경험치',
-
-    req_count    INT     NOT NULL COMMENT '레벨별 필요달성치',
-
-    use_yn       CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '사용여부',
 
     CONSTRAINT fk_event_reward_event
         FOREIGN KEY (event_id)
@@ -1712,18 +1802,10 @@ CREATE TABLE event_reward_tbl
     CONSTRAINT chk_event_reward_exe
         CHECK (
             reward_exe >= 0
-            ),
-
-    CONSTRAINT chk_event_reward_req_count
-        CHECK (
-            req_count >= 1
-            ),
-
-    CONSTRAINT chk_event_reward_use_yn
-        CHECK (
-            use_yn IN ('Y', 'N')
             )
+
 );
+
 -- 49.이벤트 참여이력 테이블
 
 DROP TABLE IF EXISTS event_participation_tbl;
@@ -1750,6 +1832,37 @@ CREATE TABLE event_participation_tbl
         UNIQUE (event_id, user_id)
 );
 
+DROP TABLE IF EXISTS event_user_tbl;
+
+CREATE TABLE event_user_tbl
+(
+    -- 이벤트 참여 관리 PK
+    event_user_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    -- 참여한 이벤트 ID
+    event_id INT NOT NULL,
+
+    -- 참여한 사용자 ID
+    user_id INT NOT NULL,
+
+    -- 이벤트 참여 시작 시간
+    joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    -- 이벤트 테이블과 연결
+    CONSTRAINT fk_event_user_event
+        FOREIGN KEY (event_id)
+        REFERENCES event_tbl(event_id),
+
+    -- 사용자 테이블과 연결
+    CONSTRAINT fk_event_user_member
+        FOREIGN KEY (user_id)
+        REFERENCES user_tbl(user_id),
+
+
+    -- 한 사용자는 같은 이벤트에 중복 참여 불가
+    -- ex) user_id = 1, event_id = 10 한번만 저장 가능
+    UNIQUE KEY uk_event_user (event_id, user_id)
+);
 
 -- 50. 이벤트 - 출석체크 참여이력 테이블
 DROP TABLE IF EXISTS event_attendance_tbl;
@@ -1761,7 +1874,7 @@ CREATE TABLE event_attendance_tbl (
 
     user_id INT NOT NULL COMMENT '사용자ID',
 
-    participated_at DATE NOT NULL COMMENT '참여일시',
+    participated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '참여일시',
 
     CONSTRAINT fk_event_attendance_event
         FOREIGN KEY (event_id)
@@ -1774,7 +1887,6 @@ CREATE TABLE event_attendance_tbl (
     CONSTRAINT uk_event_attendance_date
         UNIQUE (event_id, user_id, participated_at)
 ) COMMENT='이벤트 - 출석체크 참여이력 테이블';
-
 
 -- 51. 이벤트 리워드 수령이력 테이블 정의서
 -- UNIQUE(event_id, user_id)
@@ -1906,7 +2018,6 @@ CREATE TABLE card_company_tbl
         CHECK (CHAR_LENGTH(TRIM(card_company_name)) > 0)
 ) COMMENT = '카드사';
 
-
 -- 55. 연결카드 테이블 정의서
 DROP TABLE IF EXISTS linked_card_tbl;
 
@@ -1978,6 +2089,7 @@ CREATE TABLE account_verification_tbl
         CHECK (verified_yn IN ('Y', 'N'))
 
 ) COMMENT = '계좌인증';
+
 -- 57. 카테고리 분류 저장 테이블
 CREATE TABLE merchant_category_mapping_tbl
 (
@@ -2022,4 +2134,4 @@ CREATE TABLE merchant_category_mapping_tbl
             )
 );
 
-USE kbproject;
+SET FOREIGN_KEY_CHECKS = 1;
