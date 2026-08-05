@@ -13,8 +13,8 @@
             <h2 class="hero-title">{{ activePaymentTab === 'CARD' ? '카드 결제' : '지갑 결제' }}</h2>
           </div>
           <button class="mode-toggle-btn" @click="toggleStartScreenMode">
-            <i class="bi bi-arrow-left-right"></i>
-            <span>{{ startScreenMode === 'WALLET' ? '카드 우선' : '지갑 우선' }}</span>
+            <i class="bi bi-pin-angle-fill"></i>
+            <span>시작 화면: {{ startScreenMode === 'CARD' ? '카드결제' : '지갑결제' }}</span>
           </button>
         </div>
 
@@ -183,27 +183,26 @@
 
         <div class="quick-pay-grid">
           <!-- 바코드 결제 -->
+<!-- 바코드 결제 -->
           <button class="quick-pay-card" @click="openPaymentModal('barcode')">
-            <div class="qp-icon-wrap yellow">
-              <i class="bi bi-upc-scan"></i>
+            <div class="qp-icon-wrap amber">
+              <img src="@/assets/barcode_icon.jpg" alt="바코드" class="pay-icon" />
             </div>
             <div class="qp-text">
               <strong>바코드 결제</strong>
-              <span>1회용 보안 코드</span>
+              <span>보안 바코드 생성</span>
             </div>
-            <i class="bi bi-chevron-right qp-arrow"></i>
           </button>
 
           <!-- QR코드 결제 -->
           <button class="quick-pay-card" @click="openPaymentModal('qr')">
-            <div class="qp-icon-wrap dark">
-              <i class="bi bi-qr-code-scan"></i>
+            <div class="qp-icon-wrap blue">
+              <img src="@/assets/qr_icon.jpg" alt="QR코드" class="pay-icon" />
             </div>
             <div class="qp-text">
               <strong>QR 코드 결제</strong>
-              <span>1회용 보안 코드</span>
+              <span>보안 QR코드 생성</span>
             </div>
-            <i class="bi bi-chevron-right qp-arrow"></i>
           </button>
         </div>
 
@@ -379,6 +378,7 @@ import walletApi from '@/api/walletApi';
 import cardApi from '@/api/cardApi';
 import PaymentCodeModal from '@/components/wallet/PaymentCodeModal.vue';
 import PinAuthModal from '@/components/auth/PinAuthModal.vue';
+import WalletSection from '@/components/wallet/WalletSection.vue';
 
 const authStore = useAuthStore();
 const currentUserId = computed(() => authStore.userId || 1);
@@ -433,12 +433,15 @@ const handlePinSuccess = () => {
 };
 
 const toggleStartScreenMode = () => {
-  startScreenMode.value = startScreenMode.value === 'WALLET' ? 'CARD' : 'WALLET';
-  activePaymentTab.value = startScreenMode.value === 'CARD' ? 'CARD' : 'WALLET';
-  localStorage.setItem('kb_pay_start_mode', startScreenMode.value);
-  statusMessage.value = `시작 화면: '${startScreenMode.value === 'CARD' ? '카드 결제' : '지갑 결제'}' 우선`;
+  const nextMode = startScreenMode.value === 'WALLET' ? 'CARD' : 'WALLET';
+  startScreenMode.value = nextMode;
+  activePaymentTab.value = nextMode;
+  localStorage.setItem('kb_pay_start_mode', nextMode);
+  if (nextMode === 'CARD') startTimer();
+  else stopTimer();
+  statusMessage.value = `기본 시작 화면이 '${nextMode === 'CARD' ? '카드 결제' : '지갑 결제'}'로 설정되었습니다.`;
   isSuccess.value = true;
-  setTimeout(() => { statusMessage.value = ''; }, 2000);
+  setTimeout(() => { statusMessage.value = ''; }, 2500);
 };
 
 const switchPaymentTab = (tab) => {
@@ -606,18 +609,20 @@ onUnmounted(() => { stopTimer(); });
 ═══════════════════════════════════════ */
 .wallet-root {
   min-height: 100vh;
-  background: #F4F6FA;
+  background: #FFFFFF;
   padding-bottom: 80px;
 }
 
 /* ═══════════════════════════════════════
-   히어로 배너
+   히어로 배너 (밝은 KB 톤)
 ═══════════════════════════════════════ */
 .hero-banner {
-  background: linear-gradient(150deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%);
-  padding: 52px 20px 36px;
+  background: linear-gradient(145deg, #FFD700 0%, #FFBC00 40%, #FFA500 100%);
+  border-bottom: none;
+  padding: 36px 20px 20px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(255, 188, 0, 0.3);
 }
 .hero-banner::before {
   content: '';
@@ -626,8 +631,9 @@ onUnmounted(() => { stopTimer(); });
   right: -40px;
   width: 200px;
   height: 200px;
-  background: radial-gradient(circle, rgba(255,188,0,0.18) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,188,0,0.25) 0%, transparent 70%);
   border-radius: 50%;
+  pointer-events: none;
 }
 .hero-inner {
   max-width: 480px;
@@ -637,56 +643,63 @@ onUnmounted(() => { stopTimer(); });
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 .hero-sub {
-  color: rgba(255,255,255,0.5);
-  font-size: 0.72rem;
+  color: rgba(26, 26, 46, 0.65);
+  font-size: 0.75rem;
   margin-bottom: 4px;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: 0.5px;
 }
 .hero-title {
-  color: #fff;
+  color: #1A1A2E;
   font-size: 1.45rem;
-  font-weight: 800;
+  font-weight: 900;
   margin: 0;
   letter-spacing: -0.5px;
 }
 .mode-toggle-btn {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.7);
+  border: none;
+  color: #1A1A2E;
   border-radius: 20px;
   padding: 6px 14px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  font-weight: 800;
   display: flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  backdrop-filter: blur(4px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 10;
 }
 .mode-toggle-btn:hover {
-  background: rgba(255,188,0,0.2);
-  border-color: rgba(255,188,0,0.4);
-  color: #FFBC00;
+  background: rgba(255,255,255,0.9);
+  transform: translateY(-1px);
+}
+.mode-toggle-btn:active {
+  transform: translateY(0);
 }
 
 /* 세그먼트 탭 */
 .segment-wrap {
   display: flex;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.35);
   border-radius: 12px;
   padding: 4px;
   gap: 4px;
+  backdrop-filter: blur(4px);
 }
 .segment-btn {
   flex: 1;
   padding: 10px 0;
   border: none;
   background: transparent;
-  color: rgba(255,255,255,0.5);
+  color: rgba(26,26,46,0.6);
   border-radius: 9px;
   font-size: 0.85rem;
   font-weight: 700;
@@ -698,9 +711,10 @@ onUnmounted(() => { stopTimer(); });
   gap: 6px;
 }
 .segment-btn.active {
-  background: #FFBC00;
+  background: #ffffff;
   color: #1A1A2E;
-  box-shadow: 0 4px 16px rgba(255,188,0,0.35);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+  font-weight: 800;
 }
 
 /* ═══════════════════════════════════════
@@ -963,62 +977,94 @@ onUnmounted(() => { stopTimer(); });
 ═══════════════════════════════════════ */
 .wallet-section { display: flex; flex-direction: column; gap: 16px; }
 
-/* 잔액 카드 */
+/* ── KB국민은행 스타일 실물 카드 ── */
 .balance-card {
-  background: linear-gradient(135deg, #1A1A2E 0%, #0F3460 100%);
-  border-radius: 24px;
-  padding: 24px;
-  box-shadow: 0 12px 40px rgba(15,52,96,0.3);
+  background: linear-gradient(135deg, #342E28 0%, #1D1A17 100%);
+  border: 1px solid rgba(255, 188, 0, 0.3);
+  border-radius: 20px;
+  padding: 22px 24px 20px;
+  box-shadow: 0 10px 30px rgba(29, 26, 23, 0.35), 0 0 20px rgba(255, 188, 0, 0.12);
   position: relative;
   overflow: hidden;
+  color: #FFFFFF;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
 }
+/* 카드 배경 원형 데코 (KB 골드 앰비언트 글로우) */
 .balance-card::before {
   content: '';
   position: absolute;
-  top: -30px; right: -30px;
-  width: 150px; height: 150px;
-  background: radial-gradient(circle, rgba(255,188,0,0.15) 0%, transparent 70%);
+  top: -50px; right: -50px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(255,188,0,0.22) 0%, transparent 70%);
   border-radius: 50%;
+  pointer-events: none;
+}
+.balance-card::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; left: -30px;
+  width: 150px; height: 150px;
+  background: radial-gradient(circle, rgba(255,188,0,0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .balance-card-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 .balance-badge {
-  background: rgba(255,188,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  letter-spacing: 0.3px;
+}
+.balance-badge i {
+  font-size: 1rem;
   color: #FFBC00;
-  border: 1px solid rgba(255,188,0,0.3);
-  border-radius: 20px;
-  padding: 5px 14px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  display: flex; align-items: center;
 }
 .refresh-btn {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.15);
   border: none;
-  color: rgba(255,255,255,0.7);
-  width: 36px; height: 36px;
+  color: rgba(255, 255, 255, 0.8);
+  width: 32px; height: 32px;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.9rem;
   transition: all 0.2s ease;
 }
-.refresh-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+.refresh-btn:hover { background: rgba(255, 255, 255, 0.25); color: #fff; }
 
-.balance-display { margin-bottom: 24px; position: relative; z-index: 1; }
-.balance-label { color: rgba(255,255,255,0.5); font-size: 0.78rem; font-weight: 500; margin-bottom: 6px; }
+.balance-display {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 20px;
+}
+.balance-label {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
 .balance-amount {
-  color: #fff;
-  font-size: 2.4rem;
+  color: #FFFFFF;
+  font-size: 2.2rem;
   font-weight: 900;
   margin: 0;
   letter-spacing: -1px;
   line-height: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 .balance-actions {
@@ -1030,9 +1076,9 @@ onUnmounted(() => { stopTimer(); });
 .balance-action-btn {
   flex: 1;
   border: none;
-  border-radius: 14px;
-  padding: 14px;
-  font-size: 0.88rem;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 0.85rem;
   font-weight: 800;
   cursor: pointer;
   display: flex;
@@ -1044,54 +1090,79 @@ onUnmounted(() => { stopTimer(); });
 .balance-action-btn.charge {
   background: #FFBC00;
   color: #1A1A2E;
-  box-shadow: 0 4px 16px rgba(255,188,0,0.3);
+  box-shadow: 0 4px 14px rgba(255,188,0,0.4);
 }
-.balance-action-btn.charge:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,188,0,0.4); }
+.balance-action-btn.charge:hover { transform: translateY(-1px); background: #e6a800; }
 .balance-action-btn.send {
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.18);
+  color: #FFFFFF;
+  border: 1.5px solid rgba(255,255,255,0.3);
 }
-.balance-action-btn.send:hover { background: rgba(255,255,255,0.2); }
+.balance-action-btn.send:hover { background: rgba(255,255,255,0.28); }
 
 /* 섹션 헤더 */
 .section-header { padding: 0 4px; }
 .section-title { font-size: 1rem; font-weight: 800; color: #1A1A2E; margin: 0; }
 
-/* 빠른 결제 그리드 */
-.quick-pay-grid { display: flex; flex-direction: column; gap: 10px; }
+/* 빠른 결제 그리드 (가로 2열 배치) */
+.quick-pay-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
 
 .quick-pay-card {
-  background: #fff;
-  border: 1px solid #F1F5F9;
-  border-radius: 16px;
-  padding: 16px 18px;
+  background: linear-gradient(135deg, #F9FAFB 0%, #FFFFFF 100%);
+  border: 1.5px solid #F1F5F9;
+  border-radius: 18px;
+  padding: 18px 16px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
   width: 100%;
+  text-align: center;
 }
 .quick-pay-card:hover {
-  transform: translateX(4px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
   border-color: #FFBC00;
 }
+
 .qp-icon-wrap {
-  width: 48px; height: 48px;
-  border-radius: 14px;
+  width: 56px; height: 56px;
+  border-radius: 16px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.4rem;
+  font-size: 1.8rem;
   flex-shrink: 0;
 }
-.qp-icon-wrap.yellow { background: #FFF8E1; color: #FFBC00; }
-.qp-icon-wrap.dark { background: #F1F5F9; color: #1A1A2E; }
-.qp-text { flex: 1; }
-.qp-text strong { display: block; font-size: 0.92rem; font-weight: 800; color: #1A1A2E; margin-bottom: 2px; }
-.qp-text span { font-size: 0.75rem; color: #94A3B8; font-weight: 500; }
+.qp-icon-wrap.amber {
+  background: linear-gradient(135deg, #FFBC00 0%, #FF9900 100%);
+  color: #1A1A2E;
+  border: 2px solid #FFBC00;
+  box-shadow: 0 4px 12px rgba(255,188,0,0.25);
+}
+
+.qp-icon-wrap.blue {
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  color: #1D4ED8;
+  border: 2px solid #93C5FD;
+  box-shadow: 0 4px 12px rgba(59,130,246,0.2);
+}
+
+.qp-text { text-align: center; }
+
+.pay-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  display: block;
+}
+.qp-text strong { display: block; font-size: 0.86rem; font-weight: 800; color: #1A1A2E; margin-bottom: 2px; }
+.qp-text span { font-size: 0.72rem; color: #94A3B8; font-weight: 600; }
 .qp-arrow { color: #CBD5E1; font-size: 0.9rem; }
 
 /* 안내 배너 */

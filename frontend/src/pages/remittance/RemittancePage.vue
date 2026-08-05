@@ -272,7 +272,29 @@
             </div>
 
             <div class="form-field-group">
-              <label class="field-label">참여 친구 ID <span class="field-hint">쉼표로 구분 (예: 2, 3)</span></label>
+              <label class="field-label">정산 참여 친구 선택 <span class="field-hint">복수 선택 가능</span></label>
+              <div v-if="friendsList.length > 0" class="friend-scroll">
+                <div
+                  v-for="f in friendsList"
+                  :key="f.friendUserId || f.friendId"
+                  class="friend-chip"
+                  :class="{ selected: isDutchFriendSelected(f.friendUserId || f.friendId) }"
+                  @click="toggleDutchFriend(f.friendUserId || f.friendId)"
+                >
+                  <div class="friend-avatar">
+                    <i class="bi bi-person-fill"></i>
+                    <span v-if="isDutchFriendSelected(f.friendUserId || f.friendId)" class="friend-check">
+                      <i class="bi bi-check"></i>
+                    </span>
+                  </div>
+                  <span class="friend-name">{{ f.nickname || f.friendName || '친구' }}</span>
+                  <span class="friend-id">#{{ f.friendUserId || f.friendId }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-field-group">
+              <label class="field-label">참여 친구 ID 목록 <span class="field-hint">직접 수정 가능 (예: 2, 3)</span></label>
               <div class="input-with-icon">
                 <i class="bi bi-people-fill field-icon"></i>
                 <input type="text" v-model="dutchForm.memberIdsStr" class="field-input" placeholder="2, 3" required />
@@ -408,7 +430,7 @@
                 :class="{ active: form.visibility === 'PRIVATE' }"
                 @click="form.visibility = 'PRIVATE'"
               >
-                <i class="bi bi-lock-fill me-1"></i> 나만
+                <i class="bi bi-lock-fill me-1"></i> 비공개
               </button>
             </div>
           </div>
@@ -520,6 +542,22 @@ const dutchForm = reactive({
 const parseMemberIds = () => {
   if (!dutchForm.memberIdsStr) return [];
   return dutchForm.memberIdsStr.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n) && n > 0);
+};
+
+const isDutchFriendSelected = (fId) => {
+  const ids = parseMemberIds();
+  return ids.includes(Number(fId));
+};
+
+const toggleDutchFriend = (fId) => {
+  const targetId = Number(fId);
+  let ids = parseMemberIds();
+  if (ids.includes(targetId)) {
+    ids = ids.filter(id => id !== targetId);
+  } else {
+    ids.push(targetId);
+  }
+  dutchForm.memberIdsStr = ids.join(', ');
 };
 
 const formatCurrency = (val) => {
@@ -747,11 +785,18 @@ watch(() => form.receiverType, (newVal) => {
   if (newVal === 'ACCOUNT') fetchRecentBankInfo();
 });
 
+watch(
+  () => route.query,
+  (query) => {
+    if (query.walletId) form.walletId = Number(query.walletId);
+    if (query.receiverType) form.receiverType = query.receiverType;
+    if (query.amount) form.amount = Number(query.amount);
+    if (query.title) dutchForm.title = query.title;
+  },
+  { immediate: true, deep: true }
+);
+
 onMounted(() => {
-  if (route.query.walletId) form.walletId = Number(route.query.walletId);
-  if (route.query.receiverType) form.receiverType = route.query.receiverType;
-  if (route.query.amount) form.amount = Number(route.query.amount);
-  if (route.query.title) dutchForm.title = route.query.title;
   fetchMyBalance();
   fetchRecentBankInfo();
   fetchFriends();
@@ -764,19 +809,21 @@ onMounted(() => {
 ═══════════════════════════════════════ */
 .remit-root {
   min-height: 100vh;
-  background: #F4F6FA;
+  background: #FFFFFF;
   padding-bottom: 80px;
 }
 
 /* ═══════════════════════════════════════
-   헤더
+   헤더 (밝은 KB 스타일)
 ═══════════════════════════════════════ */
 .remit-header {
-  background: linear-gradient(150deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%);
-  padding: 52px 16px 20px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #F1F5F9;
+  padding: 40px 16px 16px;
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
 }
 .remit-header-inner {
   max-width: 480px;
@@ -787,37 +834,37 @@ onMounted(() => {
 }
 .back-btn {
   width: 38px; height: 38px;
-  background: rgba(255,255,255,0.1);
+  background: #F1F5F9;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  color: #fff;
+  color: #1A1A2E;
   text-decoration: none;
   font-size: 1.1rem;
   flex-shrink: 0;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
 }
-.back-btn:hover { background: rgba(255,255,255,0.18); color: #FFBC00; }
+.back-btn:hover { background: #FFF8E1; color: #FFBC00; }
 .header-title-wrap { flex: 1; display: flex; align-items: center; gap: 8px; }
 .header-badge {
-  background: rgba(255,188,0,0.2);
-  color: #FFBC00;
-  border: 1px solid rgba(255,188,0,0.3);
+  background: #FFF8E1;
+  color: #D97706;
+  border: 1px solid #FFE082;
   border-radius: 20px;
   padding: 2px 10px;
   font-size: 0.7rem;
   font-weight: 800;
   white-space: nowrap;
 }
-.header-title { color: #fff; font-size: 1.15rem; font-weight: 800; margin: 0; }
+.header-title { color: #1A1A2E; font-size: 1.15rem; font-weight: 900; margin: 0; }
 .header-balance-chip {
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.85);
+  background: #FFF8E1;
+  color: #1A1A2E;
   border-radius: 20px;
   padding: 5px 12px;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 800;
   white-space: nowrap;
-  border: 1px solid rgba(255,255,255,0.15);
+  border: 1px solid #FFE082;
 }
 
 /* ═══════════════════════════════════════

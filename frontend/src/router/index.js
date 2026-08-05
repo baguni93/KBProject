@@ -27,9 +27,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomePage,
-      meta: { requiresAuth: true, showBottomNav: false },
+      redirect: '/wallet',
     },
     {
       path: '/wallet',
@@ -55,7 +53,7 @@ const router = createRouter({
       path: '/transactions',
       name: 'transaction-list',
       component: TransactionListPage,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, showBottomNav: true },
     },
     {
       path: '/signup/nickname',

@@ -11,11 +11,15 @@
         <SettlementSection />
         <FeedSection type="my" :user-id="userId" />
       </template>
+      <template v-else-if="currentTab === 'wallet'">
+        <MyWallet />
+      </template>
     </div>
   </div>
 </template>
 <script setup>
 import MyPageTab from '@/components/my/MyPageTab.vue';
+import MyWallet from '@/components/my/MyWallet.vue';
 import HeaderButtons from '@/components/common/HeaderButtons.vue';
 import SettlementSection from '@/components/my/SettlementSection.vue';
 import FeedSection from '@/components/my/FeedSection.vue';
