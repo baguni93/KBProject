@@ -318,6 +318,12 @@
             analysis.ai_analysis_summary
                 AS aiAnalysisSummary,
 
+            analysis.ai_card_recommendation_summary
+                AS aiCardRecommendationSummary,
+
+            analysis.ai_insurance_recommendation_summary
+                AS aiInsuranceRecommendationSummary,
+
             analysis.created_at
                 AS createdAt
 

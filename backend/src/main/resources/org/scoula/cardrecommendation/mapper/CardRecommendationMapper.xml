@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.cardrecommendation.mapper.CardRecommendationMapper">
+
+    <select id="selectRecommendationAnalysis"
+            resultType="org.scoula.cardrecommendation.domain.CardRecommendationAnalysisVO">
+        SELECT
+            spending_analysis_id AS spendingAnalysisId,
+            user_id AS userId,
+            analysis_period AS analysisPeriod,
+            created_at AS createdAt,
+            ai_card_recommendation_summary AS aiCardRecommendationSummary
+        FROM spending_analysis_tbl
+        WHERE spending_analysis_id = #{spendingAnalysisId}
+          AND user_id = #{userId}
+    </select>
+
+    <select id="selectAnalysisCategories"
+            resultType="org.scoula.cardrecommendation.domain.CardRecommendationCategoryVO">
+        SELECT
+            result.spending_category_id AS spendingCategoryId,
+            category.category_name AS categoryName,
+            result.spending_amount AS spendingAmount,
+            result.spending_ratio AS spendingRatio,
+            result.transaction_count AS transactionCount
+        FROM spending_analysis_category_tbl result
+        INNER JOIN spending_category_tbl category
+                ON result.spending_category_id = category.spending_category_id
+        WHERE result.spending_analysis_id = #{spendingAnalysisId}
+        ORDER BY
+            result.spending_amount DESC,
+            result.transaction_count DESC,
+            result.spending_category_id ASC
+    </select>
+
+    <select id="countRecommendations" resultType="int">
+        SELECT COUNT(*)
+        FROM card_recommendation_tbl
+        WHERE spending_analysis_id = #{spendingAnalysisId}
+    </select>
+
+    <select id="selectCardProducts"
+            resultType="org.scoula.cardrecommendation.domain.CardProductVO">
+        SELECT
+            card_product_id AS cardProductId,
+            card_name AS cardName,
+            card_type AS cardType,
+            card_description AS cardDescription,
+            card_image AS cardImage,
+            application,
+            annual_fee AS annualFee
+        FROM kb_card_product_tbl
+        ORDER BY card_type, card_product_id
+    </select>
+
+    <select id="selectCardBenefits"
+            resultType="org.scoula.cardrecommendation.domain.CardBenefitVO">
+        SELECT
+            card_benefit_id AS cardBenefitId,
+            card_product_id AS cardProductId,
+            spending_category_id AS spendingCategoryId,
+            benefit_name AS benefitName,
+            benefit_amount AS benefitAmount,
+            benefit_rate AS benefitRate,
+            monthly_limit AS monthlyLimit,
+            minimum_spending_amount AS minimumSpendingAmount,
+            benefit_description AS benefitDescription
+        FROM card_benefit_tbl
+        ORDER BY card_product_id, card_benefit_id
+    </select>
+
+    <select id="selectRecommendationTransactions"
+            resultType="org.scoula.cardrecommendation.domain.CardRecommendationTransactionVO">
+        SELECT
+            ft.transaction_id AS transactionId,
+            ft.amount,
+            ft.created_at AS createdAt,
+            ft.spending_category_id AS spendingCategoryId,
+            category.parent_category_id AS parentCategoryId
+        FROM financial_transaction_tbl ft
+        LEFT JOIN spending_category_tbl category
+               ON ft.spending_category_id = category.spending_category_id
+        WHERE ft.user_id = #{userId}
+          AND ft.transaction_type = 'PAYMENT'
+          AND ft.transaction_status = 'SUCCESS'
+          AND ft.created_at <![CDATA[ >= ]]> #{startAt}
+          AND ft.created_at <![CDATA[ < ]]> #{endAt}
+        ORDER BY ft.created_at ASC, ft.transaction_id ASC
+    </select>
+
+    <insert id="insertCardRecommendation"
+            parameterType="org.scoula.cardrecommendation.domain.CardRecommendationVO"
+            useGeneratedKeys="true"
+            keyProperty="cardRecommendationId"
+            keyColumn="card_recommendation_id">
+        INSERT INTO card_recommendation_tbl
+        (
+            spending_analysis_id,
+            card_product_id,
+            recommendation_rank,
+            expected_benefit_amount
+        )
+        VALUES
+        (
+            #{spendingAnalysisId},
+            #{cardProductId},
+            #{recommendationRank},
+            #{expectedBenefitAmount}
+        )
+    </insert>
+
+    <insert id="insertCardRecommendationDetails">
+        INSERT INTO card_recommendation_detail_tbl
+        (
+            card_recommendation_id,
+            card_benefit_id,
+            eligible_spending_amount,
+            eligible_transaction_count,
+            eligible_month_count,
+            expected_benefit_amount
+        )
+        VALUES
+        <foreach collection="details" item="detail" separator=",">
+            (
+                #{detail.cardRecommendationId},
+                #{detail.cardBenefitId},
+                #{detail.eligibleSpendingAmount},
+                #{detail.eligibleTransactionCount},
+                #{detail.eligibleMonthCount},
+                #{detail.expectedBenefitAmount}
+            )
+        </foreach>
+    </insert>
+
+    <update id="updateCardRecommendationSummary">
+        UPDATE spending_analysis_tbl
+        SET ai_card_recommendation_summary = #{summary}
+        WHERE spending_analysis_id = #{spendingAnalysisId}
+          AND user_id = #{userId}
+    </update>
+
+    <select id="selectRecommendationList"
+            resultType="org.scoula.cardrecommendation.domain.CardRecommendationListItemVO">
+        SELECT
+            recommendation.card_recommendation_id AS cardRecommendationId,
+            recommendation.spending_analysis_id AS spendingAnalysisId,
+            recommendation.card_product_id AS cardProductId,
+            recommendation.recommendation_rank AS recommendationRank,
+            recommendation.expected_benefit_amount AS expectedBenefitAmount,
+            product.card_name AS cardName,
+            product.card_type AS cardType,
+            product.card_description AS cardDescription,
+            product.card_image AS cardImage,
+            product.application,
+            product.annual_fee AS annualFee
+        FROM card_recommendation_tbl recommendation
+        INNER JOIN kb_card_product_tbl product
+                ON recommendation.card_product_id = product.card_product_id
+        INNER JOIN spending_analysis_tbl analysis
+                ON recommendation.spending_analysis_id = analysis.spending_analysis_id
+        WHERE recommendation.spending_analysis_id = #{spendingAnalysisId}
+          AND analysis.user_id = #{userId}
+          AND product.card_type = #{cardType}
+        ORDER BY recommendation.recommendation_rank ASC,
+                 recommendation.card_recommendation_id ASC
+    </select>
+
+    <select id="selectRecommendationDetailHeader"
+            resultType="org.scoula.cardrecommendation.domain.CardRecommendationDetailHeaderVO">
+        SELECT
+            recommendation.card_recommendation_id AS cardRecommendationId,
+            recommendation.spending_analysis_id AS spendingAnalysisId,
+            analysis.analysis_period AS analysisPeriod,
+            recommendation.card_product_id AS cardProductId,
+            recommendation.recommendation_rank AS recommendationRank,
+            recommendation.expected_benefit_amount AS expectedBenefitAmount,
+            product.card_name AS cardName,
+            product.card_type AS cardType,
+            product.card_description AS cardDescription,
+            product.card_image AS cardImage,
+            product.application,
+            product.annual_fee AS annualFee,
+            analysis.ai_card_recommendation_summary AS aiCardRecommendationSummary
+        FROM card_recommendation_tbl recommendation
+        INNER JOIN kb_card_product_tbl product
+                ON recommendation.card_product_id = product.card_product_id
+        INNER JOIN spending_analysis_tbl analysis
+                ON recommendation.spending_analysis_id = analysis.spending_analysis_id
+        WHERE recommendation.card_recommendation_id = #{cardRecommendationId}
+          AND analysis.user_id = #{userId}
+    </select>
+
+    <select id="selectRecommendationBenefitDetails"
+            resultType="org.scoula.cardrecommendation.domain.CardRecommendationBenefitDetailVO">
+        SELECT
+            detail.card_recommendation_detail_id AS cardRecommendationDetailId,
+            detail.card_benefit_id AS cardBenefitId,
+            benefit.spending_category_id AS spendingCategoryId,
+            category.category_name AS categoryName,
+            benefit.benefit_name AS benefitName,
+            benefit.benefit_amount AS benefitAmount,
+            benefit.benefit_rate AS benefitRate,
+            benefit.monthly_limit AS monthlyLimit,
+            benefit.minimum_spending_amount AS minimumSpendingAmount,
+            benefit.benefit_description AS benefitDescription,
+            detail.eligible_spending_amount AS eligibleSpendingAmount,
+            detail.eligible_transaction_count AS eligibleTransactionCount,
+            detail.eligible_month_count AS eligibleMonthCount,
+            detail.expected_benefit_amount AS expectedBenefitAmount
+        FROM card_recommendation_detail_tbl detail
+        INNER JOIN card_benefit_tbl benefit
+                ON detail.card_benefit_id = benefit.card_benefit_id
+        INNER JOIN spending_category_tbl category
+                ON benefit.spending_category_id = category.spending_category_id
+        WHERE detail.card_recommendation_id = #{cardRecommendationId}
+        ORDER BY detail.expected_benefit_amount DESC,
+                 detail.card_recommendation_detail_id ASC
+    </select>
+
+</mapper>

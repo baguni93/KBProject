@@ -4,45 +4,19 @@ CREATE DATABASE kbproject;
 
 USE kbproject;
 
-DROP TABLE IF EXISTS tbl_member;
-
-CREATE TABLE `tbl_member`
-(
-    `username`    varchar(50)  NOT NULL,
-    `password`    varchar(128) NOT NULL,
-    `email`       varchar(50)  NOT NULL,
-    `reg_date`    datetime DEFAULT CURRENT_TIMESTAMP,
-    `update_date` datetime DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`username`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci;
-
-DROP TABLE IF EXISTS tbl_member_auth;
-
-CREATE TABLE `tbl_member_auth`
-(
-    `username` varchar(50) NOT NULL,
-    `auth`     varchar(50) NOT NULL,
-    PRIMARY KEY (`username`, `auth`),
-    CONSTRAINT `fk_authorities_users` FOREIGN KEY (`username`) REFERENCES `tbl_member` (`username`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci;
-
-
 -- 1. 회원 테이블
 DROP TABLE IF EXISTS user_tbl;
 
-CREATE TABLE user_tbl (
-    user_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '회원번호',
-    user_name VARCHAR(30) NOT NULL COMMENT '이름',
-    birth_date DATE NOT NULL COMMENT '생년월일',
-    phone_number VARCHAR(20) NOT NULL UNIQUE COMMENT '휴대폰번호',
-    pin_password VARCHAR(255) NOT NULL COMMENT '암호화된 숫자 6자리 간편비밀번호',
-    user_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '회원상태',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '가입일시',
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE user_tbl
+(
+    user_id       INT AUTO_INCREMENT PRIMARY KEY COMMENT '회원번호',
+    user_name     VARCHAR(30)  NOT NULL COMMENT '이름',
+    birth_date    DATE         NOT NULL COMMENT '생년월일',
+    phone_number  VARCHAR(20)  NOT NULL UNIQUE COMMENT '휴대폰번호',
+    pin_password  VARCHAR(255) NOT NULL COMMENT '암호화된 숫자 6자리 간편비밀번호',
+    user_status   VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE' COMMENT '회원상태',
+    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '가입일시',
+    updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP
         COMMENT '수정일시',
     withdrawn_at  DATETIME     NULL COMMENT '탈퇴일시',
@@ -55,7 +29,7 @@ CREATE TABLE user_tbl (
         CHECK (user_status IN ('ACTIVE', 'WITHDRAWN'))
 ) COMMENT = '회원';
 
--- 3. 은행 테이블
+-- 2. 은행 테이블
 DROP TABLE IF EXISTS bank_tbl;
 
 CREATE TABLE bank_tbl
@@ -70,7 +44,7 @@ CREATE TABLE bank_tbl
 );
 
 
--- 2. 사용자계좌 테이블
+-- 3. 사용자계좌 테이블
 DROP TABLE IF EXISTS linked_account_tbl;
 
 CREATE TABLE linked_account_tbl
@@ -159,21 +133,22 @@ CREATE TABLE wallet_tbl
         CHECK (wallet_status IN ('ACTIVE', 'CLOSED'))
 );
 
--- 6-2. 인증 테이블 정의서
+-- 7. 인증 테이블 정의서
 DROP TABLE IF EXISTS verification_tbl;
 
-CREATE TABLE verification_tbl (
-    verification_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '인증번호',
-    user_id INT NULL COMMENT '회원번호',
-    user_name VARCHAR(30) NOT NULL COMMENT '인증이름',
-    birth_date DATE NOT NULL COMMENT '생년월일',
-    carrier_code VARCHAR(20) NOT NULL COMMENT '통신사코드',
-    phone_number VARCHAR(20) NOT NULL COMMENT '휴대폰번호',
-    verification_code VARCHAR(6) NOT NULL COMMENT '암호화된 인증코드',
+CREATE TABLE verification_tbl
+(
+    verification_id      INT AUTO_INCREMENT PRIMARY KEY COMMENT '인증번호',
+    user_id              INT         NULL COMMENT '회원번호',
+    user_name            VARCHAR(30) NOT NULL COMMENT '인증이름',
+    birth_date           DATE        NOT NULL COMMENT '생년월일',
+    carrier_code         VARCHAR(20) NOT NULL COMMENT '통신사코드',
+    phone_number         VARCHAR(20) NOT NULL COMMENT '휴대폰번호',
+    verification_code    VARCHAR(6)  NOT NULL COMMENT '암호화된 인증코드',
     verification_purpose VARCHAR(30) NOT NULL COMMENT '인증목적',
-    requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
-    verified_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '인증완료여부',
-    fail_count INT NOT NULL DEFAULT 0 COMMENT '인증실패횟수',
+    requested_at         DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
+    verified_yn          CHAR(1)     NOT NULL DEFAULT 'N' COMMENT '인증완료여부',
+    fail_count           INT         NOT NULL DEFAULT 0 COMMENT '인증실패횟수',
 
     CONSTRAINT fk_verification_user
         FOREIGN KEY (user_id)
@@ -196,14 +171,13 @@ CREATE TABLE verification_tbl (
 
     CONSTRAINT chk_verification_purpose
         CHECK (
-            verification_purpose IN (
-                'SIGN_UP',
-                'PIN_RESET',
-                'WITHDRAWAL',
-                'NAME_CHANGE',
-                'PHONE_CHANGE'
-            )
-        ),
+            verification_purpose IN ('SIGN_UP',
+                                     'PIN_RESET',
+                                     'WITHDRAWAL',
+                                     'NAME_CHANGE',
+                                     'PHONE_CHANGE'
+                )
+            ),
 
     CONSTRAINT chk_verification_verified_yn
         CHECK (verified_yn IN ('Y', 'N')),
@@ -213,7 +187,7 @@ CREATE TABLE verification_tbl (
 ) COMMENT = '휴대폰인증';
 
 
--- 6-3. 프로필 테이블
+-- 8. 프로필 테이블
 DROP TABLE IF EXISTS profile_tbl;
 
 CREATE TABLE profile_tbl
@@ -232,34 +206,35 @@ CREATE TABLE profile_tbl
             REFERENCES user_tbl (user_id)
 );
 
--- 6-4. 알림설정 테이블
-CREATE TABLE notification_setting_tbl (
+-- 9. 알림설정 테이블
+CREATE TABLE notification_setting_tbl
+(
     notification_setting_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림설정번호',
-    user_id INT NOT NULL UNIQUE COMMENT '회원번호',
-    finance_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '금융알림',
-    friend_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '친구요청알림',
-    reward_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '리워드알림',
-    event_notification_yn CHAR(1) NOT NULL DEFAULT 'Y' COMMENT '이벤트혜택알림',
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '수정일시',
+    user_id                 INT      NOT NULL UNIQUE COMMENT '회원번호',
+    finance_notification_yn CHAR(1)  NOT NULL DEFAULT 'Y' COMMENT '금융알림',
+    friend_notification_yn  CHAR(1)  NOT NULL DEFAULT 'Y' COMMENT '친구요청알림',
+    reward_notification_yn  CHAR(1)  NOT NULL DEFAULT 'Y' COMMENT '리워드알림',
+    event_notification_yn   CHAR(1)  NOT NULL DEFAULT 'Y' COMMENT '이벤트혜택알림',
+    updated_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '수정일시',
 
     CONSTRAINT fk_notification_setting_user
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id),
 
     CONSTRAINT chk_finance_notification_yn
-        CHECK (finance_notification_yn IN ('Y','N')),
+        CHECK (finance_notification_yn IN ('Y', 'N')),
 
     CONSTRAINT chk_friend_notification_yn
-        CHECK (friend_notification_yn IN ('Y','N')),
+        CHECK (friend_notification_yn IN ('Y', 'N')),
 
     CONSTRAINT chk_reward_notification_yn
-        CHECK (reward_notification_yn IN ('Y','N')),
+        CHECK (reward_notification_yn IN ('Y', 'N')),
 
     CONSTRAINT chk_event_notification_yn
-        CHECK (event_notification_yn IN ('Y','N'))
+        CHECK (event_notification_yn IN ('Y', 'N'))
 );
 
--- 6-5. 리프레시토큰 테이블
+-- 10. 리프레시토큰 테이블
 DROP TABLE IF EXISTS refresh_token_tbl;
 
 CREATE TABLE refresh_token_tbl
@@ -276,7 +251,7 @@ CREATE TABLE refresh_token_tbl
 );
 
 
--- 7. 소비 카테고리 테이블
+-- 11. 소비 카테고리 테이블
 DROP TABLE IF EXISTS spending_category_tbl;
 
 CREATE TABLE spending_category_tbl
@@ -289,10 +264,20 @@ CREATE TABLE spending_category_tbl
         FOREIGN KEY (parent_category_id)
             REFERENCES spending_category_tbl (spending_category_id)
 
+--  spending_category_id가 AUTO_INCREMENT 컬럼이라 CHECK에서 사용할 수 없습니다. 코드에서 확인
+--     CONSTRAINT chk_spending_category_parent
+--         CHECK (
+--             parent_category_id IS NULL
+--             OR parent_category_id <> spending_category_id
+--         )
 );
 
 
--- 8.포인트 테이블
+-- 12.포인트 테이블 
+-- UNIQUE(point_wallet_id, user_id)는 불필요합니다.
+-- point_wallet_id가 PRIMARY KEY이므로 이미 유일합니다.
+-- 따라서 (point_wallet_id, user_id) 복합 UNIQUE는 의미가 없습니다.
+-- 정의서는 그대로 두더라도 DDL에서는 생략해도 동일한 효과입니다.
 
 DROP TABLE IF EXISTS point_wallet_tbl;
 
@@ -313,7 +298,7 @@ CREATE TABLE point_wallet_tbl
 );
 
 
--- 9.포인트거래내역 테이블
+-- 13.포인트거래내역 테이블
 DROP TABLE IF EXISTS point_transaction_tbl;
 
 CREATE TABLE point_transaction_tbl
@@ -332,14 +317,15 @@ CREATE TABLE point_transaction_tbl
     CONSTRAINT chk_point_transaction_type
         CHECK (transaction_type IN ('EARN', 'USE', 'EXPIRE', 'CANCEL')),
 
+    -- 0원 이상으로 하되, 상태값으로 증감처리.
     CONSTRAINT chk_point_transaction_amount
         CHECK (point_amount > 0),
 
     CONSTRAINT chk_point_transaction_reason
-        CHECK (reason_type IN ('EVENT', 'ATTENDANCE', 'RANDOM_BOX', 'CONVERSION'))
+        CHECK (reason_type IN ('ATTENDANCE', 'RANDOM_BOX', 'CONVERSION', 'EVENT'))
 );
 
--- 10.랜덤박스 테이블
+-- 14.랜덤박스 테이블
 DROP TABLE IF EXISTS user_random_box_tbl;
 
 CREATE TABLE user_random_box_tbl
@@ -382,6 +368,7 @@ CREATE TABLE user_random_box_tbl
     CONSTRAINT fk_random_box_target_wallet
         FOREIGN KEY (target_account_id)
             REFERENCES wallet_tbl (wallet_id),
+
     -- 출석, 피드공유하기, 송금, 이벤트
 
     CONSTRAINT chk_user_random_box_issue_reason
@@ -460,10 +447,12 @@ CREATE TABLE user_random_box_tbl
                     AND target_account_id IS NULL
                 )
             )
+
+
 );
 
 
--- 11. 출석 내역 테이블
+-- 15. 출석 내역 테이블
 DROP TABLE IF EXISTS attendance_tbl;
 
 CREATE TABLE attendance_tbl
@@ -480,13 +469,8 @@ CREATE TABLE attendance_tbl
             REFERENCES user_tbl (user_id)
 );
 
--- point_wallet_tbl(point_wallet_id, user_id)를 참조하도록 되어 있는데, 현재 point_wallet_tbl에는 (point_wallet_id, user_id) 복합 UNIQUE가 없습니다.
 
--- 이전 DDL에서 point_wallet_id는 PK, user_id는 UNIQUE로 생성했습니다.
--- 따라서 복합 FK는 생성할 수 없습니다.
--- 현재 구조에서는 point_wallet_id만 FK로 참조하면 충분합니다.
-
--- 12. 포인트 전환 내역 테이블 정의서
+-- 16. 포인트 전환 내역 테이블 정의서
 
 -- 포인트 전환 내역 테이블
 DROP TABLE IF EXISTS point_conversion_history_tbl;
@@ -516,18 +500,20 @@ CREATE TABLE point_conversion_history_tbl
         CHECK (converted_point >= 100)
 );
 
--- 13. 소비 분석 테이블
+-- 17. 소비 분석 테이블
 DROP TABLE IF EXISTS spending_analysis_tbl;
 
 CREATE TABLE spending_analysis_tbl
 (
-    spending_analysis_id       INT AUTO_INCREMENT PRIMARY KEY COMMENT '소비분석ID',
-    user_id                    INT          NOT NULL COMMENT '유저 ID',
-    analysis_period            INT          NOT NULL COMMENT '분석 기간',
-    representative_category_id INT          NOT NULL COMMENT '가장 많이 소비한 대표 카테고리',
-    ai_title                   VARCHAR(100) NOT NULL COMMENT 'AI 생성 칭호',
-    ai_analysis_summary        TEXT         NOT NULL COMMENT 'AI가 생성한 소비 분석 요약',
-    created_at                 DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '분석 일자',
+    spending_analysis_id                INT AUTO_INCREMENT PRIMARY KEY COMMENT '소비분석ID',
+    user_id                             INT          NOT NULL COMMENT '유저 ID',
+    analysis_period                     INT          NOT NULL COMMENT '분석 기간',
+    representative_category_id          INT          NOT NULL COMMENT '가장 많이 소비한 대표 카테고리',
+    ai_title                            VARCHAR(100) NOT NULL COMMENT 'AI 생성 칭호',
+    ai_analysis_summary                 TEXT         NOT NULL COMMENT 'AI가 생성한 소비 분석 요약',
+    ai_card_recommendation_summary      TEXT         NULL COMMENT 'AI가 생성한 카드 추천 요약',
+    ai_insurance_recommendation_summary TEXT         NULL COMMENT 'AI가 생성한 보험 추천 요약',
+    created_at                          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '분석 일자',
 
     CONSTRAINT fk_spending_analysis_user
         FOREIGN KEY (user_id)
@@ -542,7 +528,7 @@ CREATE TABLE spending_analysis_tbl
 );
 
 
--- 14. 분석결과저장 테이블
+-- 18. 분석결과저장 테이블
 DROP TABLE IF EXISTS spending_analysis_category_tbl;
 
 CREATE TABLE spending_analysis_category_tbl
@@ -576,7 +562,7 @@ CREATE TABLE spending_analysis_category_tbl
         CHECK (transaction_count >= 0)
 );
 
--- 15. KB 카드 상품 설명 테이블
+-- 19. KB 카드 상품 설명 테이블
 DROP TABLE IF EXISTS kb_card_product_tbl;
 
 CREATE TABLE kb_card_product_tbl
@@ -597,7 +583,7 @@ CREATE TABLE kb_card_product_tbl
         CHECK (annual_fee >= 0)
 );
 
---  16. 카드 혜택 테이블
+--  20. 카드 혜택 테이블
 DROP TABLE IF EXISTS card_benefit_tbl;
 
 CREATE TABLE card_benefit_tbl
@@ -641,7 +627,7 @@ CREATE TABLE card_benefit_tbl
 );
 
 
--- 17. 카드 추천 테이블
+-- 21. 카드 추천 테이블
 DROP TABLE IF EXISTS card_recommendation_tbl;
 
 CREATE TABLE card_recommendation_tbl
@@ -674,8 +660,59 @@ CREATE TABLE card_recommendation_tbl
             )
 );
 
+-- 22. 카드 추천 상세 테이블
+CREATE TABLE card_recommendation_detail_tbl
+(
+    card_recommendation_detail_id INT AUTO_INCREMENT PRIMARY KEY
+        COMMENT '카드 추천 상세 PK',
 
--- 18.KB 보험 상품 테이블
+    card_recommendation_id        INT      NOT NULL
+        COMMENT '카드 추천 ID',
+
+    card_benefit_id               INT      NOT NULL
+        COMMENT '계산에 적용된 카드 혜택 ID',
+
+    eligible_spending_amount      INT      NOT NULL
+        COMMENT '전월 실적을 충족하여 혜택 계산에 반영된 거래금액 합계',
+
+    eligible_transaction_count    INT      NOT NULL
+        COMMENT '전월 실적을 충족하여 혜택 계산에 반영된 거래 건수',
+
+    eligible_month_count          INT      NOT NULL
+        COMMENT '해당 혜택이 계산에 반영된 월 수',
+
+    expected_benefit_amount       INT      NOT NULL
+        COMMENT '해당 카드 혜택의 연간 예상 할인액',
+
+    created_at                    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        COMMENT '카드 추천 상세 생성일시',
+
+    CONSTRAINT uq_card_recommendation_detail
+        UNIQUE (card_recommendation_id, card_benefit_id),
+
+    CONSTRAINT fk_card_recommendation_detail_recommendation
+        FOREIGN KEY (card_recommendation_id)
+            REFERENCES card_recommendation_tbl (card_recommendation_id),
+
+    CONSTRAINT fk_card_recommendation_detail_benefit
+        FOREIGN KEY (card_benefit_id)
+            REFERENCES card_benefit_tbl (card_benefit_id),
+
+    CONSTRAINT chk_card_recommendation_detail_spending
+        CHECK (eligible_spending_amount >= 0),
+
+    CONSTRAINT chk_card_recommendation_detail_transaction_count
+        CHECK (eligible_transaction_count >= 0),
+
+    CONSTRAINT chk_card_recommendation_detail_month_count
+        CHECK (eligible_month_count >= 0),
+
+    CONSTRAINT chk_card_recommendation_detail_benefit_amount
+        CHECK (expected_benefit_amount >= 0)
+);
+
+
+-- 23.KB 보험 상품 테이블
 DROP TABLE IF EXISTS kb_insurance_product_tbl;
 
 CREATE TABLE kb_insurance_product_tbl
@@ -696,7 +733,7 @@ CREATE TABLE kb_insurance_product_tbl
             )
 );
 
--- 19.KB 보험 보장 항목 테이블
+-- 24.KB 보험 보장 항목 테이블
 DROP TABLE IF EXISTS kb_insurance_coverage_tbl;
 
 CREATE TABLE kb_insurance_coverage_tbl
@@ -721,7 +758,7 @@ CREATE TABLE kb_insurance_coverage_tbl
 );
 
 
--- 20. KB 보험 추천 결과 테이블
+-- 25. KB 보험 추천 결과 테이블
 DROP TABLE IF EXISTS kb_insurance_recommendation_tbl;
 
 CREATE TABLE kb_insurance_recommendation_tbl
@@ -745,7 +782,7 @@ CREATE TABLE kb_insurance_recommendation_tbl
 );
 
 
--- 21. 친구 요청 테이블
+-- 26. 친구 요청 테이블
 DROP TABLE IF EXISTS friend_request_tbl;
 
 CREATE TABLE friend_request_tbl
@@ -781,7 +818,7 @@ CREATE TABLE friend_request_tbl
         CHECK (requester_id <> receiver_id)
 );
 
--- 22.친구 테이블
+-- 27.친구 테이블
 DROP TABLE IF EXISTS friend_tbl;
 
 CREATE TABLE friend_tbl
@@ -806,7 +843,7 @@ CREATE TABLE friend_tbl
             REFERENCES user_tbl (user_id)
 );
 
--- 23. 정산 테이블
+-- 28. 정산 테이블
 DROP TABLE IF EXISTS settlement_tbl;
 
 CREATE TABLE settlement_tbl
@@ -858,7 +895,7 @@ CREATE TABLE settlement_tbl
             )
 );
 
--- 24. 정산 멤버 테이블
+-- 29. 정산 멤버 테이블
 DROP TABLE IF EXISTS settlement_member_tbl;
 
 CREATE TABLE settlement_member_tbl
@@ -901,7 +938,7 @@ CREATE TABLE settlement_member_tbl
             )
 );
 
--- 25.알림 테이블
+-- 30.알림 테이블
 DROP TABLE IF EXISTS notification_tbl;
 
 CREATE TABLE notification_tbl (
@@ -951,10 +988,10 @@ CREATE TABLE notification_tbl (
             )
         )
 );
-
--- 26. 통합 거래 원장 테이블
 -- ============================================
--- 26. 통합 거래 원장 테이블
+
+
+-- 31. 통합 거래 원장 테이블
 -- ============================================
 
 DROP TABLE IF EXISTS financial_transaction_tbl;
@@ -1073,7 +1110,7 @@ CREATE TABLE financial_transaction_tbl
             )
 );
 
--- 27.은행 계좌 더미 테이블
+-- 32.은행 계좌 더미 테이블
 DROP TABLE IF EXISTS account_dummy_tbl;
 
 CREATE TABLE account_dummy_tbl
@@ -1108,7 +1145,8 @@ CREATE TABLE account_dummy_tbl
             )
 );
 
--- 28.계좌 거래 상세 테이블
+
+-- 33.계좌 거래 상세 테이블
 DROP TABLE IF EXISTS account_transaction_tbl;
 
 CREATE TABLE account_transaction_tbl
@@ -1155,7 +1193,7 @@ CREATE TABLE account_transaction_tbl
             )
 );
 
--- 29. 지갑 거래 상세 테이블
+-- 34. 지갑 거래 상세 테이블
 DROP TABLE IF EXISTS wallet_transaction_tbl;
 
 CREATE TABLE wallet_transaction_tbl
@@ -1203,7 +1241,7 @@ CREATE TABLE wallet_transaction_tbl
 );
 
 
--- 30. 카드 더미 테이블
+-- 35. 카드 더미 테이블
 DROP TABLE IF EXISTS card_tbl;
 
 CREATE TABLE card_tbl
@@ -1225,7 +1263,7 @@ CREATE TABLE card_tbl
             REFERENCES account_dummy_tbl (account_id)
 );
 
--- 32.등록실물카드 테이블
+-- 36.등록실물카드 테이블
 DROP TABLE IF EXISTS registered_card_tbl;
 
 CREATE TABLE registered_card_tbl
@@ -1272,7 +1310,7 @@ CREATE TABLE registered_card_tbl
             )
 );
 
--- 33.결제일회성토큰 테이블
+-- 37.결제일회성토큰 테이블
 -- card_id 복합 FK 설정 오류 가능성이 있습니다.
 
 -- 정의서:
@@ -1310,7 +1348,7 @@ CREATE TABLE payment_token_tbl
             )
 );
 
--- 34.영수증메모 테이블
+-- 38.영수증메모 테이블
 DROP TABLE IF EXISTS receipt_memo_tbl;
 
 CREATE TABLE receipt_memo_tbl
@@ -1331,13 +1369,11 @@ CREATE TABLE receipt_memo_tbl
             REFERENCES financial_transaction_tbl (transaction_id)
 );
 
--- 35.피드 테이블
+-- 39.피드 테이블
 -- transaction_id 컬럼의 UK 설정이 정의서상 Y입니다.
 -- 비고: 거래당 1개의 피드 생성 UNIQUE(transaction_id)
 -- 따라서 UNIQUE(transaction_id) 적용했습니다.
 -- feed_id가 PK이면서 AUTO_INCREMENT인 구조는 정상입니다.
-DROP TABLE IF EXISTS feed_tbl;
-
 CREATE TABLE feed_tbl
 (
     feed_id     INT AUTO_INCREMENT PRIMARY KEY COMMENT '피드번호',
@@ -1393,7 +1429,7 @@ CREATE TABLE feed_tbl
             )
 );
 
--- 36.피드 이미지 테이블
+-- 40.피드 이미지 테이블
 DROP TABLE IF EXISTS feed_image_tbl;
 
 CREATE TABLE feed_image_tbl
@@ -1409,7 +1445,7 @@ CREATE TABLE feed_image_tbl
             REFERENCES feed_tbl (feed_id)
 );
 
--- 37.좋아요 테이블
+-- 41.좋아요 테이블
 DROP TABLE IF EXISTS feed_like_tbl;
 
 CREATE TABLE feed_like_tbl
@@ -1434,7 +1470,7 @@ CREATE TABLE feed_like_tbl
             REFERENCES user_tbl (user_id)
 );
 
--- 38.댓글 테이블
+-- 42.댓글 테이블
 DROP TABLE IF EXISTS feed_comment_tbl;
 
 CREATE TABLE feed_comment_tbl
@@ -1462,7 +1498,7 @@ CREATE TABLE feed_comment_tbl
 );
 
 
--- 39.커스텀 도구 에셋 테이블
+-- 43.커스텀 도구 에셋 테이블
 DROP TABLE IF EXISTS card_asset_tbl;
 
 CREATE TABLE card_asset_tbl
@@ -1500,7 +1536,7 @@ CREATE TABLE card_asset_tbl
 );
 
 
--- 40.이미지 첨부파일 테이블
+-- 44.이미지 첨부파일 테이블
 
 DROP TABLE IF EXISTS file_image_tbl;
 
@@ -1522,7 +1558,7 @@ CREATE TABLE file_image_tbl
 );
 
 
--- 41.커스텀 이미지 테이블
+-- 45.커스텀 이미지 테이블
 
 DROP TABLE IF EXISTS custom_image_tbl;
 
@@ -1557,7 +1593,7 @@ CREATE TABLE custom_image_tbl
             REFERENCES file_image_tbl (file_id)
 );
 
--- 42.커스텀카드 신청이력 테이블
+-- 46.커스텀카드 신청이력 테이블
 
 DROP TABLE IF EXISTS card_application_history_tbl;
 
@@ -1569,7 +1605,7 @@ CREATE TABLE card_application_history_tbl
 
     custom_image_id INT         NOT NULL COMMENT '커스텀이미지 첨부파일ID',
 
-    card_id         VARCHAR(20) NULL COMMENT '카드코드',
+    card_code       VARCHAR(20) NULL COMMENT '카드코드',
 
     card_name       VARCHAR(50) NULL COMMENT '카드명',
 
@@ -1599,7 +1635,7 @@ CREATE TABLE card_application_history_tbl
 );
 
 
--- 43.이벤트 테이블
+-- 47.이벤트 테이블
 DROP TABLE IF EXISTS event_tbl;
 
 CREATE TABLE event_tbl
@@ -1644,8 +1680,7 @@ CREATE TABLE event_tbl
            )
 );
 
-
--- 44.이벤트 리워드 테이블
+-- 48.이벤트 리워드 테이블
 
 DROP TABLE IF EXISTS event_reward_tbl;
 
@@ -1689,7 +1724,7 @@ CREATE TABLE event_reward_tbl
             use_yn IN ('Y', 'N')
             )
 );
--- 45.이벤트 참여이력 테이블
+-- 49.이벤트 참여이력 테이블
 
 DROP TABLE IF EXISTS event_participation_tbl;
 
@@ -1715,7 +1750,8 @@ CREATE TABLE event_participation_tbl
         UNIQUE (event_id, user_id)
 );
 
--- 45-1. 이벤트 - 출석체크 참여이력 테이블
+
+-- 50. 이벤트 - 출석체크 참여이력 테이블
 DROP TABLE IF EXISTS event_attendance_tbl;
 
 CREATE TABLE event_attendance_tbl (
@@ -1740,7 +1776,7 @@ CREATE TABLE event_attendance_tbl (
 ) COMMENT='이벤트 - 출석체크 참여이력 테이블';
 
 
--- 46. 이벤트 리워드 수령이력 테이블 정의서
+-- 51. 이벤트 리워드 수령이력 테이블 정의서
 -- UNIQUE(event_id, user_id)
 
 -- 유지하면 의미는:
@@ -1754,8 +1790,6 @@ CREATE TABLE event_attendance_tbl (
 -- event_id	user_id	reward_id	결과
 -- 1	100	1	가능
 -- 1	100	2	불가능 (이미 해당 이벤트 보상 수령)
-
-DROP TABLE IF EXISTS event_reward_receive_tbl;
 CREATE TABLE event_reward_receive_tbl
 (
 
@@ -1790,8 +1824,8 @@ CREATE TABLE event_reward_receive_tbl
 
 ) COMMENT ='이벤트 리워드 수령이력';
 
--- 47. 이벤트 챌린지 테이블 정의서
-DROP TABLE IF EXISTS event_challenge_tbl;
+-- 52. 이벤트 챌린지 테이블 정의서
+
 CREATE TABLE event_challenge_tbl
 (
 
@@ -1814,8 +1848,7 @@ CREATE TABLE event_challenge_tbl
 
 ) COMMENT ='이벤트 챌린지';
 
--- 48. 이벤트 챌린지 참여이력 테이블 정의서
-DROP TABLE IF EXISTS event_challenge_user_tbl;
+-- 53. 이벤트 챌린지 참여이력 테이블 정의서
 CREATE TABLE event_challenge_user_tbl
 (
 
@@ -1860,7 +1893,7 @@ CREATE TABLE event_challenge_user_tbl
 
 ) COMMENT ='이벤트 챌린지 참여이력';
 
--- 49. 카드사 테이블 정의서
+-- 54. 카드사 테이블 정의서
 DROP TABLE IF EXISTS card_company_tbl;
 
 CREATE TABLE card_company_tbl
@@ -1874,7 +1907,7 @@ CREATE TABLE card_company_tbl
 ) COMMENT = '카드사';
 
 
--- 50. 연결카드 테이블 정의서
+-- 55. 연결카드 테이블 정의서
 DROP TABLE IF EXISTS linked_card_tbl;
 
 CREATE TABLE linked_card_tbl
@@ -1911,40 +1944,41 @@ CREATE TABLE linked_card_tbl
         CHECK (represent_yn IN ('Y', 'N'))
 ) COMMENT = '연결카드';
 
--- 51. 계좌인증 테이블 정의서
+-- 56. 계좌인증 테이블 정의서
 DROP TABLE IF EXISTS account_verification_tbl;
 
-CREATE TABLE account_verification_tbl (
+CREATE TABLE account_verification_tbl
+(
 
-    verification_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '계좌인증번호',
+    verification_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '계좌인증번호',
 
-    user_id INT NOT NULL COMMENT '회원번호',
+    user_id           INT          NOT NULL COMMENT '회원번호',
 
-    bank_code VARCHAR(10) NOT NULL COMMENT '은행코드',
+    bank_code         VARCHAR(10)  NOT NULL COMMENT '은행코드',
 
-    account_number VARCHAR(255) NOT NULL COMMENT '계좌번호',
+    account_number    VARCHAR(255) NOT NULL COMMENT '계좌번호',
 
-    account_holder VARCHAR(50) NOT NULL COMMENT '예금주',
+    account_holder    VARCHAR(50)  NOT NULL COMMENT '예금주',
 
-    verification_code CHAR(4) NOT NULL COMMENT '입금자명4자리',
+    verification_code CHAR(4)      NOT NULL COMMENT '입금자명4자리',
 
-    verified_yn CHAR(1) NOT NULL DEFAULT 'N' COMMENT '인증여부',
+    verified_yn       CHAR(1)      NOT NULL DEFAULT 'N' COMMENT '인증여부',
 
-    requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
+    requested_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
 
     CONSTRAINT fk_account_verification_user
         FOREIGN KEY (user_id)
-        REFERENCES user_tbl(user_id),
+            REFERENCES user_tbl (user_id),
 
     CONSTRAINT fk_account_verification_bank
         FOREIGN KEY (bank_code)
-        REFERENCES bank_tbl(bank_code),
+            REFERENCES bank_tbl (bank_code),
 
     CONSTRAINT chk_account_verification_verified_yn
         CHECK (verified_yn IN ('Y', 'N'))
 
 ) COMMENT = '계좌인증';
--- 52. 카테고리 매핑 테이블
+-- 57. 카테고리 분류 저장 테이블
 CREATE TABLE merchant_category_mapping_tbl
 (
     merchant_category_mapping_id INT AUTO_INCREMENT
@@ -1987,3 +2021,5 @@ CREATE TABLE merchant_category_mapping_tbl
             correction_count >= 0
             )
 );
+
+USE kbproject;

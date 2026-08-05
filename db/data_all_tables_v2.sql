@@ -1,16 +1,3 @@
--- =====================================================================
--- KBProject 전체 더미 데이터 (init(3).sql 기준)
--- 생성 기준:
---   * 부모/기준/1:1 성격 테이블: 약 3건
---   * 자식/이력/M 성격 테이블: 약 6건
---   * 총 55개 테이블 모두 INSERT 포함
--- 주의:
---   * 이 스크립트는 기존 데이터를 TRUNCATE 합니다.
---   * 반드시 init(3).sql 실행 후 사용하세요.
---   * tbl_member 테스트 계정: test1 / test2 / test3
---   * 모든 로그인 비밀번호: 1234 (BCrypt 해시 저장)
---   * init(3).sql의 point_transaction_tbl 제약 때문에 reason_type은 EVENT만 사용합니다.
--- =====================================================================
 
 USE kbproject;
 
@@ -71,35 +58,9 @@ DROP TABLE IF EXISTS `account_verification_tbl`;
 DROP TABLE IF EXISTS `linked_account_tbl`;
 DROP TABLE IF EXISTS `bank_tbl`;
 DROP TABLE IF EXISTS `user_tbl`;
-DROP TABLE IF EXISTS `tbl_member_auth`;
-DROP TABLE IF EXISTS `tbl_member`;
 DROP TABLE IF EXISTS `merchant_category_mapping_tbl`;
 
 SET FOREIGN_KEY_CHECKS = 1;
-
-CREATE TABLE `tbl_member`
-(
-    `username`    varchar(50)  NOT NULL,
-    `password`    varchar(128) NOT NULL,
-    `email`       varchar(50)  NOT NULL,
-    `reg_date`    datetime DEFAULT CURRENT_TIMESTAMP,
-    `update_date` datetime DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`username`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci;
-
-DROP TABLE IF EXISTS tbl_member_auth;
-
-CREATE TABLE `tbl_member_auth`
-(
-    `username` varchar(50) NOT NULL,
-    `auth`     varchar(50) NOT NULL,
-    PRIMARY KEY (`username`, `auth`),
-    CONSTRAINT `fk_authorities_users` FOREIGN KEY (`username`) REFERENCES `tbl_member` (`username`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci;
 
 
 -- 1. 회원 테이블
@@ -127,7 +88,7 @@ CREATE TABLE user_tbl
         CHECK (user_status IN ('ACTIVE', 'WITHDRAWN'))
 ) COMMENT = '회원';
 
--- 3. 은행 테이블
+-- 2. 은행 테이블
 DROP TABLE IF EXISTS bank_tbl;
 
 CREATE TABLE bank_tbl
@@ -142,7 +103,7 @@ CREATE TABLE bank_tbl
 );
 
 
--- 2. 사용자계좌 테이블
+-- 3. 사용자계좌 테이블
 DROP TABLE IF EXISTS linked_account_tbl;
 
 CREATE TABLE linked_account_tbl
@@ -231,7 +192,7 @@ CREATE TABLE wallet_tbl
         CHECK (wallet_status IN ('ACTIVE', 'CLOSED'))
 );
 
--- 6-2. 인증 테이블 정의서
+-- 7. 인증 테이블 정의서
 DROP TABLE IF EXISTS verification_tbl;
 
 CREATE TABLE verification_tbl
@@ -285,7 +246,7 @@ CREATE TABLE verification_tbl
 ) COMMENT = '휴대폰인증';
 
 
--- 6-3. 프로필 테이블
+-- 8. 프로필 테이블
 DROP TABLE IF EXISTS profile_tbl;
 
 CREATE TABLE profile_tbl
@@ -304,7 +265,7 @@ CREATE TABLE profile_tbl
             REFERENCES user_tbl (user_id)
 );
 
--- 6-4. 알림설정 테이블
+-- 9. 알림설정 테이블
 CREATE TABLE notification_setting_tbl
 (
     notification_setting_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림설정번호',
@@ -332,7 +293,7 @@ CREATE TABLE notification_setting_tbl
         CHECK (event_notification_yn IN ('Y', 'N'))
 );
 
--- 6-5. 리프레시토큰 테이블
+-- 10. 리프레시토큰 테이블
 DROP TABLE IF EXISTS refresh_token_tbl;
 
 CREATE TABLE refresh_token_tbl
@@ -349,7 +310,7 @@ CREATE TABLE refresh_token_tbl
 );
 
 
--- 7. 소비 카테고리 테이블
+-- 11. 소비 카테고리 테이블
 DROP TABLE IF EXISTS spending_category_tbl;
 
 CREATE TABLE spending_category_tbl
@@ -371,7 +332,7 @@ CREATE TABLE spending_category_tbl
 );
 
 
--- 8.포인트 테이블 
+-- 12.포인트 테이블 
 -- UNIQUE(point_wallet_id, user_id)는 불필요합니다.
 -- point_wallet_id가 PRIMARY KEY이므로 이미 유일합니다.
 -- 따라서 (point_wallet_id, user_id) 복합 UNIQUE는 의미가 없습니다.
@@ -396,7 +357,7 @@ CREATE TABLE point_wallet_tbl
 );
 
 
--- 9.포인트거래내역 테이블
+-- 13.포인트거래내역 테이블
 DROP TABLE IF EXISTS point_transaction_tbl;
 
 CREATE TABLE point_transaction_tbl
@@ -423,7 +384,7 @@ CREATE TABLE point_transaction_tbl
         CHECK (reason_type IN ('ATTENDANCE', 'RANDOM_BOX', 'CONVERSION', 'EVENT'))
 );
 
--- 10.랜덤박스 테이블
+-- 14.랜덤박스 테이블
 DROP TABLE IF EXISTS user_random_box_tbl;
 
 CREATE TABLE user_random_box_tbl
@@ -550,7 +511,7 @@ CREATE TABLE user_random_box_tbl
 );
 
 
--- 11. 출석 내역 테이블
+-- 15. 출석 내역 테이블
 DROP TABLE IF EXISTS attendance_tbl;
 
 CREATE TABLE attendance_tbl
@@ -568,7 +529,7 @@ CREATE TABLE attendance_tbl
 );
 
 
--- 12. 포인트 전환 내역 테이블 정의서
+-- 16. 포인트 전환 내역 테이블 정의서
 
 -- 포인트 전환 내역 테이블
 DROP TABLE IF EXISTS point_conversion_history_tbl;
@@ -598,7 +559,7 @@ CREATE TABLE point_conversion_history_tbl
         CHECK (converted_point >= 100)
 );
 
--- 13. 소비 분석 테이블
+-- 17. 소비 분석 테이블
 DROP TABLE IF EXISTS spending_analysis_tbl;
 
 CREATE TABLE spending_analysis_tbl
@@ -626,7 +587,7 @@ CREATE TABLE spending_analysis_tbl
 );
 
 
--- 14. 분석결과저장 테이블
+-- 18. 분석결과저장 테이블
 DROP TABLE IF EXISTS spending_analysis_category_tbl;
 
 CREATE TABLE spending_analysis_category_tbl
@@ -660,7 +621,7 @@ CREATE TABLE spending_analysis_category_tbl
         CHECK (transaction_count >= 0)
 );
 
--- 15. KB 카드 상품 설명 테이블
+-- 19. KB 카드 상품 설명 테이블
 DROP TABLE IF EXISTS kb_card_product_tbl;
 
 CREATE TABLE kb_card_product_tbl
@@ -681,7 +642,7 @@ CREATE TABLE kb_card_product_tbl
         CHECK (annual_fee >= 0)
 );
 
---  16. 카드 혜택 테이블
+--  20. 카드 혜택 테이블
 DROP TABLE IF EXISTS card_benefit_tbl;
 
 CREATE TABLE card_benefit_tbl
@@ -725,7 +686,7 @@ CREATE TABLE card_benefit_tbl
 );
 
 
--- 17. 카드 추천 테이블
+-- 21. 카드 추천 테이블
 DROP TABLE IF EXISTS card_recommendation_tbl;
 
 CREATE TABLE card_recommendation_tbl
@@ -758,7 +719,7 @@ CREATE TABLE card_recommendation_tbl
             )
 );
 
--- 17-1. 카드 추천 상세 테이블
+-- 22. 카드 추천 상세 테이블
 DROP TABLE IF EXISTS card_recommendation_detail_tbl;
 
 CREATE TABLE card_recommendation_detail_tbl
@@ -812,7 +773,7 @@ CREATE TABLE card_recommendation_detail_tbl
 );
 
 
--- 18.KB 보험 상품 테이블
+-- 23.KB 보험 상품 테이블
 DROP TABLE IF EXISTS kb_insurance_product_tbl;
 
 CREATE TABLE kb_insurance_product_tbl
@@ -833,7 +794,7 @@ CREATE TABLE kb_insurance_product_tbl
             )
 );
 
--- 19.KB 보험 보장 항목 테이블
+-- 24.KB 보험 보장 항목 테이블
 DROP TABLE IF EXISTS kb_insurance_coverage_tbl;
 
 CREATE TABLE kb_insurance_coverage_tbl
@@ -858,7 +819,7 @@ CREATE TABLE kb_insurance_coverage_tbl
 );
 
 
--- 20. KB 보험 추천 결과 테이블
+-- 25. KB 보험 추천 결과 테이블
 DROP TABLE IF EXISTS kb_insurance_recommendation_tbl;
 
 CREATE TABLE kb_insurance_recommendation_tbl
@@ -882,7 +843,7 @@ CREATE TABLE kb_insurance_recommendation_tbl
 );
 
 
--- 21. 친구 요청 테이블
+-- 26. 친구 요청 테이블
 DROP TABLE IF EXISTS friend_request_tbl;
 
 CREATE TABLE friend_request_tbl
@@ -918,7 +879,7 @@ CREATE TABLE friend_request_tbl
         CHECK (requester_id <> receiver_id)
 );
 
--- 22.친구 테이블
+-- 27.친구 테이블
 DROP TABLE IF EXISTS friend_tbl;
 
 CREATE TABLE friend_tbl
@@ -943,7 +904,7 @@ CREATE TABLE friend_tbl
             REFERENCES user_tbl (user_id)
 );
 
--- 23. 정산 테이블
+-- 28. 정산 테이블
 DROP TABLE IF EXISTS settlement_tbl;
 
 CREATE TABLE settlement_tbl
@@ -995,7 +956,7 @@ CREATE TABLE settlement_tbl
             )
 );
 
--- 24. 정산 멤버 테이블
+-- 29. 정산 멤버 테이블
 DROP TABLE IF EXISTS settlement_member_tbl;
 
 CREATE TABLE settlement_member_tbl
@@ -1038,7 +999,7 @@ CREATE TABLE settlement_member_tbl
             )
 );
 
--- 25.알림 테이블
+-- 30.알림 테이블
 DROP TABLE IF EXISTS notification_tbl;
 
 CREATE TABLE notification_tbl (
@@ -1088,11 +1049,10 @@ CREATE TABLE notification_tbl (
             )
         )
 );
-
-
--- 26. 통합 거래 원장 테이블
 -- ============================================
--- 26. 통합 거래 원장 테이블
+
+
+-- 31. 통합 거래 원장 테이블
 -- ============================================
 
 DROP TABLE IF EXISTS financial_transaction_tbl;
@@ -1211,7 +1171,7 @@ CREATE TABLE financial_transaction_tbl
             )
 );
 
--- 27.은행 계좌 더미 테이블
+-- 32.은행 계좌 더미 테이블
 DROP TABLE IF EXISTS account_dummy_tbl;
 
 CREATE TABLE account_dummy_tbl
@@ -1247,7 +1207,7 @@ CREATE TABLE account_dummy_tbl
 );
 
 
--- 28.계좌 거래 상세 테이블
+-- 33.계좌 거래 상세 테이블
 DROP TABLE IF EXISTS account_transaction_tbl;
 
 CREATE TABLE account_transaction_tbl
@@ -1294,7 +1254,7 @@ CREATE TABLE account_transaction_tbl
             )
 );
 
--- 29. 지갑 거래 상세 테이블
+-- 34. 지갑 거래 상세 테이블
 DROP TABLE IF EXISTS wallet_transaction_tbl;
 
 CREATE TABLE wallet_transaction_tbl
@@ -1342,7 +1302,7 @@ CREATE TABLE wallet_transaction_tbl
 );
 
 
--- 30. 카드 더미 테이블
+-- 35. 카드 더미 테이블
 DROP TABLE IF EXISTS card_tbl;
 
 CREATE TABLE card_tbl
@@ -1364,7 +1324,7 @@ CREATE TABLE card_tbl
             REFERENCES account_dummy_tbl (account_id)
 );
 
--- 32.등록실물카드 테이블
+-- 36.등록실물카드 테이블
 DROP TABLE IF EXISTS registered_card_tbl;
 
 CREATE TABLE registered_card_tbl
@@ -1411,7 +1371,7 @@ CREATE TABLE registered_card_tbl
             )
 );
 
--- 33.결제일회성토큰 테이블
+-- 37.결제일회성토큰 테이블
 -- card_id 복합 FK 설정 오류 가능성이 있습니다.
 
 -- 정의서:
@@ -1449,7 +1409,7 @@ CREATE TABLE payment_token_tbl
             )
 );
 
--- 34.영수증메모 테이블
+-- 38.영수증메모 테이블
 DROP TABLE IF EXISTS receipt_memo_tbl;
 
 CREATE TABLE receipt_memo_tbl
@@ -1470,7 +1430,7 @@ CREATE TABLE receipt_memo_tbl
             REFERENCES financial_transaction_tbl (transaction_id)
 );
 
--- 35.피드 테이블
+-- 39.피드 테이블
 -- transaction_id 컬럼의 UK 설정이 정의서상 Y입니다.
 -- 비고: 거래당 1개의 피드 생성 UNIQUE(transaction_id)
 -- 따라서 UNIQUE(transaction_id) 적용했습니다.
@@ -1530,7 +1490,7 @@ CREATE TABLE feed_tbl
             )
 );
 
--- 36.피드 이미지 테이블
+-- 40.피드 이미지 테이블
 DROP TABLE IF EXISTS feed_image_tbl;
 
 CREATE TABLE feed_image_tbl
@@ -1546,7 +1506,7 @@ CREATE TABLE feed_image_tbl
             REFERENCES feed_tbl (feed_id)
 );
 
--- 37.좋아요 테이블
+-- 41.좋아요 테이블
 DROP TABLE IF EXISTS feed_like_tbl;
 
 CREATE TABLE feed_like_tbl
@@ -1571,7 +1531,7 @@ CREATE TABLE feed_like_tbl
             REFERENCES user_tbl (user_id)
 );
 
--- 38.댓글 테이블
+-- 42.댓글 테이블
 DROP TABLE IF EXISTS feed_comment_tbl;
 
 CREATE TABLE feed_comment_tbl
@@ -1599,7 +1559,7 @@ CREATE TABLE feed_comment_tbl
 );
 
 
--- 39.커스텀 도구 에셋 테이블
+-- 43.커스텀 도구 에셋 테이블
 DROP TABLE IF EXISTS card_asset_tbl;
 
 CREATE TABLE card_asset_tbl
@@ -1637,7 +1597,7 @@ CREATE TABLE card_asset_tbl
 );
 
 
--- 40.이미지 첨부파일 테이블
+-- 44.이미지 첨부파일 테이블
 
 DROP TABLE IF EXISTS file_image_tbl;
 
@@ -1659,7 +1619,7 @@ CREATE TABLE file_image_tbl
 );
 
 
--- 41.커스텀 이미지 테이블
+-- 45.커스텀 이미지 테이블
 
 DROP TABLE IF EXISTS custom_image_tbl;
 
@@ -1694,7 +1654,7 @@ CREATE TABLE custom_image_tbl
             REFERENCES file_image_tbl (file_id)
 );
 
--- 42.커스텀카드 신청이력 테이블
+-- 46.커스텀카드 신청이력 테이블
 
 DROP TABLE IF EXISTS card_application_history_tbl;
 
@@ -1736,7 +1696,7 @@ CREATE TABLE card_application_history_tbl
 );
 
 
--- 43.이벤트 테이블
+-- 47.이벤트 테이블
 DROP TABLE IF EXISTS event_tbl;
 
 CREATE TABLE event_tbl
@@ -1781,7 +1741,7 @@ CREATE TABLE event_tbl
            )
 );
 
--- 44.이벤트 리워드 테이블
+-- 48.이벤트 리워드 테이블
 
 DROP TABLE IF EXISTS event_reward_tbl;
 
@@ -1825,7 +1785,7 @@ CREATE TABLE event_reward_tbl
             use_yn IN ('Y', 'N')
             )
 );
--- 45.이벤트 참여이력 테이블
+-- 49.이벤트 참여이력 테이블
 
 DROP TABLE IF EXISTS event_participation_tbl;
 
@@ -1853,7 +1813,7 @@ CREATE TABLE event_participation_tbl
 
 
 
--- 45-1. 이벤트 - 출석체크 참여이력 테이블
+-- 50. 이벤트 - 출석체크 참여이력 테이블
 DROP TABLE IF EXISTS event_attendance_tbl;
 
 CREATE TABLE event_attendance_tbl (
@@ -1878,7 +1838,7 @@ CREATE TABLE event_attendance_tbl (
 ) COMMENT='이벤트 - 출석체크 참여이력 테이블';
 
 
--- 46. 이벤트 리워드 수령이력 테이블 정의서
+-- 51. 이벤트 리워드 수령이력 테이블 정의서
 -- UNIQUE(event_id, user_id)
 
 -- 유지하면 의미는:
@@ -1926,7 +1886,7 @@ CREATE TABLE event_reward_receive_tbl
 
 ) COMMENT ='이벤트 리워드 수령이력';
 
--- 47. 이벤트 챌린지 테이블 정의서
+-- 52. 이벤트 챌린지 테이블 정의서
 
 CREATE TABLE event_challenge_tbl
 (
@@ -1950,7 +1910,7 @@ CREATE TABLE event_challenge_tbl
 
 ) COMMENT ='이벤트 챌린지';
 
--- 48. 이벤트 챌린지 참여이력 테이블 정의서
+-- 53. 이벤트 챌린지 참여이력 테이블 정의서
 CREATE TABLE event_challenge_user_tbl
 (
 
@@ -1995,7 +1955,7 @@ CREATE TABLE event_challenge_user_tbl
 
 ) COMMENT ='이벤트 챌린지 참여이력';
 
--- 49. 카드사 테이블 정의서
+-- 54. 카드사 테이블 정의서
 DROP TABLE IF EXISTS card_company_tbl;
 
 CREATE TABLE card_company_tbl
@@ -2009,7 +1969,7 @@ CREATE TABLE card_company_tbl
 ) COMMENT = '카드사';
 
 
--- 50. 연결카드 테이블 정의서
+-- 55. 연결카드 테이블 정의서
 DROP TABLE IF EXISTS linked_card_tbl;
 
 CREATE TABLE linked_card_tbl
@@ -2046,7 +2006,7 @@ CREATE TABLE linked_card_tbl
         CHECK (represent_yn IN ('Y', 'N'))
 ) COMMENT = '연결카드';
 
--- 51. 계좌인증 테이블 정의서
+-- 56. 계좌인증 테이블 정의서
 DROP TABLE IF EXISTS account_verification_tbl;
 
 CREATE TABLE account_verification_tbl
@@ -2080,7 +2040,7 @@ CREATE TABLE account_verification_tbl
         CHECK (verified_yn IN ('Y', 'N'))
 
 ) COMMENT = '계좌인증';
--- 52. 카테고리 분류 저장 테이블
+-- 57. 카테고리 분류 저장 테이블
 CREATE TABLE merchant_category_mapping_tbl
 (
     merchant_category_mapping_id INT AUTO_INCREMENT
@@ -2129,34 +2089,7 @@ USE kbproject;
 START TRANSACTION;
 
 -- ---------------------------------------------------------------------
--- 1. tbl_member (3건)
--- ---------------------------------------------------------------------
-INSERT INTO tbl_member (username,
-                        password,
-                        email,
-                        reg_date,
-                        update_date)
-VALUES ('test1', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK', 'test1@kbproject.local',
-        '2026-07-01 09:00:00', '2026-07-01 09:00:00'),
-       ('test2', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK', 'test2@kbproject.local',
-        '2026-07-02 09:00:00', '2026-07-02 09:00:00'),
-       ('test3', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK', 'test3@kbproject.local',
-        '2026-07-03 09:00:00', '2026-07-03 09:00:00');
-
--- ---------------------------------------------------------------------
--- 2. tbl_member_auth (6건)
--- ---------------------------------------------------------------------
-INSERT INTO tbl_member_auth (username,
-                             auth)
-VALUES ('test1', 'ROLE_USER'),
-       ('test1', 'ROLE_ADMIN'),
-       ('test2', 'ROLE_USER'),
-       ('test2', 'ROLE_MANAGER'),
-       ('test3', 'ROLE_USER'),
-       ('test3', 'ROLE_TESTER');
-
--- ---------------------------------------------------------------------
--- 3. user_tbl (3건)
+-- 1. user_tbl (3건)
 -- ---------------------------------------------------------------------
 INSERT INTO user_tbl (user_id,
                       user_name,
@@ -2176,7 +2109,7 @@ VALUES (1, '테스트회원1', '20000115', '01011112222', '$2y$10$du1EXjznqV1UCh
         'ACTIVE', '2026-07-03 11:00:00', '2026-07-22 14:20:00', NULL, '2026-07-22 14:20:00');
 
 -- ---------------------------------------------------------------------
--- 4. bank_tbl (10건)
+-- 2. bank_tbl (10건)
 -- ---------------------------------------------------------------------
 INSERT INTO bank_tbl (bank_code,
                       bank_name,
@@ -2194,7 +2127,7 @@ VALUES ('004', 'KB국민은행', 'kb.png', 'Y'),
        ('023', 'SC제일은행', 'sc.png', 'Y');
 
 -- ---------------------------------------------------------------------
--- 5. linked_account_tbl (6건)
+-- 3. linked_account_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO linked_account_tbl (linked_account_id,
                                 user_id,
@@ -2211,7 +2144,7 @@ VALUES (1, 1, '004', '110-111-111111', '테스트회원1', 'Y', 'CONNECTED'),
        (6, 3, '004', '110-333-222222', '테스트회원3', 'N', 'CONNECTED');
 
 -- ---------------------------------------------------------------------
--- 6. agreement_tbl (4건)
+-- 4. agreement_tbl (4건)
 -- ---------------------------------------------------------------------
 INSERT INTO agreement_tbl (agreement_id,
                            agreement_type,
@@ -2238,7 +2171,7 @@ VALUES (1, 'SERVICE', '서비스 이용약관',
         '소비 분석 결과를 바탕으로 카드와 보험 등 맞춤형 금융상품을 추천하기 위해 분석 결과를 활용합니다. 선택 약관에 동의하지 않아도 소비 분석 기능은 이용할 수 있습니다.', 'N', 'Y');
 
 -- ---------------------------------------------------------------------
--- 7. user_agreement_tbl (6건)
+-- 5. user_agreement_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO user_agreement_tbl (user_agreement_id,
                                 user_id,
@@ -2253,7 +2186,7 @@ VALUES (1, 1, 1, 'Y', '2026-07-01 09:05:00'),
        (6, 3, 3, 'N', '2026-07-03 11:05:10');
 
 -- ---------------------------------------------------------------------
--- 8. wallet_tbl (3건)
+-- 6. wallet_tbl (3건)
 -- ---------------------------------------------------------------------
 INSERT INTO wallet_tbl (wallet_id,
                         user_id,
@@ -2264,7 +2197,7 @@ VALUES (1, 1, 107000, 'ACTIVE'),
        (3, 3, 145000, 'ACTIVE');
 
 -- ---------------------------------------------------------------------
--- 9. verification_tbl (6건)
+-- 7. verification_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO verification_tbl (verification_id,
                               user_id,
@@ -2286,7 +2219,7 @@ VALUES (1, 1, '테스트회원1', '20000115', 'SKT', '01011112222', '111111', 'S
         0);
 
 -- ---------------------------------------------------------------------
--- 10. profile_tbl (3건)
+-- 8. profile_tbl (3건)
 -- ---------------------------------------------------------------------
 INSERT INTO profile_tbl (profile_id,
                          user_id,
@@ -2302,7 +2235,7 @@ VALUES (1, 1, '노랑지갑', '포인트를 모으는 중입니다.', 'profile1.
         '2026-07-22 12:00:00');
 
 -- ---------------------------------------------------------------------
--- 11. notification_setting_tbl (3건)
+-- 9. notification_setting_tbl (3건)
 -- ---------------------------------------------------------------------
 INSERT INTO notification_setting_tbl (notification_setting_id,
                                       user_id,
@@ -2316,7 +2249,7 @@ VALUES (1, 1, 'Y', 'Y', 'Y', 'Y', '2026-07-20 12:00:00'),
        (3, 3, 'N', 'Y', 'Y', 'N', '2026-07-22 12:00:00');
 
 -- ---------------------------------------------------------------------
--- 12. refresh_token_tbl (6건)
+-- 10. refresh_token_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO refresh_token_tbl (refresh_token_id,
                                user_id,
@@ -2331,7 +2264,7 @@ VALUES (1, 1, 'refresh-token-user1-a', '2026-07-23 08:00:00', '2026-08-23 08:00:
        (6, 3, 'refresh-token-user3-b', '2026-07-24 10:00:00', '2026-08-24 10:00:00');
 
 -- ---------------------------------------------------------------------
--- 13. spending_category_tbl (20건)
+-- 11. spending_category_tbl (20건)
 -- ---------------------------------------------------------------------
 INSERT INTO spending_category_tbl (spending_category_id,
                                    category_name,
@@ -2358,7 +2291,7 @@ VALUES (1, '식비', NULL),
        (20, '소아과', 13);
 
 -- ---------------------------------------------------------------------
--- 14. point_wallet_tbl (3건)
+-- 12. point_wallet_tbl (3건)
 -- ---------------------------------------------------------------------
 INSERT INTO point_wallet_tbl (point_wallet_id,
                               user_id,
@@ -2369,7 +2302,7 @@ VALUES (1, 1, 500, '2026-07-24 09:10:00'),
        (3, 3, 7500, '2026-07-24 09:30:00');
 
 -- ---------------------------------------------------------------------
--- 15. point_transaction_tbl (7건)
+-- 13. point_transaction_tbl (7건)
 -- ---------------------------------------------------------------------
 INSERT INTO point_transaction_tbl (point_transaction_id,
                                    point_wallet_id,
@@ -2386,7 +2319,7 @@ VALUES (1, 1, 'EARN', 5000, 'EVENT', '2026-07-20 09:00:00'),
        (7, 3, 'USE', 2500, 'CONVERSION', '2026-07-24 09:30:00');
 
 -- ---------------------------------------------------------------------
--- 16. user_random_box_tbl (7건)
+-- 14. user_random_box_tbl (7건)
 -- ---------------------------------------------------------------------
 INSERT INTO user_random_box_tbl (user_random_box_id,
                                  user_id,
@@ -2406,7 +2339,7 @@ VALUES (1, 1, 'ATTENDANCE', 1, NULL, 'OPENED', 500, '2026-07-18 09:00:00', '2026
        (7, 1, 'TRANSFER', 2, 2, 'UNOPENED', NULL, '2026-07-24 11:00:00', NULL);
 
 -- ---------------------------------------------------------------------
--- 17. attendance_tbl (6건)
+-- 15. attendance_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO attendance_tbl (attendance_id,
                             user_id,
@@ -2419,7 +2352,7 @@ VALUES (1, 1, '2026-07-22'),
        (6, 3, '2026-07-24');
 
 -- ---------------------------------------------------------------------
--- 18. point_conversion_history_tbl (6건)
+-- 16. point_conversion_history_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO point_conversion_history_tbl (point_conversion_id,
                                           user_id,
@@ -2435,7 +2368,7 @@ VALUES (1, 1, 1, 1, 500, '2026-07-18 12:00:00'),
        (6, 3, 3, 3, 1000, '2026-07-23 12:00:00');
 
 -- ---------------------------------------------------------------------
--- 19. spending_analysis_tbl (6건)
+-- 17. spending_analysis_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO spending_analysis_tbl (spending_analysis_id,
                                    user_id,
@@ -2488,7 +2421,7 @@ VALUES (
         NULL,
         '2026-08-03 09:00:00');
 -- ---------------------------------------------------------------------
--- 20. spending_analysis_category_tbl (6건)
+-- 18. spending_analysis_category_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO spending_analysis_category_tbl (analysis_category_id,
                                             spending_analysis_id,
@@ -2536,7 +2469,7 @@ VALUES (1, 1, 4, 119000, 23.27, 1, '2026-07-01 00:05:00'),
        (37, 7, 6, 75100, 2.02, 3, '2026-08-03 09:00:05'),
        (38, 7, 2, 26400, 0.71, 4, '2026-08-03 09:00:05');
 -- ---------------------------------------------------------------------
--- 21. kb_card_product_tbl (4건)
+-- 19. kb_card_product_tbl (4건)
 -- ---------------------------------------------------------------------
 INSERT INTO kb_card_product_tbl (card_product_id,
                                  card_name,
@@ -2556,7 +2489,7 @@ VALUES (1, 'KB국민 My WE:SH 카드', 'CREDIT', '나만을 위한 맞춤형 혜
         'bonus_check_apply.html', 0, '2026-07-01 09:30:00');
 
 -- ---------------------------------------------------------------------
--- 22. card_benefit_tbl (7건)
+-- 20. card_benefit_tbl (7건)
 -- ---------------------------------------------------------------------
 INSERT INTO card_benefit_tbl (card_benefit_id,
                               card_product_id,
@@ -2578,7 +2511,7 @@ VALUES (1, 1, 2, '카페 이용 할인', NULL, 10.00, 10000, 300000, '스타벅�
         '2026-07-01 11:00:00');
 
 -- ---------------------------------------------------------------------
--- 23. card_recommendation_tbl (6건)
+-- 21. card_recommendation_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO card_recommendation_tbl
 (
@@ -2598,7 +2531,7 @@ VALUES
     (3, 7, 4, 1, 13600, '2026-08-03 09:10:05'),
     (4, 7, 3, 2,  6560, '2026-08-03 09:10:05');
 -- ---------------------------------------------------------------------
--- 23-1. card_recommendation_detail_tbl (7건)
+-- 22. card_recommendation_detail_tbl (7건)
 -- ---------------------------------------------------------------------
 
 INSERT INTO card_recommendation_detail_tbl
@@ -2633,7 +2566,7 @@ VALUES
     (7, 4, 6,  6900, 1, 1,  500, '2026-08-03 09:10:10');
 
 -- ---------------------------------------------------------------------
--- 24. kb_insurance_product_tbl (5건)
+-- 23. kb_insurance_product_tbl (5건)
 -- ---------------------------------------------------------------------
 INSERT INTO kb_insurance_product_tbl (insurance_product_id,
                                       insurance_name,
@@ -2655,7 +2588,7 @@ VALUES (1, 'KB손해보험 다이렉트 자동차보험', '자동차', '자동�
         'kb_travel_apply.html', '2026-07-01 09:40:00');
 
 -- ---------------------------------------------------------------------
--- 25. kb_insurance_coverage_tbl (12건)
+-- 24. kb_insurance_coverage_tbl (12건)
 -- ---------------------------------------------------------------------
 INSERT INTO kb_insurance_coverage_tbl (insurance_coverage_id,
                                        insurance_product_id,
@@ -2678,7 +2611,7 @@ VALUES (1, 1, '대인배상', 100000000, '자동차 사고로 타인의 신체 �
        (12, 5, '휴대품 손해', 1000000, '여행 중 휴대품 분실 및 파손 발생 시 보장합니다.', '사고당', '2026-07-01 11:50:00');
 
 -- ---------------------------------------------------------------------
--- 26. kb_insurance_recommendation_tbl (6건)
+-- 25. kb_insurance_recommendation_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO kb_insurance_recommendation_tbl (insurance_recommendation_id,
                                              spending_analysis_id,
@@ -2693,7 +2626,7 @@ VALUES (1, 1, 2, '의료와 생활 소비를 함께 고려해 건강보험을 �
        (6, 5, 5, '여가와 외출 소비가 많아 여행 보장이 유용합니다.', '2026-07-05 02:00:00');
 
 -- ---------------------------------------------------------------------
--- 27. friend_request_tbl (6건)
+-- 26. friend_request_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO friend_request_tbl (request_id,
                                 requester_id,
@@ -2709,7 +2642,7 @@ VALUES (1, 1, 2, 'ACCEPT', '2026-07-10 10:00:00', '2026-07-10 10:05:00'),
        (6, 3, 2, 'REQUEST', '2026-07-15 10:00:00', '2026-07-15 10:00:00');
 
 -- ---------------------------------------------------------------------
--- 28. friend_tbl (6건)
+-- 27. friend_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO friend_tbl (friend_id,
                         user_id,
@@ -2723,7 +2656,7 @@ VALUES (1, 1, 2, '2026-07-10 10:05:00'),
        (6, 3, 2, '2026-07-17 10:05:00');
 
 -- ---------------------------------------------------------------------
--- 29. settlement_tbl (3건)
+-- 28. settlement_tbl (3건)
 -- ---------------------------------------------------------------------
 INSERT INTO settlement_tbl (
     settlement_id, requester_id, title, content, total_amount,
@@ -2736,7 +2669,7 @@ VALUES
 (3, 3, '택시비 정산', '택시비 정산', 18000, 'CANCEL', '2026-07-22 23:00:00', 'UNEQUAL', 6, NULL, NULL);
 
 -- ---------------------------------------------------------------------
--- 30. settlement_member_tbl (6건)
+-- 29. settlement_member_tbl (6건)
 -- ---------------------------------------------------------------------
 
 INSERT INTO settlement_member_tbl (
@@ -2752,7 +2685,7 @@ VALUES
 (6, 3, 2, 10000, 'CANCEL',   '2026-07-22 23:01:00', NULL);
 
 -- ---------------------------------------------------------------------
--- 31. notification_tbl (6건)
+-- 30. notification_tbl (6건)
 -- ---------------------------------------------------------------------
 
 INSERT INTO notification_tbl (
@@ -2768,7 +2701,7 @@ VALUES
 (6, 1, 2, 'SETTLEMENT_REQUEST',2, 'READ',    '2026-07-23 20:00:00');
 
 -- ---------------------------------------------------------------------
--- 32. financial_transaction_tbl (6건)
+-- 31. financial_transaction_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO financial_transaction_tbl (transaction_id,
                                        parent_transaction_id,
@@ -2856,7 +2789,7 @@ VALUES (1, NULL, 1, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 10000, NULL,
 
 
 -- ---------------------------------------------------------------------
--- 33. account_dummy_tbl (6건)
+-- 32. account_dummy_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO account_dummy_tbl (account_id,
                                user_id,
@@ -2880,7 +2813,7 @@ VALUES (1, 1, '004', '111-001-000001', '테스트회원1', 510000, '$2y$10$du1EX
         '2026-07-03 11:30:00');
 
 -- ---------------------------------------------------------------------
--- 34. account_transaction_tbl (6건)
+-- 33. account_transaction_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO account_transaction_tbl (account_transaction_id,
                                      transaction_id,
@@ -2897,7 +2830,7 @@ VALUES (1, 1, 1, 'DEBIT', 1, 500000, 490000),
        (6, 6, 3, 'CREDIT', 6, 200000, 205000);
 
 -- ---------------------------------------------------------------------
--- 35. wallet_transaction_tbl (6건)
+-- 34. wallet_transaction_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO wallet_transaction_tbl (wallet_transaction_id,
                                     transaction_id,
@@ -2914,7 +2847,7 @@ VALUES (1, 1, 1, 'CREDIT', 1, 90000, 100000),
        (6, 6, 3, 'DEBIT', 3, 150000, 145000);
 
 -- ---------------------------------------------------------------------
--- 36. card_tbl (3건)
+-- 35. card_tbl (3건)
 -- ---------------------------------------------------------------------
 INSERT INTO card_tbl (card_code,
                       account_id,
@@ -2927,7 +2860,7 @@ VALUES ('KB-CARD-001', 1, 'card_001.png', 'ENC-CARD-1111', '12/30', 'ENC-111'),
        ('KB-CARD-003', 5, 'card_003.png', 'ENC-CARD-3333', '10/30', 'ENC-333');
 
 -- ---------------------------------------------------------------------
--- 37. registered_card_tbl (6건)
+-- 36. registered_card_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO registered_card_tbl (card_id,
                                  account_id,
@@ -2953,7 +2886,7 @@ VALUES (1, 1, 1, 'ENC-REG-1111', '12/30', 'ENC-111', '$2y$10$du1EXjznqV1UChQm4Lc
         'N', '2026-07-03 11:50:00', 'N');
 
 -- ---------------------------------------------------------------------
--- 38. payment_token_tbl (6건)
+-- 37. payment_token_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO payment_token_tbl (token_value,
                                user_id,
@@ -2968,7 +2901,7 @@ VALUES ('pay-token-001', 1, 1, '2026-07-24 10:10:00', 'Y'),
        ('pay-token-006', 3, 6, '2026-07-24 15:10:00', 'N');
 
 -- ---------------------------------------------------------------------
--- 39. receipt_memo_tbl (6건)
+-- 38. receipt_memo_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO receipt_memo_tbl (memo_id,
                               transaction_id,
@@ -2983,7 +2916,7 @@ VALUES (1, 1, '포인트 지갑 충전', '2026-07-20 09:01:00', '2026-07-20 09:0
        (6, 6, '교통비 결제', '2026-07-23 08:01:00', '2026-07-23 08:01:00');
 
 -- ---------------------------------------------------------------------
--- 40. feed_tbl (6건)
+-- 39. feed_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO feed_tbl (
     feed_id,
@@ -3005,7 +2938,7 @@ VALUES
 (6, 3, 6, 'ACTIVE', 'PAYMENT',    '교통비 결제',   'PRIVATE', '2026-07-23 08:05:00', '2026-07-23 08:05:00');
 
 -- ---------------------------------------------------------------------
--- 41. feed_image_tbl (6건)
+-- 40. feed_image_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO feed_image_tbl (image_id,
                             feed_id,
@@ -3018,7 +2951,7 @@ VALUES (1, 1, 'feed_1_1.png'),
        (6, 6, 'feed_6_1.png');
 
 -- ---------------------------------------------------------------------
--- 42. feed_like_tbl (6건)
+-- 41. feed_like_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO feed_like_tbl (like_id,
                            feed_id,
@@ -3032,7 +2965,7 @@ VALUES (1, 1, 2, '2026-07-20 09:10:00'),
        (6, 5, 2, '2026-07-22 11:11:00');
 
 -- ---------------------------------------------------------------------
--- 43. feed_comment_tbl (6건)
+-- 42. feed_comment_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO feed_comment_tbl (comment_id,
                               feed_id,
@@ -3048,7 +2981,7 @@ VALUES (1, 1, 2, '충전 축하해요', '2026-07-20 09:15:00', '2026-07-20 09:15
        (6, 6, 2, '교통비 절약!', '2026-07-23 08:15:00', '2026-07-23 08:15:00');
 
 -- ---------------------------------------------------------------------
--- 44. card_asset_tbl (3건)
+-- 43. card_asset_tbl (3건)
 -- ---------------------------------------------------------------------
 INSERT INTO card_asset_tbl (asset_id,
                             asset_type,
@@ -3062,7 +2995,7 @@ VALUES (1, 'BACKGROUND_SOLID', 'KB 옐로우', '/assets/yellow.png', '#FFCC00', 
        (3, 'STICKER', '별 스티커', '/assets/star.png', NULL, NULL, 'Y');
 
 -- ---------------------------------------------------------------------
--- 45. file_image_tbl (6건)
+-- 44. file_image_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO file_image_tbl (file_id,
                             user_id,
@@ -3077,7 +3010,7 @@ VALUES (1, 1, 'upload_user1_1.png', 120000, '2026-07-20 14:00:00'),
        (6, 3, 'upload_user3_2.png', 170000, '2026-07-22 14:10:00');
 
 -- ---------------------------------------------------------------------
--- 46. custom_image_tbl (6건)
+-- 45. custom_image_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO custom_image_tbl (custom_image_id,
                               user_id,
@@ -3095,7 +3028,7 @@ VALUES (1, 1, 1, 1, '/custom/user1/', 'custom_1.png', 220000, '2026-07-20 15:00:
        (6, 3, 3, 6, '/custom/user3/', 'custom_6.png', 270000, '2026-07-22 15:10:00');
 
 -- ---------------------------------------------------------------------
--- 47. card_application_history_tbl (6건)
+-- 46. card_application_history_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO card_application_history_tbl (apply_id,
                                           user_id,
@@ -3113,7 +3046,7 @@ VALUES (1, 1, 1, 'KB-CARD-001', '나만의 옐로우카드', 'REQUEST', '2026-07
        (6, 3, 6, 'KB-CARD-003', '별 여행카드', 'REQUEST', '2026-07-22 16:10:00', '2026-07-22 16:10:00');
 
 -- ---------------------------------------------------------------------
--- 48. event_tbl (20건)
+-- 47. event_tbl (20건)
 -- ---------------------------------------------------------------------
  INSERT INTO event_tbl (
     event_id,
@@ -3369,7 +3302,7 @@ VALUES (1, 1, 1, 'KB-CARD-001', '나만의 옐로우카드', 'REQUEST', '2026-07
     NULL,
     '2026-07-01 00:00:00'
 ),
--- 17. 여름 한정 매일 출석 미션
+-- 15. 여름 한정 매일 출석 미션
 (
     17,
     '2026 SUMMER SEASON 출석체크 챌린지', 
@@ -3390,7 +3323,7 @@ VALUES (1, 1, 1, 'KB-CARD-001', '나만의 옐로우카드', 'REQUEST', '2026-07
 
 
 -- ---------------------------------------------------------------------
--- 49. event_reward_tbl (5건)
+-- 48. event_reward_tbl (5건)
 -- ---------------------------------------------------------------------
 INSERT INTO event_reward_tbl (reward_id,
                               event_id,
@@ -3425,7 +3358,7 @@ VALUES (1, 1, 1, 100, 10, 1, 'Y'),
        
 
 -- ---------------------------------------------------------------------
--- 50. event_participation_tbl (5건)
+-- 49. event_participation_tbl (5건)
 -- ---------------------------------------------------------------------
 INSERT INTO event_participation_tbl (participation_id,
                                      event_id,
@@ -3510,7 +3443,7 @@ VALUES (1, 1, 1, 'KB', 'KB 대표카드', 'linked_kb_1.png', 'Y'),
        (6, 3, 6, 'KB', 'KB 여행카드', 'linked_kb_3.png', 'N');
 
 -- ---------------------------------------------------------------------
--- 56. merchant_category_mapping_tbl (21건)
+-- 57. merchant_category_mapping_tbl (21건)
 -- ---------------------------------------------------------------------
 
 INSERT INTO merchant_category_mapping_tbl (merchant_name,

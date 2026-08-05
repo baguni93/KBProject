@@ -10,11 +10,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
 
 @Configuration
+@EnableAsync
 @Import({OpenAIConfig.class,
         RedisConfig.class})
 @PropertySource({
@@ -40,7 +42,7 @@ import javax.sql.DataSource;
         "org.scoula.cardrecommendation.mapper",
 
 
-		"org.scoula.user.mapper",
+        "org.scoula.user.mapper",
         "org.scoula.agreement.mapper",
         "org.scoula.login.mapper",
         "org.scoula.profile.mapper",
