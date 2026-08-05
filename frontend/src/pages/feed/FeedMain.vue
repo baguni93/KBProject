@@ -6,9 +6,8 @@
     <InviteBanner />
 
     <!-- 피드 -->
-    <section class="feed-section">
-      <FeedList />
-    </section>
+
+    <FeedList />
   </div>
 </template>
 
@@ -36,16 +35,11 @@ onMounted(() => {
 <style scoped>
 .feed-page {
   width: 100%;
-  background: rgb(132, 233, 194);
+  background: white;
 }
 
 /* 검색 영역 */
 :deep(.search-bar) {
   margin-bottom: 14px;
-}
-
-/* 피드 */
-.feed-section {
-  width: 100%;
 }
 </style>

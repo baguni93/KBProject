@@ -12,14 +12,13 @@
       @profile-click="goProfile"
     />
 
-    <div v-if="requests.length === 0" class="empty">
-      받은 친구 요청이 없습니다.
-    </div>
+    <EmptyList v-if="requests.length === 0" desc="받은 친구 요청이 없습니다." />
   </div>
 </template>
 
 <script setup>
 import FriendRequestCard from './FriendRequestCard.vue';
+import EmptyList from '@/components/common/EmptyList.vue';
 
 const props = defineProps({
   requests: {

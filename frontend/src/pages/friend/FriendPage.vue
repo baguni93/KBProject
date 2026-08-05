@@ -1,5 +1,5 @@
 <template>
-  <div class="friend-page">
+  <div class="page friend-page">
     <PageHeader title="친구" />
 
     <!-- 탭 -->
@@ -26,8 +26,6 @@
     />
 
     <!-- 친구 요청 -->
-    <!-- <FriendRequestList v-else :requests="friendStore.requestList" /> -->
-
     <FriendRequest
       v-if="currentTab === 'request'"
       :received="friendStore.requestList"
@@ -39,18 +37,22 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+
 import { useFriendStore } from '@/stores/friend';
+
 import PageHeader from '@/components/common/PageHeader.vue';
 import FriendList from '@/components/friend/FriendList.vue';
 import FriendRequest from '@/components/friend/FriendRequest.vue';
 
-//test user Id
 import { useUserStore } from '@/stores/user';
+
 const userStore = useUserStore();
 const userId = userStore.userId;
 
 const route = useRoute();
+
 const friendStore = useFriendStore();
+
 const currentTab = ref(route.query.tab || 'list');
 
 watch(
@@ -68,25 +70,19 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.friend-page {
-  padding: 20px;
-}
+/* 공통 페이지 규칙 */
+.page {
+  width: 100%;
+  min-height: 100%;
 
-/* 상단 */
-.header {
   display: flex;
-  align-items: center;
-  gap: 15px;
+  flex-direction: column;
 
-  margin-bottom: 20px;
-}
+  padding: 24px;
 
-.header i {
-  cursor: pointer;
-}
+  box-sizing: border-box;
 
-.header h2 {
-  margin: 0;
+  background-color: white;
 }
 
 /* 탭 */
@@ -95,6 +91,7 @@ onMounted(() => {
 
   border-bottom: 1px solid #eee;
 
+  margin-top: 20px;
   margin-bottom: 20px;
 }
 

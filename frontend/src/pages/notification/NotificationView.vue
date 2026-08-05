@@ -49,6 +49,11 @@
           </button>
         </div>
       </div>
+
+      <EmptyList
+        v-if="notifications.length === 0"
+        desc="받은 알림이 없습니다."
+      />
     </div>
   </div>
 </template>
@@ -60,7 +65,7 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import { useNotificationStore } from '@/stores/notification';
 import { useUserStore } from '@/stores/user';
 import { formatRelativeDate } from '@/util/data';
-import { useSettlementStore } from '@/stores/settlement';
+import EmptyList from '@/components/common/EmptyList.vue';
 
 const router = useRouter();
 
@@ -369,5 +374,15 @@ onMounted(() => {
 .delete-btn:hover {
   color: #ff5555;
   transform: scale(1.1);
+}
+
+.empty {
+  text-align: center;
+
+  color: #999;
+
+  padding: 30px 0;
+
+  font-size: 14px;
 }
 </style>

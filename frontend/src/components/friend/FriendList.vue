@@ -10,13 +10,12 @@
     />
   </div>
 
-  <div v-if="friends.length === 0" class="empty">
-    보낸 친구 요청이 없습니다.
-  </div>
+  <EmptyList v-if="friends.length === 0" desc="보낸 친구 요청이 없습니다." />
 </template>
 
 <script setup>
 import FriendListCard from '../friend/FriendListCard.vue';
+import EmptyList from '@/components/common/EmptyList.vue';
 const props = defineProps({
   friends: {
     type: Array,

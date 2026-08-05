@@ -5,6 +5,7 @@ import settlement from './settlement';
 import auth from './auth';
 import signup from './signup';
 import setting from './setting';
+import pagesample from './pagesample';
 import WalletPage from '@/pages/wallet/WalletPage.vue';
 import RemittancePage from '@/pages/remittance/RemittancePage.vue';
 import TransactionListPage from '@/pages/transaction/TransactionListPage.vue';
@@ -79,13 +80,15 @@ const router = createRouter({
     ...signup,
     ...setting,
     ...analysis,
+    ...pagesample,
+
     //bottom 이 필요없는 페이지
     {
       path: '/setting',
       name: 'setting',
       component: () => import('@/pages/setting/SettingPage.vue'),
       meta: {
-        showBottomNav: true,
+        showBottomNav: false,
       },
     },
 
@@ -94,24 +97,18 @@ const router = createRouter({
       name: 'search',
       component: () => import('@/pages/search/SearchPage.vue'),
       meta: {
-        showBottomNav: true,
+        showBottomNav: false,
       },
     },
     {
       path: '/notification',
       name: 'notification',
       component: NotificationView,
-      meta: {
-        showBottomNav: true,
-      },
     },
     {
       path: '/member/:userId',
       name: 'member/:userId',
       component: MemberDetailPage,
-      meta: {
-        showBottomNav: true,
-      },
     },
     {
       path: '/point-wallet/random-box',

@@ -83,12 +83,12 @@ const openComment = async () => {
 //토스트 팝업
 const onEdit = () => {
   console.log('수정');
-  router.push(`/feed/edit/${feedId}`);
+  router.push(`/feed/edit/${feedId.value}`);
 };
 
 const onDelete = async () => {
   try {
-    await feedStore.deleteFeed(feedId);
+    await feedStore.deleteFeed(feedId.value);
   } catch (e) {
     console.log(e);
   }

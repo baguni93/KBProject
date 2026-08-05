@@ -10,14 +10,14 @@
       @cancel="cancelRequest"
       @profile-click="goProfile"
     />
-    <div v-if="requests.length === 0" class="empty">
-      보낸 친구 요청이 없습니다.
-    </div>
+
+    <EmptyList v-if="requests.length === 0" desc="보낸 친구 요청이 없습니다." />
   </div>
 </template>
 
 <script setup>
 import SentRequestCard from './SentRequestCard.vue';
+import EmptyList from '@/components/common/EmptyList.vue';
 
 defineProps({
   requests: {
