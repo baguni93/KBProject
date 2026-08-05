@@ -52,6 +52,7 @@ import org.springframework.web.servlet.config.annotation.*;
         "org.scoula.notifsetting.controller",
         "org.scoula.card.controller",
 
+        "org.scoula.event.controller"
 })
 public class ServletConfig implements WebMvcConfigurer {
 
