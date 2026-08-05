@@ -3,6 +3,7 @@ package org.scoula.feed.service;
 import org.scoula.feed.dto.FeedCreateRequestDTO;
 import org.scoula.feed.dto.FeedImageDTO;
 import org.scoula.feed.dto.FeedResponseDTO;
+import org.scoula.feed.dto.FeedUpdateRequestDTO;
 
 import java.util.List;
 
@@ -16,4 +17,8 @@ public interface FeedService {
      FeedResponseDTO delete(int feedId);
 
      FeedImageDTO getImage(int imageId);
+
+    List<FeedResponseDTO> geMemberList(int memberUserId, int userId);
+
+    void updateFeed(FeedUpdateRequestDTO feedUpdateRequestDTO);
 }

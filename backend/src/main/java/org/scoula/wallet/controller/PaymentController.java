@@ -2,6 +2,7 @@ package org.scoula.wallet.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.scoula.analysis.service.PaymentTransactionRecordService;
 import org.scoula.remittance.mapper.RemittanceMapper;
 import org.scoula.wallet.dto.PaymentConfirmRequestDTO;
 import org.scoula.wallet.dto.PaymentConfirmResponseDTO;
@@ -22,6 +23,7 @@ public class PaymentController {
     private final PaymentTokenStore tokenStore;
     private final RemittanceMapper remittanceMapper;
     private final WalletMapper walletMapper;
+    private final PaymentTransactionRecordService paymentTransactionRecordService;
 
     @PostMapping("/confirm")
     @Transactional
@@ -41,8 +43,15 @@ public class PaymentController {
 
         WalletDTO updatedWallet = walletMapper.getByWalletId(tokenDTO.getWalletId());
 
-        String merchant = (request.getMerchantName() != null && !request.getMerchantName().isEmpty())
-                ? request.getMerchantName() : "KB Pay 현장 가맹점";
+        String merchant = (request.getMerchantName() != null && !request.getMerchantName().isBlank())
+                ? request.getMerchantName().trim() : "KB Pay 현장 가맹점";
+
+        // 박준우: 성공한 결제를 카테고리 분류 후 거래 내역으로 저장
+        paymentTransactionRecordService.recordSuccessfulPayment(
+                tokenDTO,
+                request.getAmount(),
+                merchant
+        );
 
         PaymentConfirmResponseDTO response = PaymentConfirmResponseDTO.builder()
                 .status("SUCCESS")

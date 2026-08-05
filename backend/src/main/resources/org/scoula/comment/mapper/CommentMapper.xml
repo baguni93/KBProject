@@ -15,17 +15,17 @@
     </resultMap>
 
     <resultMap id="commentMap" type="org.scoula.comment.domain.CommentVO">
-        <id column="feed_id" property="commentId"/>
+        <id column="comment_id" property="commentId"/>
+        <result column="feed_id" property="feedId"/>
         <result column="user_id" property="userId"/>
-        <result column="target_id" property="content"/>
-        <result column="content" property="updatedAt"/>
+        <result column="content" property="content"/>
         <result column="created_at" property="createdAt"/>
         <result column="updated_at" property="updatedAt"/>
         <association property="writer" resultMap="writerProfileMap"/>
     </resultMap>
 
 
-    <insert id="create">
+    <insert id="create" useGeneratedKeys="true" keyProperty="commentId">
         insert feed_comment_tbl(feed_id, user_id, content) values (#{feedId}, #{userId}, #{content});
     </insert>
 
@@ -52,7 +52,8 @@
 
         from feed_comment_tbl a
             left join profile_tbl b on  a.user_id = b.user_id
-        where comment_id = #{commentId};
+        where comment_id = #{commentId}
+        ORDER by a.created_at desc;
     </select>
 
     <select id="getList" resultMap="commentMap">
@@ -71,7 +72,8 @@
         from feed_comment_tbl a
                  left join profile_tbl b
                      on  a.user_id = b.user_id
-        where feed_id = #{feedId};
+        where feed_id = #{feedId}
+        ORDER by a.created_at desc;
     </select>
 
 </mapper>

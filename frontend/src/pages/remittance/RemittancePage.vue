@@ -470,9 +470,24 @@ const fetchFriends = async () => {
 };
 
 const defaultAccounts = [
-  { bankCode: '088', bankName: '신한은행', accountNumber: '222-002-000001', ownerName: '이KB' },
-  { bankCode: '004', bankName: 'KB국민은행', accountNumber: '110-111-111111', ownerName: '김국민' },
-  { bankCode: '020', bankName: '우리은행', accountNumber: '1002-345-6789', ownerName: '박스타' },
+  {
+    bankCode: '088',
+    bankName: '신한은행',
+    accountNumber: '222-002-000001',
+    ownerName: '이KB',
+  },
+  {
+    bankCode: '004',
+    bankName: 'KB국민은행',
+    accountNumber: '110-111-111111',
+    ownerName: '김국민',
+  },
+  {
+    bankCode: '020',
+    bankName: '우리은행',
+    accountNumber: '1002-345-6789',
+    ownerName: '박스타',
+  },
 ];
 
 const recentAccounts = ref([...defaultAccounts]);
@@ -720,7 +735,9 @@ const confirmTransfer = async () => {
   } catch (err) {
     console.error('Remittance Error:', err);
     isSuccess.value = false;
-    statusMessage.value = err.response?.data?.message || '송금 실패: 출금 잔액 및 입력 정보를 확인해 주세요.';
+    statusMessage.value =
+      err.response?.data?.message ||
+      '송금 실패: 출금 잔액 및 입력 정보를 확인해 주세요.';
   } finally {
     loading.value = false;
   }

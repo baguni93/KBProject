@@ -5,6 +5,7 @@ import lombok.extern.log4j.Log4j2;
 import org.scoula.notification.dto.NotificationRequestDTO;
 import org.scoula.notification.dto.NotificationResponseDTO;
 import org.scoula.notification.service.NotificationService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,13 +32,16 @@ public class NotificationController {
     }
 
 
-    @DeleteMapping("/{notificationId}/read")
-    public ResponseEntity<NotificationResponseDTO> read(@PathVariable int notificationId){
-        return  ResponseEntity.ok(notificationService.read(notificationId));    }
+    @PatchMapping("/{notificationId}/read")
+    public ResponseEntity<HttpStatus> read(@PathVariable int notificationId){
+        notificationService.read(notificationId);
+        return  ResponseEntity.ok(HttpStatus.OK);
+    }
 
-    @DeleteMapping("/read-all")
-    public ResponseEntity<List<NotificationResponseDTO>> allRead(@RequestParam int userId){
-        return  ResponseEntity.ok(notificationService.readAll(userId));
+    @PatchMapping("/read-all")
+    public ResponseEntity<HttpStatus> allRead(@RequestParam int userId){
+        notificationService.readAll(userId);
+        return  ResponseEntity.ok(HttpStatus.OK);
     }
 
 }

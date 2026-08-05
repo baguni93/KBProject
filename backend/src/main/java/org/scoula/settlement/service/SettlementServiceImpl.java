@@ -15,6 +15,7 @@ import org.scoula.settlement.dto.SettlementCreateRequestDTO;
 import org.scoula.settlement.dto.SettlementMemberRequestDTO;
 import org.scoula.settlement.dto.SettlementResponseDTO;
 import org.scoula.settlement.mapper.SettlementMapper;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class SettlementServiceImpl implements SettlementService{
     private final SettlementMapper settlementMapper;
     private final FeedService feedService;
     private final NotificationService notificationService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     @Override
@@ -55,13 +57,29 @@ public class SettlementServiceImpl implements SettlementService{
 
         List<SettlementMemberRequestDTO> members = request.getMembers();
 
+        if(members == null || members.isEmpty()) {
+            throw  new CustomException(ErrorCode.SETTLEMENT_CAN_NOT_CREATE);
         log.info("정산 생성 완료 - ID: {}", settlementVO.getSettlementId());
 
         if (members != null && !members.isEmpty()) {
             createMember(settlementVO, members);
         }
 
-        return get(settlementVO.getSettlementId());
+        createMember(settlementVO, members);
+
+        var settlementResponseDTO = get(settlementVO.getSettlementId());
+
+        for(var member : settlementResponseDTO.getMembers()){
+
+            messagingTemplate.convertAndSendToUser(
+                    String.valueOf(member.getUserId()),
+                    "/queue/settlements",
+                    settlementResponseDTO
+            );
+
+        }
+
+        return settlementResponseDTO;
     }
 
     private void createMember(SettlementVO settlementVO, List<SettlementMemberRequestDTO> members) {
@@ -70,6 +88,12 @@ public class SettlementServiceImpl implements SettlementService{
             SettlementMemberVO settlementMemberVO = SettlementMemberVO.of(settlementVO.getSettlementId(), member);
             settlementMapper.createMember(settlementMemberVO);
 
+            notificationService.createSettlementNotification(
+                    settlementVO.getRequesterId(),
+                    member.getUserId(),
+                    settlementVO.getSettlementId(),
+                    Enum.NotificationType.SETTLEMENT_REQUEST
+            );
             try {
                 notificationService.create(
                         NotificationRequestDTO.builder()
@@ -107,7 +131,7 @@ public class SettlementServiceImpl implements SettlementService{
         if(settlementVO ==null){
             throw new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND);
         }
-        //이미 지불했다. 예외처리
+
 
         boolean isRequest = settlementVO.getMembers().stream()
                 .anyMatch(member ->
@@ -116,12 +140,15 @@ public class SettlementServiceImpl implements SettlementService{
                 );
 
 
+        //이미 지불 -> 예외처리
         if(!isRequest)
         {
             throw  new CustomException(ErrorCode.SETTLEMENT_ALREADY_PAYMENT);
         }
 
         //송금 api 호출
+
+
         //송금 후 정산 완료 처리
         settlementMapper.completeMemberSettlement(settlementId , userId);
 
@@ -133,16 +160,22 @@ public class SettlementServiceImpl implements SettlementService{
             //settlement_tbl 상태 COMPLETE
             settlementMapper.completeSettlement(settlementId);
 
+            notificationService.createSettlementNotification(
+                    settlementVO.getRequesterId(),
+                    settlementVO.getRequesterId(),
+                    settlementVO.getSettlementId(),
+                    Enum.NotificationType.SETTLEMENT_COMPLETE
+            );
+
+
             for(var member :settlementVO.getMembers()) {
 
-                notificationService.create(
-                        NotificationRequestDTO.builder()
-                                .receiverId(member.getUserId())
-                                .senderId(settlementVO.getRequesterId())
-                                .notificationType(Enum.NotificationType.SETTLEMENT_COMPLETE)
-                                .targetId(settlementVO.getSettlementId())
-                                .build()
-                );
+                notificationService.createSettlementNotification(
+                        settlementVO.getRequesterId(),
+                        member.getUserId(),
+                        settlementVO.getSettlementId(),
+                        Enum.NotificationType.SETTLEMENT_COMPLETE
+                        );
             }
 
 
@@ -160,18 +193,54 @@ public class SettlementServiceImpl implements SettlementService{
         else{
 
             //지불한 부분을 요청자에게 알림
-            notificationService.create(
-                    NotificationRequestDTO.builder()
-                            .receiverId(settlementVO.getRequesterId())
-                            .senderId(userId)
-                            .notificationType(Enum.NotificationType.SETTLEMENT_PAYMENT)
-                            .targetId(settlementVO.getSettlementId())
-                            .build()
+            notificationService.createSettlementNotification(
+                    userId,
+                    settlementVO.getRequesterId(),
+                    settlementVO.getSettlementId(),
+                    Enum.NotificationType.SETTLEMENT_PAYMENT
             );
+
+
         }
 
-        return get(settlementId);
 
+        var settlementResponseDTO = get(settlementId);
+
+        messagingTemplate.convertAndSendToUser(
+                String.valueOf(settlementResponseDTO.getRequesterId()),
+                "/queue/settlements",
+                settlementResponseDTO
+        );
+
+
+        if(completed){
+
+            for(var member : settlementResponseDTO.getMembers()){
+
+                messagingTemplate.convertAndSendToUser(
+                        String.valueOf(member.getUserId()),
+                        "/queue/settlements",
+                        settlementResponseDTO
+                );
+
+            }
+        }
+        else{
+
+            for(var member : settlementResponseDTO.getMembers()){
+
+                if(member.getUserId() == userId)
+                    continue;
+
+                messagingTemplate.convertAndSendToUser(
+                        String.valueOf(member.getUserId()),
+                        "/queue/settlements",
+                        settlementResponseDTO
+                );
+            }
+        }
+
+        return settlementResponseDTO;
     }
 
     @Transactional
@@ -209,14 +278,25 @@ public class SettlementServiceImpl implements SettlementService{
 
         for(var member :settlementVO.getMembers()) {
 
-            notificationService.create(
-                    NotificationRequestDTO.builder()
-                            .receiverId(member.getUserId())
-                            .senderId(settlementVO.getRequesterId())
-                            .notificationType(Enum.NotificationType.SETTLEMENT_CANCEL)
-                            .targetId(settlementVO.getSettlementId())
-                            .build()
-            );
+            if(member.getStatus() == Enum.SettlementStatus.COMPLETE){
+
+                //지불한 요청자에게 환불 알림
+                notificationService.createSettlementNotification(
+                        settlementVO.getRequesterId(),
+                        member.getUserId(),
+                        settlementVO.getSettlementId(),
+                        Enum.NotificationType.SETTLEMENT_CANCEL
+                );
+            }
+            else
+            {
+                notificationService.createSettlementNotification(
+                        settlementVO.getRequesterId(),
+                        member.getUserId(),
+                        settlementVO.getSettlementId(),
+                        Enum.NotificationType.SETTLEMENT_CANCEL
+                );
+            }
         }
 
         return true;
@@ -231,15 +311,15 @@ public class SettlementServiceImpl implements SettlementService{
             throw new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND);
         }
 
-        if (settlementVO.getLastReminderDate() != null) {
-            long diff = System.currentTimeMillis() - settlementVO.getLastReminderDate().getTime();
-
-            // 6시간 = 6 * 60 * 60 * 1000
-            if (diff < 6 * 60 * 60 * 1000L) {
-                // 아직 6시간이 지나지 않음
-                throw new CustomException(ErrorCode.SETTLEMENT_CAN_NOT_REMINE);
-            }
-        }
+//        if (settlementVO.getLastReminderDate() != null) {
+//            long diff = System.currentTimeMillis() - settlementVO.getLastReminderDate().getTime();
+//
+//            // 6시간 = 6 * 60 * 60 * 1000
+//            if (diff < 6 * 60 * 60 * 1000L) {
+//                // 아직 6시간이 지나지 않음
+//                throw new CustomException(ErrorCode.SETTLEMENT_CAN_NOT_REMINE);
+//            }
+//        }
 
         var remineMemberList = settlementVO.getMembers().stream()
                 .filter(member ->
@@ -250,14 +330,17 @@ public class SettlementServiceImpl implements SettlementService{
 
         for(var member :remineMemberList){
 
-            notificationService.create(
-                    NotificationRequestDTO.builder()
-                            .receiverId(member.getUserId())
-                            .senderId(settlementVO.getRequesterId())
-                            .notificationType(Enum.NotificationType.SETTLEMENT_REQUEST)
-                            .targetId(settlementVO.getSettlementId())
-                            .build()
-            );
+            if(member.getStatus() != Enum.SettlementStatus.COMPLETE) {
+
+                //지불안한 유저에게 리마인드
+                notificationService.createSettlementNotification(
+                        settlementVO.getRequesterId(),
+                        member.getUserId(),
+                        settlementVO.getSettlementId(),
+                        Enum.NotificationType.SETTLEMENT_REMIND
+                );
+            }
+
         }
 
         return true;

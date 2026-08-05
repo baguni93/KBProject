@@ -17,8 +17,10 @@
         update settlement_tbl set status = 'CANCEL' where  settlement_id = #{settlementId};
     </update>
     <update id="cancelMemberSettlement">
-        update settlement_member_tbl set status = 'CANCEL'
-                              where settlement_id = #{settlementId};
+        update settlement_member_tbl
+        set status =
+                IF(status = 'PAYMENT', 'CANCEL_REFUND', 'CANCEL')
+        where settlement_id = #{settlementId};
     </update>
 
     <select id="isAllMemberCompleted" resultType="java.lang.Boolean">
@@ -194,7 +196,8 @@
                     FROM settlement_member_tbl me
                     WHERE me.settlement_id = a.settlement_id
                       AND me.user_id = #{userId}
-                ) and a.status = 'REQUEST'
+                ) and (a.status = 'REQUEST' or a.status = 'COMPLETE')
+                    ORDER BY created_at Desc;
     </select>
 
 

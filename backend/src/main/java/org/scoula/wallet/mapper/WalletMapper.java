@@ -29,5 +29,13 @@ public interface WalletMapper {
             @Param("amount") Integer amount
     );
 
+    // 박준우: 가맹점 결제 거래 내역 저장
+    int insertPaymentTransaction(
+            @Param("userId") Integer userId,
+            @Param("amount") Integer amount,
+            @Param("merchantName") String merchantName,
+            @Param("spendingCategoryId") Integer spendingCategoryId
+    );
+
     java.util.List<org.scoula.wallet.dto.RegisteredCardDTO> getUserRegisteredCards(@Param("userId") Integer userId);
 }

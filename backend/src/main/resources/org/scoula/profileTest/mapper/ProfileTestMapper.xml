@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scoula.profileTest.mapper.ProfileTestMapper">
+
+    <select id="get" resultType="org.scoula.profileTest.domain.ProfileVO">
+
+        select profile_id,
+               user_id,
+               nickname,
+               introduction,
+               stored_name as imageName
+
+        from profile_tbl where user_id = #{userId};
+
+    </select>
+</mapper>

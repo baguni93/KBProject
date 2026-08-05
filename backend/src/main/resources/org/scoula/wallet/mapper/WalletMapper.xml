@@ -79,6 +79,31 @@
           AND wallet_status = 'ACTIVE'
     </update>
 
+    <!-- 박준우: 가맹점 결제 거래 내역 저장 -->
+    <insert id="insertPaymentTransaction">
+
+        INSERT INTO financial_transaction_tbl (
+            user_id,
+            transaction_type,
+            source_type,
+            target_type,
+            transaction_status,
+            amount,
+            merchant_name,
+            spending_category_id
+        )
+        VALUES (
+                   #{userId},
+                   'PAYMENT',
+                   'WALLET',
+                   'ACCOUNT',
+                   'SUCCESS',
+                   #{amount},
+                   #{merchantName},
+                   #{spendingCategoryId}
+               )
+
+    </insert>
     <!-- 등록 카드 목록 -->
     <select id="getUserRegisteredCards" resultType="org.scoula.wallet.dto.RegisteredCardDTO">
         SELECT

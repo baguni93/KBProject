@@ -1,8 +1,12 @@
 <template>
-  <div>정산 피드</div>
+  <!-- <FeedTags
+    v-if="feed.settlement?.category.categoryName"
+    :categoryName="feed.settlement.category.categoryName"
+  /> -->
 </template>
 
 <script setup>
+import FeedTags from '../FeedTags.vue';
 defineProps({
   feed: {
     type: Object,

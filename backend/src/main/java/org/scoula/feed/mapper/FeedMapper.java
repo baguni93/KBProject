@@ -1,5 +1,6 @@
 package org.scoula.feed.mapper;
 
+import org.apache.ibatis.annotations.Param;
 import org.scoula.feed.domain.*;
 import org.scoula.settlement.domain.SettlementVO;
 
@@ -22,10 +23,16 @@ public interface FeedMapper {
 
     TransactionVO getTransaction(int targetId);
 
-
     CardVO getCard(int targetId);
 
     AnalysisVO getAnalysis(int targetId);
 
     EventVO getEvent(int targetId);
+
+    List<FeedVO> geMemberList(@Param("memberUserId") int memberUserId,
+                              @Param("userId") int userId);
+
+    void deleteImage(Integer imageId);
+
+    void update(FeedVO vo);
 }

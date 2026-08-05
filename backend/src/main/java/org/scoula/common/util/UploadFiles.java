@@ -101,4 +101,24 @@ public class UploadFiles {
         }
     }
 
+    public static String uploadAndGetFileName(String baseDir, MultipartFile part) throws IOException {
+
+        File base = new File(baseDir);
+
+        if (!base.exists()) {
+            base.mkdirs();
+        }
+
+        // 고유 파일명 생성
+        String fileName = UploadFileName.getUniqueName(part.getOriginalFilename());
+
+        // 저장 파일 객체 생성
+        File dest = new File(baseDir, fileName);
+
+        // 실제 파일 저장
+        part.transferTo(dest);
+
+        // 저장된 파일 경로 반환
+        return fileName;
+    }
 }

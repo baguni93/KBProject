@@ -21,6 +21,7 @@ public enum ErrorCode {
     SETTLEMENT_CAN_NOT_CANCEL(HttpStatus.NOT_FOUND, "S002", "정산 요청을 취소할 수 없습니다."),
     SETTLEMENT_ALREADY_PAYMENT(HttpStatus.NOT_FOUND, "S003", "이미 지불한 맴버입니다."),
     SETTLEMENT_CAN_NOT_REMINE(HttpStatus.NOT_FOUND, "S004", "리마인드 알림을 할 수 없습니다."),
+    SETTLEMENT_CAN_NOT_CREATE(HttpStatus.NOT_FOUND, "S005", "맴버 없이는 정산요청 할 수 없습니다."),
 
     //Friend Request
     FRIEND_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "FR001", "친구 요청을 찾을 수 없습니다."),
@@ -37,9 +38,18 @@ public enum ErrorCode {
     // Wallet
     INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "W001", "잔액이 부족합니다."),
 
+    //Notification
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "N001", "알림을 찾을 수 없습니다."),
     // Analysis
-    INVALID_ANALYSIS_PERIOD(HttpStatus.BAD_REQUEST,"AN001","분석 기간은 1개월, 3개월, 12개월 중 하나여야 합니다.");
-
+    INVALID_ANALYSIS_PERIOD(HttpStatus.BAD_REQUEST,"AN001","분석 기간은 1개월, 3개월, 12개월 중 하나여야 합니다."),
+    SPENDING_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND,"AN002","존재하지 않는 소비 카테고리입니다."),
+    CLASSIFICATION_TRANSACTION_NOT_FOUND(HttpStatus.NOT_FOUND, "AN003", "분류할 수 있는 결제 거래를 찾을 수 없습니다."),
+    ANALYSIS_TRANSACTION_COUNT_NOT_ENOUGH(HttpStatus.BAD_REQUEST,"AN004","소비 분석을 위해 분류 완료된 결제 거래가 10건 이상 필요합니다."),
+    ANALYSIS_TOTAL_AMOUNT_ZERO(HttpStatus.BAD_REQUEST,"AN005","분석할 수 있는 소비 금액이 없습니다."),
+    ANALYSIS_RESULT_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR,"AN006","소비 분석 결과 저장에 실패했습니다."),
+    ANALYSIS_RESULT_NOT_FOUND(HttpStatus.NOT_FOUND,"AN007","소비 분석 결과를 찾을 수 없습니다."),
+    ANALYSIS_AGREEMENT_NOT_CONFIGURED(HttpStatus.INTERNAL_SERVER_ERROR,"AN008","소비 분석 약관이 설정되어 있지 않습니다."),
+    ANALYSIS_REQUIRED_AGREEMENT_MISSING(HttpStatus.BAD_REQUEST,"AN009","필수 소비 분석 약관에 동의해야 합니다.");
 
     private final HttpStatus status;
     private final String code;

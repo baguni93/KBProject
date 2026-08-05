@@ -26,9 +26,6 @@ public class FeedCreateRequestDTO  {
     @Builder.Default // 사용자가 form에서 업로드한 실제 파일 목록
     private List<MultipartFile> files = new ArrayList<>();
 
-//    public Enum.FeedType getType(){
-//        return feedType;
-//    }
 
     public FeedVO toVo(){
         return FeedVO.builder()

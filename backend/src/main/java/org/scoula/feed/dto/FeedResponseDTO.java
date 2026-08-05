@@ -36,6 +36,7 @@ public class FeedResponseDTO {
 
     // 통계
     private int likeCount;
+    private boolean liked;
     private int commentCount;
 
     // 사용자 정보
@@ -65,7 +66,6 @@ public class FeedResponseDTO {
             .visibility(feedVO.getVisibility())
             .createdAt(feedVO.getCreatedAt())
             .updatedAt(feedVO.getUpdatedAt())
-            .likeCount(feedVO.getStat().getLikeCount())
             .commentCount(feedVO.getStat().getCommentCount())
             .sender(feedVO.getSender())
             .settlement(feedVO.getSettlement())

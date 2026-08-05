@@ -1,10 +1,7 @@
 package org.scoula.friend.service;
 
 import org.scoula.friend.domain.FriendRequestVO;
-import org.scoula.friend.dto.FriendCreateRequestDTO;
-import org.scoula.friend.dto.FriendRequestCreateRequestDTO;
-import org.scoula.friend.dto.FriendRequestResponseDTO;
-import org.scoula.friend.dto.FriendResponseDTO;
+import org.scoula.friend.dto.*;
 
 import java.util.List;
 
@@ -18,13 +15,17 @@ public interface FriendService {
 
     FriendRequestResponseDTO createRequest(FriendRequestCreateRequestDTO request);
 
-    FriendRequestResponseDTO acceptRequest(int requestId);
+    void acceptRequest(int requestId);
 
-    FriendRequestResponseDTO cancelRequest(int requestId);
+    void cancelRequest(int requestId);
 
-    FriendRequestResponseDTO rejectRequest(int requestId);
+    void rejectRequest(int requestId);
 
     FriendRequestResponseDTO getRequest(int requestId);
 
     FriendResponseDTO getFriend(int friendId);
+
+    List<FriendRequestResponseDTO> getsendRequestList(int userId);
+
+    FriendStatusResponseDTO getFriendStatus(int checkUserId, int userId);
 }

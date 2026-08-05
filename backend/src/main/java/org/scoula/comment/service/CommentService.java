@@ -9,7 +9,7 @@ public interface CommentService {
     CommentResponseDTO create(CommentRequestDTO commentRequestDTO);
     CommentResponseDTO get(int commentId , int userId);
 
-    List<CommentResponseDTO> getList(int feedId , int userId);
+    List<CommentResponseDTO> getList(int feedId);
 
     void delete(int commentId);
 
