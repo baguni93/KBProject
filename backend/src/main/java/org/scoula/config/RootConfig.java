@@ -15,7 +15,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.sql.DataSource;
 
 @Configuration
-@Import(OpenAIConfig.class)
+@Import({OpenAIConfig.class,
+        RedisConfig.class})
 @PropertySource({
         "classpath:/application.properties",
         "classpath:/secret.properties"
