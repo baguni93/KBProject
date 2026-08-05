@@ -7,6 +7,7 @@ import org.scoula.remittance.dto.RemittanceDTO;
 import org.scoula.remittance.service.RemittanceService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -74,8 +75,14 @@ public class RemittanceController {
 
     // remit-003: 송금 최종 실행 (POST /api/remittances)
     @PostMapping
-    public ResponseEntity<RemittanceDTO> sendMoney(@RequestBody RemittanceDTO remittanceDTO) {
-        log.info("송금 최종 실행 요청 데이터: " + remittanceDTO);
+    public ResponseEntity<RemittanceDTO> sendMoney(
+            @ModelAttribute RemittanceDTO remittanceDTO,
+            @RequestParam(value = "files", required = false) MultipartFile... files) {
+        System.out.println("========== [송금 컨트롤러 디버그] 수신된 files 배열: " + (files != null ? files.length + "개" : "null"));
+        if (files != null && files.length > 0) {
+            remittanceDTO.setFiles(java.util.Arrays.asList(files));
+        }
+        log.info("송금 최종 실행 요청 데이터: " + remittanceDTO + ", 첨부파일 개수: " + (files != null ? files.length : 0));
 
         boolean result = remittanceService.sendMoney(remittanceDTO);
         if (result) {

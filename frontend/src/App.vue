@@ -1,12 +1,6 @@
 <template>
   <DefaultLayout :show-bottom-nav="showBottomNav">
-    <!-- v-slot을 사용하여 현재 라우트의 컴포넌트를 직접 제어합니다 -->
-    <RouterView v-slot="{ Component }">
-      <!-- mode="out-in"으로 이전 페이지가 완전히 사라진 후 새 페이지가 나타나게 합니다 -->
-      <transition name="fade" mode="out-in">
-        <component :is="Component" />
-      </transition>
-    </RouterView>
+    <RouterView />
   </DefaultLayout>
 </template>
 
@@ -21,7 +15,7 @@ import { useSettlementStore } from '@/stores/settlement';
 const route = useRoute();
 
 const showBottomNav = computed(() => {
-  return route.meta.showBottomNav == true;
+  return route.meta.showBottomNav === true;
 });
 
 const settlementStore = useSettlementStore();
@@ -48,23 +42,21 @@ client.onDisconnect = () => {
 };
 
 onMounted(() => {
-  client.activate();
+  try {
+    client.activate();
+  } catch (e) {
+    console.log('WS activation bypass');
+  }
 });
 
 onUnmounted(() => {
-  client.deactivate();
+  try {
+    client.deactivate();
+  } catch (e) {
+    console.log('WS deactivation bypass');
+  }
 });
 </script>
 
 <style scoped>
-/* 부드러운 투명도 전환 애니메이션 효과 정의 */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.08s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
 </style>

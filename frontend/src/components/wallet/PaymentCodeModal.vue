@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!-- PIN 6자리 인증 모달 -->
+    <!-- PIN 인증 모달 -->
     <PinAuthModal
       :show="!isPinVerified"
       :userId="userId"
@@ -8,20 +8,23 @@
       @success="handlePinSuccess"
     />
 
-    <!-- PIN 인증 성공 시 결제 코드 모달 활성화 -->
-    <div v-if="isPinVerified" class="modal-backdrop" @click.self="$emit('close')">
-      <div class="modal-card bg-white rounded-4 shadow-lg overflow-hidden animate__animated animate__fadeInUp">
+    <!-- 결제 코드 바텀 시트 모달 -->
+    <div v-if="isPinVerified" class="bottom-sheet-backdrop" @click.self="$emit('close')">
+      <div class="bottom-sheet-content bg-white shadow-2xl overflow-hidden animate-slide-up">
+        <!-- 드래그 핸들 바 -->
+        <div class="sheet-handle-bar my-2 mx-auto rounded-pill" @click="$emit('close')"></div>
+
         <!-- 헤더 -->
-        <div class="bg-dark text-white p-3 d-flex justify-content-between align-items-center">
+        <div class="px-4 py-3 d-flex justify-content-between align-items-center border-bottom">
           <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-warning text-dark fw-bold px-2 py-1">KB Pay</span>
-            <h6 class="fw-bold mb-0">1회용 보안 결제 코드</h6>
+            <span class="badge bg-dark text-warning font-outfit px-2.5 py-1 fw-bold rounded-pill">KB Pay</span>
+            <h5 class="fw-extrabold mb-0 text-dark font-outfit">1회용 보안 결제 코드</h5>
           </div>
-          <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
+          <button type="button" class="btn-close shadow-none" @click="$emit('close')"></button>
         </div>
 
         <div class="p-4 text-center">
-          <!-- 탭 버튼 (바코드 / QR코드) -->
+          <!-- 탭 버튼 -->
           <div class="btn-group w-100 mb-3" role="group">
             <button
               type="button"
@@ -93,7 +96,7 @@
 
           <!-- 하단 안내 문구 -->
           <p class="text-muted small mb-0" style="font-size: 0.75rem;">
-            <i class="bi bi-shield-check text-warning me-1"></i> 1회용 결제 코드는 3분 후 자동 소멸됩니다.
+            <i class="bi bi-shield-check text-warning me-1"></i> 1회용 결제 코드는 1분 후 자동 소멸됩니다.
           </p>
         </div>
       </div>
@@ -116,7 +119,7 @@ defineEmits(['close']);
 const isPinVerified = ref(false);
 const activeTab = ref(props.initialTab || 'barcode');
 const rawCode = ref('');
-const timeLeft = ref(180);
+const timeLeft = ref(60);
 
 let timerInterval = null;
 
@@ -150,7 +153,7 @@ const fetchServerToken = async () => {
 
     if (data && data.token) {
       rawCode.value = data.token;
-      timeLeft.value = data.expiresInSeconds || 180;
+      timeLeft.value = data.expiresInSeconds || 60;
     }
   } catch (e) {
     console.error('Token fetch error:', e);
@@ -251,23 +254,49 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.modal-backdrop {
+.bottom-sheet-backdrop {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   z-index: 1060;
-  padding: 16px;
 }
-.modal-card {
+
+.bottom-sheet-content {
   width: 100%;
-  max-width: 400px;
+  max-width: 480px;
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+  padding-bottom: 24px;
 }
+
+.sheet-handle-bar {
+  width: 40px;
+  height: 5px;
+  background: #CBD5E1;
+  cursor: pointer;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .barcode-svg {
   width: 100%;
   max-width: 280px;

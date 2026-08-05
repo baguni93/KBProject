@@ -34,4 +34,6 @@ public interface RemittanceMapper {
     List<BankDTO> getBankList();
 
     List<RecentAccountDTO> getRecentAccounts(@Param("userId") Integer userId, @Param("limit") int limit);
+
+    int insertFeedImage(@Param("feedId") int feedId, @Param("imageName") String imageName);
 }

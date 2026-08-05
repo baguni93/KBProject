@@ -52,11 +52,11 @@ const query = {
 };
 
 const visibleSettlements = computed(() => {
-  return settlementStore.activeSettlements.slice(0, 3);
+  return (settlementStore.activeSettlements || []).slice(0, 3);
 });
 
 const remainingCount = computed(() => {
-  return Math.max(settlementStore.activeSettlements.length - 3, 0);
+  return Math.max((settlementStore.activeSettlements || []).length - 3, 0);
 });
 
 const goSettlementList = () => {

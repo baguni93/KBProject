@@ -34,6 +34,7 @@ import org.springframework.web.servlet.config.annotation.*;
         "org.scoula.pointwallet.controller",
         "org.scoula.pointwallet.exception",
         "org.scoula.settlement.controller",
+        "org.scoula.dutchpay.controller",
         "org.scoula.notification.controller",
         "org.scoula.friend.controller",
         "org.scoula.comment.controller",
@@ -52,7 +53,8 @@ import org.springframework.web.servlet.config.annotation.*;
         "org.scoula.notifsetting.controller",
         "org.scoula.card.controller",
 
-        "org.scoula.event.controller"
+        "org.scoula.event.controller",
+        "org.scoula.cardpayment.controller"
 })
 public class ServletConfig implements WebMvcConfigurer {
 

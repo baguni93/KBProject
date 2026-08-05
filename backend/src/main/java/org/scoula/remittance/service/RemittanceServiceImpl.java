@@ -2,6 +2,9 @@ package org.scoula.remittance.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.scoula.common.util.Enum;
+import org.scoula.feed.dto.FeedCreateRequestDTO;
+import org.scoula.feed.service.FeedService;
 import org.scoula.remittance.dto.BankDTO;
 import org.scoula.remittance.dto.BankRemittanceInfoDTO;
 import org.scoula.remittance.dto.RecentAccountDTO;
@@ -20,6 +23,7 @@ import java.util.List;
 public class RemittanceServiceImpl implements RemittanceService {
 
     private final RemittanceMapper remittanceMapper;
+    private final FeedService feedService;
 
     @Override
     @Transactional
@@ -55,6 +59,10 @@ public class RemittanceServiceImpl implements RemittanceService {
                     remittanceDTO.getAccountNumber(),
                     amount
             );
+            // 계좌 송금인 경우 피드 INNER JOIN 바인딩을 위해 receiverId 기본값 지정
+            if (remittanceDTO.getReceiverId() == null) {
+                remittanceDTO.setReceiverId(walletId);
+            }
         } else {
             remittanceMapper.addBalance(
                     remittanceDTO.getReceiverId(),
@@ -62,36 +70,60 @@ public class RemittanceServiceImpl implements RemittanceService {
             );
         }
 
-        // 4. 송금 거래 내역 기록
+        // 4. 송금 거래 내역 기록 (financial_transaction_tbl INSERT)
         remittanceDTO.setStatus("SUCCESS");
         remittanceMapper.insertRemittance(remittanceDTO);
 
-        // 5. 피드 내역 저장 (feed_tbl chk_feed_type 제약조건: 'TRANSFER', 'PAYMENT', 'SETTLEMENT', 'SHARE' 만 허용됨)
-        String rawFeedType = remittanceDTO.getFeedType();
-        String feedType = "TRANSFER";
-        if (rawFeedType != null && !rawFeedType.isEmpty() && !"REMITTANCE".equalsIgnoreCase(rawFeedType)) {
-            feedType = rawFeedType.toUpperCase();
+        // 5. 계좌이체(ACCOUNT)가 아닌 친구/지갑 송금인 경우에만 FeedService.create() 피드 및 이미지 등록
+        org.scoula.feed.dto.FeedResponseDTO feedRes = null;
+        if (!"ACCOUNT".equalsIgnoreCase(remittanceDTO.getReceiverType())) {
+            String content = (remittanceDTO.getContent() != null && !remittanceDTO.getContent().isEmpty())
+                    ? remittanceDTO.getContent() : (remittanceDTO.getMemo() != null ? remittanceDTO.getMemo() : "송금 완료");
+
+            if (content.length() > 20) {
+                content = content.substring(0, 20);
+            }
+
+            Enum.VisibilityType visibility = Enum.VisibilityType.PUBLIC;
+            if ("FRIENDS".equalsIgnoreCase(remittanceDTO.getVisibility()) || "FRIEND".equalsIgnoreCase(remittanceDTO.getVisibility())) {
+                visibility = Enum.VisibilityType.FRIEND;
+            } else if ("PRIVATE".equalsIgnoreCase(remittanceDTO.getVisibility())) {
+                visibility = Enum.VisibilityType.PRIVATE;
+            }
+
+            FeedCreateRequestDTO feedRequest = FeedCreateRequestDTO.builder()
+                    .userId(walletId)
+                    .targetId(remittanceDTO.getTransactionId()) // 생성된 송금 거래 PK (target_id)
+                    .feedType(Enum.FeedType.TRANSFER)
+                    .content(content)
+                    .visibility(visibility)
+                    .build();
+
+            feedRes = feedService.create(feedRequest);
+            System.out.println("========== [송금 디버그] feedService.create() 완료, feedRes: " + feedRes);
+
+            if (feedRes != null && remittanceDTO.getFiles() != null && !remittanceDTO.getFiles().isEmpty()) {
+                for (org.springframework.web.multipart.MultipartFile part : remittanceDTO.getFiles()) {
+                    if (part == null || part.isEmpty()) {
+                        System.out.println("========== [송금 디버그] MultipartFile part가 empty 상태입니다.");
+                        continue;
+                    }
+                    try {
+                        String uploadPath = org.scoula.common.util.UploadFiles.upload(org.scoula.common.util.UploadPathName.getFeedPath(), part);
+                        String savedFileName = new java.io.File(uploadPath).getName();
+                        int insertedRow = remittanceMapper.insertFeedImage(feedRes.getFeedId(), savedFileName);
+                        System.out.println("========== [송금 디버그] remittanceMapper.insertFeedImage 실행 결과 row: " + insertedRow + ", FeedID: " + feedRes.getFeedId() + ", File: " + savedFileName);
+                        log.info("송금 피드 이미지 DB 입력 성공 - FeedID: {}, Image: {}", feedRes.getFeedId(), savedFileName);
+                    } catch (Exception imgE) {
+                        System.out.println("========== [송금 디버그] 이미지 저장 중 예외 발생!");
+                        imgE.printStackTrace();
+                        log.error("송금 이미지 저장 예외 발생 (송금 거래는 유지): ", imgE);
+                    }
+                }
+            }
         }
 
-        String visibility = (remittanceDTO.getVisibility() != null && !remittanceDTO.getVisibility().isEmpty())
-                ? remittanceDTO.getVisibility() : "PUBLIC";
-        String content = (remittanceDTO.getContent() != null && !remittanceDTO.getContent().isEmpty())
-                ? remittanceDTO.getContent() : (remittanceDTO.getMemo() != null ? remittanceDTO.getMemo() : "송금 완료");
-
-        // feed_tbl content는 VARCHAR(20)이므로 20자 초과 시 잘라내기
-        if (content.length() > 20) {
-            content = content.substring(0, 20);
-        }
-
-        remittanceMapper.insertFeed(
-                walletId,
-                remittanceDTO.getTransactionId(),
-                feedType,
-                content,
-                visibility
-        );
-
-        log.info("송금 완료 및 피드 등록 성공 - 거래 ID: {}, feedType: {}, 피드 내용: {}", remittanceDTO.getTransactionId(), feedType, content);
+        log.info("송금 완료 처리 성공 - 거래 ID: {}", remittanceDTO.getTransactionId());
         return true;
     }
 

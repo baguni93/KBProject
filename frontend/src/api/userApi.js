@@ -14,6 +14,6 @@ export const signup = async (signupData) => {
 
 // PIN 재설정
 export const resetPin = async (pinData) => {
-    const { data } = await api.patch('/api/users/pin/reset', pinData);
+    const { data } = await api.patch('/api/auth/pin/reset', pinData);
     return data;
 };

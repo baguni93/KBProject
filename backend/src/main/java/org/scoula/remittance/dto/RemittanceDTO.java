@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,4 +30,8 @@ public class RemittanceDTO {
     private String feedType;    // REMITTANCE
     private String content;     // 피드 내용
     private String visibility;  // PUBLIC, FRIENDS, PRIVATE
+
+    // 피드 사진 첨부용 필드 (JSON 직렬화 시 InputStream 오류 방지)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private List<MultipartFile> files;
 }

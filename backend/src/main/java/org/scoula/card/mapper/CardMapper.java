@@ -1,10 +1,12 @@
 package org.scoula.card.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.scoula.card.domain.LinkedCardVO;
 
 import java.util.List;
 
+@Mapper
 public interface CardMapper {
 
     // 연결 카드 목록 조회

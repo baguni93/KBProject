@@ -1,15 +1,17 @@
 <template>
-  <div class="login-page">
-    <main class="login-container">
-      <button class="back-button" type="button" @click="goBack">&lt;</button>
+  <div class="login-page animate-fade-in-up">
+    <main class="login-container shadow-2xl">
+      <button class="back-button" type="button" @click="goBack">
+        <i class="bi bi-chevron-left fs-4 text-dark"></i>
+      </button>
 
       <header class="login-header">
-        <div class="login-icon">
-          <span>₩</span>
+        <div class="login-icon pulse-glow">
+          <span class="font-outfit">KB</span>
         </div>
 
-        <h1>간편 로그인</h1>
-        <p>간편비밀번호를 입력해 주세요.</p>
+        <h2 class="fw-extrabold text-dark font-outfit">KB Pay 간편 로그인</h2>
+        <p class="text-secondary small font-outfit">등록하신 6자리 간편비밀번호를 입력해주세요.</p>
       </header>
 
       <section class="pin-section">
@@ -28,7 +30,7 @@
               filled: pinPassword.length >= index,
               active: pinPassword.length === index - 1 && !errorMessage,
             }"
-              class="pin-box"
+              class="pin-box shadow-sm"
           >
             <span v-if="pinPassword.length >= index" class="pin-dot"></span>
           </div>
@@ -46,36 +48,38 @@
           />
         </div>
 
-        <button class="forgot-button" type="button" @click="goPinReset">
+        <button class="forgot-button font-outfit" type="button" @click="goPinReset">
           간편비밀번호를 잊으셨나요?
         </button>
 
-        <p v-if="errorMessage" class="error-message">
+        <p v-if="errorMessage" class="error-message fw-bold">
           {{ errorMessage }}
         </p>
       </section>
 
-      <section class="security-area">
-        <div class="security-icon">✓</div>
+      <section class="security-area border-0 shadow-sm">
+        <div class="security-icon">
+          <i class="bi bi-shield-lock-fill"></i>
+        </div>
 
         <div>
-          <strong>안전하게 보호되고 있어요</strong>
-          <p>입력한 간편비밀번호는 화면에 표시되지 않아요.</p>
+          <strong class="font-outfit">금융종단간 암호화 세션 보호</strong>
+          <p>입력하시는 비밀번호는 이중 보안 처리되어 안전합니다.</p>
         </div>
       </section>
 
       <button
-          class="login-button"
+          class="login-button font-outfit shadow-md"
           :disabled="pinPassword.length !== 6 || loading"
           type="button"
           @click="login"
       >
-        {{ loading ? '로그인 중...' : '로그인' }}
+        {{ loading ? '보안 인증 확인 중...' : '로그인' }}
       </button>
 
       <div v-if="loading" class="loading-overlay">
         <div class="loading-spinner"></div>
-        <span>로그인하고 있어요.</span>
+        <span class="fw-bold font-outfit">안전하게 로그인하고 있습니다...</span>
       </div>
     </main>
   </div>
@@ -135,7 +139,7 @@ const login = async () => {
 
     signupStore.reset();
 
-    router.replace('/');
+    router.replace('/wallet');
   } catch (error) {
     console.error(error);
     pinPassword.value = '';
@@ -174,10 +178,10 @@ watch(pinPassword, (value) => {
 .login-page {
   display: flex;
   justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
-  overflow: auto;
+  align-items: center;
+  min-height: calc(100vh - 70px);
+  padding: 24px 16px;
+  background: #F1F5F9;
 }
 
 .login-container {
@@ -185,10 +189,13 @@ watch(pinPassword, (value) => {
   display: flex;
   flex: none;
   flex-direction: column;
-  width: 390px;
-  height: 844px;
-  padding: 26px 28px 30px;
+  width: 100%;
+  max-width: 400px;
+  min-height: 680px;
+  padding: 32px 28px 32px;
   background: #ffffff;
+  border-radius: 32px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
 
@@ -197,14 +204,11 @@ watch(pinPassword, (value) => {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #555555;
-  font-size: 28px;
-  line-height: 1;
   cursor: pointer;
 }
 
 .login-header {
-  margin-top: 58px;
+  margin-top: 24px;
   text-align: center;
 }
 
@@ -214,33 +218,17 @@ watch(pinPassword, (value) => {
   height: 68px;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 24px;
+  margin: 0 auto 20px;
   border-radius: 22px;
-  background: linear-gradient(145deg, #ffc744, #ffb00f);
-  box-shadow: 0 14px 28px rgba(255, 181, 22, 0.25);
-  color: #ffffff;
-  font-size: 34px;
-  font-weight: 800;
-}
-
-.login-header h1 {
-  margin: 0;
+  background: linear-gradient(135deg, #FFBC00 0%, #FF9900 100%);
+  box-shadow: 0 14px 28px rgba(255, 188, 0, 0.35);
   color: #111111;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
-  letter-spacing: -0.6px;
-}
-
-.login-header p {
-  margin: 16px 0 0;
-  color: #777777;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 1.55;
 }
 
 .pin-section {
-  margin-top: 52px;
+  margin-top: 36px;
   text-align: center;
 }
 

@@ -16,4 +16,7 @@ public interface WalletService {
 
     // 부족금 자동 충전 처리 (POST /api/wallets/auto-charge)
     WalletChargeDTO autoChargeWallet(WalletChargeDTO chargeDTO);
+
+    // 회원 등록 실물 카드 목록 조회
+    java.util.List<org.scoula.wallet.dto.RegisteredCardDTO> getUserRegisteredCards(Integer userId);
 }
