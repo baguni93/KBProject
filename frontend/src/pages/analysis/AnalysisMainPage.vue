@@ -2,13 +2,13 @@
   <div class="kb-mobile-page analysis-page">
     <header class="kb-app-header">
       <span></span>
-      <h1 class="kb-app-header__title">내 소비 분석</h1>
+      <h1 class="kb-app-header__title">최근 소비 분석 결과</h1>
       <span></span>
     </header>
 
     <div
-      v-if="message"
-      :class="[
+        v-if="message"
+        :class="[
         'kb-toast',
         messageType === 'info' ? 'kb-toast--info' : 'kb-toast--error',
       ]"
@@ -18,12 +18,12 @@
 
     <nav class="period-tabs" aria-label="소비 분석 기간">
       <button
-        v-for="periodOption in ANALYSIS_PERIODS"
-        :key="periodOption.value"
-        type="button"
-        :class="{ active: selectedPeriod === periodOption.value }"
-        :disabled="pageLoading"
-        @click="changePeriod(periodOption.value)"
+          v-for="periodOption in ANALYSIS_PERIODS"
+          :key="periodOption.value"
+          type="button"
+          :class="{ active: selectedPeriod === periodOption.value }"
+          :disabled="pageLoading"
+          @click="changePeriod(periodOption.value)"
       >
         {{ periodOption.label }}
       </button>
@@ -50,8 +50,8 @@
       <section class="summary-card kb-card">
         <div class="donut-column">
           <AnalysisDonutChart
-            :categories="sortedCategories"
-            :total-amount="latestAnalysis.totalSpendingAmount"
+              :categories="sortedCategories"
+              :total-amount="latestAnalysis.totalSpendingAmount"
           />
         </div>
 
@@ -59,8 +59,8 @@
           <span>대표 소비 카테고리</span>
           <div class="representative-name">
             <span
-              class="representative-icon"
-              :style="{
+                class="representative-icon"
+                :style="{
                 backgroundColor: `${representativeColor}20`,
                 color: representativeColor,
               }"
@@ -87,7 +87,10 @@
           </div>
           <div>
             <span>분석 기간</span>
-            <strong>{{ formatAnalysisPeriodRange(latestAnalysis.createdAt, latestAnalysis.analysisPeriod || selectedPeriod) }}</strong>
+            <strong class="summary-period-range">
+              <span>{{ formatAnalysisExecutionDate(latestAnalysis.analysisStartDate, false) }}</span>
+              <span>~ {{ formatAnalysisExecutionDate(latestAnalysis.analysisEndDate, false) }}</span>
+            </strong>
           </div>
         </div>
 
@@ -95,8 +98,14 @@
           <button type="button" class="kb-outline-button" @click="goToResult">
             상세 분석 보기
           </button>
-          <button type="button" class="kb-primary-button" @click="goToCheck">
-            다시 분석하기
+          <button
+              type="button"
+              class="kb-primary-button analysis-action-button"
+              :disabled="analysisRunning"
+              @click="goToCheck"
+          >
+            <span>{{ analysisRunning ? '분석 중' : '다시 분석하기' }}</span>
+            <span v-if="analysisRunning" class="button-spinner" aria-hidden="true"></span>
           </button>
         </div>
       </section>
@@ -111,13 +120,13 @@
 
         <div class="category-breakdown kb-card">
           <div
-            v-for="(category, index) in sortedCategories.slice(0, 5)"
-            :key="category.spendingCategoryId"
-            class="category-row"
+              v-for="(category, index) in sortedCategories.slice(0, 5)"
+              :key="category.spendingCategoryId"
+              class="category-row"
           >
             <div
-              class="category-icon"
-              :style="{
+                class="category-icon"
+                :style="{
                 backgroundColor: `${categoryColor(category, index)}20`,
                 color: categoryColor(category, index),
               }"
@@ -131,7 +140,7 @@
               </div>
               <div class="ratio-track">
                 <span
-                  :style="{
+                    :style="{
                     width: `${Math.min(Number(category.spendingRatio), 100)}%`,
                     backgroundColor: categoryColor(category, index),
                   }"
@@ -151,9 +160,15 @@
       <div class="empty-analysis__icon"><i class="fa-solid fa-chart-pie"></i></div>
       <span>{{ selectedPeriod }}개월</span>
       <h2>아직 저장된 소비 분석 결과가 없어요</h2>
-      <p>현재 소비내역이 분석 가능한 상태인지 확인한 뒤<br />새로운 분석을 시작해 보세요.</p>
-      <button type="button" class="kb-primary-button" @click="goToCheck">
-        {{ selectedPeriod }}개월 소비 분석하기
+      <p>현재 소비내역이 분석 가능한 상태인지 확인한 뒤<br/>새로운 분석을 시작해 보세요.</p>
+      <button
+          type="button"
+          class="kb-primary-button analysis-action-button"
+          :disabled="analysisRunning"
+          @click="goToCheck"
+      >
+        <span>{{ analysisRunning ? '분석 중' : `${selectedPeriod}개월 소비 분석하기` }}</span>
+        <span v-if="analysisRunning" class="button-spinner" aria-hidden="true"></span>
       </button>
     </section>
 
@@ -171,9 +186,9 @@
         </div>
         <div v-else-if="recentTransactions.length">
           <div
-            v-for="transaction in recentTransactions"
-            :key="transaction.transactionId"
-            class="spending-row"
+              v-for="transaction in recentTransactions"
+              :key="transaction.transactionId"
+              class="spending-row"
           >
             <div class="spending-icon">
               <i :class="getCategoryIcon(transaction.parentCategoryName || transaction.categoryName)"></i>
@@ -200,15 +215,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import {computed, onBeforeUnmount, onMounted, ref} from 'vue';
+import {useRoute, useRouter} from 'vue-router';
 import AnalysisDonutChart from '@/components/analysis/AnalysisDonutChart.vue';
 import analysisApi from '@/api/analysisApi';
 import {
   ANALYSIS_PERIODS,
   formatAnalysisExecutionDate,
   formatAnalysisNumber,
-  formatAnalysisPeriodRange,
   getAnalysisCategoryColor,
   getAnalysisErrorMessage,
   getCategoryIcon,
@@ -225,24 +239,26 @@ const latestLoading = ref(false);
 const transactionsLoading = ref(false);
 const message = ref('');
 const messageType = ref('error');
+const analysisRunning = ref(false);
+let statusTimer = null;
 
 const pageLoading = computed(() => latestLoading.value);
 const sortedCategories = computed(() =>
-  [...(latestAnalysis.value?.categories ?? [])].sort(
-    (left, right) =>
-      Number(right.spendingAmount ?? 0) - Number(left.spendingAmount ?? 0),
-  ),
+    [...(latestAnalysis.value?.categories ?? [])].sort(
+        (left, right) =>
+            Number(right.spendingAmount ?? 0) - Number(left.spendingAmount ?? 0),
+    ),
 );
 const recentTransactions = computed(() => transactions.value.slice(0, 5));
 const representativeCategory = computed(() =>
-  sortedCategories.value.find(
-    (category) =>
-      Number(category.spendingCategoryId) ===
-      Number(latestAnalysis.value?.representativeCategoryId),
-  ),
+    sortedCategories.value.find(
+        (category) =>
+            Number(category.spendingCategoryId) ===
+            Number(latestAnalysis.value?.representativeCategoryId),
+    ),
 );
 const representativeColor = computed(() =>
-  getAnalysisCategoryColor(latestAnalysis.value?.representativeCategoryName, 0),
+    getAnalysisCategoryColor(latestAnalysis.value?.representativeCategoryName, 0),
 );
 
 const formatRatio = (value) => {
@@ -250,15 +266,15 @@ const formatRatio = (value) => {
   return Number.isInteger(ratio) ? ratio : ratio.toFixed(1);
 };
 const formatShortDate = (value) =>
-  value ? String(value).replace('T', ' ').slice(5, 16) : '-';
+    value ? String(value).replace('T', ' ').slice(5, 16) : '-';
 const categoryColor = (category, index) =>
-  getAnalysisCategoryColor(category.categoryName, index);
+    getAnalysisCategoryColor(category.categoryName, index);
 
 const loadLatestAnalysis = async () => {
   latestLoading.value = true;
   try {
     latestAnalysis.value = await analysisApi.getLatestAnalysisDetail(
-      selectedPeriod.value,
+        selectedPeriod.value,
     );
   } catch (error) {
     if (isAnalysisResultNotFound(error)) {
@@ -267,8 +283,8 @@ const loadLatestAnalysis = async () => {
       latestAnalysis.value = null;
       messageType.value = 'error';
       message.value = getAnalysisErrorMessage(
-        error,
-        '최근 소비 분석 결과를 불러오지 못했습니다.',
+          error,
+          '최근 소비 분석 결과를 불러오지 못했습니다.',
       );
     }
   } finally {
@@ -285,27 +301,97 @@ const loadTransactions = async () => {
     transactions.value = [];
     messageType.value = 'error';
     message.value = getAnalysisErrorMessage(
-      error,
-      '최근 소비내역을 불러오지 못했습니다.',
+        error,
+        '최근 소비내역을 불러오지 못했습니다.',
     );
   } finally {
     transactionsLoading.value = false;
   }
 };
 
+const stopStatusPolling = () => {
+  if (statusTimer) {
+    window.clearInterval(statusTimer);
+    statusTimer = null;
+  }
+};
+
+const loadAnalysisStatus = async ({notifyOnComplete = false} = {}) => {
+  try {
+    const status = await analysisApi.getAnalysisStatus(selectedPeriod.value);
+    const wasRunning = analysisRunning.value;
+    analysisRunning.value = status?.status === 'PROCESSING';
+
+    if (analysisRunning.value) {
+      if (!statusTimer) {
+        statusTimer = window.setInterval(
+            () => loadAnalysisStatus({notifyOnComplete: true}),
+            2000,
+        );
+      }
+      return;
+    }
+
+    if (status?.status === 'COMPLETED') {
+      const completedAnalysisId = Number(status?.spendingAnalysisId);
+      const displayedAnalysisId = Number(latestAnalysis.value?.spendingAnalysisId);
+
+      if (
+          wasRunning ||
+          (Number.isInteger(completedAnalysisId) &&
+              completedAnalysisId > 0 &&
+              completedAnalysisId !== displayedAnalysisId)
+      ) {
+        stopStatusPolling();
+        await loadLatestAnalysis();
+      }
+
+      if (wasRunning && notifyOnComplete) {
+        messageType.value = 'info';
+        message.value = '소비 분석이 완료되어 최신 결과를 불러왔습니다.';
+      }
+      return;
+    }
+
+    if (wasRunning && status?.status === 'FAILED') {
+      stopStatusPolling();
+      messageType.value = 'error';
+      message.value = status?.message || '소비 분석 실행에 실패했습니다.';
+    }
+  } catch (error) {
+    if (analysisRunning.value) {
+      stopStatusPolling();
+      analysisRunning.value = false;
+      messageType.value = 'error';
+      message.value = getAnalysisErrorMessage(
+          error,
+          '소비 분석 진행 상태를 확인하지 못했습니다.',
+      );
+    }
+  }
+};
+
 const loadPage = async () => {
   message.value = '';
-  await Promise.all([loadLatestAnalysis(), loadTransactions()]);
+  await Promise.all([
+    loadLatestAnalysis(),
+    loadTransactions(),
+    loadAnalysisStatus(),
+  ]);
 };
 
 const changePeriod = async (period) => {
+  stopStatusPolling();
+  analysisRunning.value = false;
   selectedPeriod.value = period;
-  await router.replace({ name: 'analysis-main', query: { period } });
+  await router.replace({name: 'analysis-main', query: {period}});
   await loadPage();
 };
 
-const goToCheck = () =>
-  router.push({ name: 'analysis-check', query: { period: selectedPeriod.value } });
+const goToCheck = () => {
+  if (analysisRunning.value) return;
+  router.push({name: 'analysis-check', query: {period: selectedPeriod.value}});
+};
 
 const goToResult = () => {
   if (!latestAnalysis.value?.spendingAnalysisId) {
@@ -314,7 +400,7 @@ const goToResult = () => {
   }
   router.push({
     name: 'analysis-result',
-    params: { spendingAnalysisId: latestAnalysis.value.spendingAnalysisId },
+    params: {spendingAnalysisId: latestAnalysis.value.spendingAnalysisId},
   });
 };
 
@@ -325,24 +411,529 @@ const goToAllTransactions = () => {
   }
   router.push({
     name: 'analysis-result',
-    params: { spendingAnalysisId: latestAnalysis.value.spendingAnalysisId },
-    query: { section: 'transactions' },
+    params: {spendingAnalysisId: latestAnalysis.value.spendingAnalysisId},
+    query: {section: 'transactions'},
   });
 };
 
 const goToCategoryEdit = (transaction) =>
-  router.push({
-    name: 'analysis-category-edit',
-    params: { transactionId: transaction.transactionId },
-    query: {
-      period: selectedPeriod.value,
-      returnTo: router.currentRoute.value.fullPath,
-    },
-  });
+    router.push({
+      name: 'analysis-category-edit',
+      params: {transactionId: transaction.transactionId},
+      query: {
+        period: selectedPeriod.value,
+        returnTo: router.currentRoute.value.fullPath,
+      },
+    });
 
 onMounted(loadPage);
+onBeforeUnmount(stopStatusPolling);
 </script>
 
 <style scoped>
-.analysis-page{padding-bottom:34px}.period-tabs{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid #e8e8e8;background:#fff}.period-tabs button{position:relative;height:50px;border:0;background:transparent;color:#777;font-size:14px;font-weight:800}.period-tabs button::after{content:'';position:absolute;right:22%;bottom:-1px;left:22%;height:3px;border-radius:3px 3px 0 0;background:transparent}.period-tabs button.active{color:#d99500}.period-tabs button.active::after{background:var(--kb-yellow)}.content-loading{margin-top:14px}.title-card{margin-top:14px;padding:20px;display:flex;align-items:center;justify-content:space-between;overflow:hidden;border:1px solid #ffe19a;background:linear-gradient(135deg,#fffaf0 0%,#fff4d2 100%);box-shadow:none}.title-copy{min-width:0;flex:1}.ai-label{display:inline-flex;padding:4px 9px;border-radius:999px;background:#ffeab0;color:#9b7000;font-size:10px;font-weight:900}.title-copy h2{margin:9px 0 7px;font-size:20px;font-weight:900;letter-spacing:-.7px}.title-copy p{margin:0;display:-webkit-box;overflow:hidden;color:#746d5d;font-size:11px;line-height:1.6;-webkit-box-orient:vertical;-webkit-line-clamp:2}.title-illustration{position:relative;width:76px;height:76px;margin-left:12px;display:flex;align-items:center;justify-content:center;flex:0 0 76px;border-radius:26px;background:rgba(255,255,255,.85);color:#e7a300;font-size:32px;box-shadow:0 7px 18px rgba(153,117,0,.12)}.title-illustration span{position:absolute;top:-4px;right:-3px;padding:3px 7px;border-radius:8px;background:#222;color:#fff;font-size:8px;font-weight:900}.summary-card{margin-top:13px;padding:18px;display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,.9fr);align-items:center;gap:12px 18px;border:1px solid #ededed;box-shadow:none}.donut-column{min-width:0;text-align:center}.representative-column>span{color:#858585;font-size:10px}.representative-name{margin-top:10px;display:flex;align-items:center;gap:9px}.representative-icon{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 38px;border-radius:13px;font-size:16px}.representative-name strong{font-size:20px;font-weight:900}.representative-amount{margin-top:11px;display:flex;align-items:baseline;gap:8px}.representative-amount strong{font-size:17px;font-weight:900}.representative-amount span{color:#777;font-size:11px}.representative-column p{margin:6px 0 0;color:#aaa;font-size:9px}.summary-stats{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);overflow:hidden;border:1px solid #ececec;border-radius:13px}.summary-stats div{position:relative;min-width:0;padding:12px 5px;text-align:center}.summary-stats div+div::before{content:'';position:absolute;top:12px;bottom:12px;left:0;width:1px;background:#ececec}.summary-stats span,.summary-stats strong{display:block}.summary-stats span{color:#8f8f8f;font-size:9px}.summary-stats strong{margin-top:4px;overflow:hidden;font-size:10px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.summary-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}.summary-actions button{font-size:10px}.text-link{border:0;background:transparent;color:#2676c9;font-size:9px;font-weight:800}.category-breakdown{padding:3px 15px;border:1px solid #ededed;box-shadow:none}.category-row{min-height:64px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f1f1}.category-row:last-child{border-bottom:0}.category-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex:0 0 36px;border-radius:12px;font-size:14px}.category-info{min-width:0;flex:1}.category-head{display:flex;justify-content:space-between;gap:8px}.category-head strong{font-size:10px}.category-head span{color:#858585;font-size:8px}.ratio-track{height:5px;margin-top:7px;overflow:hidden;border-radius:8px;background:#eff0f2}.ratio-track span{display:block;height:100%;border-radius:8px}.category-amount{min-width:72px;text-align:right}.category-amount strong,.category-amount span{display:block}.category-amount strong{font-size:9px}.category-amount span{margin-top:2px;color:#aaa;font-size:7px}.empty-analysis{margin-top:16px;padding:34px 20px;text-align:center;border:1px solid #ededed;box-shadow:none}.empty-analysis__icon{width:74px;height:74px;margin:0 auto 13px;display:flex;align-items:center;justify-content:center;border-radius:26px;background:#fff3cf;color:#d99b00;font-size:30px}.empty-analysis>span{display:inline-flex;padding:4px 9px;border-radius:999px;background:#f4f4f4;color:#777;font-size:9px;font-weight:800}.empty-analysis h2{margin:10px 0 0;font-size:17px;font-weight:900}.empty-analysis p{margin:8px 0 18px;color:#777;font-size:10px;line-height:1.65}.empty-analysis button{width:100%}.recent-spending{padding:3px 15px;border:1px solid #ededed;box-shadow:none}.spending-row{min-height:65px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f2f2f2}.spending-row:last-child{border-bottom:0}.spending-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex:0 0 36px;border-radius:12px;background:#fff3cf;color:#d99b00;font-size:13px}.spending-info{min-width:0;flex:1}.spending-info strong,.spending-info span{display:block}.spending-info strong{overflow:hidden;font-size:10px;text-overflow:ellipsis;white-space:nowrap}.spending-info span{margin-top:3px;color:#aaa;font-size:8px}.spending-right{text-align:right}.spending-right>strong{display:block;font-size:10px}.spending-right button{margin-top:3px;border:0;background:transparent;color:#a27800;font-size:8px}@media(max-width:380px){.summary-card{grid-template-columns:1fr}.representative-column{text-align:center}.representative-name,.representative-amount{justify-content:center}.summary-stats,.summary-actions{grid-column:1}.summary-actions{grid-template-columns:1fr}}
+.analysis-page {
+  margin-top: -16px;
+  padding-bottom: 34px
+}
+
+.period-tabs {
+  display: grid;
+  grid-template-columns:repeat(3, 1fr);
+  border-bottom: 1px solid #e8e8e8;
+  background: #fff
+}
+
+.period-tabs button {
+  position: relative;
+  height: 50px;
+  border: 0;
+  background: transparent;
+  color: #777;
+  font-size: 14px;
+  font-weight: 800
+}
+
+.period-tabs button::after {
+  content: '';
+  position: absolute;
+  right: 22%;
+  bottom: -1px;
+  left: 22%;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: transparent
+}
+
+.period-tabs button.active {
+  color: #d99500
+}
+
+.period-tabs button.active::after {
+  background: var(--kb-yellow)
+}
+
+.content-loading {
+  margin-top: 14px
+}
+
+.title-card {
+  margin-top: 14px;
+  padding: 16px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  border: 1px solid #ffe19a;
+  background: linear-gradient(135deg, #fffaf0 0%, #fff4d2 100%);
+  box-shadow: none
+}
+
+.title-copy {
+  min-width: 0;
+  flex: 1
+}
+
+.ai-label {
+  display: inline-flex;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #ffeab0;
+  color: #9b7000;
+  font-size: 10px;
+  font-weight: 900
+}
+
+.title-copy h2 {
+  margin: 9px 0 7px;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -.7px
+}
+
+.title-copy p {
+  margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  color: #746d5d;
+  font-size: 11px;
+  line-height: 1.6;
+
+}
+
+.title-illustration {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 56px;
+  border-radius: 19px;
+  background: rgba(255, 255, 255, .85);
+  color: #e7a300;
+  font-size: 23px;
+  box-shadow: 0 7px 18px rgba(153, 117, 0, .12)
+}
+
+.title-illustration span {
+  position: absolute;
+  top: -4px;
+  right: -3px;
+  padding: 3px 7px;
+  border-radius: 8px;
+  background: #222;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 900
+}
+
+.summary-card {
+  margin-top: 13px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns:minmax(0, 1fr) minmax(130px, .9fr);
+  align-items: center;
+  gap: 12px 18px;
+  border: 1px solid #ededed;
+  box-shadow: none
+}
+
+.donut-column {
+  min-width: 0;
+  text-align: center
+}
+
+.representative-column > span {
+  color: #858585;
+  font-size: 10px
+}
+
+.representative-name {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px
+}
+
+.representative-icon {
+  width: 30px;
+  height: 35px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 38px;
+  border-radius: 13px;
+  font-size: 10px
+}
+
+.representative-name strong {
+  font-size: 15px;
+  font-weight: 900
+}
+
+.representative-amount {
+  margin-top: 11px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px
+}
+
+.representative-amount strong {
+  font-size: 17px;
+  font-weight: 900
+}
+
+.representative-amount span {
+  color: #777;
+  font-size: 11px
+}
+
+.representative-column p {
+  margin: 6px 0 0;
+  color: #aaa;
+  font-size: 9px
+}
+
+.summary-stats {
+  grid-column: 1/-1;
+  display: grid;
+  grid-template-columns:repeat(3, 1fr);
+  overflow: hidden;
+  border: 1px solid #ececec;
+  border-radius: 13px
+}
+
+.summary-stats div {
+  position: relative;
+  min-width: 0;
+  padding: 12px 5px;
+  text-align: center
+}
+
+.summary-stats div + div::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 0;
+  width: 1px;
+  background: #ececec
+}
+
+.summary-stats span, .summary-stats strong {
+  display: block
+}
+
+.summary-stats span {
+  color: #8f8f8f;
+  font-size: 9px
+}
+
+.summary-stats strong {
+  margin-top: 4px;
+  min-width: 0;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  white-space: normal;
+  color: inherit;
+}
+
+.summary-actions {
+  grid-column: 1/-1;
+  display: grid;
+  grid-template-columns:1fr 1fr;
+  gap: 8px
+}
+
+.summary-actions button {
+  font-size: 10px
+}
+
+.text-link {
+  border: 0;
+  background: transparent;
+  color: #2676c9;
+  font-size: 9px;
+  font-weight: 800
+}
+
+.category-breakdown {
+  padding: 3px 15px;
+  border: 1px solid #ededed;
+  box-shadow: none
+}
+
+.category-row {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #f1f1f1
+}
+
+.category-row:last-child {
+  border-bottom: 0
+}
+
+.category-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 36px;
+  border-radius: 12px;
+  font-size: 14px
+}
+
+.category-info {
+  min-width: 0;
+  flex: 1
+}
+
+.category-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px
+}
+
+.category-head strong {
+  font-size: 10px
+}
+
+.category-head span {
+  color: #858585;
+  font-size: 8px
+}
+
+.ratio-track {
+  height: 5px;
+  margin-top: 7px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #eff0f2
+}
+
+.ratio-track span {
+  display: block;
+  height: 100%;
+  border-radius: 8px
+}
+
+.category-amount {
+  min-width: 72px;
+  text-align: right
+}
+
+.category-amount strong, .category-amount span {
+  display: block
+}
+
+.category-amount strong {
+  font-size: 9px
+}
+
+.category-amount span {
+  margin-top: 2px;
+  color: #aaa;
+  font-size: 7px
+}
+
+.empty-analysis {
+  margin-top: 16px;
+  padding: 34px 20px;
+  text-align: center;
+  border: 1px solid #ededed;
+  box-shadow: none
+}
+
+.empty-analysis__icon {
+  width: 74px;
+  height: 74px;
+  margin: 0 auto 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 26px;
+  background: #fff3cf;
+  color: #d99b00;
+  font-size: 30px
+}
+
+.empty-analysis > span {
+  display: inline-flex;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #f4f4f4;
+  color: #777;
+  font-size: 9px;
+  font-weight: 800
+}
+
+.empty-analysis h2 {
+  margin: 10px 0 0;
+  font-size: 17px;
+  font-weight: 900
+}
+
+.empty-analysis p {
+  margin: 8px 0 18px;
+  color: #777;
+  font-size: 10px;
+  line-height: 1.65
+}
+
+.empty-analysis button {
+  width: 100%
+}
+
+.recent-spending {
+  padding: 3px 15px;
+  border: 1px solid #ededed;
+  box-shadow: none
+}
+
+.spending-row {
+  min-height: 65px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #f2f2f2
+}
+
+.spending-row:last-child {
+  border-bottom: 0
+}
+
+.spending-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 36px;
+  border-radius: 12px;
+  background: #fff3cf;
+  color: #d99b00;
+  font-size: 13px
+}
+
+.spending-info {
+  min-width: 0;
+  flex: 1
+}
+
+.spending-info strong, .spending-info span {
+  display: block
+}
+
+.spending-info strong {
+  overflow: hidden;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.spending-info span {
+  margin-top: 3px;
+  color: #aaa;
+  font-size: 8px
+}
+
+.spending-right {
+  text-align: right
+}
+
+.spending-right > strong {
+  display: block;
+  font-size: 10px
+}
+
+.spending-right button {
+  margin-top: 3px;
+  border: 0;
+  background: transparent;
+  color: #a27800;
+  font-size: 8px
+}
+
+@media (max-width: 380px) {
+  .summary-card {
+    grid-template-columns:1fr
+  }
+
+  .representative-column {
+    text-align: center
+  }
+
+  .representative-name, .representative-amount {
+    justify-content: center
+  }
+
+  .summary-stats, .summary-actions {
+    grid-column: 1
+  }
+
+  .summary-actions {
+    grid-template-columns:1fr
+  }
+}
+
+.analysis-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px
+}
+
+.analysis-action-button:disabled {
+  cursor: not-allowed;
+  opacity: .75
+}
+
+.button-spinner {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+  border: 2px solid rgba(34, 34, 34, .25);
+  border-top-color: #222;
+  border-radius: 50%;
+  animation: analysis-button-spin .75s linear infinite
+}
+
+.summary-period-range span {
+  display: block;
+  white-space: nowrap;
+  color: inherit;
+}
+
+@keyframes analysis-button-spin {
+  to {
+    transform: rotate(360deg)
+  }
+}
 </style>
