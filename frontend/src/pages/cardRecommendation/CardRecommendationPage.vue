@@ -42,7 +42,7 @@
     <div v-if="loading" class="kb-card kb-loading recommendation-loading">
       <div class="spinner-border kb-spinner"></div>
       <div>1년간의 소비분석 결과로 가장 많이 할인되는 카드를 찾고 있어요</div>
-      <small>조금만 기다리면 나도 몰랐던 많은 할인에 깜짝 놀라게 될 거에요!</small>
+      <small>화면을 벗어나도 추천 작업은 계속 진행되며, 다시 들어오면 결과를 확인할 수 있어요.</small>
     </div>
 
     <template v-else-if="recommendationData">
@@ -179,7 +179,7 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref} from 'vue';
+import {computed, onBeforeUnmount, onMounted, ref} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
 import cardRecommendationApi from '@/api/cardRecommendationApi';
 import {
@@ -259,6 +259,91 @@ const loadRecommendationList = async () => {
   );
 };
 
+const STATUS_POLL_INTERVAL = 2000;
+let statusTimer = null;
+
+const stopStatusPolling = () => {
+  if (statusTimer) {
+    window.clearInterval(statusTimer);
+    statusTimer = null;
+  }
+};
+
+const completeRecommendationLoading = async (status) => {
+  stopStatusPolling();
+
+  try {
+    creationResult.value = {
+      created: Boolean(status?.created),
+      recommendationCount: Number(status?.recommendationCount ?? 0),
+    };
+
+    await loadRecommendationList();
+    messageType.value = status?.created ? 'success' : 'info';
+    message.value =
+        status?.message || '카드 추천 결과를 불러왔습니다.';
+  } catch (error) {
+    recommendationData.value = null;
+    messageType.value = 'error';
+    message.value = getCardRecommendationErrorMessage(
+        error,
+        '카드 추천 목록을 불러오지 못했습니다.',
+    );
+  } finally {
+    loading.value = false;
+  }
+};
+
+const applyTaskStatus = async (status) => {
+  const currentStatus = status?.status ?? 'IDLE';
+
+  if (currentStatus === 'COMPLETED') {
+    await completeRecommendationLoading(status);
+    return;
+  }
+
+  if (currentStatus === 'FAILED') {
+    stopStatusPolling();
+    loading.value = false;
+    recommendationData.value = null;
+    messageType.value = 'error';
+    message.value =
+        status?.message || '카드 추천 생성에 실패했습니다.';
+    return;
+  }
+
+  loading.value = true;
+  messageType.value = 'info';
+  message.value =
+      status?.message || '카드 혜택을 계산하고 있습니다.';
+};
+
+const checkRecommendationStatus = async () => {
+  try {
+    const status = await cardRecommendationApi.getStatus(
+        spendingAnalysisId,
+    );
+    await applyTaskStatus(status);
+  } catch (error) {
+    stopStatusPolling();
+    loading.value = false;
+    recommendationData.value = null;
+    messageType.value = 'error';
+    message.value = getCardRecommendationErrorMessage(
+        error,
+        '카드 추천 진행 상태를 확인하지 못했습니다.',
+    );
+  }
+};
+
+const startStatusPolling = () => {
+  stopStatusPolling();
+  statusTimer = window.setInterval(
+      checkRecommendationStatus,
+      STATUS_POLL_INTERVAL,
+  );
+};
+
 const reloadRecommendations = async () => {
   if (!isValidAnalysisId()) {
     recommendationData.value = null;
@@ -267,26 +352,45 @@ const reloadRecommendations = async () => {
     return;
   }
 
+  stopStatusPolling();
   loading.value = true;
+  recommendationData.value = null;
   message.value = '';
 
   try {
-    creationResult.value = await cardRecommendationApi.createOrReuse(
+    const currentStatus = await cardRecommendationApi.getStatus(
         spendingAnalysisId,
     );
-    await loadRecommendationList();
 
-    messageType.value = creationResult.value.created ? 'success' : 'info';
-    message.value = creationResult.value.message;
+    if (currentStatus?.status === 'COMPLETED') {
+      await completeRecommendationLoading(currentStatus);
+      return;
+    }
+
+    if (currentStatus?.status === 'PROCESSING') {
+      await applyTaskStatus(currentStatus);
+      startStatusPolling();
+      return;
+    }
+
+    const startedStatus = await cardRecommendationApi.startAsync(
+        spendingAnalysisId,
+    );
+
+    await applyTaskStatus(startedStatus);
+
+    if (startedStatus?.status === 'PROCESSING') {
+      startStatusPolling();
+    }
   } catch (error) {
+    stopStatusPolling();
+    loading.value = false;
     recommendationData.value = null;
     messageType.value = 'error';
     message.value = getCardRecommendationErrorMessage(
         error,
-        '카드 추천 결과를 불러오지 못했습니다.',
+        '카드 추천 작업을 시작하지 못했습니다.',
     );
-  } finally {
-    loading.value = false;
   }
 };
 
@@ -353,6 +457,7 @@ const getCardInitial = (cardName = '') => {
 };
 
 onMounted(reloadRecommendations);
+onBeforeUnmount(stopStatusPolling);
 </script>
 
 <style scoped>

@@ -11,6 +11,11 @@ public interface CardRecommendationService {
             Integer spendingAnalysisId
     );
 
+    void validateRecommendationAnalysis(
+            Integer userId,
+            Integer spendingAnalysisId
+    );
+
     CardRecommendationListResponseDTO getRecommendations(
             Integer userId,
             Integer spendingAnalysisId,
