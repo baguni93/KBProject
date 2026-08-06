@@ -20,11 +20,15 @@
 
         <div class="divider"></div>
 
-        <AgreementItem
-            v-for="agreement in signupStore.agreements"
-            :key="agreement.agreementId"
-            :agreement="agreement"
-            @change="changeAgreement"
+        <AgreementCheckItem
+          v-for="agreement in signupStore.agreements"
+          :key="agreement.agreementId"
+          :model-value="agreement.agreed"
+          :title="agreement.agreementName"
+          :required="agreement.requiredYn === 'Y'"
+          detail-mode="navigate"
+          @update:model-value="(agreed) => changeAgreement({ agreementType: agreement.agreementType, agreed })"
+          @open-detail="showAgreementDetail(agreement.agreementType)"
         />
 
         <div class="divider bottom-divider"></div>
@@ -49,7 +53,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import agreementApi from '@/api/agreementApi';
-import AgreementItem from '@/components/agreement/AgreementItem.vue';
+import AgreementCheckItem from '@/components/common/AgreementCheckItem.vue';
 import { useSignupStore } from '@/stores/signup';
 
 const router = useRouter();
@@ -75,6 +79,10 @@ const changeAll = (event) => {
 // 개별 동의
 const changeAgreement = ({ agreementType, agreed }) => {
   signupStore.setAgreementChecked(agreementType, agreed);
+};
+
+const showAgreementDetail = (agreementType) => {
+  router.push(`/signup/agreement/${agreementType}`);
 };
 
 // 다음 화면

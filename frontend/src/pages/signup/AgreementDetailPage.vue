@@ -199,11 +199,11 @@ onMounted(loadAgreement);
 
 .check-box {
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  margin-right: 12px;
+  width: 28px;
+  height: 28px;
+  margin-right: 14px;
   border: 1px solid #999999;
-  border-radius: 5px;
+  border-radius: 6px;
   background: #ffffff;
 }
 
@@ -214,9 +214,9 @@ onMounted(loadAgreement);
 
 .consent-label input:checked + .check-box::after {
   display: block;
-  width: 7px;
-  height: 12px;
-  margin: 4px 0 0 8px;
+  width: 8px;
+  height: 14px;
+  margin: 4px 0 0 9px;
   border: solid #ffffff;
   border-width: 0 2px 2px 0;
   content: '';

@@ -114,10 +114,20 @@
           </div>
 
           <div class="terms-agree-box mb-4">
-            <label class="agree-label">
-              <input v-model="agreeTerms" type="checkbox" required />
-              <span>KB국민카드 결제 서비스 약관 및 개인정보 제공에 동의합니다.</span>
-            </label>
+            <AgreementCheckItem
+              v-model="agreeTerms"
+              title="KB국민카드 결제 서비스 약관 및 개인정보 제공 동의"
+              required
+              :expanded="showCardAgreementDetail"
+              @toggle-detail="showCardAgreementDetail = !showCardAgreementDetail"
+            >
+              <template #detail>
+                <p>
+                  카드 등록 및 결제 서비스 제공을 위해 카드 정보와 개인정보를
+                  수집·이용합니다.
+                </p>
+              </template>
+            </AgreementCheckItem>
           </div>
 
           <!-- 버튼 그룹 (취소/나가기 & 등록완료) -->
@@ -142,11 +152,13 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import cardApi from '@/api/cardApi';
 import { useAuthStore } from '@/stores/auth';
+import AgreementCheckItem from '@/components/common/AgreementCheckItem.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const submitting = ref(false);
 const agreeTerms = ref(true);
+const showCardAgreementDetail = ref(false);
 
 // 로컬 폴더 이미지 매핑 (/images/cards/ 폴더 참조)
 // 이미지 파일을 public/images/cards/ 폴더에 넣어주세요
@@ -373,26 +385,10 @@ const submitCard = async () => {
 }
 
 .terms-agree-box {
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 12px;
-  border: 1px solid #e2e8f0;
-}
-
-.agree-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #475569;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.agree-label input {
-  width: 16px;
-  height: 16px;
-  accent-color: #ffbc00;
+  min-height: 64px;
+  padding: 4px 0;
+  border-top: 1px solid #dddddd;
+  border-bottom: 1px solid #dddddd;
 }
 
 .form-btn-row {
