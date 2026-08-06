@@ -15,17 +15,17 @@
     </RouterLink>
   </nav>
 </template>
-<!-- //주석처리 -->
+
 <script setup>
-import { useRoute } from 'vue-router';
-import config from '@/config';
+import { useRoute } from "vue-router";
+import config from "@/config";
 
 const route = useRoute();
 
 const isActive = (url) => {
   // 홈은 정확히 일치
-  if (url === '/') {
-    return route.path === '/';
+  if (url === "/") {
+    return route.path === "/";
   }
 
   // 하위 경로까지 활성화

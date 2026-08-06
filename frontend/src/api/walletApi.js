@@ -44,4 +44,10 @@ export default {
     const { data } = await api.post('/api/payments/confirm', paymentData);
     return data;
   },
+
+  // DB 등록 실물 카드 목록 조회
+  async getUserCards(userId = 1) {
+    const { data } = await api.get(`${BASE_URL}/cards/user/${userId}`);
+    return data;
+  },
 };

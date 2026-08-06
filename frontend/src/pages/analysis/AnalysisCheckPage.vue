@@ -1,7 +1,7 @@
 <template>
-  <div class="kb-mobile-page check-page" :aria-busy="analysisLoading">
+  <div class="kb-mobile-page check-page">
     <header class="kb-app-header">
-      <button class="kb-icon-button" type="button" aria-label="뒤로가기" :disabled="analysisLoading" @click="goBack">
+      <button class="kb-icon-button" type="button" aria-label="뒤로가기" @click="goBack">
         <i class="fa-solid fa-chevron-left"></i>
       </button>
       <h1 class="kb-app-header__title">소비 분석 준비</h1>
@@ -17,28 +17,6 @@
     >
       {{ message }}
     </div>
-
-    <Transition name="analysis-overlay">
-      <div
-        v-if="analysisLoading"
-        class="analysis-loading-overlay"
-        role="status"
-        aria-live="assertive"
-        aria-label="소비 분석 진행 중"
-      >
-        <div class="analysis-loading-dialog">
-          <div class="analysis-spinner" aria-hidden="true">
-            <span></span>
-          </div>
-          <h2>소비 패턴을 분석하고 있어요</h2>
-          <p>
-            AI가 선택한 기간의 소비내역을 정리하고 있습니다.<br />
-            완료될 때까지 잠시만 기다려 주세요.
-          </p>
-          <small>분석이 끝나면 결과 화면으로 자동 이동합니다.</small>
-        </div>
-      </div>
-    </Transition>
 
     <div v-if="loading" class="kb-card kb-loading check-loading">
       <div class="spinner-border kb-spinner" role="status"></div>
@@ -92,7 +70,6 @@
           v-if="!availability.available || availability.unclassifiedPaymentCount > 0"
           type="button"
           class="kb-outline-button"
-          :disabled="analysisLoading"
           @click="goToClassification"
         >
           {{ availability.available ? '미분류 거래 분류하기' : '카테고리 분류하기' }}
@@ -101,11 +78,16 @@
         <button
           v-if="availability.available"
           type="button"
-          class="kb-primary-button"
+          class="kb-primary-button analysis-submit-button"
           :disabled="analysisLoading"
           @click="executeAnalysis"
         >
-          {{ analysisLoading ? '분석 중...' : '현재 내역으로 분석하기' }}
+          <span>{{ analysisLoading ? '분석 중' : '현재 내역으로 분석하기' }}</span>
+          <span
+            v-if="analysisLoading"
+            class="button-spinner"
+            aria-hidden="true"
+          ></span>
         </button>
       </div>
     </section>
@@ -114,22 +96,24 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import analysisApi from '@/api/analysisApi';
 import {
   getAnalysisErrorMessage,
   normalizeAnalysisPeriod,
 } from '@/util/analysis';
 
+const STATUS_POLL_INTERVAL = 2000;
 const route = useRoute();
 const router = useRouter();
 const period = normalizeAnalysisPeriod(route.query.period);
 const availability = ref(null);
 const loading = ref(false);
 const analysisLoading = ref(false);
-const allowResultNavigation = ref(false);
+const waitingForCurrentTask = ref(false);
 const message = ref('');
 const messageType = ref('error');
+let statusTimer = null;
 
 const progressPercent = computed(() => {
   if (!availability.value) return 0;
@@ -158,11 +142,86 @@ const stateVisualClass = computed(() => ({
     availability.value?.unclassifiedPaymentCount === 0,
 }));
 
+const stopStatusPolling = () => {
+  if (statusTimer) {
+    window.clearInterval(statusTimer);
+    statusTimer = null;
+  }
+};
+
+const moveToCompletedResult = async (status) => {
+  const spendingAnalysisId = Number(status?.spendingAnalysisId);
+  if (!Number.isInteger(spendingAnalysisId) || spendingAnalysisId <= 0) {
+    messageType.value = 'error';
+    message.value = '완료된 소비 분석 결과를 확인할 수 없습니다.';
+    return;
+  }
+
+  waitingForCurrentTask.value = false;
+  await router.replace({
+    name: 'analysis-result',
+    params: { spendingAnalysisId },
+  });
+};
+
+const applyTaskStatus = async (status) => {
+  const currentStatus = status?.status ?? 'IDLE';
+  analysisLoading.value = currentStatus === 'PROCESSING';
+
+  if (currentStatus === 'PROCESSING') {
+    messageType.value = 'info';
+    message.value = '소비 분석이 진행 중입니다. 다른 화면을 이용해도 분석은 계속됩니다.';
+    return;
+  }
+
+  if (currentStatus === 'COMPLETED' && waitingForCurrentTask.value) {
+    stopStatusPolling();
+    await moveToCompletedResult(status);
+    return;
+  }
+
+  if (currentStatus === 'FAILED') {
+    stopStatusPolling();
+    waitingForCurrentTask.value = false;
+    messageType.value = 'error';
+    message.value = status?.message || '소비 분석 실행에 실패했습니다.';
+  }
+};
+
+const checkAnalysisStatus = async () => {
+  try {
+    const status = await analysisApi.getAnalysisStatus(period);
+    await applyTaskStatus(status);
+  } catch (error) {
+    stopStatusPolling();
+    analysisLoading.value = false;
+    messageType.value = 'error';
+    message.value = getAnalysisErrorMessage(
+      error,
+      '소비 분석 진행 상태를 확인하지 못했습니다.',
+    );
+  }
+};
+
+const startStatusPolling = () => {
+  stopStatusPolling();
+  statusTimer = window.setInterval(checkAnalysisStatus, STATUS_POLL_INTERVAL);
+};
+
 const loadAvailability = async () => {
   loading.value = true;
   message.value = '';
   try {
     availability.value = await analysisApi.getAvailability(period);
+    const status = await analysisApi.getAnalysisStatus(period);
+
+    if (status?.status === 'PROCESSING') {
+      waitingForCurrentTask.value = true;
+      await applyTaskStatus(status);
+      startStatusPolling();
+    } else if (status?.status === 'FAILED') {
+      await applyTaskStatus(status);
+    }
   } catch (error) {
     availability.value = null;
     message.value = getAnalysisErrorMessage(
@@ -175,8 +234,6 @@ const loadAvailability = async () => {
 };
 
 const goToClassification = () => {
-  if (analysisLoading.value) return;
-
   router.push({
     name: 'analysis-classification',
     query: { period, returnTo: 'analysis-check' },
@@ -187,60 +244,32 @@ const executeAnalysis = async () => {
   if (!availability.value?.available || analysisLoading.value) return;
 
   analysisLoading.value = true;
+  waitingForCurrentTask.value = true;
   messageType.value = 'info';
-  message.value = 'AI가 소비 패턴을 분석하고 있어요. 잠시만 기다려 주세요.';
+  message.value = '소비 분석을 시작했습니다. 다른 화면을 이용해도 분석은 계속됩니다.';
 
   try {
-    const result = await analysisApi.executeAnalysis(period);
-    if (!result?.spendingAnalysisId) {
-      throw new Error('분석 결과 ID를 확인할 수 없습니다.');
-    }
-    allowResultNavigation.value = true;
-    await router.replace({
-      name: 'analysis-result',
-      params: { spendingAnalysisId: result.spendingAnalysisId },
-    });
+    const status = await analysisApi.startAsyncAnalysis(period);
+    await applyTaskStatus(status);
+    startStatusPolling();
   } catch (error) {
+    analysisLoading.value = false;
+    waitingForCurrentTask.value = false;
     messageType.value = 'error';
     message.value = getAnalysisErrorMessage(
       error,
       '소비 분석 실행에 실패했습니다.',
     );
-  } finally {
-    analysisLoading.value = false;
   }
 };
 
-const goBack = () => {
-  if (analysisLoading.value) return;
+const goBack = () =>
   router.push({ name: 'analysis-main', query: { period } });
-};
 
-const preventBrowserUnload = (event) => {
-  if (!analysisLoading.value) return;
-  event.preventDefault();
-  event.returnValue = '';
-};
-
-onBeforeRouteLeave(() => {
-  if (analysisLoading.value && !allowResultNavigation.value) {
-    messageType.value = 'info';
-    message.value = '소비 분석이 완료될 때까지 잠시만 기다려 주세요.';
-    return false;
-  }
-  return true;
-});
-
-onMounted(() => {
-  window.addEventListener('beforeunload', preventBrowserUnload);
-  loadAvailability();
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', preventBrowserUnload);
-});
+onMounted(loadAvailability);
+onBeforeUnmount(stopStatusPolling);
 </script>
 
 <style scoped>
-.check-page{padding-bottom:34px}.kb-icon-button:disabled,.check-actions button:disabled{cursor:not-allowed;opacity:.45}.analysis-loading-overlay{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(20,20,20,.48);backdrop-filter:blur(3px)}.analysis-loading-dialog{width:min(310px,100%);padding:30px 22px 24px;border-radius:24px;background:#fff;text-align:center;box-shadow:0 20px 55px rgba(0,0,0,.22)}.analysis-spinner{position:relative;width:72px;height:72px;margin:0 auto 18px;border-radius:50%;background:conic-gradient(var(--kb-yellow),#ffe9a8 45%,#f3f3f3 46% 100%);animation:analysis-spin .85s linear infinite}.analysis-spinner::after{content:'';position:absolute;inset:10px;border-radius:50%;background:#fff}.analysis-spinner span{position:absolute;top:2px;left:50%;z-index:1;width:9px;height:9px;border-radius:50%;background:#222;transform:translateX(-50%)}.analysis-loading-dialog h2{margin:0;color:#222;font-size:18px;font-weight:900;letter-spacing:-.5px}.analysis-loading-dialog p{margin:10px 0 0;color:#666;font-size:10px;line-height:1.7}.analysis-loading-dialog small{display:block;margin-top:12px;color:#a17700;font-size:9px;font-weight:800}.analysis-overlay-enter-active,.analysis-overlay-leave-active{transition:opacity .18s ease}.analysis-overlay-enter-from,.analysis-overlay-leave-to{opacity:0}@keyframes analysis-spin{to{transform:rotate(360deg)}}.check-loading{margin-top:16px}.check-card{margin-top:16px;padding:28px 20px 20px;text-align:center;border:1px solid #ededed;box-shadow:none}.check-period{display:inline-flex;padding:5px 10px;border-radius:999px;background:#f4f4f4;color:#777;font-size:9px;font-weight:800}.state-visual{width:92px;height:92px;margin:18px auto 15px;display:flex;align-items:center;justify-content:center;border-radius:30px;font-size:38px}.state-visual.needs-classification{background:#fff3cf;color:#d99b00}.state-visual.has-unclassified{background:#fff0dd;color:#e58a36}.state-visual.ready{background:#eaf8f1;color:#1e9b61}.check-card h2{margin:0;font-size:19px;font-weight:900;line-height:1.45;letter-spacing:-.6px}.check-card>p{margin:10px 0 0;color:#777;font-size:10px;line-height:1.65}.check-card>p strong{color:#d49300}.classification-progress{margin-top:22px;padding:14px;border-radius:14px;background:#fafafa}.progress-copy{display:flex;align-items:center;justify-content:space-between}.progress-copy strong{font-size:10px}.progress-copy span{color:#999;font-size:9px}.analysis-progress{height:7px;margin-top:9px;overflow:hidden;border-radius:999px;background:#ececec}.analysis-progress span{display:block;height:100%;border-radius:999px;background:var(--kb-yellow)}.classification-progress small{display:block;margin-top:5px;color:#999;font-size:8px}.check-actions{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.check-actions.single{grid-template-columns:1fr}.check-actions button{font-size:10px}@media(max-width:360px){.check-actions{grid-template-columns:1fr}}
+.check-page{margin-top:-16px;padding-bottom:34px}.analysis-submit-button{display:inline-flex;align-items:center;justify-content:center;gap:8px}.analysis-submit-button:disabled{cursor:not-allowed;opacity:.75}.button-spinner{width:14px;height:14px;flex:0 0 14px;border:2px solid rgba(34,34,34,.25);border-top-color:#222;border-radius:50%;animation:button-spin .75s linear infinite}@keyframes button-spin{to{transform:rotate(360deg)}}.check-loading{margin-top:16px}.check-card{margin-top:16px;padding:28px 20px 20px;text-align:center;border:1px solid #ededed;box-shadow:none}.check-period{display:inline-flex;padding:5px 10px;border-radius:999px;background:#f4f4f4;color:#777;font-size:9px;font-weight:800}.state-visual{width:92px;height:92px;margin:18px auto 15px;display:flex;align-items:center;justify-content:center;border-radius:30px;font-size:38px}.state-visual.needs-classification{background:#fff3cf;color:#d99b00}.state-visual.has-unclassified{background:#fff0dd;color:#e58a36}.state-visual.ready{background:#eaf8f1;color:#1e9b61}.check-card h2{margin:0;font-size:19px;font-weight:900;line-height:1.45;letter-spacing:-.6px}.check-card>p{margin:10px 0 0;color:#777;font-size:10px;line-height:1.65}.check-card>p strong{color:#d49300}.classification-progress{margin-top:22px;padding:14px;border-radius:14px;background:#fafafa}.progress-copy{display:flex;align-items:center;justify-content:space-between}.progress-copy strong{font-size:10px}.progress-copy span{color:#999;font-size:9px}.analysis-progress{height:7px;margin-top:9px;overflow:hidden;border-radius:999px;background:#ececec}.analysis-progress span{display:block;height:100%;border-radius:999px;background:var(--kb-yellow)}.classification-progress small{display:block;margin-top:5px;color:#999;font-size:8px}.check-actions{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.check-actions.single{grid-template-columns:1fr}.check-actions button{font-size:10px}@media(max-width:360px){.check-actions{grid-template-columns:1fr}}
 </style>

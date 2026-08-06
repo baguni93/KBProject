@@ -19,7 +19,7 @@ public class WalletController {
     private final WalletService walletService;
     private final PaymentTokenStore tokenStore;
 
-    // 회원 ID로 지갑 정보/잔액 조회
+    // 회원 지갑 조회
     @GetMapping("/user/{userId}")
     public ResponseEntity<WalletDTO> getWalletByUserId(@PathVariable("userId") Integer userId) {
         log.info("지갑 잔액 조회 요청 - 회원 ID: " + userId);
@@ -27,7 +27,7 @@ public class WalletController {
         return ResponseEntity.ok(walletDTO);
     }
 
-    // wallet-001: 지갑 QR 결제 토큰 생성 (3분 TTL)
+    // QR 결제 토큰
     @GetMapping("/me/qr-token")
     public ResponseEntity<PaymentTokenDTO> getQrToken(@RequestParam(value = "userId", defaultValue = "1") Integer userId) {
         log.info("1회용 QR 결제 토큰 발급 요청 - 회원 ID: " + userId);
@@ -37,7 +37,7 @@ public class WalletController {
         return ResponseEntity.ok(tokenDTO);
     }
 
-    // wallet-002: 지갑 바코드 결제 토큰 생성 (3분 TTL)
+    // 바코드 결제 토큰
     @GetMapping("/me/barcode-token")
     public ResponseEntity<PaymentTokenDTO> getBarcodeToken(@RequestParam(value = "userId", defaultValue = "1") Integer userId) {
         log.info("1회용 바코드 결제 토큰 발급 요청 - 회원 ID: " + userId);
@@ -47,7 +47,7 @@ public class WalletController {
         return ResponseEntity.ok(tokenDTO);
     }
 
-    // charge-001: 지갑 머니 수동 충전 신청 (POST /api/wallets/charges)
+    // 지갑 충전
     @PostMapping("/charges")
     public ResponseEntity<WalletChargeDTO> chargeWallet(@RequestBody WalletChargeDTO chargeDTO) {
         log.info("지갑 충전 요청: {}", chargeDTO);
@@ -55,7 +55,7 @@ public class WalletController {
         return ResponseEntity.ok(result);
     }
 
-    // charge-002: 지갑 머니 충전 내역 상세 조회 (GET /api/wallets/charges/{chargeId})
+    // 충전 내역 상세
     @GetMapping("/charges/{chargeId}")
     public ResponseEntity<WalletChargeDTO> getChargeDetails(@PathVariable("chargeId") Integer chargeId) {
         log.info("충전 상세 조회 요청 - ID: " + chargeId);
@@ -63,11 +63,19 @@ public class WalletController {
         return ResponseEntity.ok(result);
     }
 
-    // autocharge-001: 부족금 자동 충전 처리 (POST /api/wallets/auto-charge)
+    // 자동 충전
     @PostMapping("/auto-charge")
     public ResponseEntity<WalletChargeDTO> autoChargeWallet(@RequestBody WalletChargeDTO chargeDTO) {
         log.info("부족금 자동 충전 요청: {}", chargeDTO);
         WalletChargeDTO result = walletService.autoChargeWallet(chargeDTO);
         return ResponseEntity.ok(result);
+    }
+
+    // 등록 카드 목록
+    @GetMapping("/cards/user/{userId}")
+    public ResponseEntity<java.util.List<org.scoula.wallet.dto.RegisteredCardDTO>> getUserCards(@PathVariable("userId") Integer userId) {
+        log.info("회원 등록 카드 목록 DB 조회 - 회원 ID: " + userId);
+        java.util.List<org.scoula.wallet.dto.RegisteredCardDTO> cards = walletService.getUserRegisteredCards(userId);
+        return ResponseEntity.ok(cards);
     }
 }

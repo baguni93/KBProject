@@ -172,12 +172,12 @@ watch(
 
 .analysis-donut__center {
   position: absolute;
-  inset: 28%;
+  inset: 25%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  padding: 5px;
   border: 0;
   border-radius: 50%;
   background: #fff;
@@ -190,15 +190,15 @@ watch(
   max-width: 100%;
   overflow: hidden;
   color: #7d7d7d;
-  font-size: 11px;
+  font-size: 8px;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .analysis-donut__center strong {
-  margin-top: 4px;
-  font-size: clamp(13px, 4vw, 20px);
+  margin-top: 2px;
+  font-size: clamp(12px, 3.8vw, 10px);
   font-weight: 900;
   letter-spacing: -0.6px;
   white-space: nowrap;

@@ -10,11 +10,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
 
 @Configuration
+@EnableAsync
 @Import({OpenAIConfig.class,
         RedisConfig.class})
 @PropertySource({
@@ -41,6 +43,7 @@ import javax.sql.DataSource;
 
 
 		"org.scoula.user.mapper",
+        "org.scoula.user.mapper",
         "org.scoula.agreement.mapper",
         "org.scoula.login.mapper",
         "org.scoula.profile.mapper",
@@ -49,6 +52,7 @@ import javax.sql.DataSource;
         "org.scoula.notifsetting.mapper",
         "org.scoula.card.mapper",
         "org.scoula.event.mapper",
+        "org.scoula.cardpayment.mapper"
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
@@ -66,7 +70,6 @@ import javax.sql.DataSource;
         "org.scoula.analysis.service",
         "org.scoula.cardrecommendation.service",
         "org.scoula.transaction.service",
-
         "org.scoula.user.service",
         "org.scoula.agreement.service",
         "org.scoula.login.service",
@@ -77,6 +80,7 @@ import javax.sql.DataSource;
         "org.scoula.card.service",
 
         "org.scoula.event.service",
+        "org.scoula.cardpayment.service"
 })
 @EnableTransactionManagement
 @EnableAspectJAutoProxy

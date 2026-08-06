@@ -3,19 +3,23 @@
     <HeaderButtons />
     <div class="profile-section">
       <ProfileHeader v-if="profile" :profile="profile" />
-      <FriendMenuButton :friend-count="friendStore.friendList.length" />
+      <FriendMenuButton :friend-count="friendStore.friendList ? friendStore.friendList.length : 0" />
     </div>
     <MyPageTab v-model="currentTab" />
     <div class="main">
-      <template v-if="currentTab === 'feed'">
+      <div v-if="currentTab === 'feed'">
         <SettlementSection />
-        <FeedSection type="my" :user-id="userId" />
-      </template>
+        <FeedSection type="my" :user-id="userId || 1" />
+      </div>
+      <div v-else-if="currentTab === 'wallet'">
+        <MyWallet />
+      </div>
     </div>
   </div>
 </template>
 <script setup>
 import MyPageTab from '@/components/my/MyPageTab.vue';
+import MyWallet from '@/components/my/MyWallet.vue';
 import HeaderButtons from '@/components/common/HeaderButtons.vue';
 import SettlementSection from '@/components/my/SettlementSection.vue';
 import FeedSection from '@/components/my/FeedSection.vue';
@@ -30,10 +34,9 @@ const route = useRoute();
 const friendStore = useFriendStore();
 const profileStore = useProfileStore();
 
-//test user Id
 import { useUserStore } from '@/stores/user';
 const userStore = useUserStore();
-const userId = userStore.userId;
+const userId = userStore.userId || 1;
 
 const currentTab = ref(route.query.tab || 'feed');
 
@@ -47,17 +50,15 @@ watch(
   },
 );
 
-// onMounted(async () => {
-//   //profileStore.clearProfile();
-//   await profileStore.getProfile(userId);
-//   await friendStore.getFriendList(userId);
-// });
-
 const profile = ref({});
 
 const load = async () => {
-  profile.value = await profileStore.getProfile(userId);
-  await friendStore.getFriendList(userId);
+  try {
+    profile.value = await profileStore.getProfile(userId);
+    await friendStore.getFriendList(userId);
+  } catch (e) {
+    console.log('MyPage load bypass', e);
+  }
 };
 
 onMounted(load);

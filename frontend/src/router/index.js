@@ -30,16 +30,8 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomePage,
-      meta: { requiresAuth: true, showBottomNav: false },
+      redirect: '/wallet',
     },
-    {
-      path: '/wallet',
-      name: 'wallet',
-      component: WalletPage,
-    },
-
     {
       path: '/wallet',
       name: 'wallet',
@@ -64,7 +56,13 @@ const router = createRouter({
       path: '/transactions',
       name: 'transaction-list',
       component: TransactionListPage,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, showBottomNav: true },
+    },
+    {
+      path: '/wallet/card/add',
+      name: 'card-add',
+      component: () => import('@/pages/wallet/CardAddPage.vue'),
+      meta: { requiresAuth: true, showBottomNav: false },
     },
     {
       path: '/signup/nickname',

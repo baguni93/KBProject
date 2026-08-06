@@ -4,6 +4,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.scoula.analysis.dto.*;
+import org.scoula.analysis.service.AnalysisAsyncService;
 import org.scoula.analysis.service.AnalysisService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class AnalysisController {
 
     private final AnalysisService analysisService;
+    private final AnalysisAsyncService analysisAsyncService;
 
     @ApiOperation("소비 분석 가능 여부 조회")
     @GetMapping("/availability")
@@ -158,6 +160,43 @@ public class AnalysisController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    @ApiOperation("소비 분석 비동기 실행")
+    @PostMapping("/async")
+    public ResponseEntity<AnalysisTaskStatusDTO>
+    executeAnalysisAsync(
+            @RequestBody
+            AnalysisExecutionRequestDTO request
+    ) {
+        Integer temporaryUserId = 1;
+
+        AnalysisTaskStatusDTO response =
+                analysisAsyncService.startAnalysis(
+                        temporaryUserId,
+                        request.getPeriod()
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.ACCEPTED)
+                .body(response);
+    }
+
+    @ApiOperation("소비 분석 비동기 작업 상태 조회")
+    @GetMapping("/status")
+    public ResponseEntity<AnalysisTaskStatusDTO>
+    getAnalysisTaskStatus(
+            @RequestParam(value = "period", defaultValue = "1")
+            Integer period
+    ) {
+        Integer temporaryUserId = 1;
+
+        return ResponseEntity.ok(
+                analysisAsyncService.getStatus(
+                        temporaryUserId,
+                        period
+                )
+        );
     }
 
     @ApiOperation("저장된 소비 분석 상세 결과 조회")

@@ -5,9 +5,12 @@ import lombok.extern.log4j.Log4j2;
 import org.scoula.remittance.dto.BankRemittanceInfoDTO;
 import org.scoula.remittance.dto.RemittanceDTO;
 import org.scoula.remittance.service.RemittanceService;
+import org.scoula.security.util.JwtProcessor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,22 +21,40 @@ import java.util.Map;
 public class RemittanceController {
 
     private final RemittanceService remittanceService;
+    private final JwtProcessor jwtProcessor;
 
-    // remit-bank-001: 송금 가능 은행 및 최근 계좌 조회 (GET /api/remittances/banks)
+    // 사용자 인증 토큰 처리
+    private Integer resolveUserId(HttpServletRequest request, Integer paramUserId) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            try {
+                String token = authHeader.substring(7);
+                Long userId = jwtProcessor.getUserId(token);
+                if (userId != null) {
+                    return userId.intValue();
+                }
+            } catch (Exception e) {
+                log.warn("토큰 추출 실패, 파라미터 사용: {}", e.getMessage());
+            }
+        }
+        return paramUserId != null ? paramUserId : 1;
+    }
+
+    // 은행 및 최근 계좌 목록 조회
     @GetMapping("/banks")
     public ResponseEntity<BankRemittanceInfoDTO> getBankRemittanceInfo(
-            @RequestParam(value = "userId", defaultValue = "1") Integer userId) {
-        log.info("최근 계좌 및 은행 목록 조회 - 회원 ID: {}", userId);
-        BankRemittanceInfoDTO info = remittanceService.getBankRemittanceInfo(userId);
+            HttpServletRequest request,
+            @RequestParam(value = "userId", required = false) Integer userId) {
+        Integer resolvedUserId = resolveUserId(request, userId);
+        BankRemittanceInfoDTO info = remittanceService.getBankRemittanceInfo(resolvedUserId);
         return ResponseEntity.ok(info);
     }
 
-    // remit-bank-002: 계좌 송금 예금주 실명 검증 (POST /api/remittances/bank-accounts/verify)
+    // 계좌 예금주 실명 검증
     @PostMapping("/bank-accounts/verify")
     public ResponseEntity<Map<String, Object>> verifyBankAccount(@RequestBody Map<String, String> body) {
         String bankCode = body.get("bankCode");
         String accountNumber = body.get("accountNumber");
-        log.info("계좌 예금주 실명 검증 요청 - 은행: {}, 계좌: {}", bankCode, accountNumber);
 
         Map<String, Object> result = new HashMap<>();
         result.put("bankCode", bankCode);
@@ -44,11 +65,10 @@ public class RemittanceController {
         return ResponseEntity.ok(result);
     }
 
-    // remit-friend-001-verify: 친구 송금 회원 실명 검증 (POST /api/remittances/friends/verify)
+    // 친구 송금 수신자 검증
     @PostMapping("/friends/verify")
     public ResponseEntity<Map<String, Object>> verifyFriendAccount(@RequestBody Map<String, Object> body) {
         Object receiverIdObj = body.get("receiverId");
-        log.info("친구 송금 수신자 실명 검증 요청 - 회원 ID: {}", receiverIdObj);
 
         Map<String, Object> result = new HashMap<>();
         result.put("receiverId", receiverIdObj);
@@ -58,11 +78,14 @@ public class RemittanceController {
         return ResponseEntity.ok(result);
     }
 
-    // remit-friend-002: 친구 송금 (POST /api/remittances/friends)
+    // 친구 송금
     @PostMapping("/friends")
-    public ResponseEntity<RemittanceDTO> sendMoneyToFriend(@RequestBody RemittanceDTO remittanceDTO) {
+    public ResponseEntity<RemittanceDTO> sendMoneyToFriend(
+            HttpServletRequest request,
+            @RequestBody RemittanceDTO remittanceDTO) {
+        Integer resolvedUserId = resolveUserId(request, remittanceDTO.getWalletId());
+        remittanceDTO.setWalletId(resolvedUserId);
         remittanceDTO.setReceiverType("WALLET");
-        log.info("친구 송금 요청 데이터: " + remittanceDTO);
 
         boolean result = remittanceService.sendMoney(remittanceDTO);
         if (result) {
@@ -72,14 +95,36 @@ public class RemittanceController {
         }
     }
 
-    // remit-003: 송금 최종 실행 (POST /api/remittances)
+    // 송금 실행
     @PostMapping
-    public ResponseEntity<RemittanceDTO> sendMoney(@RequestBody RemittanceDTO remittanceDTO) {
-        log.info("송금 최종 실행 요청 데이터: " + remittanceDTO);
+    public ResponseEntity<RemittanceDTO> sendMoney(
+            HttpServletRequest request,
+            @ModelAttribute RemittanceDTO remittanceDTO,
+            @RequestParam(value = "files", required = false) MultipartFile... files) {
+        Integer resolvedUserId = resolveUserId(request, remittanceDTO.getWalletId());
+        remittanceDTO.setWalletId(resolvedUserId);
+
+        if (files != null && files.length > 0) {
+            remittanceDTO.setFiles(java.util.Arrays.asList(files));
+        }
 
         boolean result = remittanceService.sendMoney(remittanceDTO);
         if (result) {
             return ResponseEntity.ok(remittanceDTO);
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // 정산 환불
+    @PostMapping("/refund")
+    public ResponseEntity<Boolean> refundSettlement(
+            @RequestParam Integer requesterUserId,
+            @RequestParam Integer memberUserId,
+            @RequestParam Integer amount) {
+        boolean result = remittanceService.refundSettlement(requesterUserId, memberUserId, amount);
+        if (result) {
+            return ResponseEntity.ok(true);
         } else {
             return ResponseEntity.badRequest().build();
         }

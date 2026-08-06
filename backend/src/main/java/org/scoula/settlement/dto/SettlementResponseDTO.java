@@ -35,7 +35,7 @@ public class SettlementResponseDTO {
 
     public static SettlementResponseDTO of(SettlementVO settlementVO) {
 
-       return  settlementVO == null ? null :  SettlementResponseDTO.builder()
+        return settlementVO == null ? null : SettlementResponseDTO.builder()
                 .settlementId(settlementVO.getSettlementId())
                 .requesterId(settlementVO.getRequesterId())
                 .title(settlementVO.getTitle())
@@ -45,7 +45,9 @@ public class SettlementResponseDTO {
                 .completedAt(settlementVO.getCompletedAt())
                 .lastReminderDate(settlementVO.getLastReminderDate())
                 .status(settlementVO.getStatus())
-                .members(settlementVO.getMembers().stream().map(SettlementMemberResponseDTO::of).toList())
+                .members(settlementVO.getMembers() != null
+                        ? settlementVO.getMembers().stream().filter(java.util.Objects::nonNull).map(SettlementMemberResponseDTO::of).toList()
+                        : java.util.List.of())
                 .profileSimpleVO(settlementVO.getSender())
                 .categoryVO(settlementVO.getCategory())
                 .build();
