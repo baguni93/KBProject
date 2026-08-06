@@ -8,4 +8,6 @@ public interface RemittanceService {
     boolean sendMoney(RemittanceDTO remittanceDTO);
 
     BankRemittanceInfoDTO getBankRemittanceInfo(Integer userId);
+
+    boolean refundSettlement(Integer requesterUserId, Integer memberUserId, Integer amount);
 }

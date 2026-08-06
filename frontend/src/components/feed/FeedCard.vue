@@ -4,8 +4,8 @@
       <FeedMoreButton v-if="feed.userId === userId" @click="openMenu" />
       <CardProfile
         :user-id="feed.userId"
-        :profile-image-name="feed.sender.profileImageName"
-        :nickname="feed.sender.nickname"
+        :profile-image-name="feed.sender ? feed.sender.profileImageName : null"
+        :nickname="feed.sender ? feed.sender.nickname : (feed.userName || '회원')"
         :created-at="feed.createdAt"
         :visibility="feed.visibility"
         :show-visibility="true"

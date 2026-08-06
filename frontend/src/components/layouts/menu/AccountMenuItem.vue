@@ -21,7 +21,7 @@ const props = defineProps({ username: String });
 
 const avatar = computed(
   () =>
-    `/api/member/${props.username}/avatar?t=${auth.state.user.avatarUpdated || 0}`,
+    `/api/member/${props.username}/avatar?t=${auth.state?.user?.avatarUpdated || 0}`,
 );
 </script>
 

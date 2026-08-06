@@ -1,26 +1,29 @@
 <template>
-  <div v-if="show" class="pin-backdrop d-flex align-items-center justify-content-center">
-    <div class="pin-modal-card rounded-4 p-4 text-center">
+  <div v-if="show" class="pin-bottom-sheet-backdrop d-flex align-items-flex-end justify-content-center" @click.self="closeModal">
+    <div class="pin-sheet-card rounded-t-4 p-4 text-center bg-white shadow-2xl animate-slide-up">
+      <!-- 드래그 핸들 바 -->
+      <div class="sheet-handle-bar my-1 mx-auto rounded-pill" @click="closeModal"></div>
+
       <!-- 헤더 -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2 px-1">
         <div class="d-flex align-items-center gap-2">
-          <span class="badge bg-warning text-dark fw-bold px-2 py-1">KB Pay</span>
-          <span class="fw-bold text-dark fs-6">보안 인증</span>
+          <span class="badge bg-dark text-warning font-outfit px-2.5 py-1 fw-bold rounded-pill">KB Pay</span>
+          <span class="fw-extrabold text-dark fs-6 font-outfit">보안 인증</span>
         </div>
-        <button type="button" class="btn-close" @click="closeModal"></button>
+        <button type="button" class="btn-close shadow-none" @click="closeModal"></button>
       </div>
 
       <!-- 아이콘 & 타이틀 -->
-      <div class="py-2">
-        <div class="icon-box bg-warning text-dark mx-auto rounded-circle mb-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 56px; height: 56px;">
-          <i class="bi bi-shield-lock-fill fs-2"></i>
+      <div class="py-1">
+        <div class="icon-box bg-warning text-dark mx-auto rounded-circle mb-2 d-flex align-items-center justify-content-center shadow-md" style="width: 52px; height: 52px;">
+          <i class="bi bi-shield-lock-fill fs-3"></i>
         </div>
 
-        <h4 class="fw-bold text-dark mb-1">PIN 비밀번호 6자리</h4>
-        <p class="text-secondary small mb-4">결제 보안을 위한 비밀번호를 입력하세요.</p>
+        <h5 class="fw-extrabold text-dark mb-1 font-outfit">PIN 비밀번호 6자리</h5>
+        <p class="text-secondary small mb-3 font-outfit">간편비밀번호 6자리를 입력해 주세요.</p>
 
-        <!-- 6자리 핀 도트 표시 -->
-        <div class="d-flex justify-content-center gap-3 mb-4">
+        <!-- 6자리 핀 도트 -->
+        <div class="d-flex justify-content-center gap-3 mb-3">
           <div
             v-for="i in 6"
             :key="i"
@@ -33,7 +36,7 @@
           {{ errorMessage }}
         </div>
 
-        <!-- 3x4 키패드 -->
+        <!-- 3x4 숫자 키패드 -->
         <div class="row g-2 px-1">
           <div v-for="num in [1, 2, 3, 4, 5, 6, 7, 8, 9]" :key="num" class="col-4">
             <button
@@ -48,7 +51,7 @@
           <div class="col-4">
             <button
               type="button"
-              class="btn key-btn-action w-100 py-3 text-secondary"
+              class="btn key-btn-action w-100 py-3 text-secondary font-outfit"
               @click.prevent="clearPin"
               :disabled="loading"
             >
@@ -150,32 +153,53 @@ watch(pin, (newVal) => {
 </script>
 
 <style scoped>
-.pin-backdrop {
+.pin-bottom-sheet-backdrop {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  background: rgba(0, 0, 0, 0.55) !important;
-  z-index: 1060 !important;
-  padding: 16px;
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 1070 !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
 }
 
-.pin-modal-card {
+.pin-sheet-card {
   width: 100%;
-  max-width: 390px;
+  max-width: 480px;
   background-color: #ffffff !important;
-  background: #ffffff !important;
-  opacity: 1 !important;
-  border-radius: 20px !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
-  position: relative !important;
-  z-index: 1061 !important;
+  border-top-left-radius: 28px !important;
+  border-top-right-radius: 28px !important;
+  padding-bottom: 24px;
+}
+
+.sheet-handle-bar {
+  width: 40px;
+  height: 5px;
+  background: #CBD5E1;
+  cursor: pointer;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .pin-dot {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background-color: #f1f5f9;
   border: 2px solid #cbd5e1;
@@ -193,9 +217,8 @@ watch(pin, (newVal) => {
   background-color: #f8fafc !important;
   color: #0f172a !important;
   font-weight: 800 !important;
-  font-size: 1.4rem !important;
-  border: 1.5px solid #cbd5e1 !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  font-size: 1.3rem !important;
+  border: 1px solid #e2e8f0 !important;
   transition: all 0.15s ease;
 }
 
@@ -208,6 +231,6 @@ watch(pin, (newVal) => {
 
 .key-btn-action {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 </style>

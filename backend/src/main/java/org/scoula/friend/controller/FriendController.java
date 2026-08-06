@@ -12,6 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.scoula.security.util.JwtProcessor;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @RestController
@@ -21,6 +24,23 @@ import java.util.List;
 public class FriendController {
 
     private final FriendService friendService;
+    private final JwtProcessor jwtProcessor;
+
+    private int resolveUserId(HttpServletRequest request, Integer paramUserId) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            try {
+                String token = authHeader.substring(7);
+                Long userId = jwtProcessor.getUserId(token);
+                if (userId != null) {
+                    return userId.intValue();
+                }
+            } catch (Exception e) {
+                log.warn("토큰에서 userId 추출 실패, 파라미터 사용: {}", e.getMessage());
+            }
+        }
+        return paramUserId != null ? paramUserId : 1;
+    }
 
     //친구 여부 확인
     @GetMapping("/{checkUserId}/friendStatus")
@@ -33,13 +53,19 @@ public class FriendController {
 
 
     @GetMapping
-    public ResponseEntity<List<FriendResponseDTO>> getList(@RequestParam int userId){
-        return ResponseEntity.ok(friendService.getList(userId));
+    public ResponseEntity<List<FriendResponseDTO>> getList(
+            HttpServletRequest request,
+            @RequestParam(required = false) Integer userId) {
+        int resolvedUserId = resolveUserId(request, userId);
+        return ResponseEntity.ok(friendService.getList(resolvedUserId));
     }
 
     @GetMapping("/requests")
-    public ResponseEntity<List<FriendRequestResponseDTO>> getRequestList(@RequestParam int userId){
-        return ResponseEntity.ok(friendService.getRequestList(userId));
+    public ResponseEntity<List<FriendRequestResponseDTO>> getRequestList(
+            HttpServletRequest request,
+            @RequestParam(required = false) Integer userId) {
+        int resolvedUserId = resolveUserId(request, userId);
+        return ResponseEntity.ok(friendService.getRequestList(resolvedUserId));
     }
 
     @GetMapping("/sendRequests")

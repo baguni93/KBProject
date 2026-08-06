@@ -30,7 +30,8 @@
       </router-link>
       <div class="quick-divider"></div>
       <router-link to="/point-wallet/conversion" class="quick-item">
-        <div class="quick-icon exchange"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+        <div class="quick-icon exchange"><i class="fa-solid fa-wallet"></i>
+          </div>
         <div>
           <strong>포인트 전환</strong>
         </div>
@@ -262,7 +263,7 @@ onMounted(loadPage);
 .quick-item span { margin-top: 2px; color: var(--kb-subtext); font-size: 10px; }
 .quick-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 16px; }
 .quick-icon.gift { background: #fff0c2; color: #ef9c00; }
-.quick-icon.exchange { background: #f1f2f4; color: #555; }
+.quick-icon.exchange { background: #fff0c2; color: #ef9c00; }
 .quick-divider { width: 1px; height: 34px; background: var(--kb-line); }
 .quick-arrow { color: #bbb; font-size: 10px; }
 .calendar-month { color: #777; font-size: 12px; font-weight: 600; }

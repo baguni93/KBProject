@@ -63,6 +63,21 @@ export default {
     return data;
   },
 
+  async startAsyncAnalysis(period) {
+    const { data } = await api.post(
+      `${SPENDING_ANALYSIS_URL}/async`,
+      { period },
+    );
+    return data;
+  },
+
+  async getAnalysisStatus(period = 1) {
+    const { data } = await api.get(`${SPENDING_ANALYSIS_URL}/status`, {
+      params: { period },
+    });
+    return data;
+  },
+
   async getAnalysisDetail(spendingAnalysisId) {
     const { data } = await api.get(
       `${SPENDING_ANALYSIS_URL}/${spendingAnalysisId}`,

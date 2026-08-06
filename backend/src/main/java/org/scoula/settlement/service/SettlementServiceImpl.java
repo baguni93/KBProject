@@ -37,13 +37,31 @@ public class SettlementServiceImpl implements SettlementService{
 
         SettlementVO settlementVO = request.toVo();
 
+        if (settlementVO.getSettlementType() == null) {
+            settlementVO.setSettlementType(Enum.SettlementType.EQUAL);
+        }
+        if (settlementVO.getSpendingCategoryId() <= 0) {
+            settlementVO.setSpendingCategoryId(1);
+        }
+        if (settlementVO.getTitle() == null || settlementVO.getTitle().isEmpty()) {
+            settlementVO.setTitle("더치페이 정산");
+        }
+        if (settlementVO.getTitle().length() > 20) {
+            settlementVO.setTitle(settlementVO.getTitle().substring(0, 20));
+        }
+        if (settlementVO.getContent() != null && settlementVO.getContent().length() > 20) {
+            settlementVO.setContent(settlementVO.getContent().substring(0, 20));
+        }
+
         settlementMapper.create(settlementVO);
 
         List<SettlementMemberRequestDTO> members = request.getMembers();
 
         if(members == null || members.isEmpty()) {
-            throw  new CustomException(ErrorCode.SETTLEMENT_CAN_NOT_CREATE);
+            throw new CustomException(ErrorCode.SETTLEMENT_CAN_NOT_CREATE);
         }
+
+        log.info("정산 생성 완료 - ID: {}", settlementVO.getSettlementId());
 
         createMember(settlementVO, members);
 
@@ -64,8 +82,8 @@ public class SettlementServiceImpl implements SettlementService{
 
     private void createMember(SettlementVO settlementVO, List<SettlementMemberRequestDTO> members) {
 
-        for(var member: members) {
-            SettlementMemberVO settlementMemberVO = SettlementMemberVO.of(settlementVO.getSettlementId() , member);
+        for (var member : members) {
+            SettlementMemberVO settlementMemberVO = SettlementMemberVO.of(settlementVO.getSettlementId(), member);
             settlementMapper.createMember(settlementMemberVO);
 
             notificationService.createSettlementNotification(
@@ -74,6 +92,17 @@ public class SettlementServiceImpl implements SettlementService{
                     settlementVO.getSettlementId(),
                     Enum.NotificationType.SETTLEMENT_REQUEST
             );
+            try {
+                notificationService.create(
+                        NotificationRequestDTO.builder()
+                                .receiverId(member.getUserId())
+                                .senderId(settlementVO.getRequesterId())
+                                .notificationType(Enum.NotificationType.SETTLEMENT_REQUEST)
+                                .targetId(settlementVO.getSettlementId())
+                                .build());
+            } catch (Exception e) {
+                log.warn("알림 생성 중 오류 발생 (무시하고 정산 진행): {}", e.getMessage());
+            }
         }
     }
 

@@ -41,8 +41,9 @@ const props = defineProps({
     required: true,
   },
   profileImageName: {
-    type: String,
-    required: true,
+    type: [String, Object],
+    required: false,
+    default: null,
   },
   nickname: {
     type: String,

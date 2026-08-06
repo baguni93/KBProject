@@ -31,20 +31,20 @@
 
     <!-- 충전 거래 기록 (자동 충전용) -->
     <insert id="insertChargeTransaction">
-        INSERT INTO financial_transaction_tbl (user_id, transaction_type, source_type, target_type, transaction_status, amount, created_at)
-        VALUES (#{walletId}, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', #{amount}, NOW())
+        INSERT INTO financial_transaction_tbl (user_id, spending_category_id, transaction_type, source_type, target_type, transaction_status, amount, created_at)
+        VALUES (#{walletId}, 1, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', #{amount}, NOW())
     </insert>
 
-    <!-- 송금 거래 내역 저장 -->
+    <!-- 송금 거래 내역 저장 (spending_category_id = 1: 송금/이체 카테고리 기본 지정) -->
     <insert id="insertRemittance" useGeneratedKeys="true" keyProperty="transactionId">
-        INSERT INTO financial_transaction_tbl (user_id, transaction_type, source_type, target_type, transaction_status, amount, created_at)
-        VALUES (#{walletId}, 'TRANSFER', 'WALLET', #{receiverType}, 'SUCCESS', #{amount}, NOW())
+        INSERT INTO financial_transaction_tbl (user_id, receive_id, spending_category_id, transaction_type, source_type, target_type, transaction_status, amount, created_at)
+        VALUES (#{walletId}, #{receiverId}, 1, 'TRANSFER', 'WALLET', #{receiverType}, 'SUCCESS', #{amount}, NOW())
     </insert>
 
-    <!-- 피드 데이터 저장 (receipt_memo_tbl 대신 feed_tbl에 직접 저장) -->
+    <!-- 최신 init.sql 기준 피드 데이터 저장 (target_id & feed_status 반영) -->
     <insert id="insertFeed">
-        INSERT INTO feed_tbl (user_id, transaction_id, feed_type, content, visibility, created_at, updated_at)
-        VALUES (#{userId}, #{transactionId}, #{feedType}, #{content}, #{visibility}, NOW(), NOW())
+        INSERT INTO feed_tbl (user_id, target_id, feed_type, content, visibility, feed_status, created_at, updated_at)
+        VALUES (#{userId}, #{transactionId}, #{feedType}, #{content}, #{visibility}, 'ACTIVE', NOW(), NOW())
     </insert>
 
     <!-- 은행 목록 조회 -->
@@ -68,5 +68,11 @@
         ORDER BY a.account_id ASC
         LIMIT #{limit}
     </select>
+
+    <!-- 송금 피드 이미지 등록 (feed_image_tbl) -->
+    <insert id="insertFeedImage">
+        INSERT INTO feed_image_tbl(feed_id, image_name)
+        VALUES (#{feedId}, #{imageName})
+    </insert>
 
 </mapper>
