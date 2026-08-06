@@ -88,7 +88,7 @@
 <script setup>
 import { nextTick, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import loginApi from '@/api/loginApi';
+import { getUserInfo } from '@/api/userApi';
 import { useSignupStore } from '@/stores/signup';
 import { useAuthStore } from '@/stores/auth';
 
@@ -123,6 +123,11 @@ const changePin = (event) => {
 const login = async () => {
   const phoneNumber = sessionStorage.getItem('pinLoginPhoneNumber');
 
+  if (!phoneNumber) {
+    errorMessage.value = '휴대폰 본인인증 정보가 없습니다.';
+    return;
+  }
+
   if (pinPassword.value.length !== 6) {
     errorMessage.value = '간편비밀번호 6자리를 입력해 주세요.';
     await focusPinInput();
@@ -133,17 +138,25 @@ const login = async () => {
     loading.value = true;
     errorMessage.value = '';
 
-    await authStore.login({ phoneNumber, pinPassword: pinPassword.value });
+    await authStore.login({
+      phoneNumber,
+      pinPassword: pinPassword.value,
+    });
+
+    const userInfo = await getUserInfo(authStore.userId);
+
+    authStore.setUserName(userInfo.userName);
 
     sessionStorage.removeItem('pinLoginPhoneNumber');
-
     signupStore.reset();
 
-    router.replace('/wallet');
+    // router.replace('/wallet');
+    await router.replace('/wallet');
   } catch (error) {
     console.error(error);
+
     pinPassword.value = '';
-    errorMessage.value = '간편비밀번호가 일치하지 않습니다.';
+    errorMessage.value = error.response?.data?.message || '간편비밀번호가 일치하지 않습니다.';
 
     await focusPinInput();
   } finally {
@@ -176,27 +189,21 @@ watch(pinPassword, (value) => {
 
 <style scoped>
 .login-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: calc(100vh - 70px);
-  padding: 24px 16px;
-  background: #F1F5F9;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
 }
 
 .login-container {
   position: relative;
   display: flex;
-  flex: none;
   flex-direction: column;
   width: 100%;
-  max-width: 400px;
-  min-height: 680px;
-  padding: 32px 28px 32px;
+  height: 100%;
+  min-height: 0;
+  padding: 26px 28px 140px;
   background: #ffffff;
-  border-radius: 32px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .back-button {
@@ -343,11 +350,15 @@ watch(pinPassword, (value) => {
 }
 
 .login-button {
-  width: 100%;
+  position: absolute;
+  right: 28px;
+  bottom: 58px;
+  left: 28px;
+  width: auto;
   height: 58px;
-  margin-top: auto;
+  margin: 0;
   border: 1px solid #cc9200;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #ffbc2e;
   color: #111111;
   font-size: 18px;
@@ -365,6 +376,7 @@ watch(pinPassword, (value) => {
 .loading-overlay {
   position: absolute;
   inset: 0;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
