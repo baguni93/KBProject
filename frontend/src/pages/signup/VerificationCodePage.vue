@@ -1,10 +1,13 @@
 <template>
   <div class="signup-page">
     <main class="signup-container">
-      <button class="back-button" type="button" @click="goBack">&lt;</button>
+      <button class="back-button" type="button" @click="goBack">
+        &lt;
+      </button>
 
       <header class="signup-header">
         <h1>인증번호 입력</h1>
+
         <p>
           문자로 받은 인증번호를<br />
           입력해 주세요.
@@ -36,7 +39,8 @@
         <VerificationCodeInput v-model="verificationCode" :expired="expired" />
 
         <p v-if="signupStore.developmentCode" class="development-code">
-          개발용 인증번호: {{ signupStore.developmentCode }}
+          개발용 인증번호:
+          {{ signupStore.developmentCode }}
         </p>
 
         <p v-if="expired && resendCount === 0" class="error-message">
@@ -72,6 +76,11 @@
       >
         {{ loading ? '확인 중...' : '확인' }}
       </button>
+
+      <div v-if="loading" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <span>인증정보를 확인하고 있어요.</span>
+      </div>
     </main>
   </div>
 </template>
@@ -80,12 +89,15 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import loginApi from '@/api/loginApi';
+import { changePhoneNumber, changeUserName } from '@/api/userApi';
 import VerificationCodeInput from '@/components/auth/VerificationCodeInput.vue';
 import VerificationTimer from '@/components/auth/VerificationTimer.vue';
+import { useAuthStore } from '@/stores/auth';
 import { useSignupStore } from '@/stores/signup';
 
 const router = useRouter();
 const signupStore = useSignupStore();
+const authStore = useAuthStore();
 
 const verificationCode = ref('');
 const errorMessage = ref('');
@@ -102,42 +114,120 @@ const handleExpired = () => {
   errorMessage.value = '';
 };
 
+// PIN 재설정 인증 완료 처리
+const handlePinReset = async () => {
+  sessionStorage.setItem('pinResetPhoneNumber', signupStore.phoneAuth.phoneNumber);
+
+  await router.push('/auth/pin-reset');
+};
+
+// 이름 변경 인증 완료 처리
+const handleNameChange = async () => {
+  const newUserName = sessionStorage.getItem('nameChangeNewUserName');
+
+  if (!authStore.userId || !newUserName) {
+    await router.replace('/setting/account-management/name');
+
+    return;
+  }
+
+  await changeUserName(authStore.userId, {
+    phoneNumber: signupStore.phoneAuth.phoneNumber,
+    newUserName,
+  });
+
+  authStore.setUserName(newUserName);
+
+  sessionStorage.removeItem('nameChangeNewUserName');
+
+  signupStore.reset();
+
+  await router.replace({
+    path: '/setting/account-management/complete',
+    query: { type: 'NAME_CHANGE' },
+  });
+};
+
+// 휴대폰번호 변경 인증 완료 처리
+const handlePhoneChange = async () => {
+  if (!authStore.userId) {
+    await router.replace('/intro');
+    return;
+  }
+
+  await changePhoneNumber(authStore.userId, {
+    newPhoneNumber: signupStore.phoneAuth.phoneNumber,
+  });
+
+  signupStore.reset();
+
+  await router.replace({
+    path: '/setting/account-management/complete',
+    query: { type: 'PHONE_CHANGE' },
+  });
+};
+
+// 회원가입 인증 완료 처리
+const handleSignup = async () => {
+  const signupResponse = await loginApi.checkSignupStatus({
+    phoneNumber: signupStore.phoneAuth.phoneNumber,
+  });
+
+  signupStore.setMemberStatus(signupResponse.memberStatus);
+
+  if (signupResponse.existingMember) {
+    sessionStorage.setItem('pinLoginPhoneNumber', signupStore.phoneAuth.phoneNumber);
+
+    await router.push('/signup/existing-member');
+
+    return;
+  }
+
+  await router.push('/signup/new-member');
+};
+
 // 인증번호 확인
 const verifyCode = async () => {
+  if (verificationCode.value.length !== 6 || loading.value || expired.value) {
+    return;
+  }
+
   try {
     loading.value = true;
     errorMessage.value = '';
 
+    const verificationPurpose = signupStore.phoneAuth.verificationPurpose;
+
     await loginApi.verifyPhoneAuthCode({
       phoneNumber: signupStore.phoneAuth.phoneNumber,
       verificationCode: verificationCode.value,
-      verificationPurpose: signupStore.phoneAuth.verificationPurpose,
+      verificationPurpose,
     });
 
     signupStore.setVerificationCode(verificationCode.value);
 
-    if (signupStore.phoneAuth.verificationPurpose === 'PIN_RESET') {
-      sessionStorage.setItem('pinResetPhoneNumber', signupStore.phoneAuth.phoneNumber);
-      router.push('/auth/pin-reset');
+    if (verificationPurpose === 'PIN_RESET') {
+      await handlePinReset();
       return;
     }
 
-    const signupResponse = await loginApi.checkSignupStatus({
-      phoneNumber: signupStore.phoneAuth.phoneNumber,
-    });
-
-    signupStore.setMemberStatus(signupResponse.memberStatus);
-
-    if (signupResponse.existingMember) {
-      sessionStorage.setItem('pinLoginPhoneNumber', signupStore.phoneAuth.phoneNumber);
-      router.push('/signup/existing-member');
+    if (verificationPurpose === 'NAME_CHANGE') {
+      await handleNameChange();
       return;
     }
 
-    router.push('/signup/new-member');
+    if (verificationPurpose === 'PHONE_CHANGE') {
+      await handlePhoneChange();
+      return;
+    }
+
+    await handleSignup();
   } catch (error) {
     console.error(error);
-    errorMessage.value = '인증번호가 일치하지 않습니다.';
+
+    errorMessage.value = error.response?.data?.message || '인증번호가 일치하지 않습니다.';
+
+    verificationCode.value = '';
   } finally {
     loading.value = false;
   }
@@ -145,7 +235,9 @@ const verifyCode = async () => {
 
 // 인증번호 재발급
 const resendCode = async () => {
-  if (resendCount.value >= 1) return;
+  if (resendCount.value >= 1 || resending.value) {
+    return;
+  }
 
   try {
     resending.value = true;
@@ -165,44 +257,72 @@ const resendCode = async () => {
     timerKey.value += 1;
   } catch (error) {
     console.error(error);
-    errorMessage.value = '인증번호 재전송에 실패했습니다.';
+
+    errorMessage.value = error.response?.data?.message || '인증번호 재전송에 실패했습니다.';
   } finally {
     resending.value = false;
   }
 };
 
 // 본인인증 다시 시작
-const restartVerification = () => {
+const restartVerification = async () => {
+  const verificationPurpose = signupStore.phoneAuth.verificationPurpose;
+
   signupStore.setVerificationCode('');
   signupStore.setDevelopmentCode('');
-  router.push('/signup/check');
+
+  if (verificationPurpose === 'NAME_CHANGE') {
+    await router.replace('/setting/account-management/name');
+
+    return;
+  }
+
+  if (verificationPurpose === 'PHONE_CHANGE') {
+    await router.replace('/setting/account-management/phone');
+
+    return;
+  }
+
+  await router.push('/signup/check');
 };
 
 // 이전 화면
-const goBack = () => {
+const goBack = async () => {
+  const verificationPurpose = signupStore.phoneAuth.verificationPurpose;
+
+  if (verificationPurpose === 'NAME_CHANGE') {
+    await router.replace('/setting/account-management/name');
+
+    return;
+  }
+
+  if (verificationPurpose === 'PHONE_CHANGE') {
+    await router.replace('/setting/account-management/phone');
+
+    return;
+  }
+
   router.back();
 };
 </script>
 
 <style scoped>
 .signup-page {
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
-  overflow: auto;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
 }
 
 .signup-container {
+  position: relative;
   display: flex;
-  flex: none;
   flex-direction: column;
-  width: 390px;
-  height: 844px;
-  padding: 26px 28px 30px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 26px 28px 140px;
   background: #ffffff;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .back-button {
@@ -214,6 +334,7 @@ const goBack = () => {
   color: #555555;
   font-size: 28px;
   line-height: 1;
+  cursor: pointer;
 }
 
 .signup-header h1 {
@@ -226,9 +347,9 @@ const goBack = () => {
 .signup-header p {
   margin: 0;
   color: #777777;
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 .verification-section {
@@ -265,6 +386,7 @@ const goBack = () => {
   color: #444444;
   font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
 }
 
 .resend-button:disabled {
@@ -281,15 +403,20 @@ const goBack = () => {
 }
 
 .confirm-button {
-  width: 100%;
+  position: absolute;
+  right: 28px;
+  bottom: 58px;
+  left: 28px;
+  width: auto;
   height: 58px;
-  margin-top: auto;
+  margin: 0;
   border: 1px solid #cc9200;
   border-radius: 10px;
   background: #ffbc2e;
   color: #111111;
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .confirm-button:disabled {
@@ -297,5 +424,35 @@ const goBack = () => {
   background: #eeeeee;
   color: #999999;
   cursor: not-allowed;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #333333;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid #eeeeee;
+  border-top-color: #ffbc2e;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

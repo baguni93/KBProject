@@ -79,23 +79,21 @@ const goLogin = () => {
 
 <style scoped>
 .member-page {
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
-  overflow: auto;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
 }
 
 .member-container {
+  position: relative;
   display: flex;
-  flex: none;
   flex-direction: column;
-  width: 390px;
-  height: 844px;
-  padding: 52px 28px 30px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 40px 28px 140px;
   background: #ffffff;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .member-content {
@@ -202,7 +200,7 @@ const goLogin = () => {
 .member-content h1 {
   margin: 0;
   color: #111111;
-  font-size: 27px;
+  font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.7px;
 }
@@ -210,13 +208,13 @@ const goLogin = () => {
 .member-description {
   margin: 18px 0 0;
   color: #777777;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 1.6;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .guide-list {
-  margin-top: 48px;
+  margin-top: 42px;
   padding: 6px 18px;
   border-radius: 20px;
   background: #fafafa;
@@ -226,9 +224,9 @@ const goLogin = () => {
 
 .guide-item {
   display: flex;
+  min-height: 86px;
   align-items: center;
   gap: 14px;
-  min-height: 86px;
   border-bottom: 1px solid #eeeeee;
 }
 
@@ -265,11 +263,15 @@ const goLogin = () => {
 }
 
 .bottom-button {
-  width: 100%;
+  position: absolute;
+  right: 28px;
+  bottom: 58px;
+  left: 28px;
+  width: auto;
   height: 58px;
-  margin-top: auto;
-  border: 1px solid #d99900;
-  border-radius: 12px;
+  margin: 0;
+  border: 1px solid #cc9200;
+  border-radius: 10px;
   background: #ffbc2e;
   color: #111111;
   font-size: 18px;

@@ -69,23 +69,21 @@ const goBack = () => {
 
 <style scoped>
 .signup-page {
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
-  overflow: auto;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
 }
 
 .signup-container {
+  position: relative;
   display: flex;
-  flex: none;
   flex-direction: column;
-  width: 390px;
-  height: 844px;
-  padding: 26px 28px 32px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 26px 28px 140px;
   background: #ffffff;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .back-button {
@@ -97,6 +95,7 @@ const goBack = () => {
   color: #555555;
   font-size: 28px;
   line-height: 1;
+  cursor: pointer;
 }
 
 .signup-header {
@@ -122,5 +121,16 @@ const goBack = () => {
   margin: 16px 0 0;
   color: #d32f2f;
   font-size: 14px;
+}
+
+/* PhoneAuthForm 안의 인증번호 받기 버튼 */
+:deep(.submit-button) {
+  position: absolute;
+  right: 28px;
+  bottom: 58px;
+  left: 28px;
+  width: auto;
+  height: 58px;
+  margin: 0;
 }
 </style>

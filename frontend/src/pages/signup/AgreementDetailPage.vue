@@ -101,36 +101,33 @@ onMounted(loadAgreement);
 
 <style scoped>
 .detail-page {
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
-  overflow: auto;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
 }
 
 .detail-container {
   position: relative;
   display: flex;
-  flex: none;
   flex-direction: column;
-  width: 390px;
-  height: 844px;
-  min-height: 844px;
-  padding: 24px 24px 28px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 26px 28px 30px;
   background: #ffffff;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .back-button {
   align-self: flex-start;
-  margin-bottom: 22px;
+  margin-bottom: 28px;
   padding: 0;
   border: 0;
   background: transparent;
   color: #555555;
   font-size: 28px;
   line-height: 1;
+  cursor: pointer;
 }
 
 .detail-content {
@@ -147,9 +144,9 @@ onMounted(loadAgreement);
 .detail-header h1 {
   margin: 0 0 20px;
   color: #111111;
-  font-size: 25px;
+  font-size: 28px;
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 .agreement-type {
@@ -172,12 +169,20 @@ onMounted(loadAgreement);
   min-height: 0;
   padding: 18px;
   border: 1px solid #dddddd;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #333333;
   font-size: 15px;
   line-height: 1.8;
   white-space: pre-wrap;
+
   overflow-y: auto;
+
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.agreement-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .consent-label {
@@ -205,6 +210,7 @@ onMounted(loadAgreement);
   border: 1px solid #999999;
   border-radius: 5px;
   background: #ffffff;
+  box-sizing: border-box;
 }
 
 .consent-label input:checked + .check-box {
@@ -226,6 +232,7 @@ onMounted(loadAgreement);
 .consent-label span:last-child {
   color: #222222;
   font-size: 16px;
+  font-weight: 600;
 }
 
 .status-message {
