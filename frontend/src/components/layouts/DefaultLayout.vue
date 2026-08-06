@@ -34,6 +34,9 @@ const scrollbarHiddenRouteNames = new Set([
   'analysis-main',
   'analysis-agreement',
   'analysis-result',
+  'analysis-recommendation-guide',
+  'card-recommendation',
+  'card-recommendation-detail',
 ]);
 
 const hideScrollbar = computed(() =>
