@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CardRecommendationController {
 
+    // 카드 추천 목록조회, 상세조회, 실제 추천 계산
     private final CardRecommendationService cardRecommendationService;
+    // 비동기 작업 시작, 현재 작업 상태 조회
     private final CardRecommendationAsyncService
             cardRecommendationAsyncService;
 
@@ -48,6 +50,7 @@ public class CardRecommendationController {
                 .body(response);
     }
 
+    // 카드 추천 비동기 시작 API
     @ApiOperation("카드 추천 비동기 생성 시작")
     @PostMapping(
             "/api/spending-analyses/{spendingAnalysisId}"
@@ -80,6 +83,7 @@ public class CardRecommendationController {
             @PathVariable("spendingAnalysisId")
             Integer spendingAnalysisId
     ) {
+        // TODO-auth : 이 임시 사용자 JWT로 바꿔야 합니다.
         Integer temporaryUserId = 1;
 
         return ResponseEntity.ok(
@@ -111,6 +115,7 @@ public class CardRecommendationController {
             )
             String feeMode
     ) {
+        // TODO-auth : 임시 사용자 1번 교체해야한다.
         Integer temporaryUserId = 1;
 
         return ResponseEntity.ok(
