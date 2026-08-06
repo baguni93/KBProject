@@ -39,7 +39,7 @@ import javax.sql.DataSource;
         "org.scoula.analysis.mapper",
         "org.scoula.cardrecommendation.mapper",
 
-
+        "org.scoula.profileTest.mapper",
 		"org.scoula.user.mapper",
         "org.scoula.agreement.mapper",
         "org.scoula.login.mapper",
@@ -75,7 +75,7 @@ import javax.sql.DataSource;
         "org.scoula.account.service",
         "org.scoula.notifsetting.service",
         "org.scoula.card.service",
-
+        "org.scoula.profileTest.service",
         "org.scoula.event.service",
 })
 @EnableTransactionManagement
