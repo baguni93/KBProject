@@ -259,6 +259,7 @@ const loadRecommendationList = async () => {
   );
 };
 
+// 2초마다 백엔드에 작업이 완료되었는지 호출한다.(비동기 처리용도)
 const STATUS_POLL_INTERVAL = 2000;
 let statusTimer = null;
 
