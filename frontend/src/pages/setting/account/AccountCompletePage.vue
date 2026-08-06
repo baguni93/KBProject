@@ -28,7 +28,7 @@
       </section>
 
       <button class="complete-button" type="button" @click="complete">
-        시작하기
+        {{ isInitialConnection ? '시작하기' : '확인' }}
       </button>
     </main>
   </div>
@@ -42,40 +42,55 @@ import { useAccountStore } from '@/stores/account';
 const router = useRouter();
 const accountStore = useAccountStore();
 
+// 회원가입 직후 첫 계좌 연결 여부
+const isInitialConnection = computed(() => {
+  return !!sessionStorage.getItem('signupUserId');
+});
+
+// 계좌번호 마스킹
 const maskedAccountNumber = computed(() => {
-  const accountNumber = accountStore.accountForm.accountNumber;
+  const accountNumber = accountStore.accountForm.accountNumber || '';
 
   if (accountNumber.length <= 4) return accountNumber;
 
-  return `${accountNumber.slice(0, 3)}-${'*'.repeat(accountNumber.length - 7)}-${accountNumber.slice(-4)}`;
+  const middleLength = Math.max(accountNumber.length - 7, 0);
+
+  return `${accountNumber.slice(0, 3)}-${'*'.repeat(middleLength)}-${accountNumber.slice(-4)}`;
 });
 
 // 계좌 연결 완료
-const complete = () => {
-  sessionStorage.removeItem('signupUserId');
+const complete = async () => {
+  const initialConnection = isInitialConnection.value;
+
   accountStore.resetAccountForm();
-  router.replace('/');
+
+  if (initialConnection) {
+    sessionStorage.removeItem('signupUserId');
+    await router.replace('/wallet');
+    return;
+  }
+
+  await router.replace('/setting/accounts');
 };
 </script>
 
 <style scoped>
 .complete-page {
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
 }
 
 .complete-container {
+  position: relative;
   display: flex;
-  flex: none;
   flex-direction: column;
-  width: 390px;
-  height: 844px;
-  padding: 74px 28px 30px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 82px 28px 140px;
   background: #ffffff;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .complete-content {
@@ -84,72 +99,85 @@ const complete = () => {
 
 .complete-icon {
   display: flex;
-  width: 108px;
-  height: 108px;
   align-items: center;
   justify-content: center;
-  margin: 56px auto 46px;
+  width: 110px;
+  height: 110px;
+  margin: 20px auto 42px;
   border-radius: 50%;
-  background: #ffbc2e;
-  box-shadow: 0 20px 40px rgba(255, 188, 46, 0.28);
+  background: linear-gradient(145deg, #ffc744, #ffb00f);
+  box-shadow: 0 18px 34px rgba(255, 188, 46, 0.25);
   color: #ffffff;
-  font-size: 54px;
+  font-size: 52px;
+  font-weight: 700;
 }
 
 .complete-content h1 {
-  margin: 0;
+  margin: 0 0 28px;
   color: #111111;
-  font-size: 27px;
-  font-weight: 800;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .complete-content > p {
-  margin: 20px 0 0;
+  margin: 0;
   color: #777777;
-  font-size: 16px;
-  line-height: 1.65;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.35;
 }
 
 .account-card {
   display: flex;
   align-items: center;
-  gap: 15px;
-  margin-top: 52px;
-  padding: 20px;
-  border: 1px solid #f1e2b5;
-  border-radius: 18px;
-  background: #fff9e9;
+  gap: 16px;
+  margin-top: 56px;
+  padding: 18px;
+  border: 1px solid #f2e3b7;
+  border-radius: 16px;
+  background: #fff9ea;
   text-align: left;
 }
 
 .account-card img {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   object-fit: contain;
 }
 
 .account-card strong {
   display: block;
   color: #222222;
-  font-size: 15px;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .account-card span {
   display: block;
-  margin-top: 7px;
+  margin-top: 6px;
   color: #777777;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .complete-button {
-  width: 100%;
+  position: absolute;
+  right: 28px;
+  bottom: 58px;
+  left: 28px;
+  width: auto;
   height: 58px;
-  margin-top: auto;
+  margin: 0;
   border: 1px solid #cc9200;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #ffbc2e;
   color: #111111;
   font-size: 18px;
   font-weight: 800;
+  cursor: pointer;
+}
+
+.complete-button:active {
+  background: #f2aa10;
 }
 </style>
