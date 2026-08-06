@@ -45,6 +45,7 @@
         <AnalysisDonutChart
             :categories="sortedCategories"
             :total-amount="analysis.totalSpendingAmount"
+            variant="detail"
         />
 
         <div class="summary-meta">
@@ -461,6 +462,10 @@ onMounted(loadAnalysisDetail);
   padding-bottom: 34px
 }
 
+.result-page .kb-app-header__title {
+  font-size: 16px
+}
+
 .execution-date-card {
   margin: 14px 0 12px;
   padding: 0 2px
@@ -490,7 +495,7 @@ onMounted(loadAnalysisDetail);
 }
 
 .result-hero {
-  padding: 20px;
+  padding: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -511,7 +516,7 @@ onMounted(loadAnalysisDetail);
   border-radius: 999px;
   background: #ffeab0;
   color: #9b7000;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 900
 }
 
@@ -527,7 +532,7 @@ onMounted(loadAnalysisDetail);
   display: -webkit-box;
   overflow: hidden;
   color: #746d5c;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4
@@ -617,13 +622,13 @@ onMounted(loadAnalysisDetail);
 
 .summary-stats span {
   color: #8f8f8f;
-  font-size: 8px
+  font-size: 10px
 }
 
 .summary-stats strong {
   margin-top: 4px;
   min-width: 0;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 900;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -643,7 +648,7 @@ onMounted(loadAnalysisDetail);
 }
 
 .result-row {
-  min-height: 68px;
+  min-height: 64px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -655,13 +660,13 @@ onMounted(loadAnalysisDetail);
 }
 
 .result-category-icon {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 38px;
-  border-radius: 13px;
+  flex: 0 0 36px;
+  border-radius: 12px;
   font-size: 14px
 }
 
@@ -686,8 +691,8 @@ onMounted(loadAnalysisDetail);
 }
 
 .result-track {
-  height: 6px;
-  margin-top: 8px;
+  height: 5px;
+  margin-top: 7px;
   overflow: hidden;
   border-radius: 8px;
   background: #eff0f2
@@ -700,7 +705,7 @@ onMounted(loadAnalysisDetail);
 }
 
 .result-category-amount {
-  min-width: 76px;
+  min-width: 72px;
   text-align: right
 }
 
@@ -860,7 +865,7 @@ onMounted(loadAnalysisDetail);
 }
 
 .transaction-row {
-  min-height: 66px;
+  min-height: 65px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -895,7 +900,8 @@ onMounted(loadAnalysisDetail);
 
 .transaction-info strong {
   overflow: hidden;
-  font-size: 10px;
+  font-size: 13px;
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap
 }
@@ -916,11 +922,13 @@ onMounted(loadAnalysisDetail);
 }
 
 .transaction-right button {
-  margin-top: 3px;
+  margin-top: 4px;
+  padding: 0;
   border: 0;
   background: transparent;
   color: #a27800;
-  font-size: 8px
+  font-size: 10px;
+  font-weight: 700
 }
 
 .pagination {
@@ -960,7 +968,7 @@ onMounted(loadAnalysisDetail);
 }
 
 .result-actions button {
-  font-size: 11px
+  font-size: 13px
 }
 
 @media (max-width: 420px) {

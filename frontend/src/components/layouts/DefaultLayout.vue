@@ -3,7 +3,10 @@
     <div class="container" id="app-container">
       <!-- Content -->
       <div ref="contentRef" class="content"
-           :class="{ 'has-bottom-nav': props.showBottomNav }">
+           :class="{
+             'has-bottom-nav': props.showBottomNav,
+             'hide-scrollbar': hideScrollbar,
+           }">
         <slot></slot>
       </div>
 
@@ -14,7 +17,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import BottomNav from './BottomNav.vue';
 
@@ -26,6 +29,16 @@ const props = defineProps({
 });
 
 const route = useRoute();
+
+const scrollbarHiddenRouteNames = new Set([
+  'analysis-main',
+  'analysis-agreement',
+  'analysis-result',
+]);
+
+const hideScrollbar = computed(() =>
+  scrollbarHiddenRouteNames.has(String(route.name ?? '')),
+);
 
 const contentRef = ref(null);
 
@@ -111,6 +124,16 @@ watch(
 
 .content.has-bottom-nav {
   padding-bottom: 90px;
+}
+
+/* 소비분석 메인·동의·상세 화면에서만 스크롤바 표시를 숨긴다. */
+.content.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.content.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* BottomNav 위에 띄우기 */

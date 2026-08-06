@@ -148,7 +148,7 @@ onMounted(loadAgreements);
   min-height: 100vh;
   padding: 24px 0;
   background: #f4f4f4;
-  overflow: auto;
+  overflow: visible;
 }
 
 .analysis-agreement-container {
@@ -161,7 +161,7 @@ onMounted(loadAgreements);
   margin: 0;
   padding: 60px 28px 116px;
   background: #ffffff;
-  overflow-y: auto;
+  overflow-y: visible;
 }
 
 .agreement-header h1 {
