@@ -1715,7 +1715,40 @@ CREATE TABLE event_participation_tbl
         UNIQUE (event_id, user_id)
 );
 
--- 45-1. 이벤트 - 출석체크 참여이력 테이블
+-- 45-1. 이벤트 참여 관리 테이블
+DROP TABLE IF EXISTS event_user_tbl;
+
+CREATE TABLE event_user_tbl
+(
+    -- 이벤트 참여 관리 PK
+    event_user_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    -- 참여한 이벤트 ID
+    event_id INT NOT NULL,
+
+    -- 참여한 사용자 ID
+    user_id INT NOT NULL,
+
+    -- 이벤트 참여 시작 시간
+    joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    -- 이벤트 테이블과 연결
+    CONSTRAINT fk_event_user_event
+        FOREIGN KEY (event_id)
+        REFERENCES event_tbl(event_id),
+
+    -- 사용자 테이블과 연결
+    CONSTRAINT fk_event_user_member
+        FOREIGN KEY (user_id)
+        REFERENCES user_tbl(user_id),
+
+
+    -- 한 사용자는 같은 이벤트에 중복 참여 불가
+    -- ex) user_id = 1, event_id = 10 한번만 저장 가능
+    UNIQUE KEY uk_event_user (event_id, user_id)
+);
+
+-- 45-2. 이벤트 - 출석체크 참여이력 테이블
 DROP TABLE IF EXISTS event_attendance_tbl;
 
 CREATE TABLE event_attendance_tbl (

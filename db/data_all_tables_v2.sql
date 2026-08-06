@@ -24,7 +24,7 @@ DROP TABLE IF EXISTS `event_reward_receive_tbl`;
 DROP TABLE IF EXISTS `event_participation_tbl`;
 DROP TABLE IF EXISTS `event_reward_tbl`;
 DROP TABLE IF EXISTS `event_tbl`;
-DROP TABLE IF EXISTS `event_user_tb`;
+DROP TABLE IF EXISTS `event_user_tbl`;
 DROP TABLE IF EXISTS `card_application_history_tbl`;
 DROP TABLE IF EXISTS `custom_image_tbl`;
 DROP TABLE IF EXISTS `file_image_tbl`;
@@ -1837,7 +1837,7 @@ CREATE TABLE event_participation_tbl
         UNIQUE (event_id, user_id)
 );
 
-
+-- 45-1. 이벤트 참여 관리 테이블
 DROP TABLE IF EXISTS event_user_tbl;
 
 CREATE TABLE event_user_tbl
@@ -1870,7 +1870,7 @@ CREATE TABLE event_user_tbl
     UNIQUE KEY uk_event_user (event_id, user_id)
 );
 
--- 45-1. 이벤트 - 출석체크 참여이력 테이블
+-- 45-2. 이벤트 - 출석체크 참여이력 테이블
 DROP TABLE IF EXISTS event_attendance_tbl;
 
 CREATE TABLE event_attendance_tbl (
