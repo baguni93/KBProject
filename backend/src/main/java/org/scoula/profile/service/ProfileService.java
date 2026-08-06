@@ -20,4 +20,7 @@ public interface ProfileService {
 
     // 프로필 이미지 파일 조회
     File getProfileImage(Long userId);
+
+    // 프로필 이미지 삭제
+    boolean deleteProfileImage(Long userId);
 }
