@@ -1,28 +1,39 @@
 <template>
-  <!-- 네비게이션 항목 -->
   <li class="nav-item">
-    <!-- 프로필 페이지로 이동하는 링크 -->
-    <router-link class="nav-link" to="/auth/profile">
-      <!-- 사용자 아이콘 -->
-      <img :src="avatar" class="avatar avatar-sm" />
-      <!-- 사용자 이름 표시 -->
-      {{ username }}
+    <router-link class="nav-link account-link" to="/auth/profile">
+      <span class="account-icon">👤</span>
+      <span>{{ userName }}</span>
     </router-link>
   </li>
 </template>
 
 <script setup>
-import { useAuthStore } from '@/stores/auth';
 import { computed } from 'vue';
+import { useAuthStore } from '@/stores/auth';
 
 const auth = useAuthStore();
-const props = defineProps({ username: String });
-//const avatar = `/api/member/${props.username}/avatar`;
+
+const props = defineProps({
+    username: {
+        type: String,
+        default: '사용자',
+    },
+});
 
 const avatar = computed(
-  () =>
-    `/api/member/${props.username}/avatar?t=${auth.state?.user?.avatarUpdated || 0}`,
+    () =>
+        `/api/member/${props.username}/avatar?t=${auth.state?.user?.avatarUpdated || 0}`,
 );
 </script>
 
-<style lang="scss" scoped></style>
+<style scoped>
+.account-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.account-icon {
+  font-size: 17px;
+}
+</style>

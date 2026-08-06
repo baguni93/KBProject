@@ -2,7 +2,9 @@
   <div class="intro-page">
     <main class="intro-container">
       <section class="intro-content">
-        <div class="service-badge">SOCIAL WALLET</div>
+        <div class="service-badge">
+          SOCIAL WALLET
+        </div>
 
         <h1>
           결제는 순식간,<br />
@@ -44,7 +46,11 @@
         </div>
       </section>
 
-      <button class="start-button" type="button" @click="start">
+      <button
+          class="start-button"
+          type="button"
+          @click="start"
+      >
         시작하기
       </button>
     </main>
@@ -64,31 +70,31 @@ const start = () => {
 
 <style scoped>
 .intro-page {
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
-  overflow: auto;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
 }
 
 .intro-container {
   display: flex;
-  flex: none;
   flex-direction: column;
-  width: 390px;
-  height: 844px;
-  padding: 56px 28px 30px;
+  width: 100%;
+  height: 100%;
+  padding: 40px 28px 30px;
   background: #ffffff;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .intro-content {
+  display: flex;
   flex: 1;
+  min-height: 0;
+  flex-direction: column;
 }
 
 .service-badge {
   display: inline-flex;
+  align-self: flex-start;
   align-items: center;
   min-height: 30px;
   padding: 0 14px;
@@ -120,8 +126,8 @@ const start = () => {
 .wallet-visual {
   position: relative;
   width: 100%;
-  height: 330px;
-  margin-top: 46px;
+  height: 300px;
+  margin-top: 34px;
 }
 
 .visual-glow {
@@ -147,6 +153,7 @@ const start = () => {
   height: 154px;
   border-radius: 20px;
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14);
+  box-sizing: border-box;
 }
 
 .back-card {
@@ -237,6 +244,7 @@ const start = () => {
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14);
   font-size: 21px;
   font-weight: 800;
+  box-sizing: border-box;
 }
 
 .left-bubble {
@@ -256,6 +264,8 @@ const start = () => {
 .start-button {
   width: 100%;
   height: 58px;
+  margin-top: auto;
+  margin-bottom: 28px;
   border: 1px solid #cc9200;
   border-radius: 10px;
   background: #ffbc2e;
@@ -267,5 +277,29 @@ const start = () => {
 
 .start-button:active {
   background: #f3aa0b;
+}
+
+@media (max-height: 760px) {
+  .intro-container {
+    padding-top: 24px;
+    padding-bottom: 22px;
+  }
+
+  .intro-content h1 {
+    margin-top: 18px;
+    font-size: 30px;
+  }
+
+  .intro-content p {
+    margin-top: 14px;
+    font-size: 15px;
+  }
+
+  .wallet-visual {
+    height: 280px;
+    margin-top: 24px;
+    transform: scale(0.9);
+    transform-origin: top center;
+  }
 }
 </style>

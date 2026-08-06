@@ -226,7 +226,9 @@ onMounted(() => {
 <style scoped>
 .notification-page {
   width: 100%;
-  padding: 20px;
+  min-height: 100%;
+  padding: 0 20px 30px;
+  background: #ffffff;
 }
 
 .notification-content {

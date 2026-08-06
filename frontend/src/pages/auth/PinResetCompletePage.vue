@@ -64,23 +64,16 @@ const goLogin = () => {
 
 <style scoped>
 .complete-page {
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
-  overflow: auto;
+  width: 100%;
+  min-height: 100%;
+  padding: 58px 28px 30px;
+  background: #ffffff;
 }
 
 .complete-container {
   display: flex;
-  flex: none;
   flex-direction: column;
-  width: 390px;
-  height: 844px;
-  padding: 74px 28px 30px;
-  background: #ffffff;
-  overflow: hidden;
+  width: 100%;
 }
 
 .complete-content {

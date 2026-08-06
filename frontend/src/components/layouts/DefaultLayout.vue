@@ -2,7 +2,8 @@
   <div class="app-wrapper">
     <div class="container" id="app-container">
       <!-- Content -->
-      <div ref="contentRef" class="content">
+      <div ref="contentRef" class="content"
+           :class="{ 'has-bottom-nav': props.showBottomNav }">
         <slot></slot>
       </div>
 
@@ -17,7 +18,7 @@ import { ref, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import BottomNav from './BottomNav.vue';
 
-defineProps({
+const props = defineProps({
   showBottomNav: {
     type: Boolean,
     default: true,
@@ -101,11 +102,15 @@ watch(
 
   padding-top: 16px;
 
-  padding-bottom: 90px;
+  padding-bottom: 0;
 
   box-sizing: border-box;
 
   background: white;
+}
+
+.content.has-bottom-nav {
+  padding-bottom: 90px;
 }
 
 /* BottomNav 위에 띄우기 */

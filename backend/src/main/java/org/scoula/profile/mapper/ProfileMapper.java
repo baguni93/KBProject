@@ -23,4 +23,7 @@ public interface ProfileMapper {
             @Param("originalName") String originalName,
             @Param("storedName") String storedName
     );
+
+    // 프로필 이미지 정보 초기화
+    int clearProfileImage(Long userId);
 }

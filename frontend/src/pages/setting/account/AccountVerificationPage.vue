@@ -141,91 +141,109 @@ onMounted(() => {
 
 <style scoped>
 .account-page {
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
 }
 
 .account-container {
+  position: relative;
   display: flex;
-  flex: none;
   flex-direction: column;
-  width: 390px;
-  height: 844px;
-  padding: 26px 28px 30px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 26px 28px 140px;
   background: #ffffff;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .back-button {
   align-self: flex-start;
+  margin-bottom: 28px;
   padding: 0;
   border: 0;
   background: transparent;
   color: #555555;
   font-size: 28px;
   line-height: 1;
+  cursor: pointer;
 }
 
 .page-header {
-  margin-top: 54px;
+  margin: 0;
 }
 
 .page-header h1 {
-  margin: 0;
+  margin: 0 0 28px;
   color: #111111;
-  font-size: 28px;
-  font-weight: 800;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .page-header p {
-  margin: 18px 0 0;
+  margin: 0;
   color: #777777;
-  font-size: 17px;
-  line-height: 1.55;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.35;
 }
 
 .verification-section {
-  margin-top: 72px;
+  margin-top: 64px;
   text-align: center;
 }
 
 .verification-boxes {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  cursor: text;
 }
 
 .verification-box {
   display: flex;
-  height: 66px;
+  aspect-ratio: 1 / 1;
+  max-height: 72px;
   align-items: center;
   justify-content: center;
   border: 1px solid #dddddd;
   border-radius: 14px;
   background: #fafafa;
+  color: #222222;
   font-size: 24px;
   font-weight: 700;
+  transition:
+      border-color 0.2s,
+      background 0.2s,
+      box-shadow 0.2s;
 }
 
-.verification-box.active,
+.verification-box.active {
+  border-color: #ffbc2e;
+  background: #fffaf0;
+  box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
+}
+
 .verification-box.filled {
   border-color: #ffbc2e;
-  background: #fff9e9;
+  background: #fff8e5;
 }
 
 .verification-box.error {
   border-color: #e53935;
   background: #fff7f7;
+  box-shadow: none;
 }
 
 .hidden-input {
   position: absolute;
   width: 1px;
   height: 1px;
+  border: 0;
   opacity: 0;
   pointer-events: none;
 }
@@ -234,29 +252,42 @@ onMounted(() => {
   margin: 18px 0 0;
   color: #777777;
   font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
 }
 
 .error-message {
   margin: 18px 0 0;
   color: #e53935;
   font-size: 14px;
+  line-height: 1.5;
 }
 
 .confirm-button {
-  width: 100%;
+  position: absolute;
+  right: 28px;
+  bottom: 58px;
+  left: 28px;
+  width: auto;
   height: 58px;
-  margin-top: auto;
+  margin: 0;
   border: 1px solid #cc9200;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #ffbc2e;
   color: #111111;
   font-size: 18px;
   font-weight: 800;
+  cursor: pointer;
+}
+
+.confirm-button:active:not(:disabled) {
+  background: #f2aa10;
 }
 
 .confirm-button:disabled {
   border-color: #dddddd;
   background: #eeeeee;
-  color: #aaaaaa;
+  color: #999999;
+  cursor: not-allowed;
 }
 </style>

@@ -9,6 +9,8 @@ import org.scoula.account.dto.AccountDTO;
 import org.scoula.account.dto.AccountVerificationConfirmDTO;
 import org.scoula.account.dto.AccountVerificationRequestDTO;
 import org.scoula.account.mapper.AccountMapper;
+import org.scoula.user.domain.UserVO;
+import org.scoula.user.mapper.UserMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,26 +27,51 @@ import java.util.stream.Collectors;
 public class AccountServiceImpl implements AccountService {
 
     private final AccountMapper accountMapper;
+    private final UserMapper userMapper;
     private final SecureRandom secureRandom = new SecureRandom();
 
     // 연결 계좌 목록 조회
     @Override
     @Transactional(readOnly = true)
     public List<AccountDTO> getAccounts(Long userId) {
-        return accountMapper.findAccountsByUserId(userId).stream().map(AccountDTO::of).collect(Collectors.toList());
+        return accountMapper.findAccountsByUserId(userId)
+                .stream()
+                .map(AccountDTO::of)
+                .collect(Collectors.toList());
     }
 
     // 계좌 인증번호 발급
     @Override
     @Transactional
-    public Map<String, Object> requestVerification(Long userId, AccountVerificationRequestDTO requestDTO) {
+    public Map<String, Object> requestVerification(
+            Long userId,
+            AccountVerificationRequestDTO requestDTO
+    ) {
+
         validateVerificationRequest(requestDTO);
+
+        UserVO user = userMapper.findById(userId);
+
+        if (user == null) {
+            throw new IllegalArgumentException("회원 정보를 찾을 수 없습니다.");
+        }
+
+        String userName = user.getUserName().trim();
+        String accountHolder = requestDTO.getAccountHolder().trim();
+
+        if (!userName.equals(accountHolder)) {
+            throw new IllegalArgumentException("예금주명이 회원 실명과 일치하지 않습니다.");
+        }
 
         if (accountMapper.countActiveBank(requestDTO.getBankCode()) == 0) {
             throw new IllegalArgumentException("존재하지 않거나 사용할 수 없는 은행입니다.");
         }
 
-        int duplicateCount = accountMapper.countConnectedAccount(userId, requestDTO.getBankCode(), requestDTO.getAccountNumber().trim());
+        int duplicateCount = accountMapper.countConnectedAccount(
+                userId,
+                requestDTO.getBankCode(),
+                requestDTO.getAccountNumber().trim()
+        );
 
         if (duplicateCount > 0) {
             throw new IllegalArgumentException("이미 연결된 계좌입니다.");
@@ -56,7 +83,7 @@ public class AccountServiceImpl implements AccountService {
                 .userId(userId)
                 .bankCode(requestDTO.getBankCode())
                 .accountNumber(requestDTO.getAccountNumber().trim())
-                .accountHolder(requestDTO.getAccountHolder().trim())
+                .accountHolder(userName)
                 .verificationCode(verificationCode)
                 .verifiedYn("N")
                 .requestedAt(LocalDateTime.now())
@@ -76,24 +103,30 @@ public class AccountServiceImpl implements AccountService {
     // 계좌 인증번호 확인
     @Override
     @Transactional
-    public boolean confirmVerification(Long userId, AccountVerificationConfirmDTO confirmDTO) {
+    public boolean confirmVerification(
+            Long userId,
+            AccountVerificationConfirmDTO confirmDTO
+    ) {
+
         if (confirmDTO.getVerificationId() == null) {
             throw new IllegalArgumentException("계좌 인증번호 식별값이 필요합니다.");
         }
 
-        if (confirmDTO.getVerificationCode() == null || !confirmDTO.getVerificationCode().matches("\\d{4}")) {
+        if (confirmDTO.getVerificationCode() == null
+                || !confirmDTO.getVerificationCode().matches("\\d{4}")) {
             throw new IllegalArgumentException("인증번호는 숫자 4자리로 입력해주세요.");
         }
 
-        AccountVerificationVO verification = accountMapper.findVerificationById(confirmDTO.getVerificationId(), userId);
+        AccountVerificationVO verification = accountMapper.findVerificationById(
+                confirmDTO.getVerificationId(),
+                userId
+        );
 
         if (verification == null) {
             throw new IllegalArgumentException("계좌 인증 요청을 찾을 수 없습니다.");
         }
 
-        if ("Y".equals(verification.getVerifiedYn())) {
-            return true;
-        }
+        if ("Y".equals(verification.getVerifiedYn())) return true;
 
         if (!verification.getVerificationCode().equals(confirmDTO.getVerificationCode())) {
             throw new IllegalArgumentException("계좌 인증번호가 일치하지 않습니다.");
@@ -106,11 +139,15 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public AccountDTO connectAccount(Long userId, AccountConnectDTO connectDTO) {
+
         if (connectDTO.getVerificationId() == null) {
             throw new IllegalArgumentException("계좌 인증 정보가 필요합니다.");
         }
 
-        AccountVerificationVO verification = accountMapper.findVerificationById(connectDTO.getVerificationId(), userId);
+        AccountVerificationVO verification = accountMapper.findVerificationById(
+                connectDTO.getVerificationId(),
+                userId
+        );
 
         if (verification == null) {
             throw new IllegalArgumentException("계좌 인증 요청을 찾을 수 없습니다.");
@@ -120,7 +157,11 @@ public class AccountServiceImpl implements AccountService {
             throw new IllegalArgumentException("계좌 인증이 완료되지 않았습니다.");
         }
 
-        int duplicateCount = accountMapper.countConnectedAccount(userId, verification.getBankCode(), verification.getAccountNumber());
+        int duplicateCount = accountMapper.countConnectedAccount(
+                userId,
+                verification.getBankCode(),
+                verification.getAccountNumber()
+        );
 
         if (duplicateCount > 0) {
             throw new IllegalArgumentException("이미 연결된 계좌입니다.");
@@ -145,7 +186,10 @@ public class AccountServiceImpl implements AccountService {
 
         accountMapper.deleteVerification(connectDTO.getVerificationId(), userId);
 
-        LinkedAccountVO connectedAccount = accountMapper.findAccountById(userId, account.getLinkedAccountId());
+        LinkedAccountVO connectedAccount = accountMapper.findAccountById(
+                userId,
+                account.getLinkedAccountId()
+        );
 
         return AccountDTO.of(connectedAccount);
     }
@@ -154,15 +198,14 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public boolean setPrimaryAccount(Long userId, Long linkedAccountId) {
+
         LinkedAccountVO account = accountMapper.findAccountById(userId, linkedAccountId);
 
         if (account == null) {
             throw new IllegalArgumentException("연결된 계좌를 찾을 수 없습니다.");
         }
 
-        if ("Y".equals(account.getPrimaryYn())) {
-            return true;
-        }
+        if ("Y".equals(account.getPrimaryYn())) return true;
 
         accountMapper.clearPrimaryAccount(userId);
 
@@ -173,6 +216,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public boolean disconnectAccount(Long userId, Long linkedAccountId) {
+
         LinkedAccountVO account = accountMapper.findAccountById(userId, linkedAccountId);
 
         if (account == null) {
@@ -188,7 +232,10 @@ public class AccountServiceImpl implements AccountService {
         LinkedAccountVO nextPrimaryAccount = null;
 
         if ("Y".equals(account.getPrimaryYn())) {
-            nextPrimaryAccount = accountMapper.findAnotherConnectedAccount(userId, linkedAccountId);
+            nextPrimaryAccount = accountMapper.findAnotherConnectedAccount(
+                    userId,
+                    linkedAccountId
+            );
 
             if (nextPrimaryAccount == null) {
                 throw new IllegalStateException("대표계좌로 설정할 다른 계좌가 없습니다.");
@@ -197,12 +244,13 @@ public class AccountServiceImpl implements AccountService {
 
         int result = accountMapper.disconnectAccount(userId, linkedAccountId);
 
-        if (result == 0) {
-            return false;
-        }
+        if (result == 0) return false;
 
         if (nextPrimaryAccount != null) {
-            accountMapper.setPrimaryAccount(userId, nextPrimaryAccount.getLinkedAccountId());
+            accountMapper.setPrimaryAccount(
+                    userId,
+                    nextPrimaryAccount.getLinkedAccountId()
+            );
         }
 
         return true;
@@ -210,6 +258,11 @@ public class AccountServiceImpl implements AccountService {
 
     // 계좌 인증 요청값 검증
     private void validateVerificationRequest(AccountVerificationRequestDTO requestDTO) {
+
+        if (requestDTO == null) {
+            throw new IllegalArgumentException("계좌 인증 요청 정보가 필요합니다.");
+        }
+
         if (requestDTO.getBankCode() == null || requestDTO.getBankCode().trim().isEmpty()) {
             throw new IllegalArgumentException("은행을 선택해주세요.");
         }
