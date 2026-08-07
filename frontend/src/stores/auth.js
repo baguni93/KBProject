@@ -89,8 +89,8 @@ export const useAuthStore = defineStore('auth', () => {
 
     setAuth(data);
 
-    const payload = decodeToken(tokenData.accessToken);
-    const tokenUserId = Number(payload?.userId || tokenData.userId);
+    const payload = decodeToken(data.accessToken);
+    const tokenUserId = Number(payload?.userId || data.userId);
     connectStomp(tokenUserId);
 
     return data;
