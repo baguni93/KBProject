@@ -1,9 +1,9 @@
 <template>
-  <div class="header">
+  <header class="header">
     <i class="fa-solid fa-arrow-left" @click="goBack"></i>
 
     <h2>{{ title }}</h2>
-  </div>
+  </header>
 </template>
 
 <script setup>
@@ -43,6 +43,6 @@ const goBack = () => {
 .header h2 {
   margin: 0;
 
-  font-size: 20px;
+  font-size: 15px;
 }
 </style>
