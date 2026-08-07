@@ -1,10 +1,8 @@
 <template>
-  <div class="feed-page">
+  <div class="page">
     <!-- 검색 -->
     <SearchBar />
-
     <InviteBanner />
-
     <!-- 피드 -->
 
     <FeedList />
@@ -20,8 +18,11 @@ import { useFeedStore } from '@/stores/feed';
 import { useAuthStore } from '@/stores/auth';
 
 const feedStore = useFeedStore();
+import { useAuthStore } from '@/stores/auth.js';
 const authStore = useAuthStore();
+const userId = authStore.userId;
 
+//JWT 처리
 onMounted(() => {
   const userId = authStore.userId || 1;
   feedStore.getList({
@@ -31,11 +32,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.feed-page {
-  width: 100%;
-  background: white;
-}
-
 /* 검색 영역 */
 :deep(.search-bar) {
   margin-bottom: 14px;

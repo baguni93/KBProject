@@ -5,7 +5,7 @@
       <CardProfile
         :user-id="feed.userId"
         :profile-image-name="feed.sender ? feed.sender.profileImageName : null"
-        :nickname="feed.sender ? feed.sender.nickname : (feed.userName || '회원')"
+        :nickname="feed.sender ? feed.sender.nickname : feed.userName || '회원'"
         :created-at="feed.createdAt"
         :visibility="feed.visibility"
         :show-visibility="true"
@@ -42,9 +42,9 @@ import CommentBottomSheet from './CommentBottomSheet.vue';
 import { useFeedStore } from '@/stores/feed';
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
-
+import { useAuthStore } from '@/stores/auth.js';
 const authStore = useAuthStore();
-const userId = computed(() => authStore.userId || 1);
+const userId = authStore.userId;
 
 const router = useRouter();
 const feedStore = useFeedStore();

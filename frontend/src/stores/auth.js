@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import axios from 'axios';
+import { connectStomp, disconnectStomp } from '@/websocket';
 
 const initState = {
   userId: null,
@@ -15,7 +16,9 @@ export const useAuthStore = defineStore('auth', () => {
   const state = ref({ ...initState });
 
   // 로그인 여부
-  const isLogin = computed(() => !!state.value.accessToken && !!state.value.userId);
+  const isLogin = computed(
+    () => !!state.value.accessToken && !!state.value.userId,
+  );
 
   // 로그인 회원번호
   const userId = computed(() => state.value.userId);
@@ -36,12 +39,18 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const payload = token.split('.')[1];
       const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
-      const paddedPayload = normalizedPayload.padEnd(Math.ceil(normalizedPayload.length / 4) * 4, '=');
+      const paddedPayload = normalizedPayload.padEnd(
+        Math.ceil(normalizedPayload.length / 4) * 4,
+        '=',
+      );
       const decodedPayload = decodeURIComponent(
-          atob(paddedPayload)
-              .split('')
-              .map((character) => `%${character.charCodeAt(0).toString(16).padStart(2, '0')}`)
-              .join(''),
+        atob(paddedPayload)
+          .split('')
+          .map(
+            (character) =>
+              `%${character.charCodeAt(0).toString(16).padStart(2, '0')}`,
+          )
+          .join(''),
       );
 
       return JSON.parse(decodedPayload);
@@ -80,6 +89,10 @@ export const useAuthStore = defineStore('auth', () => {
 
     setAuth(data);
 
+    const payload = decodeToken(tokenData.accessToken);
+    const tokenUserId = Number(payload?.userId || tokenData.userId);
+    connectStomp(tokenUserId);
+
     return data;
   };
 
@@ -103,9 +116,10 @@ export const useAuthStore = defineStore('auth', () => {
     const savedRefreshToken = state.value.refreshToken;
 
     try {
-      if (savedRefreshToken) {
+      if (savedRefreshToken)
         await axios.post('/api/logout', { refreshToken: savedRefreshToken });
-      }
+
+      disconnectStomp();
     } catch (error) {
       console.error('로그아웃 요청에 실패했습니다.', error);
     } finally {
@@ -141,6 +155,8 @@ export const useAuthStore = defineStore('auth', () => {
         userId: tokenUserId,
         userName: parsedAuth.userName || '',
       };
+
+      connectStomp(tokenUserId);
     } catch (error) {
       console.error('저장된 로그인 정보를 불러오지 못했습니다.', error);
       clearAuth();

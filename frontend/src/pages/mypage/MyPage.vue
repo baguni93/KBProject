@@ -1,18 +1,24 @@
 <template>
-  <div>
-    <HeaderButtons />
-    <div class="profile-section">
-      <ProfileHeader v-if="profile" :profile="profile" />
-      <FriendMenuButton :friend-count="friendStore.friendList ? friendStore.friendList.length : 0" />
-    </div>
-    <MyPageTab v-model="currentTab" />
-    <div class="main">
-      <div v-if="currentTab === 'feed'">
-        <SettlementSection />
-        <FeedSection type="my" :user-id="userId || 1" />
+  <div class="page">
+    <div>
+      <HeaderButtons />
+      <div class="profile-section">
+        <ProfileHeader v-if="profile" :profile="profile" />
+        <FriendMenuButton
+          :friend-count="
+            friendStore.friendList ? friendStore.friendList.length : 0
+          "
+        />
       </div>
-      <div v-else-if="currentTab === 'wallet'">
-        <MyWallet />
+      <MyPageTab v-model="currentTab" />
+      <div class="main">
+        <div v-if="currentTab === 'feed'">
+          <SettlementSection />
+          <FeedSection type="my" :user-id="userId || 1" />
+        </div>
+        <div v-else-if="currentTab === 'wallet'">
+          <MyWallet />
+        </div>
       </div>
     </div>
   </div>
@@ -29,14 +35,13 @@ import { useProfileStore } from '@/stores/profile';
 import { useFriendStore } from '@/stores/friend';
 import { onMounted, watch, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import { useAuthStore } from '@/stores/auth.js';
 
+const authStore = useAuthStore();
+const userId = authStore.userId;
 const route = useRoute();
 const friendStore = useFriendStore();
 const profileStore = useProfileStore();
-
-import { useUserStore } from '@/stores/user';
-const userStore = useUserStore();
-const userId = userStore.userId || 1;
 
 const currentTab = ref(route.query.tab || 'feed');
 

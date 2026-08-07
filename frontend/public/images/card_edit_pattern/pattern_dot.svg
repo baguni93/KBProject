@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
+  <g stroke="#ffffff" stroke-width="1.2" fill="none" opacity="0.75">
+    <!-- 모서리 타겟 프레임 (뷰파인더) -->
+    <path d="M 10 18 L 10 10 L 18 10" />
+    <path d="M 32 10 L 40 10 L 40 18" />
+    <path d="M 10 32 L 10 40 L 18 40" />
+    <path d="M 32 40 L 40 40 L 40 32" />
+    <!-- 미니 십자 포커스 -->
+    <line x1="25" y1="22" x2="25" y2="28" stroke-width="0.8"/>
+    <line x1="22" y1="25" x2="28" y2="25" stroke-width="0.8"/>
+  </g>
+</svg>

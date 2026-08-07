@@ -13,9 +13,9 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from "vue";
-import { useRoute } from "vue-router";
-import BottomNav from "./BottomNav.vue";
+import { ref, watch, nextTick } from 'vue';
+import { useRoute } from 'vue-router';
+import BottomNav from './BottomNav.vue';
 
 defineProps({
   showBottomNav: {

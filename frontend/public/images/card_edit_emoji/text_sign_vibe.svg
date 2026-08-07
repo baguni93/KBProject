@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 80">
+  <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="sans-serif" font-weight="900" font-size="28" letter-spacing="4">V I B E</text>
+  <line x1="40" y1="20" x2="60" y2="20" stroke="black" stroke-width="3" stroke-linecap="round"/>
+  <line x1="160" y1="60" x2="180" y2="60" stroke="black" stroke-width="3" stroke-linecap="round"/>
+</svg>
