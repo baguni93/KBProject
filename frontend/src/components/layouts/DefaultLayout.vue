@@ -32,17 +32,17 @@ const contentRef = ref(null);
  * 페이지 이동 시 스크롤 최상단 이동
  */
 watch(
-  () => route.path,
-  async () => {
-    try {
-      await nextTick();
-      if (contentRef.value) {
-        contentRef.value.scrollTop = 0;
+    () => route.path,
+    async () => {
+      try {
+        await nextTick();
+        if (contentRef.value) {
+          contentRef.value.scrollTop = 0;
+        }
+      } catch (e) {
+        console.log('Scroll top bypass', e);
       }
-    } catch (e) {
-      console.log('Scroll top bypass', e);
-    }
-  },
+    },
 );
 </script>
 
@@ -57,7 +57,7 @@ watch(
 
   padding: 40px;
 
-  background: #eeeeee;
+  background: #EEEEEE;
   box-sizing: border-box;
 }
 
