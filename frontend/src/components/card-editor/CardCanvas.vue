@@ -1,0 +1,660 @@
+<template>
+  <div
+    class="card"
+    :style="{ background: cardBackground }"
+    :data-active-tab="cardStore.activeEditorTab"
+    @click="deselectAll($event)"
+  >
+    <!-- 패턴 레이어 -->
+    <div
+      v-if="cardStore.pattern"
+      class="pattern"
+      :style="{ backgroundImage: `url(${cardStore.pattern})` }"
+    />
+
+    <!-- 💡 카드 전체를 커버하는 단일 드로잉 캔버스 (브러시 & 지우개 통합) -->
+    <canvas
+      ref="liveCanvasRef"
+      class="live-drawing-canvas"
+      :style="{
+        pointerEvents:
+          cardStore.activeEditorTab === 'drawing' ? 'auto' : 'none',
+      }"
+      @mousedown.stop="startLiveDraw"
+      @mousemove.stop="liveDraw"
+      @mouseup.stop="stopLiveDraw"
+      @mouseleave.stop="stopLiveDraw"
+      @touchstart.stop="startLiveDraw"
+      @touchmove.stop="liveDraw"
+      @touchend.stop="stopLiveDraw"
+    ></canvas>
+
+    <!-- 💡 텍스트 레이어 (드래그 및 회전 가능 영역) -->
+    <div
+      class="custom-text-wrapper"
+      :style="{ zIndex: cardStore.activeEditorTab === 'text' ? 12 : 10 }"
+    >
+      <div
+        v-for="item in cardStore.texts || []"
+        :key="item.id"
+        class="custom-text-item"
+        :class="{
+          dragging: draggingId === item.id,
+          selected:
+            cardStore.activeEditorTab === 'text' &&
+            cardStore.selectedTextId === item.id,
+          'out-of-bounds': isOutOfBounds && draggingId === item.id,
+        }"
+        :style="{
+          fontFamily: item.font,
+          color: item.color,
+          fontSize: item.size,
+          fontWeight: item.isBold ? 'bold' : 'normal',
+          left: `${item.x ?? 50}%`,
+          top: `${item.y ?? 50}%`,
+          transform: `translate(-50%, -50%) rotate(${item.rotation ?? 0}deg)`,
+        }"
+        @mousedown.stop.prevent="startDrag($event, item)"
+        @touchstart.stop.prevent="startDrag($event, item)"
+      >
+        <span>{{ item.text }}</span>
+        <div
+          v-if="
+            cardStore.activeEditorTab === 'text' &&
+            cardStore.selectedTextId === item.id
+          "
+          class="rotate-handle"
+          title="회전하기"
+          @mousedown.stop.prevent="startRotate($event, item)"
+          @touchstart.stop.prevent="startRotate($event, item)"
+        >
+          <i class="fa-solid fa-arrow-rotate-right"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 💡 이모지 레이어 -->
+    <div
+      class="custom-emoji-wrapper"
+      :style="{ zIndex: cardStore.activeEditorTab === 'emoji' ? 12 : 10 }"
+    >
+      <div
+        v-for="item in cardStore.emojis || []"
+        :key="item.id"
+        class="custom-emoji-item"
+        :class="{
+          'is-text-sticker': item.emojiObj?.emoji?.includes('text_'),
+          dragging: draggingEmojiId === item.id,
+          selected:
+            cardStore.activeEditorTab === 'emoji' &&
+            cardStore.selectedEmojiId === item.id,
+          'out-of-bounds': isEmojiOutOfBounds && draggingEmojiId === item.id,
+        }"
+        :style="{
+          left: `${item.x ?? 50}%`,
+          top: `${item.y ?? 50}%`,
+          transform: `translate(-50%, -50%) rotate(${item.rotation ?? 0}deg)`,
+        }"
+        @mousedown.stop.prevent="startEmojiDrag($event, item)"
+        @touchstart.stop.prevent="startEmojiDrag($event, item)"
+      >
+        <img :src="item.emojiObj.emoji" alt="" draggable="false" />
+        <div
+          v-if="
+            cardStore.activeEditorTab === 'emoji' &&
+            cardStore.selectedEmojiId === item.id
+          "
+          class="emoji-delete-btn"
+          @mousedown.stop.prevent="deleteEmoji(item.id)"
+          @touchstart.stop.prevent="deleteEmoji(item.id)"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 카드 기본 정보 고정 레이어 -->
+    <div class="card-content">
+      <div class="card-name">{{ cardStore.cardName }}</div>
+      <div class="card-bottom">
+        <span>{{ cardStore.cardNumber }}</span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue';
+import { useCardEditorStore } from '@/stores/cardEditorStore';
+
+const cardStore = useCardEditorStore();
+
+// --- 단일 캔버스 그리기 로직 (브러시 & 지우개 자유 사용) ---
+const liveCanvasRef = ref(null);
+let liveCtx = null;
+let isLiveDrawing = false;
+
+onMounted(() => {
+  const canvas = liveCanvasRef.value;
+  if (!canvas) return;
+  canvas.width = canvas.offsetWidth || 205;
+  canvas.height = canvas.offsetHeight || 128;
+  liveCtx = canvas.getContext('2d');
+  liveCtx.lineCap = 'round';
+  liveCtx.lineJoin = 'round';
+
+  // 스토어에 이미 저장된 그림이 있다면 캔버스에 불러오기
+  if (cardStore.savedDrawingImage) {
+    const img = new Image();
+    img.src = cardStore.savedDrawingImage;
+    img.onload = () => {
+      liveCtx.drawImage(img, 0, 0);
+    };
+  }
+});
+
+const getCanvasCoordinates = (e) => {
+  const rect = liveCanvasRef.value.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: clientX - rect.left, y: clientY - rect.top };
+};
+
+const startLiveDraw = (e) => {
+  if (cardStore.activeEditorTab !== 'drawing') return;
+  isLiveDrawing = true;
+  const { x, y } = getCanvasCoordinates(e);
+  liveCtx.beginPath();
+  liveCtx.moveTo(x, y);
+};
+
+const liveDraw = (e) => {
+  if (!isLiveDrawing || cardStore.activeEditorTab !== 'drawing') return;
+  const { x, y } = getCanvasCoordinates(e);
+
+  const mode = cardStore.drawingOptions?.mode || 'brush';
+  const color = cardStore.drawingOptions?.color || '#00bcd4';
+  const size = cardStore.drawingOptions?.size || 8;
+
+  if (mode === 'eraser') {
+    liveCtx.globalCompositeOperation = 'destination-out'; // 지우개 모드 (픽셀 투명하게 삭제)
+    liveCtx.lineWidth = size * 2;
+  } else {
+    liveCtx.globalCompositeOperation = 'source-over'; // 일반 브러시 모드
+    liveCtx.strokeStyle = color;
+    liveCtx.lineWidth = size;
+  }
+
+  liveCtx.lineTo(x, y);
+  liveCtx.stroke();
+};
+
+const stopLiveDraw = () => {
+  if (!isLiveDrawing) return;
+  isLiveDrawing = false;
+  const canvas = liveCanvasRef.value;
+  if (!canvas) return;
+
+  // 그리기가 끝날 때마다 캔버스 전체 상태를 스토어에 저장 (원할 때 언제든 지우개로 다시 지울 수 있음)
+  const dataUrl = canvas.toDataURL('image/png');
+  cardStore.savedDrawingImage = dataUrl;
+};
+
+// '전체 지우기' 기능 대응을 위한 감시 또는 메서드 연동
+watch(
+  () => cardStore.isDrawingCleared,
+  () => {
+    if (liveCanvasRef.value && liveCtx) {
+      liveCtx.clearRect(
+        0,
+        0,
+        liveCanvasRef.value.width,
+        liveCanvasRef.value.height,
+      );
+      cardStore.savedDrawingImage = null;
+    }
+  },
+);
+
+// --- 이모지 드래그 로직 ---
+const draggingEmojiId = ref(null);
+const isEmojiOutOfBounds = ref(false);
+
+const deleteEmoji = (id) => {
+  if (cardStore.removeEmoji) {
+    cardStore.removeEmoji(id);
+  }
+};
+
+const startEmojiDrag = (event, item) => {
+  if (cardStore.selectEmoji) {
+    cardStore.selectEmoji(item.id);
+  }
+  if (cardStore.activeEditorTab !== 'emoji') return;
+
+  draggingEmojiId.value = item.id;
+  isEmojiOutOfBounds.value = false;
+
+  const emojiElement = event.currentTarget;
+  const cardElement = emojiElement.closest('.card');
+  if (!cardElement) return;
+
+  const cardRect = cardElement.getBoundingClientRect();
+
+  const onMove = (moveEvent) => {
+    if (draggingEmojiId.value !== item.id) return;
+
+    const clientX = moveEvent.touches
+      ? moveEvent.touches[0].clientX
+      : moveEvent.clientX;
+    const clientY = moveEvent.touches
+      ? moveEvent.touches[0].clientY
+      : moveEvent.clientY;
+
+    const emojiRect = emojiElement.getBoundingClientRect();
+    const isOverLeft = emojiRect.left < cardRect.left;
+    const isOverTop = emojiRect.top < cardRect.top;
+    const isOverRight = emojiRect.right > cardRect.right;
+    const isOverBottom = emojiRect.bottom > cardRect.bottom;
+
+    isEmojiOutOfBounds.value =
+      isOverLeft || isOverTop || isOverRight || isOverBottom;
+
+    const percentX = ((clientX - cardRect.left) / cardRect.width) * 100;
+    const percentY = ((clientY - cardRect.top) / cardRect.height) * 100;
+
+    if (cardStore.updateEmojiPosition) {
+      cardStore.updateEmojiPosition(item.id, percentX, percentY);
+    }
+  };
+
+  const stopDrag = (e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+
+    draggingEmojiId.value = null;
+    if (isEmojiOutOfBounds.value) {
+      cardStore.updateEmojiPosition?.(item.id, 50, 50);
+      isEmojiOutOfBounds.value = false;
+    }
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', stopDrag);
+    window.removeEventListener('touchmove', onMove);
+    window.removeEventListener('touchend', stopDrag);
+  };
+
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', stopDrag);
+  window.addEventListener('touchmove', onMove);
+  window.addEventListener('touchend', stopDrag);
+};
+
+// --- 텍스트 드래그 및 회전 로직 ---
+const draggingId = ref(null);
+const isOutOfBounds = ref(false);
+
+const cardBackground = computed(() => {
+  if (cardStore.image)
+    return `url(${cardStore.image}) center / cover no-repeat`;
+  if (cardStore.gradient) return cardStore.gradient;
+  return cardStore.color || '#1e40af';
+});
+
+const deselectAll = (event) => {
+  // 클릭한 대상이 카드 배경(.card)이거나 패턴(.pattern)일 때만 해제 (텍스트나 이모지 내부 클릭 시 무시)
+  if (
+    event.target.classList.contains('card') ||
+    event.target.classList.contains('pattern')
+  ) {
+    if (cardStore.selectText) {
+      cardStore.selectText(null);
+      cardStore.selectEmoji?.(null);
+    }
+  }
+};
+
+const startDrag = (event, item) => {
+  if (cardStore.selectText) {
+    cardStore.selectText(item.id);
+  }
+
+  if (cardStore.activeEditorTab !== 'text') return;
+
+  draggingId.value = item.id;
+  isOutOfBounds.value = false;
+
+  const textElement = event.currentTarget;
+  const cardElement = textElement.closest('.card');
+  if (!cardElement) return;
+
+  const cardRect = cardElement.getBoundingClientRect();
+
+  const onMove = (moveEvent) => {
+    if (draggingId.value !== item.id) return;
+
+    const clientX = moveEvent.touches
+      ? moveEvent.touches[0].clientX
+      : moveEvent.clientX;
+    const clientY = moveEvent.touches
+      ? moveEvent.touches[0].clientY
+      : moveEvent.clientY;
+
+    const textRect = textElement.getBoundingClientRect();
+    const isOverLeft = textRect.left < cardRect.left;
+    const isOverTop = textRect.top < cardRect.top;
+    const isOverRight = textRect.right > cardRect.right;
+    const isOverBottom = textRect.bottom > cardRect.bottom;
+
+    isOutOfBounds.value =
+      isOverLeft || isOverTop || isOverRight || isOverBottom;
+
+    let percentX = ((clientX - cardRect.left) / cardRect.width) * 100;
+    let percentY = ((clientY - cardRect.top) / cardRect.height) * 100;
+
+    if (cardStore.updateTextPosition) {
+      cardStore.updateTextPosition(item.id, percentX, percentY);
+    } else {
+      item.x = percentX;
+      item.y = percentY;
+    }
+  };
+
+  const stopDrag = (e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    draggingId.value = null;
+    if (isOutOfBounds.value) {
+      if (cardStore.updateTextPosition) {
+        cardStore.updateTextPosition(item.id, 50, 50);
+      } else {
+        item.x = 50;
+        item.y = 50;
+      }
+      isOutOfBounds.value = false;
+    }
+
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', stopDrag);
+    window.removeEventListener('touchmove', onMove);
+    window.removeEventListener('touchend', stopDrag);
+  };
+
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', stopDrag);
+  window.addEventListener('touchmove', onMove);
+  window.addEventListener('touchend', stopDrag);
+};
+
+const startRotate = (event, item) => {
+  const textElement = event.currentTarget.closest('.custom-text-item');
+  const rect = textElement.getBoundingClientRect();
+
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+
+  const onRotateMove = (moveEvent) => {
+    const clientX = moveEvent.touches
+      ? moveEvent.touches[0].clientX
+      : moveEvent.clientX;
+    const clientY = moveEvent.touches
+      ? moveEvent.touches[0].clientY
+      : moveEvent.clientY;
+
+    const radians = Math.atan2(clientY - centerY, clientX - centerX);
+    let degrees = radians * (180 / Math.PI);
+    degrees = (degrees + 90) % 360;
+
+    if (cardStore.updateTextRotation) {
+      cardStore.updateTextRotation(item.id, degrees);
+    } else {
+      item.rotation = Math.round(degrees);
+    }
+  };
+
+  const stopRotate = () => {
+    window.removeEventListener('mousemove', onRotateMove);
+    window.removeEventListener('mouseup', stopRotate);
+    window.removeEventListener('touchmove', onRotateMove);
+    window.removeEventListener('touchend', stopRotate);
+
+    if (cardStore.saveStep) {
+      cardStore.saveStep();
+    }
+  };
+
+  window.addEventListener('mousemove', onRotateMove);
+  window.addEventListener('mouseup', stopRotate);
+  window.addEventListener('touchmove', onRotateMove);
+  window.addEventListener('touchend', stopRotate);
+};
+</script>
+
+<style scoped>
+/* 💡 단일 캔버스 스타일 (카드 전체 영역 덮기) */
+.live-drawing-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none; /* 💡 평소에는 마우스 이벤트를 통과시킴 */
+  border-radius: 17px;
+}
+
+/* 💡 드로잉 탭일 때만 캔버스가 마우스 입력을 받도록 활성화 */
+.card[data-tab='drawing'] .live-drawing-canvas {
+  pointer-events: auto;
+}
+
+/* 💡 그리기 탭일 때는 텍스트와 이모지 위로 마우스가 통과해서 밑에 있는 캔버스에 그림이 그려지도록 설정 */
+.card[data-active-tab='drawing'] .custom-text-item,
+.card[data-active-tab='drawing'] .custom-emoji-item {
+  pointer-events: none !important;
+}
+
+.card {
+  width: 205px;
+  height: 128px;
+  border-radius: 17px;
+  padding: 15px;
+  box-sizing: border-box;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.pattern {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+  background-position: center;
+  background-size: 80px;
+  opacity: 0.5;
+  pointer-events: none;
+  border-radius: 17px;
+}
+
+/* 래퍼 자체는 이벤트를 통과시키고 z-index는 템플릿의 동적 스타일에 맡김 */
+.custom-emoji-wrapper,
+.custom-text-wrapper {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* 🎀 기본 이모지 박스 크기 */
+.custom-emoji-item {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: move;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  pointer-events: auto;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+  transition:
+    left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.27),
+    top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.27),
+    border-color 0.2s,
+    background-color 0.2s;
+}
+
+/* 💡 일반 이모지 이미지 크기 */
+.custom-emoji-item img {
+  width: 36px !important;
+  height: 36px !important;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
+/* 🚀 [핵심] 스티커 탭의 문구 스티커일 때는 '박스 자체'도 큼직하게 확장! */
+.custom-emoji-item.is-text-sticker {
+  width: 90px !important; /* 문구 스티커 선택 박스의 가로 크기 */
+  height: 50px !important; /* 문구 스티커 선택 박스의 세로 크기 (비율에 맞게 조절 가능) */
+}
+
+/* 🚀 [핵심] 문구 스티커 내부의 이미지도 박스에 딱 맞춰 크게 출력 */
+.custom-emoji-item.is-text-sticker img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* 문구 스티커가 커졌으니 X(삭제) 버튼 위치도 우측 상단 모서리에 예쁘게 재배치 */
+.custom-emoji-item.is-text-sticker .emoji-delete-btn {
+  top: -8px;
+  right: -8px;
+}
+.custom-text-item {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  line-height: 1.2;
+  cursor: move;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  pointer-events: auto;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+  padding: 4px 6px;
+  transition:
+    left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.27),
+    top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.27),
+    border-color 0.2s,
+    background-color 0.2s;
+}
+
+.custom-text-item {
+  padding: 4px 6px;
+}
+
+.custom-text-item.dragging,
+.custom-emoji-item.dragging {
+  cursor: grabbing;
+  border-color: #ffc107;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+}
+
+.custom-text-item.out-of-bounds,
+.custom-emoji-item.out-of-bounds {
+  border: 1.5px solid #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.25) !important;
+  color: #ef4444 !important;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+.custom-text-item.selected,
+.custom-emoji-item.selected {
+  border: 1px dashed #3b82f6;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* 이모지 X(삭제) 버튼 위치 재조정 (박스가 작아졌으므로 우측 상단에 딱 맞게) */
+.emoji-delete-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 20;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.rotate-handle {
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 24px;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #ffffff;
+  filter: drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.7));
+  cursor: grab;
+  z-index: 12;
+  transition: transform 0.15s ease;
+}
+
+.rotate-handle:hover {
+  transform: translateX(-50%) scale(1.15);
+}
+
+.rotate-handle:active {
+  cursor: grabbing;
+  color: #ffc107;
+}
+
+.card-content {
+  position: relative;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  pointer-events: none;
+}
+
+.card-name {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.card-bottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 8px;
+}
+</style>

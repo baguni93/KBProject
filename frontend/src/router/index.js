@@ -24,6 +24,8 @@ import { isAuthenticated } from '@/util/guards';
 import EventPage from '@/pages/event/EventPage.vue';
 import EventListPage from '@/pages/event/EventListPage.vue';
 import FinancePage from '@/pages/finance/FinancePage.vue';
+import CardCreatePage from '@/pages/card/CardCreatePage.vue';
+import CardCompletePage from '@/pages/card/CardCompletePage.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -84,6 +86,22 @@ const router = createRouter({
     ...pagesample,
 
     //bottom 이 필요없는 페이지
+    {
+      path: '/card/create',
+      name: 'card/create',
+      component: CardCreatePage,
+      meta: {
+        showBottomNav: false,
+      },
+    },
+    {
+      path: '/card/complete',
+      name: 'card/complete',
+      component: CardCompletePage,
+      meta: {
+        showBottomNav: false,
+      },
+    },
     {
       path: '/setting',
       name: 'setting',
