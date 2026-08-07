@@ -22,6 +22,8 @@ import SignupCompletePage from '@/pages/signup/SignupCompletePage.vue';
 import EventPage from '@/pages/event/EventPage.vue';
 import EventListPage from '@/pages/event/EventListPage.vue';
 import FinancePage from '@/pages/finance/FinancePage.vue';
+import CardCreatePage from '@/pages/card/CardCreatePage.vue';
+import CardCompletePage from '@/pages/card/CardCompletePage.vue';
 
 import { isAuthenticated } from '@/util/guards';
 
@@ -64,6 +66,54 @@ const router = createRouter({
       path: '/transactions',
       name: 'transaction-list',
       component: TransactionListPage,
+      meta: { requiresAuth: true, showBottomNav: true },
+    },
+    {
+      path: '/wallet/card/add',
+      name: 'card-add',
+      component: () => import('@/pages/wallet/CardAddPage.vue'),
+      meta: { requiresAuth: true, showBottomNav: false },
+    },
+    {
+      path: '/signup/nickname',
+      name: 'signup-nickname',
+      component: NicknamePage,
+    },
+    {
+      path: '/signup/complete',
+      name: 'signup-complete',
+      component: SignupCompletePage,
+    },
+    ...feed,
+    ...mypage,
+    ...settlement,
+    ...auth,
+    ...signup,
+    ...setting,
+    ...analysis,
+    ...pagesample,
+
+    //bottom 이 필요없는 페이지
+    {
+      path: '/card/create',
+      name: 'card/create',
+      component: CardCreatePage,
+      meta: {
+        showBottomNav: false,
+      },
+    },
+    {
+      path: '/card/complete',
+      name: 'card/complete',
+      component: CardCompletePage,
+      meta: {
+        showBottomNav: false,
+      },
+    },
+    {
+      path: '/setting',
+      name: 'setting',
+      component: () => import('@/pages/setting/SettingPage.vue'),
       meta: {
         requiresAuth: true,
         showBottomNav: true,

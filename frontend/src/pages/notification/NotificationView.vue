@@ -63,14 +63,13 @@ import { onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useNotificationStore } from '@/stores/notification';
-import { useUserStore } from '@/stores/user';
 import { formatRelativeDate } from '@/util/data';
 import EmptyList from '@/components/common/EmptyList.vue';
+import { useAuthStore } from '@/stores/auth.js';
 
+const authStore = useAuthStore();
+const userId = authStore.userId;
 const router = useRouter();
-
-const userStore = useUserStore();
-const userId = userStore.userId;
 
 const notificationStore = useNotificationStore();
 

@@ -57,7 +57,7 @@ watch(
 
   padding: 40px;
 
-  background: #EEEEEE;
+  background: #eeeeee;
   box-sizing: border-box;
 }
 

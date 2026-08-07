@@ -1,17 +1,65 @@
 import { Client } from '@stomp/stompjs';
+import { useNotificationStore } from '@/stores/notification';
+import { useSettlementStore } from '@/stores/settlement';
 
-const userId = 3;
+let client = null;
 
-const client = new Client({
-  brokerURL: 'ws://localhost:8080/ws',
+export const connectStomp = (userId) => {
+  // 이미 연결 중이거나 연결되어 있으면 종료
+  if (client?.active) return;
 
-  connectHeaders: {
-    userId: String(userId),
-  },
+  const notificationStore = useNotificationStore();
+  const settlementStore = useSettlementStore();
 
-  reconnectDelay: 5000,
+  client = new Client({
+    brokerURL: 'ws://localhost:8080/ws',
 
-  debug: (str) => console.log(str),
-});
+    connectHeaders: {
+      userId: String(userId),
+    },
 
-export default client;
+    reconnectDelay: 5000,
+
+    debug: (str) => console.log(str),
+  });
+
+  client.onConnect = () => {
+    console.log('웹소켓 연결 성공');
+
+    client.subscribe('/user/queue/notifications', (message) => {
+      const notification = JSON.parse(message.body);
+      console.log(notification);
+      notificationStore.addNotification(notification);
+    });
+
+    client.subscribe('/user/queue/settlements', (message) => {
+      const settlement = JSON.parse(message.body);
+      console.log(settlement);
+      settlementStore.updateSettlement(settlement);
+    });
+  };
+
+  client.onDisconnect = () => {
+    console.log('웹소켓 연결 종료');
+  };
+
+  client.onStompError = (frame) => {
+    console.error('STOMP ERROR', frame);
+  };
+
+  client.activate();
+};
+
+export const disconnectStomp = async () => {
+  if (!client) return;
+
+  try {
+    await client.deactivate();
+  } catch (e) {
+    console.log('WS deactivation bypass');
+  }
+
+  client = null;
+};
+
+export const getStompClient = () => client;

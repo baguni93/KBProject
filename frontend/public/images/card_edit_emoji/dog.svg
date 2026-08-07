@@ -1,0 +1,15 @@
+<svg width="150" height="150" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- 처진 귀 -->
+  <path d="M 30 40 Q 15 60 25 85 Q 35 90 42 70" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M 90 40 Q 105 60 95 85 Q 85 90 78 70" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- 얼굴형 -->
+  <circle cx="60" cy="62" r="30" fill="none" stroke="#000000" stroke-width="4" />
+  <!-- 눈 (초롱초롱) -->
+  <circle cx="48" cy="58" r="4" fill="#000000" />
+  <circle cx="72" cy="58" r="4" fill="#000000" />
+  <!-- 코와 주둥이 -->
+  <path d="M 54 68 Q 60 74 66 68" fill="none" stroke="#000000" stroke-width="3.5" stroke-linecap="round" />
+  <polygon points="57,65 63,65 60,69" fill="#000000" />
+  <!-- 혀 빼꼼 -->
+  <path d="M 58 72 Q 60 80 62 72 Z" fill="#ff5a8d" stroke="#000000" stroke-width="2" />
+</svg>
