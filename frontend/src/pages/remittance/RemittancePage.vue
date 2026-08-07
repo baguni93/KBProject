@@ -1076,8 +1076,12 @@ const executeRealTransfer = async () => {
       // 지갑 잔액 차감 반영
       myBalance.value = Math.max(0, myBalance.value - (remitAmount.value || 0));
 
-      // 피드 목록에 즉시 반영 (FeedImageSlider.vue 및 TransferFeedBody.vue 연동)
-      const imgList = imagePreviewUrl.value ? [{ imageId: Date.now(), url: imagePreviewUrl.value }] : [];
+      // 피드 목록에 즉시 반영 (새로고침 시에도 깨지지 않는 백엔드 서버 URL 적용)
+      const feedIdVal = res?.feedId || res?.transactionId || Date.now();
+      const serverImgUrl = (res?.feedId && selectedFile.value)
+        ? `/api/feeds/image/${res.feedId}`
+        : (imagePreviewUrl.value || '');
+      const imgList = serverImgUrl ? [{ imageId: feedIdVal, url: serverImgUrl }] : [];
       const newFeedObj = {
         feedId: res?.feedId || res?.transactionId || Date.now(),
         userId: userId,
