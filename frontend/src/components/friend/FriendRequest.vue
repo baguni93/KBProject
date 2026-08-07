@@ -28,13 +28,12 @@ import FriendRequestList from './FriendRequestList.vue';
 import SentRequestList from './SentRequestList.vue';
 import { useFriendStore } from '@/stores/friend';
 import { useRouter } from 'vue-router';
-import { useUserStore } from '@/stores/user';
+import { useAuthStore } from '@/stores/auth.js';
+const authStore = useAuthStore();
+const userId = authStore.userId;
 
 const router = useRouter();
 const friendStore = useFriendStore();
-const userStore = useUserStore();
-
-const userId = userStore.userId;
 
 defineProps({
   received: {

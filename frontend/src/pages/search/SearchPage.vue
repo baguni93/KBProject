@@ -11,10 +11,12 @@
 <script setup>
 import { ref } from 'vue';
 import searchApi from '@/api/searchApi';
-import { useUserStore } from '@/stores/user';
 import PageHeader from '@/components/common/PageHeader.vue';
 import SearchBar from '@/components/search/SearchBar.vue';
 import SearchResultList from '@/components/search/SearchResultList.vue';
+import { useAuthStore } from '@/stores/auth.js';
+const authStore = useAuthStore();
+const userId = authStore.userId;
 
 const searchUserTemplate = {
   userId: 0,
@@ -26,13 +28,12 @@ const searchUserTemplate = {
 
 const result = ref([]);
 const keyword = ref('');
-const userStore = useUserStore();
 
 const searchMember = async () => {
   console.log('검색:', keyword.value);
   const data = await searchApi.searchMember({
     keyword: keyword.value,
-    userId: userStore.userId,
+    userId: userId,
   });
 
   result.value = data;

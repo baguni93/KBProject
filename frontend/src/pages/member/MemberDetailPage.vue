@@ -13,22 +13,20 @@
   </div>
 </template>
 <script setup>
-import { onMounted, ref, onUnmounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import PageHeader from '@/components/common/PageHeader.vue';
 import ProfileHeader from '@/components/profile/ProfileHeader.vue';
 import FeedSection from '@/components/my/FeedSection.vue';
 import FriendButton from '@/components/common/FriendButton.vue';
 import { useProfileStore } from '@/stores/profile';
+import { useAuthStore } from '@/stores/auth.js';
+const authStore = useAuthStore();
+const userId = authStore.userId;
 
 const profileStore = useProfileStore();
 const route = useRoute();
 const memberUserId = Number(route.params.userId);
-
-//test user Id
-import { useUserStore } from '@/stores/user';
-const userStore = useUserStore();
-const userId = userStore.userId;
 
 const profile = ref(null);
 

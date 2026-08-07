@@ -37,17 +37,13 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-
 import { useFriendStore } from '@/stores/friend';
-
 import PageHeader from '@/components/common/PageHeader.vue';
 import FriendList from '@/components/friend/FriendList.vue';
 import FriendRequest from '@/components/friend/FriendRequest.vue';
-
-import { useUserStore } from '@/stores/user';
-
-const userStore = useUserStore();
-const userId = userStore.userId;
+import { useAuthStore } from '@/stores/auth.js';
+const authStore = useAuthStore();
+const userId = authStore.userId;
 
 const route = useRoute();
 
@@ -71,18 +67,8 @@ onMounted(() => {
 
 <style scoped>
 /* 공통 페이지 규칙 */
-.page {
-  width: 100%;
-  min-height: 100%;
-
-  display: flex;
-  flex-direction: column;
-
-  padding: 24px;
-
-  box-sizing: border-box;
-
-  background-color: white;
+.friend-page {
+  padding: 16px;
 }
 
 /* 탭 */
