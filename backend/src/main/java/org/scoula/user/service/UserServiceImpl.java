@@ -409,11 +409,27 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("PIN이 일치하지 않습니다.");
         }
 
+        // 회원 상태 변경
         int result = userMapper.withdraw(userId);
 
         if (result != 1) {
             throw new IllegalStateException("회원 탈퇴 처리에 실패했습니다.");
         }
+
+        // 닉네임 즉시 익명화
+        long timestamp = System.currentTimeMillis();
+        String anonymousNickname =
+                "wd" + userId + "_" + (timestamp % 100000);
+
+        int nicknameResult =
+                userMapper.anonymizeNickname(userId, anonymousNickname);
+
+        if (nicknameResult != 1) {
+            throw new IllegalStateException("탈퇴 회원 닉네임 익명화에 실패했습니다.");
+        }
+
+        // Refresh Token 즉시 삭제
+        loginMapper.deleteRefreshTokenByUserId(userId);
 
         log.info("회원탈퇴 완료: userId={}", userId);
     }
@@ -467,22 +483,19 @@ public class UserServiceImpl implements UserService {
         Long userId = withdrawnUser.getUserId();
         long timestamp = System.currentTimeMillis();
 
-        String anonymousPhoneNumber = "wd" + userId + "_" + (timestamp % 100000);
-        String anonymousNickname = "wd" + userId + "_" + (timestamp % 100000);
+        String anonymousPhoneNumber =
+                "wd" + userId + "_" + (timestamp % 100000);
 
-        int phoneResult = userMapper.anonymizePhoneNumber(userId, anonymousPhoneNumber);
+        int phoneResult =
+                userMapper.anonymizePhoneNumber(userId, anonymousPhoneNumber);
 
         if (phoneResult != 1) {
-            throw new IllegalStateException("탈퇴 회원 휴대폰번호 익명화에 실패했습니다.");
+            throw new IllegalStateException(
+                    "탈퇴 회원 휴대폰번호 익명화에 실패했습니다."
+            );
         }
 
-        int nicknameResult = userMapper.anonymizeNickname(userId, anonymousNickname);
-
-        if (nicknameResult != 1) {
-            throw new IllegalStateException("탈퇴 회원 닉네임 익명화에 실패했습니다.");
-        }
-
-        log.info("탈퇴 회원 익명화 완료: userId={}", userId);
+        log.info("탈퇴 회원 휴대폰번호 익명화 완료: userId={}", userId);
     }
 
     // 활성 회원 조회
