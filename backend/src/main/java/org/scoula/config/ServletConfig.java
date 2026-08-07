@@ -44,6 +44,7 @@ import org.springframework.web.servlet.config.annotation.*;
         "org.scoula.analysis.controller",
         "org.scoula.cardrecommendation.controller",
 
+        "org.scoula.search.controller",
         "org.scoula.user.controller",
         "org.scoula.agreement.controller",
         "org.scoula.login.controller",

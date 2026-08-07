@@ -31,17 +31,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import CardProfile from "../common/CardProfile.vue";
-import FeedBottomSheet from "./FeedBottomSheet.vue";
-import FeedFooter from "./FeedFooter.vue";
-import FeedBody from "./body/FeedBody.vue";
-import FeedTypeTags from "./FeedTypeTags.vue";
-import FeedMoreButton from "./FeedMoreButton.vue";
-import CommentBottomSheet from "./CommentBottomSheet.vue";
-import { useFeedStore } from "@/stores/feed";
-import { useAuthStore } from "@/stores/auth";
-import { useRouter } from "vue-router";
+import { ref, computed } from 'vue';
+import CardProfile from '../common/CardProfile.vue';
+import FeedBottomSheet from './FeedBottomSheet.vue';
+import FeedFooter from './FeedFooter.vue';
+import FeedBody from './body/FeedBody.vue';
+import FeedTypeTags from './FeedTypeTags.vue';
+import FeedMoreButton from './FeedMoreButton.vue';
+import CommentBottomSheet from './CommentBottomSheet.vue';
+import { useFeedStore } from '@/stores/feed';
+import { useAuthStore } from '@/stores/auth';
+import { useRouter } from 'vue-router';
 const authStore = useAuthStore();
 const userId = authStore.userId;
 
@@ -61,7 +61,7 @@ const handleLike = async () => {
   try {
     await feedStore.toggleLike({
       feedId: feedId.value,
-      userId: userId.value,
+      userId: userId,
     });
   } catch (e) {
     console.log(e);
@@ -80,7 +80,7 @@ const openComment = async () => {
 
 //토스트 팝업
 const onEdit = () => {
-  console.log("수정");
+  console.log('수정');
   router.push(`/feed/edit/${feedId.value}`);
 };
 
