@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import PageHeader from '@/components/common/PageHeader.vue';
 import {
   deleteProfileImage,
   getProfile,
@@ -253,15 +254,12 @@ onBeforeUnmount(() => {
 <template>
   <div class="profile-page">
     <main class="profile-container">
-      <header class="page-header">
-        <button class="back-button" type="button" @click="goBack">
-          &lt;
-        </button>
-
-        <h1>프로필 관리</h1>
-
-        <div class="header-empty"></div>
-      </header>
+      <!-- 공통 페이지 헤더 -->
+      <PageHeader
+          title="프로필 관리"
+          custom-back
+          @back="goBack"
+      />
 
       <section class="title-section">
         <h2>
@@ -473,44 +471,13 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 }
 
-.page-header {
-  display: grid;
-  grid-template-columns: 38px 1fr 38px;
-  min-height: 44px;
-  align-items: center;
-}
-
-.page-header h1 {
-  margin: 0;
-  color: #222222;
-  font-size: 17px;
-  font-weight: 700;
-  text-align: center;
-}
-
-.back-button {
-  justify-self: start;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #555555;
-  font-size: 27px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.header-empty {
-  width: 38px;
-}
-
 .title-section {
   margin-top: 38px;
 }
-
 .title-section h2 {
   margin: 0;
   color: #111111;
-  font-size: 25px;
+  font-size: 28px;
   font-weight: 800;
   line-height: 1.35;
   letter-spacing: -0.8px;
@@ -519,7 +486,7 @@ onBeforeUnmount(() => {
 .title-section p {
   margin: 14px 0 0;
   color: #888888;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   line-height: 1.5;
 }
