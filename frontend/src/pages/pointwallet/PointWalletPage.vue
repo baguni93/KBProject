@@ -1,14 +1,9 @@
 <template>
   <div class="kb-mobile-page point-wallet-page">
-    <header class="kb-app-header">
-      <span></span>
-
-      <h1 class="kb-app-header__title text-18-bold">
-        포인트 지갑
-      </h1>
-
-      <span></span>
-    </header>
+    <PageHeader
+      title="포인트 지갑"
+      :showBack="false"
+    />
 
     <div v-if="message" :class="['kb-toast', messageType === 'success' ? 'kb-toast--success' : 'kb-toast--error']">
       {{ message }}
@@ -278,6 +273,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import PageHeader from '@/components/common/PageHeader.vue';
 import pointWalletApi from '@/api/pointWalletApi';
 import {
   formatNumber,
@@ -411,6 +407,7 @@ onMounted(loadPage);
 
 <style scoped>
 .point-wallet-page {
+  background: var(--color-bg-screen);
   padding-bottom: 30px;
 }
 
@@ -419,6 +416,8 @@ onMounted(loadPage);
 ========================= */
 
 .balance-card {
+  margin-top: 14px;
+
   min-height: 126px;
   padding: 22px;
   display: flex;
