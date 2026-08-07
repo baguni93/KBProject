@@ -846,10 +846,7 @@ const loadRemitInitData = async () => {
         if (bInfo) {
           const rList = bInfo.recentRemittances || bInfo.recentAccounts || bInfo.recents || (Array.isArray(bInfo) ? bInfo : []);
           
-          // 실제 송금 이력이 존재하는 계좌만 노출 (신규 계정 더미 계좌 노출 방지)
-          const validList = rList.filter(r => r.hasTransferHistory === true || r.lastTransferAt || r.isRecent === true);
-
-          recentAccounts.value = validList.map(r => ({
+          recentAccounts.value = rList.map(r => ({
             id: r.id || r.remittanceId || r.accountNumber,
             receiverName: r.ownerName || r.receiverName || r.name || '수취인',
             ownerName: r.ownerName || r.receiverName || '수취인',
