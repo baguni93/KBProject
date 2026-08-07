@@ -201,7 +201,7 @@ watch(pinPassword, (value) => {
   width: 100%;
   height: 100%;
   min-height: 0;
-  padding: 26px 28px 140px;
+  padding: 10px 28px 30px;
   background: #ffffff;
   box-sizing: border-box;
 }
@@ -215,7 +215,7 @@ watch(pinPassword, (value) => {
 }
 
 .login-header {
-  margin-top: 24px;
+  margin-top: 42px;
   text-align: center;
 }
 
@@ -225,17 +225,33 @@ watch(pinPassword, (value) => {
   height: 68px;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px;
+  margin: 0 auto 24px;
   border-radius: 22px;
-  background: linear-gradient(135deg, #FFBC00 0%, #FF9900 100%);
-  box-shadow: 0 14px 28px rgba(255, 188, 0, 0.35);
+  background: linear-gradient(135deg, #ffbc00 0%, #ff9900 100%);
+  box-shadow: 0 14px 28px rgba(255, 188, 0, 0.25);
   color: #111111;
   font-size: 26px;
   font-weight: 800;
 }
 
+.login-header h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.7px;
+}
+
+.login-header p {
+  margin: 14px 0 0;
+  color: #777777;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
 .pin-section {
-  margin-top: 36px;
+  margin-top: 54px;
   text-align: center;
 }
 
@@ -257,13 +273,13 @@ watch(pinPassword, (value) => {
   border: 1px solid #dddddd;
   border-radius: 12px;
   background: #fafafa;
-  transition: 0.2s;
+  transition: .2s;
 }
 
 .pin-box.active {
   border-color: #ffbc2e;
   background: #fffaf0;
-  box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
+  box-shadow: 0 0 0 3px rgba(255,188,46,.12);
 }
 
 .pin-box.filled {
@@ -293,46 +309,46 @@ watch(pinPassword, (value) => {
 }
 
 .forgot-button {
-  margin-top: 25px;
+  margin-top: 24px;
   padding: 0;
   border: 0;
   background: transparent;
-  color: #444444;
-  font-size: 14px;
+  color: #666666;
+  font-size: 13px;
   font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
 }
 
 .error-message {
+  min-height: 22px;
   margin: 18px 0 0;
   color: #e53935;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
 .security-area {
   display: flex;
   align-items: center;
-  gap: 13px;
-  margin-top: 46px;
-  padding: 16px;
+  gap: 14px;
+  margin-top: 48px;
+  padding: 18px;
   border-radius: 14px;
-  background: #fff9ea;
+  background: #fff9e9;
 }
 
 .security-icon {
   display: flex;
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background: #ffbc2e;
   color: #ffffff;
   font-size: 18px;
-  font-weight: 800;
 }
 
 .security-area strong {
@@ -346,7 +362,7 @@ watch(pinPassword, (value) => {
   margin: 5px 0 0;
   color: #888888;
   font-size: 11px;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .login-button {
@@ -361,7 +377,7 @@ watch(pinPassword, (value) => {
   border-radius: 10px;
   background: #ffbc2e;
   color: #111111;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -382,7 +398,7 @@ watch(pinPassword, (value) => {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: rgba(255, 255, 255, 0.84);
+  background: rgba(255,255,255,.86);
   color: #333333;
   font-size: 15px;
   font-weight: 700;
@@ -394,7 +410,23 @@ watch(pinPassword, (value) => {
   border: 4px solid #eeeeee;
   border-top-color: #ffbc2e;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin .8s linear infinite;
+}
+
+@media (max-width:360px) {
+  .login-container {
+    padding-right:20px;
+    padding-left:20px;
+  }
+
+  .login-header h2 {
+    font-size:23px;
+  }
+
+  .login-button {
+    right:20px;
+    left:20px;
+  }
 }
 
 @keyframes spin {
