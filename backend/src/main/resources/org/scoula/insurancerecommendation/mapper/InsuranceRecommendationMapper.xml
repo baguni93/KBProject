@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.insurancerecommendation.mapper.InsuranceRecommendationMapper">
+
+    <resultMap id="insuranceRecommendationCandidateResultMap"
+               type="org.scoula.insurancerecommendation.domain.InsuranceRecommendationCandidateVO">
+
+        <id property="insuranceProductId"
+            column="insurance_product_id"/>
+
+        <result property="insuranceName"
+                column="insurance_name"/>
+
+        <result property="insuranceCategory"
+                column="insurance_category"/>
+
+        <result property="insuranceDescription"
+                column="insurance_description"/>
+
+        <result property="monthlyPremium"
+                column="monthly_premium"/>
+
+        <result property="insuranceImage"
+                column="insurance_image"/>
+
+        <result property="applicationUrl"
+                column="application_url"/>
+
+        <result property="spendingCategoryId"
+                column="spending_category_id"/>
+
+        <result property="categoryName"
+                column="category_name"/>
+
+        <result property="parentCategoryId"
+                column="parent_category_id"/>
+
+        <result property="recommendationReason"
+                column="recommendation_reason"/>
+
+        <result property="priority"
+                column="priority"/>
+
+    </resultMap>
+
+
+    <!--
+        최근 소비 내역 중 보험 추천 매핑과 연결되는 상품 조회
+
+        조건:
+        1. 해당 사용자의 거래
+        2. 성공한 결제(PAYMENT) 거래
+        3. 지정된 분석 기간 안의 거래
+        4. 직접 카테고리 또는 부모 카테고리가 보험 매핑과 일치
+        5. 매핑이 활성화(Y) 상태
+        6. 관련 거래가 1건이라도 존재하면 추천
+    -->
+    <select id="selectMatchedCandidates"
+            resultMap="insuranceRecommendationCandidateResultMap">
+
+        SELECT
+        product.insurance_product_id,
+        product.insurance_name,
+        product.insurance_category,
+        product.insurance_description,
+        product.monthly_premium,
+        product.insurance_image,
+        product.application_url,
+
+        matched_category.spending_category_id,
+        matched_category.category_name,
+        matched_category.parent_category_id,
+
+        match_tbl.recommendation_reason,
+        match_tbl.priority
+
+        FROM kb_insurance_category_match_tbl match_tbl
+
+        INNER JOIN kb_insurance_product_tbl product
+        ON product.insurance_product_id =
+        match_tbl.insurance_product_id
+
+        INNER JOIN spending_category_tbl matched_category
+        ON matched_category.spending_category_id =
+        match_tbl.spending_category_id
+
+        WHERE match_tbl.active_yn = 'Y'
+        -- 최근 3개월 이내에 결과가 1건이라도 있으면 되기 때문
+        AND EXISTS (
+        SELECT 1
+
+        FROM financial_transaction_tbl transaction_tbl
+
+        LEFT JOIN spending_category_tbl transaction_category
+        ON transaction_category.spending_category_id =
+        transaction_tbl.spending_category_id
+
+        WHERE transaction_tbl.user_id = #{userId}
+
+        AND transaction_tbl.transaction_type = 'PAYMENT'
+
+        AND transaction_tbl.transaction_status = 'SUCCESS'
+
+        AND transaction_tbl.created_at >= #{startAt}
+
+        AND transaction_tbl.created_at &lt; #{endAt}
+
+        AND (
+        match_tbl.spending_category_id =
+        transaction_tbl.spending_category_id
+
+        OR
+
+        match_tbl.spending_category_id =
+        transaction_category.parent_category_id
+        )
+        )
+
+        ORDER BY
+        match_tbl.priority ASC,
+        product.insurance_product_id ASC
+
+    </select>
+
+</mapper>
