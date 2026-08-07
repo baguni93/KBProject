@@ -10,6 +10,8 @@ public enum ErrorCode {
     DATA_ACCESS_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C002", "데이터 조회에 실패했습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C999", "서버 오류가 발생했습니다."),
 
+    AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "AUTH001", "로그인이 필요하거나 Access Token이 유효하지 않습니다."),
+
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "사용자를 찾을 수 없습니다."),
 
@@ -37,6 +39,22 @@ public enum ErrorCode {
     
     // Wallet
     INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "W001", "잔액이 부족합니다."),
+
+
+    // Point Wallet / Random Box
+    POINT_WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, "PW001", "포인트 지갑을 찾을 수 없습니다."),
+    INVALID_POINT_AMOUNT(HttpStatus.BAD_REQUEST, "PW002", "포인트 금액이 올바르지 않습니다."),
+    INVALID_TRANSACTION_TYPE(HttpStatus.BAD_REQUEST, "PW003", "올바르지 않은 포인트 거래 유형입니다."),
+    RANDOM_BOX_NOT_FOUND(HttpStatus.NOT_FOUND, "PW004", "랜덤박스를 찾을 수 없습니다."),
+    ALREADY_ATTENDED(HttpStatus.CONFLICT, "PW005", "오늘은 이미 출석을 완료했습니다."),
+    RANDOM_BOX_ALREADY_ISSUED(HttpStatus.CONFLICT, "PW006", "이미 지급된 랜덤박스입니다."),
+    RANDOM_BOX_ALREADY_OPENED(HttpStatus.CONFLICT, "PW007", "이미 개봉된 랜덤박스입니다."),
+    RANDOM_BOX_ALREADY_PROCESSED(HttpStatus.CONFLICT, "PW008", "이미 처리된 랜덤박스입니다."),
+    RANDOM_BOX_DAILY_LIMIT_EXCEEDED(HttpStatus.CONFLICT, "PW009", "오늘 받을 수 있는 랜덤박스의 최대 개수를 초과했습니다."),
+    INSUFFICIENT_POINT(HttpStatus.CONFLICT, "PW010", "보유 포인트가 부족합니다."),
+    POINT_CONVERSION_WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, "PW011", "포인트 전환 대상 전자지갑을 찾을 수 없습니다."),
+    POINT_CONVERSION_WALLET_NOT_ACTIVE(HttpStatus.CONFLICT, "PW012", "포인트 전환 대상 전자지갑이 사용 가능한 상태가 아닙니다."),
+    POINT_WALLET_PROCESS_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "PW999", "포인트 지갑 요청을 처리하는 중 오류가 발생했습니다."),
 
     //Notification
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "N001", "알림을 찾을 수 없습니다."),

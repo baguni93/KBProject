@@ -3,19 +3,30 @@ package org.scoula.cardrecommendation.controller;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.scoula.cardrecommendation.dto.CardRecommendationCreateResponseDTO;
 import org.scoula.cardrecommendation.dto.CardRecommendationDetailResponseDTO;
 import org.scoula.cardrecommendation.dto.CardRecommendationListResponseDTO;
 import org.scoula.cardrecommendation.dto.CardRecommendationTaskStatusDTO;
 import org.scoula.cardrecommendation.service.CardRecommendationAsyncService;
 import org.scoula.cardrecommendation.service.CardRecommendationService;
+import org.scoula.exception.CustomException;
+import org.scoula.exception.ErrorCode;
+import org.scoula.security.util.JwtProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.servlet.http.HttpServletRequest;
 
 @Api(tags = "카드 추천 API")
 @RestController
 @RequiredArgsConstructor
+@Log4j2
 public class CardRecommendationController {
 
     // 카드 추천 목록조회, 상세조회, 실제 추천 계산
@@ -23,6 +34,25 @@ public class CardRecommendationController {
     // 비동기 작업 시작, 현재 작업 상태 조회
     private final CardRecommendationAsyncService
             cardRecommendationAsyncService;
+    private final JwtProcessor jwtProcessor;
+
+    // 사용자 인증 토큰 처리
+    private Integer resolveUserId(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new CustomException(ErrorCode.AUTHENTICATION_REQUIRED);
+        }
+
+        try {
+            String token = authHeader.substring(7);
+            Long userId = jwtProcessor.getUserId(token);
+            return userId.intValue();
+        } catch (Exception e) {
+            log.warn("토큰에서 userId 추출 실패: {}", e.getMessage());
+            throw new CustomException(ErrorCode.AUTHENTICATION_REQUIRED);
+        }
+    }
 
     @ApiOperation("12개월 소비분석 기반 카드 추천 생성 또는 재사용")
     @PostMapping(
@@ -30,14 +60,15 @@ public class CardRecommendationController {
     )
     public ResponseEntity<CardRecommendationCreateResponseDTO>
     createOrReuseRecommendations(
+            HttpServletRequest httpRequest,
             @PathVariable("spendingAnalysisId")
             Integer spendingAnalysisId
     ) {
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
 
         CardRecommendationCreateResponseDTO response =
                 cardRecommendationService.createOrReuse(
-                        temporaryUserId,
+                        userId,
                         spendingAnalysisId
                 );
 
@@ -58,16 +89,17 @@ public class CardRecommendationController {
     )
     public ResponseEntity<CardRecommendationTaskStatusDTO>
     startAsyncRecommendations(
+            HttpServletRequest httpRequest,
             @PathVariable("spendingAnalysisId")
             Integer spendingAnalysisId
     ) {
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
 
         return ResponseEntity
                 .status(HttpStatus.ACCEPTED)
                 .body(
                         cardRecommendationAsyncService.start(
-                                temporaryUserId,
+                                userId,
                                 spendingAnalysisId
                         )
                 );
@@ -80,15 +112,15 @@ public class CardRecommendationController {
     )
     public ResponseEntity<CardRecommendationTaskStatusDTO>
     getRecommendationStatus(
+            HttpServletRequest httpRequest,
             @PathVariable("spendingAnalysisId")
             Integer spendingAnalysisId
     ) {
-        // TODO-auth : 이 임시 사용자 JWT로 바꿔야 합니다.
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
 
         return ResponseEntity.ok(
                 cardRecommendationAsyncService.getStatus(
-                        temporaryUserId,
+                        userId,
                         spendingAnalysisId
                 )
         );
@@ -100,6 +132,7 @@ public class CardRecommendationController {
     )
     public ResponseEntity<CardRecommendationListResponseDTO>
     getRecommendations(
+            HttpServletRequest httpRequest,
             @PathVariable("spendingAnalysisId")
             Integer spendingAnalysisId,
 
@@ -115,12 +148,11 @@ public class CardRecommendationController {
             )
             String feeMode
     ) {
-        // TODO-auth : 임시 사용자 1번 교체해야한다.
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
 
         return ResponseEntity.ok(
                 cardRecommendationService.getRecommendations(
-                        temporaryUserId,
+                        userId,
                         spendingAnalysisId,
                         cardType,
                         feeMode
@@ -134,6 +166,7 @@ public class CardRecommendationController {
     )
     public ResponseEntity<CardRecommendationDetailResponseDTO>
     getRecommendationDetail(
+            HttpServletRequest httpRequest,
             @PathVariable("cardRecommendationId")
             Integer cardRecommendationId,
 
@@ -143,11 +176,11 @@ public class CardRecommendationController {
             )
             String feeMode
     ) {
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
 
         return ResponseEntity.ok(
                 cardRecommendationService.getRecommendationDetail(
-                        temporaryUserId,
+                        userId,
                         cardRecommendationId,
                         feeMode
                 )

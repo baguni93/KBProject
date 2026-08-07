@@ -1,5 +1,6 @@
 package org.scoula.insurancerecommendation.mapper;
 
+import org.apache.ibatis.annotations.Param;
 import org.scoula.insurancerecommendation.domain.InsuranceRecommendationCandidateVO;
 
 import java.time.LocalDateTime;

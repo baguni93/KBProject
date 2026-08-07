@@ -3,39 +3,64 @@ package org.scoula.analysis.controller;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.scoula.analysis.dto.*;
 import org.scoula.analysis.service.AnalysisAsyncService;
 import org.scoula.analysis.service.AnalysisService;
+import org.scoula.exception.CustomException;
+import org.scoula.exception.ErrorCode;
+import org.scoula.security.util.JwtProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 
 @Api(tags = "소비 분석 API")
 @RestController
 @RequestMapping("/api/spending-analyses")
 @RequiredArgsConstructor
+@Log4j2
 public class AnalysisController {
 
     private final AnalysisService analysisService;
     private final AnalysisAsyncService analysisAsyncService;
+    private final JwtProcessor jwtProcessor;
+
+    // 사용자 인증 토큰 처리
+    private Integer resolveUserId(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new CustomException(ErrorCode.AUTHENTICATION_REQUIRED);
+        }
+
+        try {
+            String token = authHeader.substring(7);
+            Long userId = jwtProcessor.getUserId(token);
+            return userId.intValue();
+        } catch (Exception e) {
+            log.warn("토큰에서 userId 추출 실패: {}", e.getMessage());
+            throw new CustomException(ErrorCode.AUTHENTICATION_REQUIRED);
+        }
+    }
 
     @ApiOperation("소비 분석 가능 여부 조회")
     @GetMapping("/availability")
     public ResponseEntity<AnalysisAvailabilityDTO>
     getAnalysisAvailability(
+            HttpServletRequest httpRequest,
             @RequestParam(
                     value = "period",
                     defaultValue = "1"
             )
             Integer period
     ) {
-        // TODO-AUTH:
-        // JWT 인증 정보에서 현재 로그인 사용자의 ID를 가져오도록 변경
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
 
         AnalysisAvailabilityDTO response =
                 analysisService.getAnalysisAvailability(
-                        temporaryUserId,
+                        userId,
                         period
                 );
 
@@ -45,11 +70,13 @@ public class AnalysisController {
     @ApiOperation("소비 분석용 결제 거래 목록 조회")
     @GetMapping("/transactions")
     public ResponseEntity<AnalysisTransactionListDTO> getAnalysisTransactions(
+            HttpServletRequest httpRequest,
             @RequestParam(value = "period", defaultValue = "1") Integer period
     ) {
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
+
         return ResponseEntity.ok(
-                analysisService.getAnalysisTransactions(temporaryUserId, period)
+                analysisService.getAnalysisTransactions(userId, period)
         );
     }
 
@@ -57,13 +84,15 @@ public class AnalysisController {
     @GetMapping("/{spendingAnalysisId}/transactions")
     public ResponseEntity<AnalysisTransactionListDTO>
     getAnalysisResultTransactions(
+            HttpServletRequest httpRequest,
             @PathVariable("spendingAnalysisId")
             Integer spendingAnalysisId
     ) {
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
+
         return ResponseEntity.ok(
                 analysisService.getAnalysisTransactionsByAnalysisId(
-                        temporaryUserId,
+                        userId,
                         spendingAnalysisId
                 )
         );
@@ -73,19 +102,18 @@ public class AnalysisController {
     @GetMapping("/unclassified-transactions")
     public ResponseEntity<UnclassifiedTransactionListDTO>
     getUnclassifiedTransactions(
+            HttpServletRequest httpRequest,
             @RequestParam(
                     value = "period",
                     defaultValue = "1"
             )
             Integer period
     ) {
-        // TODO-AUTH:
-        // 로그인 사용자 연동 전 임시 사용자
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
 
         UnclassifiedTransactionListDTO response =
                 analysisService.getUnclassifiedTransactions(
-                        temporaryUserId,
+                        userId,
                         period
                 );
 
@@ -106,12 +134,14 @@ public class AnalysisController {
     @ApiOperation("결제 거래 단건 조회")
     @GetMapping("/transactions/{transactionId}")
     public ResponseEntity<AnalysisTransactionDTO> getAnalysisTransaction(
+            HttpServletRequest httpRequest,
             @PathVariable("transactionId") Integer transactionId
     ) {
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
+
         return ResponseEntity.ok(
                 analysisService.getAnalysisTransaction(
-                        temporaryUserId,
+                        userId,
                         transactionId
                 )
         );
@@ -121,18 +151,18 @@ public class AnalysisController {
     @PatchMapping("/transactions/{transactionId}/category")
     public ResponseEntity<TransactionClassificationResponseDTO>
     classifyTransaction(
+            HttpServletRequest httpRequest,
             @PathVariable("transactionId")
             Integer transactionId,
 
             @RequestBody
             TransactionClassificationRequestDTO request
     ) {
-        // 로그인 연동 전 임시 사용자
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
 
         TransactionClassificationResponseDTO response =
                 analysisService.classifyTransaction(
-                        temporaryUserId,
+                        userId,
                         transactionId,
                         request.getSpendingCategoryId()
                 );
@@ -144,16 +174,15 @@ public class AnalysisController {
     @PostMapping
     public ResponseEntity<AnalysisExecutionResponseDTO>
     executeAnalysis(
+            HttpServletRequest httpRequest,
             @RequestBody
             AnalysisExecutionRequestDTO request
     ) {
-        // TODO-AUTH:
-        // JWT 인증 정보의 로그인 사용자 ID로 변경
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
 
         AnalysisExecutionResponseDTO response =
                 analysisService.executeAnalysis(
-                        temporaryUserId,
+                        userId,
                         request.getPeriod()
                 );
 
@@ -166,14 +195,15 @@ public class AnalysisController {
     @PostMapping("/async")
     public ResponseEntity<AnalysisTaskStatusDTO>
     executeAnalysisAsync(
+            HttpServletRequest httpRequest,
             @RequestBody
             AnalysisExecutionRequestDTO request
     ) {
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
 
         AnalysisTaskStatusDTO response =
                 analysisAsyncService.startAnalysis(
-                        temporaryUserId,
+                        userId,
                         request.getPeriod()
                 );
 
@@ -186,14 +216,15 @@ public class AnalysisController {
     @GetMapping("/status")
     public ResponseEntity<AnalysisTaskStatusDTO>
     getAnalysisTaskStatus(
+            HttpServletRequest httpRequest,
             @RequestParam(value = "period", defaultValue = "1")
             Integer period
     ) {
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
 
         return ResponseEntity.ok(
                 analysisAsyncService.getStatus(
-                        temporaryUserId,
+                        userId,
                         period
                 )
         );
@@ -203,16 +234,15 @@ public class AnalysisController {
     @GetMapping("/{spendingAnalysisId}")
     public ResponseEntity<AnalysisDetailResponseDTO>
     getAnalysisDetail(
+            HttpServletRequest httpRequest,
             @PathVariable("spendingAnalysisId")
             Integer spendingAnalysisId
     ) {
-        // TODO-AUTH:
-        // JWT 인증 정보의 로그인 사용자 ID로 변경
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
 
         AnalysisDetailResponseDTO response =
                 analysisService.getAnalysisDetail(
-                        temporaryUserId,
+                        userId,
                         spendingAnalysisId
                 );
 
@@ -223,20 +253,18 @@ public class AnalysisController {
     @GetMapping("/latest")
     public ResponseEntity<AnalysisDetailResponseDTO>
     getLatestAnalysisDetail(
+            HttpServletRequest httpRequest,
             @RequestParam(value = "period", defaultValue = "1")
             Integer period
     ) {
-        // TODO-AUTH:
-        // JWT 인증 정보의 로그인 사용자 ID로 변경
-        Integer temporaryUserId = 1;
+        Integer userId = resolveUserId(httpRequest);
 
         AnalysisDetailResponseDTO response =
                 analysisService.getLatestAnalysisDetail(
-                        temporaryUserId,
+                        userId,
                         period
                 );
 
         return ResponseEntity.ok(response);
     }
-
 }

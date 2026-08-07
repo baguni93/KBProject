@@ -1,5 +1,7 @@
 package org.scoula.pointwallet.service;
 
+import org.scoula.exception.CustomException;
+import org.scoula.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.pointwallet.common.PointReasonType;
@@ -7,8 +9,6 @@ import org.scoula.pointwallet.common.PointTransactionType;
 import org.scoula.pointwallet.domain.PointWalletVO;
 import org.scoula.pointwallet.dto.PointTransactionDTO;
 import org.scoula.pointwallet.dto.PointWalletDTO;
-import org.scoula.pointwallet.exception.PointWalletErrorCode;
-import org.scoula.pointwallet.exception.PointWalletException;
 import org.scoula.pointwallet.mapper.PointWalletMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,8 +35,8 @@ public class PointWalletServiceImpl implements PointWalletService {
 
         // 포인트 지갑이 존재하지 않는 경우
         if (wallet == null) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.POINT_WALLET_NOT_FOUND
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_NOT_FOUND
             );
         }
 
@@ -57,8 +57,8 @@ public class PointWalletServiceImpl implements PointWalletService {
 
         // 포인트 지갑이 존재하지 않는 경우
         if (wallet == null) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.POINT_WALLET_NOT_FOUND
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_NOT_FOUND
             );
         }
 
@@ -94,8 +94,8 @@ public class PointWalletServiceImpl implements PointWalletService {
 
         // 포인트 지갑이 존재하지 않는 경우
         if (wallet == null) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.POINT_WALLET_NOT_FOUND
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_NOT_FOUND
             );
         }
 
@@ -133,10 +133,8 @@ public class PointWalletServiceImpl implements PointWalletService {
             PointTransactionType.valueOf(normalized);
 
         } catch (IllegalArgumentException exception) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.INVALID_TRANSACTION_TYPE,
-                    "거래 유형은 ALL, EARN, USE, EXPIRE, CANCEL 중 하나여야 합니다.",
-                    exception
+            throw new CustomException(
+                    ErrorCode.INVALID_TRANSACTION_TYPE
             );
         }
 
@@ -163,8 +161,8 @@ public class PointWalletServiceImpl implements PointWalletService {
 
         // 포인트 지갑이 존재하지 않는 경우
         if (wallet == null) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.POINT_WALLET_NOT_FOUND
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_NOT_FOUND
             );
         }
 
@@ -184,8 +182,8 @@ public class PointWalletServiceImpl implements PointWalletService {
                     pointAmount
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -207,8 +205,8 @@ public class PointWalletServiceImpl implements PointWalletService {
                     reasonType
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -221,8 +219,8 @@ public class PointWalletServiceImpl implements PointWalletService {
                     userId
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -246,24 +244,21 @@ public class PointWalletServiceImpl implements PointWalletService {
         validateUserId(userId);
 
         if (pointAmount == null || pointAmount <= 0) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.INVALID_POINT_AMOUNT,
-                    "적립 포인트는 0보다 커야 합니다."
+            throw new CustomException(
+                    ErrorCode.INVALID_POINT_AMOUNT
             );
         }
 
         if (reasonType == null) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.INVALID_REQUEST,
-                    "포인트 적립 사유는 필수입니다."
+            throw new CustomException(
+                    ErrorCode.INVALID_REQUEST
             );
         }
 
         // 포인트 전환은 적립이 아니라 사용 처리
         if (reasonType == PointReasonType.CONVERSION) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.INVALID_REQUEST,
-                    "CONVERSION은 포인트 적립 사유로 사용할 수 없습니다."
+            throw new CustomException(
+                    ErrorCode.INVALID_REQUEST
             );
         }
     }
@@ -303,8 +298,8 @@ public class PointWalletServiceImpl implements PointWalletService {
                     insertedCount
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -317,8 +312,8 @@ public class PointWalletServiceImpl implements PointWalletService {
                     userId
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -355,8 +350,8 @@ public class PointWalletServiceImpl implements PointWalletService {
 
         // 포인트 지갑이 없는 경우
         if (wallet == null) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.POINT_WALLET_NOT_FOUND
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_NOT_FOUND
             );
         }
 
@@ -378,8 +373,8 @@ public class PointWalletServiceImpl implements PointWalletService {
                     pointAmount
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -404,8 +399,8 @@ public class PointWalletServiceImpl implements PointWalletService {
                     reasonType
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -418,8 +413,8 @@ public class PointWalletServiceImpl implements PointWalletService {
                     userId
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -445,17 +440,15 @@ public class PointWalletServiceImpl implements PointWalletService {
 
         // 취소하는 포인트 금액이 없거나 0이하일떄.
         if (pointAmount == null || pointAmount <= 0) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.INVALID_POINT_AMOUNT,
-                    "취소 포인트는 0보다 커야 합니다."
+            throw new CustomException(
+                    ErrorCode.INVALID_POINT_AMOUNT
             );
         }
 
         // 포인트 취소사유가 들어오지 않았을 때
         if (reasonType == null) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.INVALID_REQUEST,
-                    "포인트 취소 사유는 필수입니다."
+            throw new CustomException(
+                    ErrorCode.INVALID_REQUEST
             );
         }
     }
@@ -465,9 +458,8 @@ public class PointWalletServiceImpl implements PointWalletService {
     private void validateUserId(Integer userId) {
 
         if (userId == null || userId <= 0) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.INVALID_REQUEST,
-                    "유효한 사용자 ID가 필요합니다."
+            throw new CustomException(
+                    ErrorCode.INVALID_REQUEST
             );
         }
     }

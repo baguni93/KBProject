@@ -1,5 +1,7 @@
 package org.scoula.pointwallet.service;
 
+import org.scoula.exception.CustomException;
+import org.scoula.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.pointwallet.common.PointReasonType;
@@ -8,8 +10,6 @@ import org.scoula.pointwallet.domain.PointConversionVO;
 import org.scoula.pointwallet.domain.PointWalletVO;
 import org.scoula.pointwallet.domain.WalletVO;
 import org.scoula.pointwallet.dto.PointConversionResultDTO;
-import org.scoula.pointwallet.exception.PointWalletErrorCode;
-import org.scoula.pointwallet.exception.PointWalletException;
 import org.scoula.pointwallet.mapper.PointConversionMapper;
 import org.scoula.pointwallet.mapper.PointWalletMapper;
 import org.springframework.stereotype.Service;
@@ -49,8 +49,8 @@ public class PointConversionServiceImpl implements PointConversionService {
 
         // 포인트 지갑이 존재하지 않는 경우
         if (pointWallet == null) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.WALLET_NOT_FOUND
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_NOT_FOUND
             );
         }
 
@@ -66,22 +66,22 @@ public class PointConversionServiceImpl implements PointConversionService {
 
         // 전자 지갑이 존재하지 않는 경우
         if (wallet == null) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.WALLET_NOT_FOUND
+            throw new CustomException(
+                    ErrorCode.POINT_CONVERSION_WALLET_NOT_FOUND
             );
         }
 
         // 전자 지갑이 사용 가능한 상태가 아닌 경우
         if (!"ACTIVE".equals(wallet.getWalletStatus())) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.WALLET_NOT_ACTIVE
+            throw new CustomException(
+                    ErrorCode.POINT_CONVERSION_WALLET_NOT_ACTIVE
             );
         }
 
         // 보유 포인트가 부족한 경우
         if (pointWallet.getPointBalance() < pointAmount) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.INSUFFICIENT_POINT
+            throw new CustomException(
+                    ErrorCode.INSUFFICIENT_POINT
             );
         }
 
@@ -104,8 +104,8 @@ public class PointConversionServiceImpl implements PointConversionService {
                     pointAmount
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -130,8 +130,8 @@ public class PointConversionServiceImpl implements PointConversionService {
                     pointAmount
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -149,8 +149,8 @@ public class PointConversionServiceImpl implements PointConversionService {
                     pointAmount
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -179,8 +179,8 @@ public class PointConversionServiceImpl implements PointConversionService {
                     pointAmount
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -192,8 +192,8 @@ public class PointConversionServiceImpl implements PointConversionService {
                     pointAmount
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -208,8 +208,8 @@ public class PointConversionServiceImpl implements PointConversionService {
                     userId
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -224,8 +224,8 @@ public class PointConversionServiceImpl implements PointConversionService {
                     userId
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -240,8 +240,8 @@ public class PointConversionServiceImpl implements PointConversionService {
                     pointConversion.getPointConversionId()
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -266,20 +266,16 @@ public class PointConversionServiceImpl implements PointConversionService {
             Integer pointAmount
     ) {
         if (userId == null || userId <= 0) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.INVALID_REQUEST,
-                    "유효한 사용자 ID가 필요합니다."
+            throw new CustomException(
+                    ErrorCode.INVALID_REQUEST
             );
         }
 
         if (pointAmount == null
                 || pointAmount < MINIMUM_CONVERSION_POINT) {
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INVALID_POINT_AMOUNT,
-                    "포인트 전환은 최소 "
-                            + MINIMUM_CONVERSION_POINT
-                            + "포인트부터 가능합니다."
+            throw new CustomException(
+                    ErrorCode.INVALID_POINT_AMOUNT
             );
         }
     }
