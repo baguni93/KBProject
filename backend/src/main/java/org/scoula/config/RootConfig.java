@@ -52,7 +52,8 @@ import javax.sql.DataSource;
         "org.scoula.notifsetting.mapper",
         "org.scoula.card.mapper",
         "org.scoula.event.mapper",
-        "org.scoula.cardpayment.mapper"
+        "org.scoula.cardpayment.mapper",
+        "org.scoula.insurancerecommendation.mapper",
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
@@ -80,7 +81,9 @@ import javax.sql.DataSource;
         "org.scoula.card.service",
         "org.scoula.profileTest.service",
         "org.scoula.event.service",
-        "org.scoula.cardpayment.service"
+        "org.scoula.cardpayment.service",
+        "org.scoula.insurancerecommendation.service",
+
 })
 @EnableTransactionManagement
 @EnableAspectJAutoProxy

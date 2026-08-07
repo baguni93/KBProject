@@ -142,6 +142,15 @@ public class CardRecommendationServiceImpl
 
     @Override
     @Transactional(readOnly = true)
+    public void validateRecommendationAnalysis(
+            Integer userId,
+            Integer spendingAnalysisId
+    ) {
+        getValidatedAnalysis(userId, spendingAnalysisId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public CardRecommendationListResponseDTO getRecommendations(
             Integer userId,
             Integer spendingAnalysisId,

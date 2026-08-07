@@ -105,4 +105,14 @@
 
     </update>
 
+
+    <!-- 프로필 이미지 정보 초기화 -->
+    <update id="clearProfileImage">
+        UPDATE profile_tbl
+        SET original_name = NULL,
+        stored_name = NULL,
+        updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
 </mapper>

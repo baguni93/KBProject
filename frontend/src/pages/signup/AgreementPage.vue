@@ -3,7 +3,10 @@
     <main class="signup-container">
       <section class="signup-header">
         <h1>약관 동의</h1>
-        <p>가입을 위해 약관에<br />동의해주세요.</p>
+        <p>
+          가입을 위해 약관에<br />
+          동의해주세요.
+        </p>
       </section>
 
       <section class="agreement-section">
@@ -20,11 +23,15 @@
 
         <div class="divider"></div>
 
-        <AgreementItem
-            v-for="agreement in signupStore.agreements"
-            :key="agreement.agreementId"
-            :agreement="agreement"
-            @change="changeAgreement"
+        <AgreementCheckItem
+          v-for="agreement in signupStore.agreements"
+          :key="agreement.agreementId"
+          :model-value="agreement.agreed"
+          :title="agreement.agreementName"
+          :required="agreement.requiredYn === 'Y'"
+          detail-mode="navigate"
+          @update:model-value="(agreed) => changeAgreement({ agreementType: agreement.agreementType, agreed })"
+          @open-detail="showAgreementDetail(agreement.agreementType)"
         />
 
         <div class="divider bottom-divider"></div>
@@ -49,7 +56,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import agreementApi from '@/api/agreementApi';
-import AgreementItem from '@/components/agreement/AgreementItem.vue';
+import AgreementCheckItem from '@/components/common/AgreementCheckItem.vue';
 import { useSignupStore } from '@/stores/signup';
 
 const router = useRouter();
@@ -77,6 +84,10 @@ const changeAgreement = ({ agreementType, agreed }) => {
   signupStore.setAgreementChecked(agreementType, agreed);
 };
 
+const showAgreementDetail = (agreementType) => {
+  router.push(`/signup/agreement/${agreementType}`);
+};
+
 // 다음 화면
 const next = () => {
   router.push('/signup/check');
@@ -87,26 +98,21 @@ onMounted(loadAgreements);
 
 <style scoped>
 .signup-page {
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
-  overflow: auto;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
 }
 
 .signup-container {
   position: relative;
   display: flex;
-  flex: none;
   flex-direction: column;
-  width: 390px;
-  height: 844px;
-  min-height: 844px;
-  margin: 0;
-  padding: 60px 28px 100px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 82px 28px 140px;
   background: #ffffff;
-  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .signup-header h1 {
@@ -143,12 +149,14 @@ onMounted(loadAgreements);
 }
 
 .check-box {
+  flex-shrink: 0;
   width: 28px;
   height: 28px;
   margin-right: 14px;
   border: 1px solid #999999;
   border-radius: 6px;
   background: #ffffff;
+  box-sizing: border-box;
 }
 
 .all-agreement input:checked + .check-box {
@@ -169,6 +177,7 @@ onMounted(loadAgreements);
 
 .all-agreement strong {
   font-size: 18px;
+  font-weight: 700;
 }
 
 .divider {
@@ -182,7 +191,7 @@ onMounted(loadAgreements);
 }
 
 .error-message {
-  margin-top: 16px;
+  margin: 16px 0 0;
   color: #d32f2f;
   font-size: 14px;
 }
@@ -190,16 +199,18 @@ onMounted(loadAgreements);
 .next-button {
   position: absolute;
   right: 28px;
-  bottom: 28px;
+  bottom: 58px;
   left: 28px;
   width: auto;
   height: 58px;
+  margin: 0;
   border: 1px solid #cc9200;
   border-radius: 10px;
   background: #ffbc2e;
   color: #111111;
-  font-size: 19px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .next-button:disabled {

@@ -43,7 +43,6 @@
         </div>
         <div class="title-illustration" aria-hidden="true">
           <i :class="getCategoryIcon(latestAnalysis.representativeCategoryName)"></i>
-          <span>AI</span>
         </div>
       </section>
 
@@ -436,6 +435,10 @@ onBeforeUnmount(stopStatusPolling);
   padding-bottom: 34px
 }
 
+.analysis-page .kb-app-header__title {
+  font-size: 16px
+}
+
 .period-tabs {
   display: grid;
   grid-template-columns:repeat(3, 1fr);
@@ -449,7 +452,7 @@ onBeforeUnmount(stopStatusPolling);
   border: 0;
   background: transparent;
   color: #777;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800
 }
 
@@ -499,7 +502,7 @@ onBeforeUnmount(stopStatusPolling);
   border-radius: 999px;
   background: #ffeab0;
   color: #9b7000;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 900
 }
 
@@ -515,38 +518,27 @@ onBeforeUnmount(stopStatusPolling);
   display: -webkit-box;
   overflow: hidden;
   color: #746d5d;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
 
 }
 
 .title-illustration {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: 54px;
+  height: 54px;
   margin-left: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 56px;
-  border-radius: 19px;
+  flex: 0 0 54px;
+  border-radius: 18px;
   background: rgba(255, 255, 255, .85);
   color: #e7a300;
-  font-size: 23px;
+  font-size: 22px;
   box-shadow: 0 7px 18px rgba(153, 117, 0, .12)
 }
 
-.title-illustration span {
-  position: absolute;
-  top: -4px;
-  right: -3px;
-  padding: 3px 7px;
-  border-radius: 8px;
-  background: #222;
-  color: #fff;
-  font-size: 8px;
-  font-weight: 900
-}
 
 .summary-card {
   margin-top: 13px;
@@ -566,7 +558,7 @@ onBeforeUnmount(stopStatusPolling);
 
 .representative-column > span {
   color: #858585;
-  font-size: 10px
+  font-size: 11px
 }
 
 .representative-name {
@@ -647,13 +639,13 @@ onBeforeUnmount(stopStatusPolling);
 
 .summary-stats span {
   color: #8f8f8f;
-  font-size: 9px
+  font-size: 10px
 }
 
 .summary-stats strong {
   margin-top: 4px;
   min-width: 0;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 900;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -670,14 +662,14 @@ onBeforeUnmount(stopStatusPolling);
 }
 
 .summary-actions button {
-  font-size: 10px
+  font-size: 13px
 }
 
 .text-link {
   border: 0;
   background: transparent;
   color: #2676c9;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 800
 }
 
@@ -722,12 +714,12 @@ onBeforeUnmount(stopStatusPolling);
 }
 
 .category-head strong {
-  font-size: 10px
+  font-size: 13px
 }
 
 .category-head span {
   color: #858585;
-  font-size: 8px
+  font-size: 11px
 }
 
 .ratio-track {
@@ -754,13 +746,13 @@ onBeforeUnmount(stopStatusPolling);
 }
 
 .category-amount strong {
-  font-size: 9px
+  font-size: 10px
 }
 
 .category-amount span {
   margin-top: 2px;
   color: #aaa;
-  font-size: 7px
+  font-size: 8px
 }
 
 .empty-analysis {
@@ -853,9 +845,10 @@ onBeforeUnmount(stopStatusPolling);
 
 .spending-info strong {
   overflow: hidden;
-  font-size: 10px;
+  font-size: 13px;
+  font-weight: 700;
   text-overflow: ellipsis;
-  white-space: nowrap
+  white-space: nowrap;
 }
 
 .spending-info span {
@@ -874,11 +867,13 @@ onBeforeUnmount(stopStatusPolling);
 }
 
 .spending-right button {
-  margin-top: 3px;
+  margin-top: 4px;
+  padding: 0;
   border: 0;
   background: transparent;
   color: #a27800;
-  font-size: 8px
+  font-size: 10px;
+  font-weight: 700;
 }
 
 @media (max-width: 380px) {

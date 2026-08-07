@@ -114,20 +114,30 @@
           </div>
 
           <div class="terms-agree-box mb-4">
-            <label class="agree-label">
-              <input v-model="agreeTerms" type="checkbox" required />
-              <span>KB국민카드 결제 서비스 약관 및 개인정보 제공에 동의합니다.</span>
-            </label>
+            <AgreementCheckItem
+              v-model="agreeTerms"
+              title="KB국민카드 결제 서비스 약관 및 개인정보 제공 동의"
+              required
+              :expanded="showCardAgreementDetail"
+              @toggle-detail="showCardAgreementDetail = !showCardAgreementDetail"
+            >
+              <template #detail>
+                <p>
+                  카드 등록 및 결제 서비스 제공을 위해 카드 정보와 개인정보를
+                  수집·이용합니다.
+                </p>
+              </template>
+            </AgreementCheckItem>
           </div>
 
           <!-- 버튼 그룹 (취소/나가기 & 등록완료) -->
           <div class="form-btn-row">
             <button type="button" class="cancel-btn" @click="$router.push('/wallet')">
-              취소 (나가기)
+              취소
             </button>
             <button type="submit" class="submit-card-btn flex-1" :disabled="!isFormValid || submitting">
               <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
-              KB국민카드 등록 완료
+              등록 완료
             </button>
           </div>
         </form>
@@ -140,13 +150,15 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import cardApi from '@/api/cardApi';
+import { registerCard } from '@/api/cardApi';
 import { useAuthStore } from '@/stores/auth';
+import AgreementCheckItem from '@/components/common/AgreementCheckItem.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const submitting = ref(false);
 const agreeTerms = ref(true);
+const showCardAgreementDetail = ref(false);
 
 // 로컬 폴더 이미지 매핑 (/images/cards/ 폴더 참조)
 // 이미지 파일을 public/images/cards/ 폴더에 넣어주세요
@@ -211,7 +223,7 @@ const submitCard = async () => {
       cvv: cardForm.value.cvc,
       cardPassword: cardForm.value.cardPassword,
     };
-    await cardApi.registerCard(payload);
+    await registerCard(payload);
     router.push('/wallet');
   } catch (err) {
     console.error('카드 등록 실패:', err);
@@ -225,174 +237,293 @@ const submitCard = async () => {
 
 <style scoped>
 .card-add-root {
-  min-height: 100vh;
-  background-color: #f4f5f8;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  color: #222;
-  padding-bottom: 50px;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: #ffffff;
+  color: #222222;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
+/* 상단 헤더 */
 .card-add-header {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 50;
+  width: 100%;
+  height: 44px;
   background: #ffffff;
-  border-bottom: 1px solid #ebebeb;
 }
 
 .header-inner {
-  max-width: 500px;
-  margin: 0 auto;
-  height: 56px;
-  padding: 0 16px;
-  display: flex;
+  display: grid;
+  grid-template-columns: 70px 1fr 38px;
+  width: 100%;
+  height: 44px;
   align-items: center;
-  justify-content: space-between;
+  padding: 0 28px;
+  box-sizing: border-box;
 }
 
 .back-btn {
-  background: transparent;
-  border: none;
-  font-size: 14px;
-  font-weight: 700;
-  color: #475569;
-  cursor: pointer;
   display: flex;
   align-items: center;
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #555555;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.back-btn i {
+  font-size: 18px;
 }
 
 .header-title {
-  font-size: 17px;
-  font-weight: 800;
   margin: 0;
-  color: #0f172a;
+  color: #222222;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
 }
 
 .close-x-btn {
+  display: flex;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  padding: 0;
+  border: 0;
   background: transparent;
-  border: none;
+  color: #777777;
   font-size: 20px;
-  color: #64748b;
+  line-height: 1;
   cursor: pointer;
-  padding: 4px;
 }
 
+/* 본문 */
 .card-add-body {
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 20px 16px;
+  width: 100%;
+  height: calc(100% - 44px);
+  padding: 38px 28px 150px;
+  background: #ffffff;
+  box-sizing: border-box;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.card-add-body::-webkit-scrollbar {
+  display: none;
 }
 
 .form-card {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
   background: #ffffff;
-  border-radius: 24px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
+  box-sizing: border-box;
 }
 
+/* 카드 미리보기 */
 .card-preview-plate {
   position: relative;
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e293b 100%);
-  border-radius: 20px;
-  padding: 20px;
-  color: #fff;
-  margin-bottom: 24px;
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.22);
-  overflow: hidden;
-  min-height: 200px;
   display: flex;
+  width: 100%;
+  min-height: 200px;
   flex-direction: column;
   justify-content: space-between;
+  margin-bottom: 32px;
+  padding: 20px;
+  border-radius: 18px;
+  background: linear-gradient(
+      135deg,
+      #1d4ed8 0%,
+      #1e293b 100%
+  );
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+  color: #ffffff;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.plate-background-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+      radial-gradient(
+          circle at top right,
+          rgba(255, 255, 255, 0.14),
+          transparent 42%
+      );
+  pointer-events: none;
 }
 
 .card-plate-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  position: relative;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .chip-ic {
   width: 32px;
   height: 22px;
-  background: #f59e0b;
   border-radius: 5px;
+  background: #f5c242;
 }
 
 .kb-card-badge {
-  background: #ffbc00;
-  color: #111;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #ffbc2e;
+  color: #111111;
   font-size: 11px;
-  font-weight: 900;
-  padding: 3px 8px;
-  border-radius: 8px;
+  font-weight: 800;
 }
 
 .real-card-img-wrap {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 75px;
+  position: relative;
   z-index: 2;
+  display: flex;
+  height: 76px;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0;
 }
 
 .real-card-img {
-  max-height: 75px;
-  max-width: 120px;
+  display: block;
+  max-width: 125px;
+  max-height: 76px;
   object-fit: contain;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+  filter: drop-shadow(
+      0 5px 10px rgba(0, 0, 0, 0.25)
+  );
 }
 
 .card-preview-num {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  font-family: monospace;
+  position: relative;
   z-index: 2;
+  overflow: hidden;
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.preview-name { font-size: 13px; font-weight: 700; z-index: 2; }
-.preview-expiry { font-size: 12px; opacity: 0.8; z-index: 2; }
+.preview-name {
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  max-width: 75%;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-expiry {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+}
+
+/* 폼 */
+.form-group {
+  margin-bottom: 22px !important;
+}
 
 .form-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: #475569;
-  margin-bottom: 6px;
   display: block;
+  margin: 0 0 9px;
+  color: #333333;
+  font-size: 13px;
+  font-weight: 800;
 }
 
-.kb-input, .kb-select-field {
+.kb-input,
+.kb-select-field {
   width: 100%;
-  padding: 12px 14px;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
+  height: 52px;
+  padding: 0 14px;
+  border: 1px solid #dddddd;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #222222;
+  font-family: inherit;
   font-size: 14px;
-  font-weight: 600;
-  background-color: #ffffff;
+  font-weight: 500;
+  outline: none;
+  box-sizing: border-box;
 }
 
-.terms-agree-box {
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 12px;
-  border: 1px solid #e2e8f0;
+.kb-input::placeholder {
+  color: #aaaaaa;
+  font-weight: 400;
 }
 
-.agree-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #475569;
-  font-weight: 600;
+.kb-input:focus,
+.kb-select-field:focus {
+  border-color: #ffbc2e;
+  box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
+}
+
+.kb-select-field {
+  padding-right: 36px;
   cursor: pointer;
 }
 
-.agree-label input {
-  width: 16px;
-  height: 16px;
-  accent-color: #ffbc00;
+/* 유효기간, CVC, 비밀번호 영역 */
+.row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 22px !important;
+}
+
+.col-4 {
+  width: auto;
+  min-width: 0;
+  padding: 0;
+}
+
+.row .form-label {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row .kb-input {
+  min-width: 0;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+/* 약관 */
+.terms-agree-box {
+  min-height: 64px;
+  padding: 4px 0;
+  border-top: 1px solid #dddddd;
+  border-bottom: 1px solid #dddddd;
 }
 
 .form-btn-row {
@@ -411,29 +542,102 @@ const submitCard = async () => {
   cursor: pointer;
 }
 
+/* 하단 버튼 */
+.form-btn-row {
+  position: absolute;
+  z-index: 20;
+  right: 28px;
+  bottom: 58px;
+  left: 28px;
+  display: grid;
+  grid-template-columns: 0.8fr 1.6fr;
+  gap: 10px;
+  margin: 0;
+}
+
+.cancel-btn,
 .submit-card-btn {
-  background: #ffbc00;
-  color: #111;
-  border: none;
-  border-radius: 14px;
-  padding: 14px 0;
+  width: 100%;
+  height: 58px;
+  padding: 0;
+  border-radius: 10px;
+  font-family: inherit;
   font-size: 15px;
   font-weight: 800;
   cursor: pointer;
 }
 
+.cancel-btn {
+  border: 1px solid #bbbbbb;
+  background: #ffffff;
+  color: #444444;
+}
+
+.submit-card-btn {
+  border: 1px solid #cc9200;
+  background: #ffbc2e;
+  color: #111111;
+}
+
+.cancel-btn:active {
+  background: #f5f5f5;
+}
+
+.submit-card-btn:active:not(:disabled) {
+  background: #f2aa10;
+}
+
 .submit-card-btn:disabled {
-  background: #e2e8f0;
-  color: #94a3b8;
+  border-color: #dddddd;
+  background: #eeeeee;
+  color: #aaaaaa;
   cursor: not-allowed;
 }
 
-.flex-1 { flex: 1; }
+.flex-1 {
+  min-width: 0;
+}
 
-.fade-in { animation: fadeIn 0.25s ease-in-out; }
+/* 애니메이션 */
+.fade-in {
+  animation: fade-in 0.25s ease-in-out;
+}
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
+@media (max-width: 360px) {
+  .header-inner {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .card-add-body {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .form-btn-row {
+    right: 20px;
+    left: 20px;
+  }
+
+  .row {
+    gap: 6px;
+  }
+
+  .row .kb-input {
+    padding: 0 8px;
+    font-size: 12px;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>

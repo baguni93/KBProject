@@ -1,10 +1,14 @@
 <template>
   <div class="app-wrapper">
-    <div class="app">
-      <!-- 페이지 -->
-      <main class="app-content">
-        <slot />
-      </main>
+    <div class="container" id="app-container">
+      <!-- Content -->
+      <div ref="contentRef" class="content"
+           :class="{
+             'has-bottom-nav': props.showBottomNav,
+             'hide-scrollbar': hideScrollbar,
+           }">
+        <slot></slot>
+      </div>
 
       <!-- 공통 Bottom -->
       <BottomNav v-if="showBottomNav" />
@@ -13,11 +17,11 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import BottomNav from './BottomNav.vue';
 
-defineProps({
+const props = defineProps({
   showBottomNav: {
     type: Boolean,
     default: true,
@@ -25,6 +29,19 @@ defineProps({
 });
 
 const route = useRoute();
+
+const scrollbarHiddenRouteNames = new Set([
+  'analysis-main',
+  'analysis-agreement',
+  'analysis-result',
+  'analysis-recommendation-guide',
+  'card-recommendation',
+  'card-recommendation-detail',
+]);
+
+const hideScrollbar = computed(() =>
+  scrollbarHiddenRouteNames.has(String(route.name ?? '')),
+);
 
 const contentRef = ref(null);
 
@@ -82,8 +99,44 @@ watch(
 
   overflow-y: auto;
   overflow-x: hidden;
+
+  padding-top: 16px;
+
+  padding-bottom: 0;
+
+  box-sizing: border-box;
+
+  background: white;
 }
 
+.content.has-bottom-nav {
+  padding-bottom: 90px;
+}
+
+/* 소비분석 메인·동의·상세 화면에서만 스크롤바 표시를 숨긴다. */
+.content.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.content.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* BottomNav 위에 띄우기 */
+:deep(.bottom-nav) {
+  position: absolute;
+
+  bottom: 0;
+
+  left: 0;
+
+  width: 100%;
+
+  z-index: 100;
+}
+
+/* 모바일 */
 @media (max-width: 430px) {
   .app-wrapper {
     padding: 0;

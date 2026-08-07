@@ -6,6 +6,9 @@ import AnalysisClassificationPage from '@/pages/analysis/AnalysisClassificationP
 import AnalysisSubcategoryPage from '@/pages/analysis/AnalysisSubcategoryPage.vue';
 import AnalysisResultPage from '@/pages/analysis/AnalysisResultPage.vue';
 import AnalysisCategoryEditPage from '@/pages/analysis/AnalysisCategoryEditPage.vue';
+import RecommendationPeriodGuidePage from '@/pages/analysis/RecommendationPeriodGuidePage.vue';
+import CardRecommendationPage from '@/pages/cardRecommendation/CardRecommendationPage.vue';
+import CardRecommendationDetailPage from '@/pages/cardRecommendation/CardRecommendationDetailPage.vue';
 import analysisAgreementApi from '@/api/analysisAgreementApi';
 
 const requireAnalysisAgreement = async () => {
@@ -62,6 +65,24 @@ export default [
     path: '/analysis/result/:spendingAnalysisId',
     name: 'analysis-result',
     component: AnalysisResultPage,
+    beforeEnter: requireAnalysisAgreement,
+  },
+  {
+    path: '/analysis/recommendation-guide',
+    name: 'analysis-recommendation-guide',
+    component: RecommendationPeriodGuidePage,
+    beforeEnter: requireAnalysisAgreement,
+  },
+  {
+    path: '/analysis/result/:spendingAnalysisId/card-recommendations',
+    name: 'card-recommendation',
+    component: CardRecommendationPage,
+    beforeEnter: requireAnalysisAgreement,
+  },
+  {
+    path: '/card-recommendations/:cardRecommendationId',
+    name: 'card-recommendation-detail',
+    component: CardRecommendationDetailPage,
     beforeEnter: requireAnalysisAgreement,
   },
 ];

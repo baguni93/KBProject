@@ -1,5 +1,9 @@
 <template>
-  <div class="analysis-donut" @mouseleave="hoveredCategory = null">
+  <div
+    class="analysis-donut"
+    :class="{ 'analysis-donut--detail': variant === 'detail' }"
+    @mouseleave="hoveredCategory = null"
+  >
     <svg
       class="analysis-donut__svg"
       viewBox="0 0 220 220"
@@ -71,6 +75,11 @@ const props = defineProps({
   totalAmount: {
     type: Number,
     default: 0,
+  },
+  variant: {
+    type: String,
+    default: 'default',
+    validator: (value) => ['default', 'detail'].includes(value),
   },
 });
 
@@ -198,7 +207,7 @@ watch(
 
 .analysis-donut__center strong {
   margin-top: 2px;
-  font-size: clamp(12px, 3.8vw, 10px);
+  font-size: 12px;
   font-weight: 900;
   letter-spacing: -0.6px;
   white-space: nowrap;
@@ -209,5 +218,18 @@ watch(
   color: #9a9a9a;
   font-size: 10px;
   font-weight: 700;
+}
+
+/* 상세 화면에서만 도넛 중앙 정보를 한 단계 크게 표시 */
+.analysis-donut--detail .analysis-donut__center span {
+  font-size: 10px;
+}
+
+.analysis-donut--detail .analysis-donut__center strong {
+  font-size: 15px;
+}
+
+.analysis-donut--detail .analysis-donut__center small {
+  font-size: 11px;
 }
 </style>

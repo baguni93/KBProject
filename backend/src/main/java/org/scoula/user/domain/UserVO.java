@@ -15,22 +15,13 @@ import java.time.LocalDateTime;
 public class UserVO {
 
     private Long userId;
-
     private String userName;
-
     private LocalDate birthDate;
-
     private String phoneNumber;
-
     private String pinPassword;
-
     private String nickname;
-
     private String userStatus;
-
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
-
     private LocalDateTime withdrawnAt;
 }

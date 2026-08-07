@@ -4,6 +4,8 @@ import './assets/main.css';
 import './assets/kb-mobile.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
+import '@/components/common/common/common.css';
+
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import VueAwesomePaginate from 'vue-awesome-paginate';

@@ -135,7 +135,7 @@ const handleSubmit = () => {
 .nickname-form {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  width: 100%;
 }
 
 .input-group {
@@ -145,58 +145,81 @@ const handleSubmit = () => {
 }
 
 .input-group label {
+  color: #222222;
   font-size: 15px;
   font-weight: 600;
 }
 
 .nickname-input-wrap {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
   gap: 8px;
+  width: 100%;
 }
 
 .nickname-input-wrap input {
-  flex: 1;
+  width: 100%;
+  min-width: 0;
   height: 50px;
   padding: 0 16px;
   border: 1px solid #dddddd;
   border-radius: 10px;
+  background: #ffffff;
+  color: #222222;
   font-size: 16px;
   outline: none;
+  box-sizing: border-box;
 }
 
 .nickname-input-wrap input:focus {
-  border-color: #222222;
+  border-color: #ffbc2e;
+  box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
+}
+
+.nickname-input-wrap input::placeholder {
+  color: #aaaaaa;
 }
 
 .check-button {
-  min-width: 96px;
+  width: 96px;
   height: 50px;
-  border: none;
+  padding: 0;
+  border: 1px solid #dddddd;
   border-radius: 10px;
-  background: #eeeeee;
+  background: #ffffff;
+  color: #333333;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
 }
 
+.check-button:active:not(:disabled) {
+  background: #f7f7f7;
+}
+
 .check-button:disabled {
+  border-color: #eeeeee;
+  background: #f5f5f5;
   color: #aaaaaa;
   cursor: not-allowed;
 }
 
 .input-info {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  gap: 8px;
+  width: 100%;
   min-height: 20px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  align-items: start;
 }
 
 .success-message,
 .error-message {
-  flex: 1;
+  grid-column: 1;
   margin: 0;
   font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
 }
 
 .success-message {
@@ -208,26 +231,40 @@ const handleSubmit = () => {
 }
 
 .character-count {
-  margin-left: auto;
+  grid-column: 2;
+  margin: 0;
   color: #999999;
   font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
   white-space: nowrap;
 }
 
 .submit-button {
-  width: 100%;
-  height: 54px;
-  border: none;
-  border-radius: 12px;
-  background: #222222;
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 700;
+  position: absolute;
+  right: 28px;
+  bottom: 58px;
+  left: 28px;
+  width: auto;
+  height: 58px;
+  margin: 0;
+  border: 1px solid #cc9200;
+  border-radius: 10px;
+  background: #ffbc2e;
+  color: #111111;
+  font-size: 18px;
+  font-weight: 800;
   cursor: pointer;
 }
 
+.submit-button:active:not(:disabled) {
+  background: #f2aa10;
+}
+
 .submit-button:disabled {
-  background: #cccccc;
+  border-color: #dddddd;
+  background: #eeeeee;
+  color: #999999;
   cursor: not-allowed;
 }
 </style>

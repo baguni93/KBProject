@@ -2134,4 +2134,43 @@ CREATE TABLE merchant_category_mapping_tbl
             )
 );
 
+-- 58. 소비카테고리 <-> 보험 종류 매칭 정책 테이블
+CREATE TABLE kb_insurance_category_match_tbl
+(
+    insurance_category_match_id INT AUTO_INCREMENT PRIMARY KEY
+        COMMENT '보험 추천 카테고리 매핑 ID',
+
+    insurance_product_id        INT          NOT NULL
+        COMMENT '보험 상품 ID',
+
+    spending_category_id        INT          NOT NULL
+        COMMENT '소비 카테고리 ID',
+
+    recommendation_reason       VARCHAR(255) NULL
+        COMMENT '추천 사유 기본 문구',
+
+    priority                    INT          NOT NULL DEFAULT 1
+        COMMENT '같은 카테고리 내 표시 순서',
+
+    active_yn                   CHAR(1)      NOT NULL DEFAULT 'Y'
+        COMMENT '추천 관계 사용 여부',
+
+    created_at                  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+        COMMENT '생성 일시',
+
+    CONSTRAINT fk_insurance_match_product
+        FOREIGN KEY (insurance_product_id)
+            REFERENCES kb_insurance_product_tbl (insurance_product_id),
+
+    CONSTRAINT fk_insurance_match_spending_category
+        FOREIGN KEY (spending_category_id)
+            REFERENCES spending_category_tbl (spending_category_id),
+
+    CONSTRAINT uk_insurance_category_match
+        UNIQUE (insurance_product_id, spending_category_id),
+
+    CONSTRAINT chk_insurance_match_active
+        CHECK (active_yn IN ('Y', 'N'))
+);
+
 SET FOREIGN_KEY_CHECKS = 1;

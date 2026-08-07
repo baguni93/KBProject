@@ -145,6 +145,37 @@ public class ProfileServiceImpl implements ProfileService {
         return imageFile;
     }
 
+    // 프로필 이미지 삭제
+    @Override
+    @Transactional
+    public boolean deleteProfileImage(Long userId) {
+        ProfileVO profile = profileMapper.findByUserId(userId);
+
+        if (profile == null) {
+            throw new IllegalArgumentException("프로필을 찾을 수 없습니다.");
+        }
+
+        String storedName = profile.getStoredName();
+
+        // 등록된 이미지가 없으면 이미 기본 이미지 상태
+        if (storedName == null || storedName.trim().isEmpty()) {
+            return true;
+        }
+
+        int result = profileMapper.clearProfileImage(userId);
+
+        if (result == 0) {
+            throw new IllegalStateException("프로필 이미지 정보 삭제에 실패했습니다.");
+        }
+
+        // 기본 이미지는 삭제하지 않음
+        if (!"unknown.png".equals(storedName)) {
+            deleteFile(storedName);
+        }
+
+        return true;
+    }
+
 
     // 닉네임 검증
     private void validateNickname(Long userId, String nickname) {

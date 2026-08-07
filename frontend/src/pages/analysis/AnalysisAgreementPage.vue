@@ -1,81 +1,53 @@
 <template>
-  <div class="kb-mobile-page agreement-page">
-    <header class="kb-app-header">
-      <button class="kb-icon-button" type="button" aria-label="뒤로가기" @click="goBack">
-        <i class="fa-solid fa-chevron-left"></i>
-      </button>
-      <h1 class="kb-app-header__title">개인정보 이용 동의</h1>
-      <span></span>
-    </header>
-
-    <div v-if="message" class="kb-toast kb-toast--error">{{ message }}</div>
-
-    <div v-if="loading" class="kb-card kb-loading agreement-loading">
-      <div class="spinner-border kb-spinner" role="status"></div>
-      <div>소비 분석 약관을 불러오는 중이에요.</div>
-    </div>
-
-    <template v-else>
-      <section class="agreement-intro">
-        <div class="intro-icon"><i class="fa-solid fa-user-shield"></i></div>
-        <h2>맞춤형 소비 분석 서비스를<br />시작하려면 동의가 필요해요</h2>
-        <p>안전하게 소비정보를 분석하고 결과를 제공하기 위해<br />아래 내용을 확인해 주세요.</p>
+  <div class="analysis-agreement-page">
+    <main class="analysis-agreement-container">
+      <section class="agreement-header">
+        <h1>약관 동의</h1>
+        <p>소비 분석을 위해 약관에<br />동의해주세요.</p>
       </section>
 
-      <section class="agreement-list kb-card">
-        <label class="all-agreement-row">
-          <input type="checkbox" :checked="allChecked" @change="toggleAll" />
-          <span class="custom-check"><i class="fa-solid fa-check"></i></span>
-          <span>
+      <div v-if="message" class="error-message">{{ message }}</div>
+
+      <div v-if="loading" class="loading-area">
+        <div class="spinner-border" role="status"></div>
+        <span>소비 분석 약관을 불러오는 중이에요.</span>
+      </div>
+
+      <template v-else>
+        <section class="agreement-section">
+          <label class="all-agreement">
+            <input type="checkbox" :checked="allChecked" @change="toggleAll" />
+            <span class="check-box"></span>
             <strong>전체 동의</strong>
-            <small>필수·선택 약관을 모두 동의합니다.</small>
-          </span>
-        </label>
+          </label>
 
-        <div class="agreement-divider"></div>
+          <div class="divider"></div>
 
-        <article
-          v-for="agreement in agreements"
-          :key="agreement.agreementId"
-          class="agreement-item"
+          <AgreementCheckItem
+            v-for="agreement in agreements"
+            :key="agreement.agreementId"
+            :model-value="Boolean(checkedMap[agreement.agreementId])"
+            :title="agreement.agreementName"
+            :detail="agreement.agreementContent"
+            :required="agreement.requiredYn === 'Y'"
+            :expanded="expandedIds.has(agreement.agreementId)"
+            @update:model-value="(checked) => { checkedMap[agreement.agreementId] = checked; }"
+            @toggle-detail="toggleExpanded(agreement.agreementId)"
+          />
+
+          <div class="divider bottom-divider"></div>
+        </section>
+
+        <button
+          type="button"
+          class="submit-button"
+          :disabled="!requiredChecked || saving"
+          @click="submitAgreement"
         >
-          <div class="agreement-item__top">
-            <label>
-              <input
-                v-model="checkedMap[agreement.agreementId]"
-                type="checkbox"
-              />
-              <span class="custom-check"><i class="fa-solid fa-check"></i></span>
-              <span class="agreement-name">
-                <em :class="agreement.requiredYn === 'Y' ? 'required' : 'optional'">
-                  [{{ agreement.requiredYn === 'Y' ? '필수' : '선택' }}]
-                </em>
-                {{ agreement.agreementName }}
-              </span>
-            </label>
-            <button type="button" @click="toggleExpanded(agreement.agreementId)">
-              <i
-                :class="expandedIds.has(agreement.agreementId)
-                  ? 'fa-solid fa-chevron-up'
-                  : 'fa-solid fa-chevron-down'"
-              ></i>
-            </button>
-          </div>
-          <p v-if="expandedIds.has(agreement.agreementId)" class="agreement-content">
-            {{ agreement.agreementContent }}
-          </p>
-        </article>
-      </section>
-
-      <button
-        type="button"
-        class="kb-primary-button agreement-submit"
-        :disabled="!requiredChecked || saving"
-        @click="submitAgreement"
-      >
-        {{ saving ? '동의 처리 중...' : '동의하고 소비 분석 시작하기' }}
-      </button>
-    </template>
+          {{ saving ? '동의 처리 중...' : '동의하고 소비 분석 시작하기' }}
+        </button>
+      </template>
+    </main>
   </div>
 </template>
 
@@ -83,6 +55,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import analysisAgreementApi from '@/api/analysisAgreementApi';
+import AgreementCheckItem from '@/components/common/AgreementCheckItem.vue';
 import { getAnalysisErrorMessage } from '@/util/analysis';
 
 const router = useRouter();
@@ -165,11 +138,162 @@ const submitAgreement = async () => {
   }
 };
 
-const goBack = () => router.back();
-
 onMounted(loadAgreements);
 </script>
 
 <style scoped>
-.agreement-page{padding-bottom:34px}.agreement-loading{margin-top:16px}.agreement-intro{padding:28px 16px 22px;text-align:center}.intro-icon{width:72px;height:72px;margin:0 auto 15px;display:flex;align-items:center;justify-content:center;border-radius:25px;background:#fff4ce;color:#d99a00;font-size:30px}.agreement-intro h2{margin:0;font-size:19px;font-weight:900;line-height:1.45;letter-spacing:-.5px}.agreement-intro p{margin:10px 0 0;color:#777;font-size:10px;line-height:1.65}.agreement-list{padding:4px 16px;border:1px solid #ececec;box-shadow:none}.all-agreement-row,.agreement-item__top label{display:flex;align-items:center;gap:10px;cursor:pointer}.all-agreement-row{min-height:68px}.all-agreement-row input,.agreement-item__top input{position:absolute;opacity:0;pointer-events:none}.custom-check{width:23px;height:23px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 23px;border:1.5px solid #d5d5d5;border-radius:50%;background:#fff;color:transparent;font-size:11px}.all-agreement-row input:checked+.custom-check,.agreement-item__top input:checked+.custom-check{border-color:var(--kb-yellow);background:var(--kb-yellow);color:#222}.all-agreement-row strong,.all-agreement-row small{display:block}.all-agreement-row strong{font-size:13px;font-weight:900}.all-agreement-row small{margin-top:3px;color:#999;font-size:8px}.agreement-divider{height:1px;background:#ededed}.agreement-item{padding:14px 0;border-bottom:1px solid #f2f2f2}.agreement-item:last-child{border-bottom:0}.agreement-item__top{display:flex;align-items:center;justify-content:space-between;gap:8px}.agreement-item__top label{min-width:0;flex:1}.agreement-name{min-width:0;font-size:10px;font-weight:800}.agreement-name em{margin-right:3px;font-style:normal}.agreement-name .required{color:#c78e00}.agreement-name .optional{color:#888}.agreement-item__top button{width:30px;height:30px;border:0;background:transparent;color:#999;font-size:10px}.agreement-content{margin:10px 0 0 33px;padding:10px 12px;border-radius:10px;background:#f7f7f7;color:#777;font-size:9px;line-height:1.65}.agreement-submit{width:100%;margin-top:18px}.agreement-submit:disabled{opacity:.45}
+.analysis-agreement-page {
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px 0;
+  background: #f4f4f4;
+  overflow: visible;
+}
+
+.analysis-agreement-container {
+  position: relative;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 390px;
+  min-height: 844px;
+  margin: 0;
+  padding: 60px 28px 116px;
+  background: #ffffff;
+  overflow-y: visible;
+}
+
+.agreement-header h1 {
+  margin: 0 0 28px;
+  color: #111111;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.agreement-header p {
+  margin: 0;
+  color: #777777;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.agreement-section {
+  margin-top: 66px;
+}
+
+.all-agreement,
+.agreement-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.all-agreement {
+  min-height: 48px;
+}
+
+.all-agreement input,
+.agreement-label input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.check-box {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-right: 14px;
+  border: 1px solid #999999;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.all-agreement input:checked + .check-box,
+.agreement-label input:checked + .check-box {
+  border-color: #ffbc2e;
+  background: #ffbc2e;
+}
+
+.all-agreement input:checked + .check-box::after,
+.agreement-label input:checked + .check-box::after {
+  display: block;
+  width: 8px;
+  height: 14px;
+  margin: 4px 0 0 9px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  content: '';
+  transform: rotate(45deg);
+}
+
+.all-agreement strong {
+  color: #111111;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.divider {
+  height: 1px;
+  margin: 20px 0 12px;
+  background: #dddddd;
+}
+
+.bottom-divider {
+  margin-top: 12px;
+}
+
+.error-message {
+  margin-top: 20px;
+  color: #d32f2f;
+  font-size: 14px;
+}
+
+.loading-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 66px;
+  color: #777777;
+  font-size: 14px;
+}
+
+.submit-button {
+  position: absolute;
+  right: 28px;
+  bottom: 28px;
+  left: 28px;
+  width: auto;
+  height: 58px;
+  border: 1px solid #cc9200;
+  border-radius: 10px;
+  background: #ffbc2e;
+  color: #111111;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.submit-button:disabled {
+  border-color: #dddddd;
+  background: #eeeeee;
+  color: #999999;
+  cursor: not-allowed;
+}
+
+@media (max-width: 430px) {
+  .analysis-agreement-page {
+    padding: 0;
+    background: #ffffff;
+  }
+
+  .analysis-agreement-container {
+    width: 100%;
+    min-height: 100vh;
+  }
+}
 </style>

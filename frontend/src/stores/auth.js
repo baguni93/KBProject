@@ -5,6 +5,7 @@ import { connectStomp, disconnectStomp } from '@/websocket';
 
 const initState = {
   userId: null,
+  userName: '',
   tokenType: '',
   accessToken: '',
   refreshToken: '',
@@ -22,9 +23,13 @@ export const useAuthStore = defineStore('auth', () => {
   // 로그인 회원번호
   const userId = computed(() => state.value.userId);
 
+  // 로그인 사용자 이름
+  const userName = computed(() => state.value.userName);
+
   // 로그인 사용자 정보
   const user = computed(() => ({
     userId: state.value.userId,
+    userName: state.value.userName,
   }));
 
   // JWT 정보 해석
@@ -62,12 +67,19 @@ export const useAuthStore = defineStore('auth', () => {
 
     state.value = {
       userId: tokenUserId || null,
+      userName: tokenData.userName || state.value.userName || '',
       tokenType: tokenData.tokenType || 'Bearer',
       accessToken: tokenData.accessToken || '',
       refreshToken: tokenData.refreshToken || '',
       accessTokenExpiresIn: tokenData.accessTokenExpiresIn || 0,
     };
 
+    localStorage.setItem('auth', JSON.stringify(state.value));
+  };
+
+  // 로그인 사용자 이름 저장
+  const setUserName = (name) => {
+    state.value.userName = name || '';
     localStorage.setItem('auth', JSON.stringify(state.value));
   };
 
@@ -86,7 +98,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 재발급된 토큰 저장
   const updateTokens = (tokenData) => {
-    setAuth(tokenData);
+    setAuth({
+      ...tokenData,
+      userId: tokenData.userId || state.value.userId,
+      userName: tokenData.userName || state.value.userName,
+    });
   };
 
   // 로그인 정보 삭제
@@ -137,6 +153,7 @@ export const useAuthStore = defineStore('auth', () => {
         ...initState,
         ...parsedAuth,
         userId: tokenUserId,
+        userName: parsedAuth.userName || '',
       };
 
       connectStomp(tokenUserId);
@@ -152,11 +169,13 @@ export const useAuthStore = defineStore('auth', () => {
     state,
     user,
     userId,
+    userName,
     isLogin,
     login,
     logout,
     clearAuth,
     setAuth,
+    setUserName,
     updateTokens,
     getToken,
     getRefreshToken,
