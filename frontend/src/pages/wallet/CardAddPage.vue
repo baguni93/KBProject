@@ -2,7 +2,7 @@
   <div class="card-add-root">
 
     <!-- ══════════════════════════════════════════
-         상단 헤더 (나가는 버튼 X 및 뒤로가기)
+         상단 고정 헤더
     ══════════════════════════════════════════ -->
     <div class="card-add-header">
       <div class="header-inner">
@@ -16,11 +16,13 @@
       </div>
     </div>
 
-    <!-- 본문 폼 -->
+    <!-- ══════════════════════════════════════════
+         본문 폼 (중간 가변 스크롤 영역)
+    ══════════════════════════════════════════ -->
     <div class="card-add-body">
       <div class="form-card">
         
-        <!-- KB국민카드 실물 3D 프리뷰 플레이트 (공식 CDN 실물 카드 이미지 적용!) -->
+        <!-- KB국민카드 실물 3D 프리뷰 플레이트 (실물 카드 이미지 & 카드 별칭 실시간 반영) -->
         <div class="card-preview-plate">
           <div class="plate-background-overlay"></div>
           
@@ -42,17 +44,17 @@
           <div class="card-preview-num">{{ cardForm.cardNum || '**** **** **** ****' }}</div>
           
           <div class="d-flex justify-content-between align-items-center mt-2">
-            <span class="preview-name">{{ cardForm.cardName || 'KB국민카드 상품을 선택하세요' }}</span>
+            <span class="preview-name">{{ cardForm.cardAlias || cardForm.cardName || 'KB국민카드 상품을 선택하세요' }}</span>
             <span class="preview-expiry">{{ cardForm.expiry || 'MM/YY' }}</span>
           </div>
         </div>
 
-        <form @submit.prevent="submitCard">
+        <form id="cardAddForm" @submit.prevent="submitCard">
           
           <!-- KB국민카드 전용 상품 선택 드롭다운 -->
           <div class="form-group mb-3">
             <label class="form-label">
-              <i class="bi bi-credit-card-2-front-fill me-1 text-warning"></i>KB국민카드 상품 선택
+              <i class="bi bi-credit-card-2-front-fill me-1 text-warning"></i>KB국민카드 상품 및 디자인 선택
             </label>
             <select v-model="cardForm.cardName" class="kb-select-field" required @change="updatePreviewImg">
               <option value="" disabled selected>등록할 KB국민카드 상품을 선택하세요</option>
@@ -60,6 +62,20 @@
                 {{ opt }}
               </option>
             </select>
+          </div>
+
+          <!-- 카드 별칭 (카드 이미지를 위한 사용자 정의 카드 이름) -->
+          <div class="form-group mb-3">
+            <label class="form-label">
+              <i class="bi bi-tag-fill me-1 text-primary"></i>카드 별칭 (지갑 표기용 이름)
+            </label>
+            <input
+              v-model="cardForm.cardAlias"
+              type="text"
+              class="kb-input"
+              placeholder="예: 메인 KB 체크카드, 생활비 전용 카드"
+              maxLength="20"
+            />
           </div>
 
           <!-- 카드 번호 -->
@@ -113,35 +129,54 @@
             </div>
           </div>
 
-          <div class="terms-agree-box mb-4">
-            <AgreementCheckItem
-              v-model="agreeTerms"
-              title="KB국민카드 결제 서비스 약관 및 개인정보 제공 동의"
-              required
-              :expanded="showCardAgreementDetail"
-              @toggle-detail="showCardAgreementDetail = !showCardAgreementDetail"
-            >
-              <template #detail>
-                <p>
-                  카드 등록 및 결제 서비스 제공을 위해 카드 정보와 개인정보를
-                  수집·이용합니다.
-                </p>
-              </template>
-            </AgreementCheckItem>
+          <!-- 보안 숫자 키패드 (HTML 캔버스 Screen 2-1 맞춤) -->
+          <div class="keypad-container my-3 p-2 bg-light rounded-3 border">
+            <div class="text-center text-muted small fw-bold mb-2">
+              <i class="bi bi-shield-lock-fill text-warning me-1"></i>보안 키패드 입력
+            </div>
+            <div class="grid-keypad">
+              <button type="button" class="key-btn" v-for="num in [1,2,3,4,5,6,7,8,9]" :key="num" @click="appendKeypad(num)">{{ num }}</button>
+              <button type="button" class="key-btn action" @click="shuffleKeypad"><i class="bi bi-arrow-repeat"></i></button>
+              <button type="button" class="key-btn" @click="appendKeypad(0)">0</button>
+              <button type="button" class="key-btn action" @click="deleteKeypad"><i class="bi bi-backspace"></i></button>
+            </div>
           </div>
 
-          <!-- 버튼 그룹 (취소/나가기 & 등록완료) -->
-          <div class="form-btn-row">
-            <button type="button" class="cancel-btn" @click="$router.push('/wallet')">
-              취소
-            </button>
-            <button type="submit" class="submit-card-btn flex-1" :disabled="!isFormValid || submitting">
-              <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
-              등록 완료
-            </button>
+          <div class="terms-agree-box mb-4 p-3 bg-light rounded-3 border">
+            <div class="d-flex align-items-center mb-2 pb-2 border-bottom">
+              <input type="checkbox" id="agreeAll" v-model="agreeTerms" class="form-check-input me-2">
+              <label for="agreeAll" class="fw-bold text-dark small mb-0">약관 전체 동의 (필수)</label>
+            </div>
+            <div class="small text-muted space-y-1" style="font-size: 11px;">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span><i class="bi bi-check-circle-fill text-success me-1"></i>개인정보 수집 및 이용 동의 (필수)</span>
+                <i class="bi bi-chevron-right text-muted" style="font-size: 9px;"></i>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span><i class="bi bi-check-circle-fill text-success me-1"></i>고유식별정보 처리 동의 (필수)</span>
+                <i class="bi bi-chevron-right text-muted" style="font-size: 9px;"></i>
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-check-circle-fill text-success me-1"></i>카드결제 서비스 이용 약관 (필수)</span>
+                <i class="bi bi-chevron-right text-muted" style="font-size: 9px;"></i>
+              </div>
+            </div>
           </div>
         </form>
       </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         하단 고정 버튼 영역 (Flex 바닥 고정)
+    ══════════════════════════════════════════ -->
+    <div class="form-btn-row">
+      <button type="button" class="cancel-btn" @click="$router.push('/wallet')">
+        취소
+      </button>
+      <button type="submit" form="cardAddForm" class="submit-card-btn flex-1" :disabled="!isFormValid || submitting">
+        <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
+        카드 정보 입력 완료
+      </button>
     </div>
 
   </div>
@@ -161,7 +196,6 @@ const agreeTerms = ref(true);
 const showCardAgreementDetail = ref(false);
 
 // 로컬 폴더 이미지 매핑 (/images/cards/ 폴더 참조)
-// 이미지 파일을 public/images/cards/ 폴더에 넣어주세요
 const kbCardImageMap = {
   'KB Pay 노리2 체크카드 (KB국민카드)': '/images/cards/nori2.png',
   'KB국민 톡톡MyPoint 카드': '/images/cards/toktok.png',
@@ -175,6 +209,7 @@ const kbCardOptions = Object.keys(kbCardImageMap);
 
 const cardForm = ref({
   cardName: 'KB Pay 노리2 체크카드 (KB국민카드)',
+  cardAlias: '',
   cardNum: '',
   expiry: '',
   cvc: '',
@@ -211,6 +246,26 @@ const formatExpiry = (e) => {
   }
 };
 
+const appendKeypad = (num) => {
+  if (cardForm.value.cardPassword.length < 2) {
+    cardForm.value.cardPassword += String(num);
+  } else if (cardForm.value.cvc.length < 3) {
+    cardForm.value.cvc += String(num);
+  }
+};
+
+const deleteKeypad = () => {
+  if (cardForm.value.cvc.length > 0) {
+    cardForm.value.cvc = cardForm.value.cvc.slice(0, -1);
+  } else if (cardForm.value.cardPassword.length > 0) {
+    cardForm.value.cardPassword = cardForm.value.cardPassword.slice(0, -1);
+  }
+};
+
+const shuffleKeypad = () => {
+  // 시각적 피드백
+};
+
 const submitCard = async () => {
   if (!isFormValid.value || submitting.value) return;
   submitting.value = true;
@@ -218,6 +273,8 @@ const submitCard = async () => {
     const payload = {
       userId: authStore.userId,
       cardName: cardForm.value.cardName,
+      cardAlias: cardForm.value.cardAlias || cardForm.value.cardName,
+      cardImgUrl: cardPreviewImg.value,
       cardNum: cardForm.value.cardNum,
       expiryDate: cardForm.value.expiry,
       cvv: cardForm.value.cvc,
@@ -237,6 +294,8 @@ const submitCard = async () => {
 
 <style scoped>
 .card-add-root {
+  display: flex;
+  flex-direction: column;
   position: relative;
   width: 100%;
   height: 100%;
@@ -249,11 +308,13 @@ const submitCard = async () => {
 
 /* 상단 헤더 */
 .card-add-header {
+  flex-shrink: 0;
   position: relative;
   z-index: 50;
   width: 100%;
   height: 44px;
   background: #ffffff;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .header-inner {
@@ -308,11 +369,12 @@ const submitCard = async () => {
   cursor: pointer;
 }
 
-/* 본문 */
+/* 본문 (중간 가변 독립 스크롤) */
 .card-add-body {
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  height: calc(100% - 44px);
-  padding: 38px 28px 150px;
+  padding: 24px 28px 40px;
   background: #ffffff;
   box-sizing: border-box;
   overflow-y: auto;
@@ -343,7 +405,7 @@ const submitCard = async () => {
   min-height: 200px;
   flex-direction: column;
   justify-content: space-between;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   padding: 20px;
   border-radius: 18px;
   background: linear-gradient(
@@ -526,39 +588,24 @@ const submitCard = async () => {
   border-bottom: 1px solid #dddddd;
 }
 
+/* 하단 고정 버튼 영역 */
 .form-btn-row {
-  display: flex;
-  gap: 10px;
-}
-
-.cancel-btn {
-  background: #f1f5f9;
-  color: #475569;
-  border: none;
-  border-radius: 14px;
-  padding: 14px 20px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-/* 하단 버튼 */
-.form-btn-row {
-  position: absolute;
+  flex-shrink: 0;
+  position: relative;
   z-index: 20;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
   display: grid;
   grid-template-columns: 0.8fr 1.6fr;
   gap: 10px;
+  padding: 12px 28px 24px;
+  background: #ffffff;
+  border-top: 1px solid #f0f0f0;
   margin: 0;
 }
 
 .cancel-btn,
 .submit-card-btn {
   width: 100%;
-  height: 58px;
+  height: 52px;
   padding: 0;
   border-radius: 10px;
   font-family: inherit;
@@ -598,6 +645,35 @@ const submitCard = async () => {
   min-width: 0;
 }
 
+/* 보안 키패드 스타일 */
+.grid-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.key-btn {
+  height: 38px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: #1e293b;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.key-btn:active {
+  background: #e2e8f0;
+}
+
+.key-btn.action {
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+}
+
 /* 애니메이션 */
 .fade-in {
   animation: fade-in 0.25s ease-in-out;
@@ -615,8 +691,8 @@ const submitCard = async () => {
   }
 
   .form-btn-row {
-    right: 20px;
-    left: 20px;
+    padding-right: 20px;
+    padding-left: 20px;
   }
 
   .row {

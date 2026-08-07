@@ -17,15 +17,13 @@ import SearchBar from '@/components/search/SearchBar.vue';
 import InviteBanner from '@/components/common/InviteBanner.vue';
 import { onMounted } from 'vue';
 import { useFeedStore } from '@/stores/feed';
+import { useAuthStore } from '@/stores/auth';
+
 const feedStore = useFeedStore();
+const authStore = useAuthStore();
 
-//test user Id
-import { useUserStore } from '@/stores/user';
-const userStore = useUserStore();
-const userId = userStore.userId;
-
-//JWT 처리
 onMounted(() => {
+  const userId = authStore.userId || 1;
   feedStore.getList({
     userId,
   });

@@ -40,12 +40,11 @@ import FeedTypeTags from './FeedTypeTags.vue';
 import FeedMoreButton from './FeedMoreButton.vue';
 import CommentBottomSheet from './CommentBottomSheet.vue';
 import { useFeedStore } from '@/stores/feed';
+import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
 
-//test user Id
-import { useUserStore } from '@/stores/user';
-const userStore = useUserStore();
-const userId = userStore.userId;
+const authStore = useAuthStore();
+const userId = computed(() => authStore.userId || 1);
 
 const router = useRouter();
 const feedStore = useFeedStore();
@@ -63,7 +62,7 @@ const handleLike = async () => {
   try {
     await feedStore.toggleLike({
       feedId: feedId.value,
-      userId,
+      userId: userId.value,
     });
   } catch (e) {
     console.log(e);
