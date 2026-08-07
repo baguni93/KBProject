@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+  <g stroke="#ffffff" stroke-width="1" fill="none" opacity="0.85">
+    <!-- 사선 레이아웃 -->
+    <path d="M0 60 L60 0 M-10 10 L10 -10 M50 70 L70 50" stroke-width="0.5" opacity="0.4"/>
+    <!-- Y2K Star / Sparkle -->
+    <path d="M30 18 Q30 30 18 30 Q30 30 30 42 Q30 30 42 30 Q30 30 30 18 Z" fill="#ffffff" stroke="none" opacity="0.9"/>
+    <path d="M0 0 Q0 8 -8 8 Q0 8 0 16 Q0 8 8 8 Q0 8 0 0 Z" fill="#ffffff" stroke="none" opacity="0.6"/>
+    <path d="M60 60 Q60 68 52 68 Q60 68 60 76 Q60 68 68 68 Q60 68 60 60 Z" fill="#ffffff" stroke="none" opacity="0.6"/>
+  </g>
+</svg>

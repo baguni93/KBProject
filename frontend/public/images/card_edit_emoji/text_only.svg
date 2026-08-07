@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80">
+  <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="black" font-family="serif" font-weight="900" font-style="italic" font-size="28" letter-spacing="2">ONLY U</text>
+  <path d="M50 20 L60 25 L50 30" stroke="black" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M150 50 L140 55 L150 60" stroke="black" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>
