@@ -33,6 +33,36 @@
       <div class="point-symbol">P</div>
     </section>
 
+    <!-- 랜덤박스 / 포인트 전환 바로가기 -->
+    <section class="quick-card kb-card">
+      <router-link to="/point-wallet/random-box" class="quick-item">
+        <div class="quick-icon gift">
+          <i class="fa-solid fa-gift"></i>
+        </div>
+
+        <div>
+          <strong class="text-15-bold">랜덤박스</strong>
+          <span class="text-13">{{ randomBoxCount }}개</span>
+        </div>
+
+        <i class="fa-solid fa-chevron-right quick-arrow"></i>
+      </router-link>
+
+      <div class="quick-divider"></div>
+
+      <router-link to="/point-wallet/conversion" class="quick-item">
+        <div class="quick-icon exchange">
+          <i class="fa-solid fa-wallet"></i>
+        </div>
+
+        <div>
+          <strong class="text-15-bold">포인트 전환</strong>
+        </div>
+
+        <i class="fa-solid fa-chevron-right quick-arrow"></i>
+      </router-link>
+    </section>
+
     <section class="kb-section">
       <div class="kb-section-title-row">
         <h2 class="kb-section-title text-18-bold">
