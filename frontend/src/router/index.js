@@ -46,8 +46,7 @@ const router = createRouter({
     {
       path: '/wallet/card/add',
       name: 'card-add',
-      component: () =>
-          import('@/pages/wallet/CardAddPage.vue'),
+      component: () => import('@/pages/wallet/CardAddPage.vue'),
       meta: {
         requiresAuth: true,
         showBottomNav: false,
@@ -113,7 +112,7 @@ const router = createRouter({
     {
       path: '/setting',
       name: 'setting',
-      component: () => import('@/pages/setting/SettingPage.vue'),
+      component: () => import('@/pages/setting/SettingHomePage.vue'),
       meta: {
         requiresAuth: true,
         showBottomNav: true,
@@ -164,8 +163,7 @@ const router = createRouter({
     {
       path: '/search',
       name: 'search',
-      component: () =>
-          import('@/pages/search/SearchPage.vue'),
+      component: () => import('@/pages/search/SearchPage.vue'),
       meta: {
         showBottomNav: false,
       },
@@ -210,11 +208,7 @@ const router = createRouter({
 
 // 로그인 필수 화면 접근 확인
 router.beforeEach((to) => {
-  if (
-      !to.matched.some(
-          (route) => route.meta.requiresAuth,
-      )
-  ) {
+  if (!to.matched.some((route) => route.meta.requiresAuth)) {
     return true;
   }
 
