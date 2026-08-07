@@ -56,16 +56,14 @@
 
     <!-- 최근 송금 계좌 3건 조회 (실제 로그인 유저의 송금 이력 기준) -->
     <select id="getRecentAccounts" resultType="org.scoula.remittance.dto.RecentAccountDTO">
-        SELECT DISTINCT
-            COALESCE(a.bank_code, '088') AS bankCode,
-            COALESCE(b.bank_name, '신한은행') AS bankName,
-            COALESCE(a.account_number, CONCAT('222-002-00000', t.receive_id)) AS accountNumber,
-            COALESCE(u.user_name, a.owner_name, '수취인') AS ownerName,
+        SELECT
+            '088' AS bankCode,
+            '신한은행' AS bankName,
+            COALESCE(u.phone_number, '111-001-000001') AS accountNumber,
+            COALESCE(u.user_name, '수취인') AS ownerName,
             t.created_at AS lastTransferAt
         FROM financial_transaction_tbl t
         LEFT JOIN user_tbl u ON t.receive_id = u.user_id
-        LEFT JOIN account_dummy_tbl a ON u.user_id = a.user_id
-        LEFT JOIN bank_tbl b ON a.bank_code = b.bank_code
         WHERE t.user_id = #{userId}
           AND t.transaction_type = 'TRANSFER'
         ORDER BY t.transaction_id DESC
