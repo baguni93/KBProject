@@ -16,7 +16,7 @@
       </div>
 
       <template v-if="lastOpenResult">
-        <div class="eyebrow">랜덤박스 결과</div>
+        <div class="eyebrow">보유 랜덤박스 {{ randomBoxes.length }}개</div>
         <h2>축하해요!</h2>
         <div class="reward-value">{{ formatNumber(lastOpenResult.totalRewardPoint ?? lastOpenResult.rewardPoint) }}P</div>
         <p>포인트가 바로 적립되었어요.</p>
@@ -29,8 +29,13 @@
     </section>
 
     <div class="box-actions">
-      <button type="button" class="kb-primary-button" :disabled="loading || randomBoxes.length === 0" @click="openOne">
-        {{ loading ? '개봉 중...' : '1개 열기' }}
+      <button
+        type="button"
+        :class="['kb-primary-button', 'open-one-button', { 'open-one-button--empty': randomBoxes.length === 0 }]"
+        :disabled="loading || randomBoxes.length === 0"
+        @click="openOne"
+      >
+        {{ loading ? '개봉 중...' : (randomBoxes.length === 0 ? '모두 열었어요' : '1개 열기') }}
       </button>
       <button type="button" class="kb-secondary-button" :disabled="loading || randomBoxes.length === 0" @click="openAll">
         모두 열기
@@ -99,6 +104,15 @@ onMounted(initialize);
 .spark-1 { top: 9px; right: 8px; }.spark-2 { left: 0; bottom: 18px; animation-delay: .4s; }
 @keyframes twinkle { to { transform: scale(1.4); opacity: .45; } }
 .eyebrow { color: #a87900; font-size: 12px; font-weight: 800; }
+.result-eyebrow { margin-top: 7px; color: var(--kb-subtext); font-size: 11px; font-weight: 700; }
+.open-one-button.open-one-button--empty,
+.open-one-button.open-one-button--empty:disabled {
+  background: #d9d9d9;
+  border-color: #d9d9d9;
+  color: #8a8a8a;
+  opacity: 1;
+  cursor: not-allowed;
+}
 .box-stage h2 { margin: 7px 0 6px; font-size: 22px; font-weight: 900; letter-spacing: -.7px; }
 .box-stage p { margin: 0; color: var(--kb-subtext); font-size: 12px; }
 .reward-value { margin: 2px 0 5px; font-size: 34px; font-weight: 900; }
