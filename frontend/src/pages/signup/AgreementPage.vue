@@ -3,6 +3,7 @@
     <main class="signup-container">
       <section class="signup-header">
         <h1>약관 동의</h1>
+
         <p>
           가입을 위해 약관에<br />
           동의해주세요.
@@ -24,30 +25,36 @@
         <div class="divider"></div>
 
         <AgreementCheckItem
-          v-for="agreement in signupStore.agreements"
-          :key="agreement.agreementId"
-          :model-value="agreement.agreed"
-          :title="agreement.agreementName"
-          :required="agreement.requiredYn === 'Y'"
-          detail-mode="navigate"
-          @update:model-value="(agreed) => changeAgreement({ agreementType: agreement.agreementType, agreed })"
-          @open-detail="showAgreementDetail(agreement.agreementType)"
+            v-for="agreement in signupStore.agreements"
+            :key="agreement.agreementId"
+            :model-value="agreement.agreed"
+            :title="agreement.agreementName"
+            :required="agreement.requiredYn === 'Y'"
+            detail-mode="navigate"
+            @update:model-value="(agreed) => changeAgreement({ agreementType: agreement.agreementType, agreed })"
+            @open-detail="showAgreementDetail(agreement.agreementType)"
         />
 
         <div class="divider bottom-divider"></div>
       </section>
 
-      <p v-if="errorMessage" class="error-message">
+      <p
+          v-if="errorMessage"
+          class="error-message"
+      >
         {{ errorMessage }}
       </p>
 
-      <button
-          class="next-button"
-          :disabled="!signupStore.isRequiredChecked"
-          @click="next"
-      >
-        다음
-      </button>
+      <div class="bottom-btn-area single">
+        <button
+            class="bottom-btn"
+            :disabled="!signupStore.isRequiredChecked"
+            type="button"
+            @click="next"
+        >
+          다음
+        </button>
+      </div>
     </main>
   </div>
 </template>
@@ -81,9 +88,13 @@ const changeAll = (event) => {
 
 // 개별 동의
 const changeAgreement = ({ agreementType, agreed }) => {
-  signupStore.setAgreementChecked(agreementType, agreed);
+  signupStore.setAgreementChecked(
+      agreementType,
+      agreed,
+  );
 };
 
+// 약관 상세 이동
 const showAgreementDetail = (agreementType) => {
   router.push(`/signup/agreement/${agreementType}`);
 };
@@ -118,7 +129,7 @@ onMounted(loadAgreements);
 .signup-header h1 {
   margin: 0 0 28px;
   color: #111111;
-  font-size: 30px;
+  font-size: 32px;
   font-weight: 700;
 }
 
@@ -194,29 +205,5 @@ onMounted(loadAgreements);
   margin: 16px 0 0;
   color: #d32f2f;
   font-size: 14px;
-}
-
-.next-button {
-  position: absolute;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
-  width: auto;
-  height: 58px;
-  margin: 0;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.next-button:disabled {
-  border-color: #dddddd;
-  background: #eeeeee;
-  color: #999999;
-  cursor: not-allowed;
 }
 </style>

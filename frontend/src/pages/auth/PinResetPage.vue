@@ -195,7 +195,7 @@ onMounted(() => {
 .pin-header h1 {
   margin: 0;
   color: #111111;
-  font-size: 25px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1.35;
   letter-spacing: -0.7px;
@@ -204,7 +204,7 @@ onMounted(() => {
 .pin-header p {
   margin: 16px 0 0;
   color: #777777;
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 400;
   line-height: 1.6;
 }

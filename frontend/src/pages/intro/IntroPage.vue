@@ -109,7 +109,7 @@ const start = () => {
 .intro-content h1 {
   margin: 26px 0 0;
   color: #111111;
-  font-size: 34px;
+  font-size: 32px;
   font-weight: 800;
   line-height: 1.3;
   letter-spacing: -1px;
