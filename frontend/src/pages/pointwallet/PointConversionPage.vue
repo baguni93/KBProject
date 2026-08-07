@@ -22,7 +22,13 @@
       <div class="kb-section-title-row"><h2 class="kb-section-title">전환할 포인트</h2><span class="rate-label">1P = 1원</span></div>
       <form class="conversion-card kb-card" @submit.prevent="submitConversion">
         <div class="amount-input-wrap">
-          <input v-model.number="pointAmount" type="number" min="100" step="1" required aria-label="전환할 포인트" />
+          <input
+            :value="formattedPointAmount"
+            type="text"
+            inputmode="numeric"
+            aria-label="전환할 포인트"
+            @input="handlePointAmountInput"
+          />
           <span>P</span>
         </div>
         <div class="quick-amounts">
@@ -56,15 +62,33 @@ import { formatNumber, getApiErrorMessage } from '@/util/pointWallet';
 const TEMPORARY_USER_ID = 1; const MINIMUM_POINT = 100;
 const pointWallet = ref(null); const wallet = ref(null); const pointAmount = ref(MINIMUM_POINT); const conversionResult = ref(null); const loading = ref(false); const message = ref(''); const messageType = ref('success');
 const quickAmounts = [100, 500, 1000];
+const maximumPointAmount = computed(() => Math.max(Number(pointWallet.value?.pointBalance ?? 0), 0));
+const formattedPointAmount = computed(() => pointAmount.value === '' ? '' : formatNumber(pointAmount.value));
 const expectedPointBalance = computed(() => Math.max(Number(pointWallet.value?.pointBalance ?? 0) - Number(pointAmount.value ?? 0), 0));
 const expectedWalletBalance = computed(() => Number(wallet.value?.balance ?? 0) + Math.max(Number(pointAmount.value ?? 0), 0));
 const loadBalances = async () => { const [pointWalletData, walletData] = await Promise.all([pointWalletApi.getWallet(), walletApi.getWalletByUserId(TEMPORARY_USER_ID)]); pointWallet.value = pointWalletData; wallet.value = walletData; };
-const addPointAmount = (amount) => {
-  const currentAmount = Number(pointAmount.value);
-  pointAmount.value = (Number.isFinite(currentAmount) ? currentAmount : 0) + amount;
+const clampPointAmount = (amount) => {
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  return Math.min(Math.trunc(amount), maximumPointAmount.value);
 };
-const setMaximumAmount = () => { pointAmount.value = Number(pointWallet.value?.pointBalance ?? 0); };
-const validatePointAmount = () => { const amount = Number(pointAmount.value); const balance = Number(pointWallet.value?.pointBalance ?? 0); if (!Number.isInteger(amount)) return '전환 포인트는 정수로 입력해야 합니다.'; if (amount < MINIMUM_POINT) return `최소 ${MINIMUM_POINT}P부터 전환할 수 있습니다.`; if (amount > balance) return '보유 포인트보다 많은 금액은 전환할 수 없습니다.'; return ''; };
+const handlePointAmountInput = (event) => {
+  const digitsOnly = event.target.value.replace(/[^0-9]/g, '');
+
+  if (!digitsOnly) {
+    pointAmount.value = '';
+    event.target.value = '';
+    return;
+  }
+
+  pointAmount.value = clampPointAmount(Number(digitsOnly));
+  event.target.value = formatNumber(pointAmount.value);
+};
+const addPointAmount = (amount) => {
+  const currentAmount = Number(pointAmount.value) || 0;
+  pointAmount.value = clampPointAmount(currentAmount + amount);
+};
+const setMaximumAmount = () => { pointAmount.value = maximumPointAmount.value; };
+const validatePointAmount = () => { const amount = Number(pointAmount.value); if (!Number.isInteger(amount)) return '전환 포인트는 정수로 입력해야 합니다.'; if (amount < MINIMUM_POINT) return `최소 ${formatNumber(MINIMUM_POINT)}P부터 전환할 수 있습니다.`; return ''; };
 const submitConversion = async () => { message.value = ''; const validationMessage = validatePointAmount(); if (validationMessage) { messageType.value = 'error'; message.value = validationMessage; return; } loading.value = true; try { const result = await pointWalletApi.convertPoints(pointAmount.value); conversionResult.value = result; messageType.value = 'success'; message.value = `${formatNumber(result.convertedPoint)}P가 전자지갑으로 전환되었습니다.`; await loadBalances(); pointAmount.value = MINIMUM_POINT; } catch (error) { messageType.value = 'error'; message.value = getApiErrorMessage(error, '포인트 전환에 실패했습니다.'); } finally { loading.value = false; } };
 const initialize = async () => { loading.value = true; try { await loadBalances(); } catch (error) { messageType.value = 'error'; message.value = getApiErrorMessage(error, '지갑 잔액을 불러오지 못했습니다.'); } finally { loading.value = false; } };
 onMounted(initialize);
