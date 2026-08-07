@@ -17,21 +17,21 @@
     ══════════════════════════════════════════ -->
     <div class="fintech-body">
 
+      <!-- [고정 1] 카드 결제 / 지갑 결제 공통 탭 바 (최상단 고정 -> 어느 모드든 절대 안 흔들림!) -->
+      <div class="mode-tab-bar mb-3">
+        <button class="tab-item" :class="{ active: !isWalletModeActive }" @click="isWalletModeActive = false">카드 결제</button>
+        <button class="tab-item" :class="{ active: isWalletModeActive }" @click="isWalletModeActive = true">지갑 결제</button>
+      </div>
+
       <!-- ------------------------------------------
-           A. 무선 카드 결제 모드 (대표 카드 유/무 분기)
+           A. 무선 카드 결제 모드 (카드 결제 전용 - 지갑 잔액 미표시)
       ------------------------------------------ -->
       <template v-if="!isWalletModeActive">
 
-        <!-- A-1. 대표 카드가 없을 때 (이미지 1번 100% 동일 구현!) -->
+        <!-- A-1. 대표 카드가 없을 때 -->
         <template v-if="!hasRepresentativeCard">
           <div class="text-center my-1 flex-shrink-0">
             <span class="no-card-status-badge">무선 카드 결제 대기 중 (카드 없음)</span>
-          </div>
-
-          <!-- 카드 결제 / 지갑 결제 세그먼트 탭 -->
-          <div class="mode-tab-bar mb-3">
-            <button class="tab-item active">카드 결제</button>
-            <button class="tab-item text-secondary" @click="toggleStartMode">지갑 결제</button>
           </div>
 
           <!-- 중앙 대표 카드 지정 필요 삐딱한 점선 카드 그래픽 -->
@@ -60,115 +60,162 @@
         <!-- A-2. 대표 카드가 등록되어 있을 때 (삼성페이 다중 카드 덱 뷰) -->
         <template v-else>
           <div class="text-center my-1 flex-shrink-0">
-            <span v-if="isNfcActive" class="active-card-status-badge">대표 카드 ({{ currentCardIdx + 1 }}/{{ registeredCards.length }}) 결제 신호 송신 중</span>
-            <span v-else class="badge bg-secondary bg-opacity-10 text-secondary border px-3 py-1 font-bold">결제 준비 완료 (PIN 인증 대기)</span>
-          </div>
-
-          <div class="mode-tab-bar mb-2">
-            <button class="tab-item active">카드 결제</button>
-            <button class="tab-item text-secondary" @click="toggleStartMode">지갑 결제</button>
+            <span v-if="isNfcActive" class="active-card-status-badge">대표 카드 결제 신호 송신 중</span>
+            <span v-else-if="currentCardIdx === registeredCards.length" class="badge bg-warning bg-opacity-20 text-dark border border-warning px-3 py-1 font-bold">
+              <i class="bi bi-plus-circle-fill text-warning me-1"></i>새 카드 등록 탭
+            </span>
+            <span v-else class="badge bg-secondary bg-opacity-10 text-secondary border px-3 py-1 font-bold">
+              카드를 터치하면 결제가 진행됩니다 ({{ currentCardIdx + 1 }}/{{ registeredCards.length }})
+            </span>
           </div>
 
           <!-- 다중 카드 스태킹 덱 -->
-          <div class="spay-deck-container flex-1 d-flex flex-column align-items-center justify-content-center my-3 position-relative">
-            <button class="deck-arrow-btn left" :disabled="currentCardIdx === 0" @click="currentCardIdx--">
-              <i class="bi bi-chevron-left"></i>
-            </button>
+          <div class="spay-deck-container flex-1 d-flex flex-column align-items-center justify-content-center my-2 position-relative">
+            <button class="deck-arrow-btn left" :disabled="currentCardIdx === 0" @click="currentCardIdx--">‹</button>
 
             <div class="card-stack-wrap position-relative">
+              <!-- 1) 등록된 카드 목록 (터치 시 PIN 인증 모달 즉시 호출) -->
               <div
                 v-for="(card, index) in registeredCards"
                 :key="index"
-                class="stack-card-item"
+                class="stack-card-item cursor-pointer"
                 :class="{
                   'active-card': currentCardIdx === index,
                   'behind-card': currentCardIdx !== index
                 }"
+                @click="onCardClick(index)"
               >
-                <div class="card-brand-label">{{ card.cardAlias || card.cardName }}</div>
-                <div class="card-number-label">{{ card.cardNum || '•••• 9182' }}</div>
-                <span v-if="index === 0" class="rep-badge">대표</span>
+                <!-- 카드 실물 배경 이미지 (이미지 등록된 카드만 노출) -->
+                <img
+                  v-if="getCardImg(card)"
+                  :src="getCardImg(card)"
+                  class="card-plate-bg-img"
+                  alt="card"
+                  @error="(e) => e.target.style.display='none'"
+                />
+                <div class="card-plate-overlay"></div>
+
+                <!-- 상단: IC 칩 & 대표/KB국민카드 뱃지 -->
+                <div class="card-plate-top d-flex justify-content-between align-items-center">
+                  <div class="chip-ic-sm"></div>
+                  <span v-if="index === 0" class="rep-badge">대표카드</span>
+                  <span v-else class="kb-badge-sm"><i class="bi bi-shield-fill-check me-1"></i>KB국민카드</span>
+                </div>
+
+                <!-- 하단: 깔끔한 단일 오버레이 정보 (별칭 + 마스킹 카드번호) -->
+                <div class="card-plate-bottom-info text-start">
+                  <div class="card-brand-label">{{ card.cardAlias || card.cardName || 'KB국민카드' }}</div>
+                  <div class="card-number-label">{{ formatMaskedCardNum(card.cardNum) }}</div>
+                </div>
+              </div>
+
+              <!-- 2) 맨 우측 끝: 카드 모양의 '새 카드 등록하기' 카드 -->
+              <div
+                class="stack-card-item card-add-deck-item"
+                :class="{
+                  'active-card': currentCardIdx === registeredCards.length,
+                  'behind-card': currentCardIdx !== registeredCards.length
+                }"
+                @click="$router.push('/wallet/card/add')"
+              >
+                <div class="d-flex flex-column align-items-center justify-content-center h-100 text-center">
+                  <div class="add-icon-circle mb-2">
+                    <i class="bi bi-plus-lg fs-3 text-warning"></i>
+                  </div>
+                  <span class="fw-bold text-dark mb-0 fs-6">새 카드 등록하기</span>
+                  <span class="text-secondary" style="font-size: 11px;">터치하여 신규 카드 추가</span>
+                </div>
               </div>
             </div>
 
-            <button class="deck-arrow-btn right" :disabled="currentCardIdx === registeredCards.length - 1" @click="currentCardIdx++">
-              <i class="bi bi-chevron-right"></i>
-            </button>
+            <!-- 오른쪽 화살표: 다음 카드로 이동, 맨 끝일 때 클릭하면 카드 추가 화면으로 이동! -->
+            <button class="deck-arrow-btn right" @click="handleRightArrowClick">›</button>
 
             <div class="indicator-dots mt-3">
-              <span v-for="(_, idx) in registeredCards" :key="idx" class="dot" :class="{ active: currentCardIdx === idx }"></span>
+              <span
+                v-for="(_, idx) in (registeredCards.length + 1)"
+                :key="idx"
+                class="dot"
+                :class="{ active: currentCardIdx === idx }"
+                @click="currentCardIdx = idx"
+              ></span>
             </div>
           </div>
 
-          <!-- PIN 인증 활성화 여부에 따른 하단 결제 박스 -->
+          <!-- NFC 활성화 안내 또는 카드 터치 안내 -->
           <div v-if="isNfcActive" class="nfc-wait-box text-center p-3 mb-1 shadow-sm rounded-3 bg-white border">
             <p class="fw-bold mb-1 text-dark" style="font-size: 13px;"><i class="bi bi-wifi text-success me-1 fs-6"></i>결제 단말기에 스마트폰 뒷면을 대어주세요</p>
-            <p class="small text-secondary mb-0">NFC 결제 신호 송신 중... 남은 시간 <span class="text-danger fw-bold font-monospace fs-6">{{ formattedNfcTimer }}</span></p>
+            <p class="small text-secondary mb-0">NFC 결제 신호 송신 중... 남은 시간 <span class="text-danger fw-bold fs-6">{{ formattedNfcTimer }}</span></p>
           </div>
-
-          <div v-else class="nfc-init-box text-center p-3 mb-1 shadow-sm rounded-3 bg-white border">
-            <p class="small text-muted mb-2">PIN 인증을 하시면 50초간 결제 신호가 활성화됩니다.</p>
-            <button class="btn btn-warning w-100 fw-bold py-2 shadow-sm text-dark" @click="openPinModal">
-              <i class="bi bi-shield-lock-fill me-1"></i> PIN 인증하고 결제 시작하기
-            </button>
+          <div v-else class="text-center text-muted small mt-1">
+            <i class="bi bi-hand-index-thumb text-warning me-1"></i>카드를 터치하면 PIN 인증 후 결제가 시작됩니다.
           </div>
         </template>
 
       </template>
 
       <!-- ------------------------------------------
-           B. 전자지갑 결제 모드 (QR / 바코드 결제)
+           B. 전자지갑 결제 모드 (지갑 잔액 표시 + 이미지 6번과 100% 동일한 고급 지갑 UI)
       ------------------------------------------ -->
       <template v-else>
-        <!-- 지갑 잔액 카운터 카드가 상단에 위치 -->
-        <div class="wallet-balance-banner p-3 mb-2 d-flex justify-content-between align-items-center rounded-4 border">
+
+        <!-- [지갑 전용] MY WALLET BALANCE 잔액 카드가 탭 바 바로 밑에 위치 -->
+        <div class="wallet-balance-banner p-3 mb-3 d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center gap-2">
-            <div class="wallet-icon-circle"><i class="bi bi-wallet2 text-success"></i></div>
+            <div class="wallet-icon-circle">
+              <i class="bi bi-wallet2"></i>
+            </div>
             <div>
-              <span class="text-uppercase text-muted font-monospace" style="font-size: 10px;">My Wallet Balance</span>
-              <h4 class="fw-black m-0 font-monospace text-dark">{{ formatCurrency(walletBalance) }} <span class="fs-6 text-success">KRW</span></h4>
+              <span class="text-uppercase text-secondary font-bold d-block" style="font-size: 10px; letter-spacing: 0.5px;">MY WALLET BALANCE</span>
+              <h4 class="fw-black m-0 text-dark" style="font-size: 19px;">
+                {{ formatCurrency(walletBalance) }} <span class="fs-6 text-success fw-bold">KRW</span>
+              </h4>
             </div>
           </div>
-          <div class="d-flex gap-1">
-            <button class="btn btn-success btn-sm font-bold" @click="$router.push('/wallet/charge')">+ 충전</button>
-            <button class="btn btn-outline-secondary btn-sm font-bold" @click="$router.push('/remittance')">송금</button>
+          <div class="d-flex gap-1.5">
+            <button class="btn-charge-green" @click="$router.push('/wallet/charge')">+ 충전</button>
+            <button class="btn-remit-white" @click="$router.push('/remittance')"><i class="bi bi-arrow-right me-1"></i>송금</button>
           </div>
         </div>
 
-        <div class="mode-tab-bar mb-3">
-          <button class="tab-item text-secondary" @click="toggleStartMode">카드 결제</button>
-          <button class="tab-item active">지갑 결제</button>
-        </div>
-
+        <!-- QR 코드 / 바코드 서브 세그먼트 탭 -->
         <div class="sub-qr-barcode-tab p-1 bg-light rounded-3 d-flex mb-3">
           <button class="flex-1 btn btn-sm" :class="walletTab === 'QR' ? 'btn-white shadow-sm fw-bold' : 'text-muted'" @click="walletTab = 'QR'">QR 코드 결제</button>
           <button class="flex-1 btn btn-sm" :class="walletTab === 'BARCODE' ? 'btn-white shadow-sm fw-bold' : 'text-muted'" @click="walletTab = 'BARCODE'">바코드 결제</button>
         </div>
 
-        <!-- QR 코드 결제 뷰 -->
-        <div v-if="walletTab === 'QR'" class="qr-scanner-box flex-1 d-flex flex-column align-items-center justify-content-center my-3">
-          <div class="qr-code-frame position-relative p-3 bg-white rounded-4 border shadow-sm">
-            <div class="laser-scanner-line"></div>
+        <!-- QR 코드 결제 뷰 (1회용 토큰 타이머) -->
+        <div v-if="walletTab === 'QR'" class="qr-scanner-box flex-1 d-flex flex-column align-items-center justify-content-center my-2">
+          <div class="qr-code-frame position-relative p-4 bg-white rounded-4 border shadow-sm">
             <div class="qr-code-graphic">
-              <!-- QR 패턴 그래픽 -->
               <div class="grid-qr">
                 <div v-for="n in 25" :key="n" :class="n % 2 === 0 ? 'bg-dark' : 'bg-white'"></div>
               </div>
             </div>
           </div>
-          <p class="small text-muted text-center mt-3">매장 직원에게 이 화면을 보여주거나<br><strong class="text-dark">리더기에 QR코드</strong>를 스캔해 주세요.</p>
+          
+          <!-- 1회용 보안 토큰 & 실시간 타이머 바 (이미지 6번 100% 동일 재현) -->
+          <div class="security-token-bar w-100 p-2.5 px-3 bg-white rounded-4 d-flex justify-content-between align-items-center border shadow-xs mt-3">
+            <span class="small text-secondary fw-bold"><i class="bi bi-shield-lock text-success me-1"></i> 1회용 보안 토큰</span>
+            <span class="text-danger fw-bold small"><i class="bi bi-clock-history me-1"></i> {{ formattedQrTimer }}</span>
+          </div>
         </div>
 
         <!-- 바코드 결제 뷰 -->
-        <div v-else class="barcode-scanner-box flex-1 d-flex flex-column align-items-center justify-content-center my-3">
+        <div v-else class="barcode-scanner-box flex-1 d-flex flex-column align-items-center justify-content-center my-2">
           <div class="barcode-frame w-100 p-4 bg-white rounded-4 border shadow-sm text-center">
-            <span class="text-muted font-monospace" style="font-size: 10px;">MEMBER TRANSACTION BARCODE</span>
-            <div class="barcode-graphic-bars my-2 d-flex justify-content-center align-items-center gap-1">
+            <span class="text-muted" style="font-size: 10px; letter-spacing: 1px;">MEMBER TRANSACTION BARCODE</span>
+            <div class="barcode-graphic-bars my-3 d-flex justify-content-center align-items-center gap-1">
               <span v-for="w in [2,4,1,3,1,4,2,1,4,2,1,3,2,4,1]" :key="w" class="bar-line" :style="{ width: w + 'px' }"></span>
             </div>
-            <span class="fw-bold font-monospace text-dark">9283-7492-1049-9182</span>
+            <span class="fw-bold text-dark fs-5 tracking-wider">9283-7492-1049-9182</span>
           </div>
-          <p class="small text-muted text-center mt-3">가맹점 전용 스캐너 및 포스기 리더기에<br><strong class="text-dark">생성된 바코드</strong>를 보여주세요.</p>
+
+          <!-- 1회용 보안 토큰 & 실시간 타이머 바 -->
+          <div class="security-token-bar w-100 p-2.5 px-3 bg-white rounded-4 d-flex justify-content-between align-items-center border shadow-xs mt-3">
+            <span class="small text-secondary fw-bold"><i class="bi bi-shield-lock text-success me-1"></i> 1회용 보안 토큰</span>
+            <span class="text-danger fw-bold small"><i class="bi bi-clock-history me-1"></i> {{ formattedQrTimer }}</span>
+          </div>
         </div>
       </template>
 
@@ -215,6 +262,53 @@ const walletBalance = ref(0);
 
 const registeredCards = ref([]);
 const currentCardIdx = ref(0);
+
+const kbCardImageMap = {
+  'KB Pay 노리2 체크카드 (KB국민카드)': '/images/cards/nori2.png',
+  'KB국민 톡톡MyPoint 카드': '/images/cards/toktok.png',
+  'KB국민 굿데이 ALL 카드': '/images/cards/goodday.png',
+  'KB국민 청춘대로 톡톡카드': '/images/cards/chungchun.png',
+  'KB국민 My WEISH 카드': '/images/cards/weish.png',
+  'KB국민 Easy Link 카드': '/images/cards/easylink.png',
+};
+
+const getCardImg = (card) => {
+  if (!card) return null;
+  if (card.cardImage) return card.cardImage;
+  if (card.cardName && kbCardImageMap[card.cardName]) return kbCardImageMap[card.cardName];
+  if (card.cardName) {
+    for (const [name, img] of Object.entries(kbCardImageMap)) {
+      if (card.cardName.includes(name) || name.includes(card.cardName)) return img;
+    }
+  }
+  return null;
+};
+
+const formatMaskedCardNum = (num) => {
+  if (!num) return '•••• •••• •••• 9182';
+  const clean = num.replace(/\D/g, '');
+  if (clean.length >= 4) {
+    const last4 = clean.slice(-4);
+    return `•••• •••• •••• ${last4}`;
+  }
+  return num;
+};
+
+const handleRightArrowClick = () => {
+  if (currentCardIdx.value < registeredCards.value.length) {
+    currentCardIdx.value++;
+  } else {
+    router.push('/wallet/card/add');
+  }
+};
+
+const onCardClick = (index) => {
+  if (currentCardIdx.value === index) {
+    openPinModal();
+  } else {
+    currentCardIdx.value = index;
+  }
+};
 
 const hasRepresentativeCard = computed(() => {
   return registeredCards.value.length > 0;
@@ -287,9 +381,7 @@ const enterPin = async (num) => {
 
 const loadData = async () => {
   try {
-    const userId = authStore.userId;
-    if (!userId) return;
-
+    const userId = authStore.userId || 1;
     const cardsData = await getCards(userId);
     if (cardsData && Array.isArray(cardsData)) {
       registeredCards.value = cardsData;
@@ -304,12 +396,36 @@ const loadData = async () => {
   }
 };
 
+// QR / 바코드 1회용 보안 토큰 실시간 3분 카운트다운 타이머 (이미지 6번과 100% 동일!)
+const qrTimerSeconds = ref(179);
+let qrTimerInterval = null;
+
+const formattedQrTimer = computed(() => {
+  const m = Math.floor(qrTimerSeconds.value / 60);
+  const s = qrTimerSeconds.value % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+});
+
+const startQrTimer = () => {
+  if (qrTimerInterval) clearInterval(qrTimerInterval);
+  qrTimerSeconds.value = 179;
+  qrTimerInterval = setInterval(() => {
+    if (qrTimerSeconds.value > 0) {
+      qrTimerSeconds.value--;
+    } else {
+      qrTimerSeconds.value = 179;
+    }
+  }, 1000);
+};
+
 onMounted(() => {
   loadData();
+  startQrTimer();
 });
 
 onUnmounted(() => {
   if (timerInterval) clearInterval(timerInterval);
+  if (qrTimerInterval) clearInterval(qrTimerInterval);
 });
 </script>
 
@@ -527,52 +643,163 @@ onUnmounted(() => {
   background: #0F172A;
 }
 
-/* 카드 스태킹 덱 스타일 */
+/* 카드 스태킹 덱 스타일 (크기 대폭 확대 260px x 165px) */
 .card-stack-wrap {
-  width: 200px;
-  height: 120px;
+  width: 260px;
+  height: 165px;
 }
 
 .stack-card-item {
   position: absolute;
   inset: 0;
-  border-radius: 16px;
-  padding: 14px;
+  border-radius: 18px;
+  padding: 16px 18px;
   color: #ffffff;
-  display: flex;
+  display: none !important;
+  opacity: 0;
   flex-direction: column;
   justify-content: space-between;
-  background: linear-gradient(135deg, #FF9F00, #FFC200);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  background: linear-gradient(135deg, #1E293B, #0F172A);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  user-select: none;
+  z-index: 1;
+}
+
+.stack-card-item.active-card {
+  display: flex !important;
+  opacity: 1 !important;
+  z-index: 10 !important;
+}
+
+.card-plate-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+  border-radius: 18px;
+}
+
+.card-plate-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.65) 100%);
+  z-index: 2;
+  border-radius: 18px;
+}
+
+.card-plate-top,
+.card-plate-bottom-info {
+  position: relative;
+  z-index: 3;
+}
+
+.card-plate-bottom-info {
+  background: rgba(0, 0, 0, 0.35);
+  padding: 8px 12px;
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+}
+
+.chip-ic-sm {
+  width: 32px;
+  height: 24px;
+  background: linear-gradient(135deg, #FFE082, #FFB300);
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.kb-badge-sm {
+  font-size: 11px;
+  font-weight: 800;
+  color: #FFD54F;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 3px 9px;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
 }
 
 .rep-badge {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  background: rgba(255,255,255,0.25);
-  font-size: 9px;
+  background: #FFBC00;
+  color: #111111;
+  font-size: 11px;
   font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.card-brand-label {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  margin-bottom: 2px;
+}
+
+.card-number-label {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+
+.card-add-deck-item {
+  background: #ffffff !important;
+  border: 2px dashed #CBD5E1;
+  color: #334155 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+  cursor: pointer;
+}
+
+.add-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #FFFBE6;
+  border: 1px solid #FFE58F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .deck-arrow-btn {
   position: absolute;
-  top: 50%;
+  top: 45%;
   transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #DEDEDE;
   background: #ffffff;
-  color: #64748B;
-  z-index: 15;
+  color: #222222;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  z-index: 25;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.deck-arrow-btn.left { left: 0; }
-.deck-arrow-btn.right { right: 0; }
+.deck-arrow-btn:hover:not(:disabled) {
+  background: #F8F9FA;
+  transform: translateY(-50%) scale(1.08);
+}
+
+.deck-arrow-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.deck-arrow-btn.left { left: -10px; }
+.deck-arrow-btn.right { right: -10px; }
 
 .indicator-dots .dot {
   display: inline-block;
@@ -666,5 +893,66 @@ onUnmounted(() => {
 
 .pin-num-btn:active {
   background: #e2e8f0;
+}
+
+/* ========================================
+   전자지갑 잔액 배너 (이미지 6번과 100% 동일 민트 그린 디자인)
+======================================== */
+.wallet-balance-banner {
+  background: #eaf8f1;
+  border: 1px solid #d1f0e2;
+  border-radius: 18px;
+  box-shadow: 0 2px 10px rgba(31, 157, 98, 0.05);
+}
+
+.wallet-icon-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #a3e7cb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #147648;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.btn-charge-green {
+  background: #1f9d62;
+  color: #ffffff;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(31, 157, 98, 0.2);
+  transition: all 0.15s ease;
+}
+
+.btn-charge-green:hover {
+  background: #198752;
+}
+
+.btn-remit-white {
+  background: #ffffff;
+  color: #333333;
+  border: 1px solid #dedede;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-remit-white:hover {
+  background: #f8f9fa;
+}
+
+.security-token-bar {
+  background: #ffffff;
+  border: 1px solid #eef0f4;
 }
 </style>

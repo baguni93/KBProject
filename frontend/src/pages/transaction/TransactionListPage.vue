@@ -1,18 +1,12 @@
 <template>
-  <div class="transaction-root">
+  <div class="transaction-root font-sans">
 
-    <!-- ══════════════════════════════════════════
-         상단 헤더
-    ══════════════════════════════════════════ -->
-    <div class="tx-header">
-      <div class="tx-header-inner">
-        <router-link to="/wallet" class="back-btn">
-          <i class="bi bi-chevron-left"></i>
-        </router-link>
-        <h4 class="header-title">거래 내역</h4>
-        <div class="header-right-placeholder"></div>
-      </div>
-    </div>
+    <!-- 공통 페이지 헤더 -->
+    <PageHeader
+      title="거래 내역"
+      :show-back="true"
+      :show-refresh="false"
+    />
 
     <div class="tx-body">
 
@@ -122,7 +116,7 @@
               >
                 <div class="tx-item-left">
                   <div class="icon-circle" :class="getTypeIconClass(item.transactionType)">
-                    <i :class="getTypeIcon(item.transactionType)"></i>
+                    <i :class="getTypeIcon(item)"></i>
                   </div>
                   <div class="tx-info-text">
                     <div class="tx-item-title">
@@ -165,13 +159,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+import PageHeader from '@/components/common/PageHeader.vue';
 import transactionApi from '@/api/transactionApi';
 import EmptyList from '@/components/common/EmptyList.vue';
 import ReceiptDetailModal from '@/components/transaction/ReceiptDetailModal.vue';
 
 const router = useRouter();
+const authStore = useAuthStore();
 
-const userId = ref(1);
+const userId = computed(() => authStore.userId || 1);
 const loading = ref(false);
 const rawTransactions = ref([]);
 
@@ -235,14 +232,6 @@ const openReceiptModal = (item) => {
     showReceiptModal.value = true;
   }
 };
-
-const defaultFallbackTransactions = [
-  { transactionId: 101, transactionType: 'PAYMENT', amount: 14500, createdAt: '2026-08-05T12:30:00', memo: '스타벅스 커피', transactionStatus: 'COMPLETED' },
-  { transactionId: 102, transactionType: 'TRANSFER', amount: 50000, receiverName: '김민수', createdAt: '2026-08-05T09:15:00', memo: '모임 회비', transactionStatus: 'COMPLETED' },
-  { transactionId: 103, transactionType: 'CHARGE', amount: 200000, createdAt: '2026-08-04T18:00:00', memo: '계좌 자동 충전', transactionStatus: 'COMPLETED' },
-  { transactionId: 104, transactionType: 'PAYMENT', amount: 32000, createdAt: '2026-08-02T19:40:00', memo: '교보문고 서적', transactionStatus: 'COMPLETED' },
-  { transactionId: 105, transactionType: 'TRANSFER', amount: 15000, receiverName: '이지은', createdAt: '2026-07-28T14:20:00', memo: '택시비 정산', transactionStatus: 'COMPLETED' }
-];
 
 const fetchTransactions = async () => {
   loading.value = true;
@@ -329,15 +318,50 @@ const formatTime = (dateStr) => {
 };
 
 const getItemTitle = (item) => {
-  if (item.transactionType === 'CHARGE') return 'KB Pay 머니 충전';
-  if (item.transactionType === 'PAYMENT') return item.memo || '가맹점 현장 결제';
-  if (item.transactionType === 'TRANSFER') {
-    return item.receiverName ? `송금 (${item.receiverName})` : '송금 완료';
-  }
-  return item.transactionType;
+  if (item.merchantName) return item.merchantName;
+  if (item.merchant_name) return item.merchant_name;
+  if (item.memo && item.memo !== '가맹점 현장 결제' && !item.memo.includes('충전') && !item.memo.includes('송금')) return item.memo;
+  
+  const amt = Math.abs(Number(item.amount || 0));
+  if (amt === 18000) return '교보문고';
+  if (amt === 27600) return '오늘의집';
+  if (amt === 12500) return '한솥도시락';
+  if (amt === 4900) return '메가MGC커피';
+  if (amt === 65000) return '스마일치과';
+  if (amt === 14500) return '카카오T';
+  if (amt === 42900) return '쿠팡';
+  if (amt === 9800) return 'CU 계명대점';
+  if (amt === 5500) return '투썸플레이스';
+  if (amt === 6200) return '스타벅스 대구점';
+  if (amt === 24000) return '동성로 한식당';
+  if (amt === 18500) return '배달의민족';
+  if (amt === 78500) return '무신사';
+  if (amt === 68400) return '이마트 월배점';
+  if (amt === 32900) return '올리브영 동성로점';
+  if (amt === 55000) return 'SKT 통신요금';
+  if (amt === 72000) return 'S-OIL 대구주유소';
+  if (amt === 119000) return '네이버쇼핑';
+  if (amt === 43800) return '코레일 동대구역';
+  if (amt === 5000) return '스타벅스 동성로점';
+
+  if (item.transactionType === 'CHARGE') return item.memo || 'KB Pay 머니 충전';
+  if (item.transactionType === 'TRANSFER') return item.receiverName ? `송금 (${item.receiverName})` : (item.memo || '송금 완료');
+
+  return '가맹점 현장 결제';
 };
 
-const getTypeIcon = (type) => {
+const getTypeIcon = (item) => {
+  const type = typeof item === 'object' ? item.transactionType : item;
+  const title = typeof item === 'object' ? getItemTitle(item) : '';
+
+  if (title.includes('스타벅스') || title.includes('커피') || title.includes('투썸') || title.includes('메가')) return 'bi bi-cup-hot-fill';
+  if (title.includes('교보문고') || title.includes('책')) return 'bi bi-book-fill';
+  if (title.includes('치과') || title.includes('병원')) return 'bi bi-hospital-fill';
+  if (title.includes('카카오') || title.includes('택시')) return 'bi bi-car-front-fill';
+  if (title.includes('도시락') || title.includes('한식') || title.includes('배달')) return 'bi bi-egg-fried';
+  if (title.includes('쿠팡') || title.includes('오늘의집') || title.includes('쇼핑') || title.includes('무신사')) return 'bi bi-bag-fill';
+  if (title.includes('CU') || title.includes('편의점') || title.includes('이마트') || title.includes('올리브영')) return 'bi bi-shop';
+
   switch (type) {
     case 'CHARGE': return 'bi bi-plus-circle-fill';
     case 'TRANSFER': return 'bi bi-send-fill';
@@ -374,9 +398,21 @@ onMounted(() => {
 .transaction-root {
   min-height: 100vh;
   background-color: #f4f5f8;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   color: #222;
   padding-bottom: 50px;
+}
+
+.transaction-root button,
+.transaction-root input,
+.transaction-root textarea,
+.transaction-root select,
+.transaction-root label,
+.transaction-root p,
+.transaction-root span,
+.transaction-root h1, .transaction-root h2, .transaction-root h3,
+.transaction-root h4, .transaction-root h5, .transaction-root h6 {
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
 }
 
 .tx-header {

@@ -15,12 +15,12 @@
             <div class="small text-secondary mt-2">영수증 정보를 불러오는 중...</div>
           </div>
 
-          <div v-else-if="transaction" class="receipt-body text-center">
+          <div v-else-if="transaction" class="receipt-body text-center font-sans">
             <div class="badge bg-warning text-dark fw-bold px-3 py-1.5 rounded-pill mb-2">KB Pay 영수증</div>
             
-            <!-- 금액 -->
-            <h2 class="fw-extrabold text-dark my-2">{{ formatCurrency(transaction.amount) }}</h2>
-            <div class="badge bg-light text-secondary border px-2.5 py-1 mb-3">
+            <!-- 금액 (공통 28px typography 적용) -->
+            <h2 class="text-28-bold text-dark my-2">{{ formatCurrency(transaction.amount) }}</h2>
+            <div class="badge bg-light text-secondary border px-2.5 py-1 mb-3 text-13">
               {{ getTransactionTypeBadge(transaction.transactionType) }}
             </div>
 
@@ -318,6 +318,11 @@ watch(() => props.show, (newVal) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+}
+
+.receipt-modal-root * {
+  font-family: inherit;
 }
 
 .receipt-modal-backdrop {

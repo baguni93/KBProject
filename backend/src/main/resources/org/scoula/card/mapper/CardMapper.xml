@@ -38,34 +38,34 @@
     </resultMap>
 
 
-    <!-- 연결 카드 목록 조회 -->
+    <!-- 연결 카드 목록 조회 (registered_card_tbl 기준 LEFT JOIN으로 새로 추가된 카드도 즉시 조회) -->
     <select id="findCardsByUserId"
             parameterType="long"
             resultMap="linkedCardMap">
 
         SELECT
-        lc.linked_card_id,
-        lc.user_id,
-        lc.card_id,
-        lc.card_company_code,
-        cc.card_company_name,
-        lc.card_name,
-        lc.card_image_name,
+        COALESCE(lc.linked_card_id, rc.card_id) AS linked_card_id,
+        rc.user_id,
+        rc.card_id,
+        COALESCE(lc.card_company_code, 'KB') AS card_company_code,
+        COALESCE(cc.card_company_name, 'KB국민카드') AS card_company_name,
+        COALESCE(lc.card_name, CONCAT('KB국민 Custom Card (', rc.card_id, ')')) AS card_name,
+        COALESCE(lc.card_image_name, 'nori2.png') AS card_image_name,
         rc.card_num,
-        lc.represent_yn
-        FROM linked_card_tbl lc
-        INNER JOIN registered_card_tbl rc
-        ON lc.card_id = rc.card_id
-        INNER JOIN card_company_tbl cc
+        rc.represent_yn
+        FROM registered_card_tbl rc
+        LEFT JOIN linked_card_tbl lc
+        ON rc.card_id = lc.card_id
+        LEFT JOIN card_company_tbl cc
         ON lc.card_company_code = cc.card_company_code
         INNER JOIN user_tbl u
-        ON lc.user_id = u.user_id
-        WHERE lc.user_id = #{userId}
+        ON rc.user_id = u.user_id
+        WHERE rc.user_id = #{userId}
         AND rc.delete_yn = 'N'
         AND u.user_status = 'ACTIVE'
         ORDER BY
-        CASE WHEN lc.represent_yn = 'Y' THEN 0 ELSE 1 END,
-        lc.linked_card_id
+        CASE WHEN rc.represent_yn = 'Y' THEN 0 ELSE 1 END,
+        rc.card_id DESC
 
     </select>
 

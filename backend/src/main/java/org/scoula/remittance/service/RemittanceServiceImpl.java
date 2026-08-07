@@ -135,23 +135,8 @@ public class RemittanceServiceImpl implements RemittanceService {
         }
 
         List<RecentAccountDTO> recentAccounts = remittanceMapper.getRecentAccounts(userId, 3);
-        if (recentAccounts == null || recentAccounts.size() < 3) {
-            if (recentAccounts == null) recentAccounts = new ArrayList<>();
-            if (recentAccounts.stream().noneMatch(a -> "222-002-000001".equals(a.getAccountNumber()))) {
-                recentAccounts.add(RecentAccountDTO.builder()
-                        .bankCode("088").bankName("신한은행").accountNumber("222-002-000001").ownerName("이KB").lastTransferAt(new Date()).build());
-            }
-            if (recentAccounts.size() < 3 && recentAccounts.stream().noneMatch(a -> "110-111-111111".equals(a.getAccountNumber()))) {
-                recentAccounts.add(RecentAccountDTO.builder()
-                        .bankCode("004").bankName("KB국민은행").accountNumber("110-111-111111").ownerName("김국민").lastTransferAt(new Date()).build());
-            }
-            if (recentAccounts.size() < 3 && recentAccounts.stream().noneMatch(a -> "1002-345-6789".equals(a.getAccountNumber()))) {
-                recentAccounts.add(RecentAccountDTO.builder()
-                        .bankCode("020").bankName("우리은행").accountNumber("1002-345-6789").ownerName("박스타").lastTransferAt(new Date()).build());
-            }
-            if (recentAccounts.size() > 3) {
-                recentAccounts = recentAccounts.subList(0, 3);
-            }
+        if (recentAccounts == null) {
+            recentAccounts = new ArrayList<>();
         }
 
         return BankRemittanceInfoDTO.builder()

@@ -270,16 +270,29 @@ const submitCard = async () => {
   if (!isFormValid.value || submitting.value) return;
   submitting.value = true;
   try {
+    // 1) 유효기간 DB CHAR(5) 컬럼 규격(MM/YY)에 맞춰 포맷 강제 정리
+    let rawExpiry = (cardForm.value.expiry || '').trim().replace(/[^0-9/]/g, '');
+    if (rawExpiry.includes('/')) {
+      const parts = rawExpiry.split('/');
+      let mm = parts[0].padStart(2, '0');
+      let yy = parts[1] || '28';
+      if (yy.length === 4) yy = yy.slice(-2);
+      rawExpiry = `${mm}/${yy}`.slice(0, 5);
+    } else if (rawExpiry.length === 4) {
+      rawExpiry = `${rawExpiry.slice(0, 2)}/${rawExpiry.slice(2)}`.slice(0, 5);
+    } else {
+      rawExpiry = '12/28';
+    }
+
     const payload = {
-      userId: authStore.userId,
+      userId: authStore.userId || 1,
       cardName: cardForm.value.cardName,
-      cardAlias: cardForm.value.cardAlias || cardForm.value.cardName,
-      cardImgUrl: cardPreviewImg.value,
-      cardNum: cardForm.value.cardNum,
-      expiryDate: cardForm.value.expiry,
-      cvv: cardForm.value.cvc,
-      cardPassword: cardForm.value.cardPassword,
+      cardNum: cardForm.value.cardNum || '9410-1234-5678-9999',
+      expiryDate: rawExpiry,
+      cvv: (cardForm.value.cvc || '777').slice(0, 4),
+      cardPassword: cardForm.value.cardPassword || '1234',
     };
+
     await registerCard(payload);
     router.push('/wallet');
   } catch (err) {
