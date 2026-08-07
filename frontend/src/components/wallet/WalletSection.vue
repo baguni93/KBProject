@@ -73,14 +73,16 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 import transactionApi from '@/api/transactionApi';
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 const props = defineProps({
   userId: {
     type: Number,
-    default: 1,
+    default: null,
   },
 });
 
@@ -105,43 +107,57 @@ const formatCurrency = (val) => {
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
   const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
 const getItemTitle = (item) => {
-  if (item.transactionType === 'CHARGE') return '지갑 충전';
-  if (item.transactionType === 'PAYMENT') return '현장 결제';
-  if (item.transactionType === 'TRANSFER') {
-    return item.receiverName ? `송금 (${item.receiverName})` : '송금 완료';
+  const tType = (item.transactionType || item.type || '').toUpperCase();
+  if (tType === 'CHARGE') return item.merchantName || item.merchant_name || item.title || '지갑 충전';
+  if (tType === 'TRANSFER' || tType === 'REMIT') {
+    return item.receiverName ? `송금 (${item.receiverName})` : (item.title || '송금 완료');
   }
-  return item.memo || '거래 내역';
+  return (
+    item.merchantName ||
+    item.merchant_name ||
+    item.receiverName ||
+    item.storeName ||
+    item.placeName ||
+    item.targetName ||
+    item.merchant ||
+    item.title ||
+    item.name ||
+    item.memo ||
+    item.description ||
+    '현장 결제'
+  );
 };
 
 const getTypeIcon = (type) => {
-  switch (type) {
-    case 'CHARGE': return 'bi bi-plus-lg';
-    case 'TRANSFER': return 'bi bi-send-fill';
-    case 'PAYMENT': return 'bi bi-bag-check-fill';
-    default: return 'bi bi-arrow-left-right';
-  }
+  const tStr = (type || '').toUpperCase();
+  if (tStr.includes('CHARGE')) return 'bi bi-plus-lg';
+  if (tStr.includes('TRANSFER') || tStr.includes('REMIT')) return 'bi bi-send-fill';
+  if (tStr.includes('PAY')) return 'bi bi-bag-check-fill';
+  return 'bi bi-arrow-left-right';
 };
 
 const getTypeIconClass = (type) => {
-  switch (type) {
-    case 'CHARGE': return 'yellow';
-    case 'TRANSFER': return 'blue';
-    case 'PAYMENT': return 'dark';
-    default: return 'gray';
-  }
+  const tStr = (type || '').toUpperCase();
+  if (tStr.includes('CHARGE')) return 'yellow';
+  if (tStr.includes('TRANSFER') || tStr.includes('REMIT')) return 'blue';
+  if (tStr.includes('PAY')) return 'dark';
+  return 'gray';
 };
 
 const getAmountClass = (type) => {
-  if (type === 'CHARGE') return 'plus';
+  const tStr = (type || '').toUpperCase();
+  if (tStr.includes('CHARGE')) return 'plus';
   return 'minus';
 };
 
 const getAmountPrefix = (type) => {
-  if (type === 'CHARGE') return '+';
+  const tStr = (type || '').toUpperCase();
+  if (tStr.includes('CHARGE')) return '+';
   return '-';
 };
 
@@ -150,40 +166,36 @@ const changeTab = (val) => {
   fetchTransactions();
 };
 
-const defaultFallbackList = [
-  { transactionId: 101, transactionType: 'CHARGE', amount: 50000, createdAt: new Date().toISOString(), memo: '계좌 자동충전' },
-  { transactionId: 102, transactionType: 'TRANSFER', amount: 15000, receiverName: '여행저축러', createdAt: new Date(Date.now() - 3600000).toISOString(), memo: '식대 송금' },
-  { transactionId: 103, transactionType: 'PAYMENT', amount: 18500, createdAt: new Date(Date.now() - 86400000).toISOString(), memo: '스타벅스 강남대로점' },
-  { transactionId: 104, transactionType: 'PAYMENT', amount: 45000, createdAt: new Date(Date.now() - 172800000).toISOString(), memo: '강남 쉐이크쉑 수제버거' }
-];
-
 const fetchTransactions = async () => {
   loading.value = true;
   try {
-    const list = await transactionApi.getTransactions(props.userId, selectedType.value);
-    const savedCharges = JSON.parse(localStorage.getItem('user_charges') || '[]');
-    let apiList = (list && list.length > 0) ? list : defaultFallbackList;
-    let merged = [...savedCharges, ...apiList];
-    
-    if (selectedType.value) {
-      merged = merged.filter(t => t.transactionType === selectedType.value);
-    }
-    
-    merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const targetUserId = props.userId || authStore.userId;
+    if (!targetUserId) return;
 
-    const seen = new Set();
-    transactions.value = merged.filter(t => {
-      if (seen.has(t.transactionId)) return false;
-      seen.add(t.transactionId);
-      return true;
-    });
-  } catch (err) {
-    const savedCharges = JSON.parse(localStorage.getItem('user_charges') || '[]');
-    let merged = [...savedCharges, ...defaultFallbackList];
-    if (selectedType.value) {
-      merged = merged.filter(t => t.transactionType === selectedType.value);
+    const list = await transactionApi.getTransactions(targetUserId);
+    if (list && Array.isArray(list)) {
+      let filtered = list;
+      if (selectedType.value) {
+        filtered = list.filter(t => {
+          const typeStr = (t.transactionType || t.type || '').toUpperCase();
+          if (selectedType.value === 'CHARGE') return typeStr.includes('CHARGE');
+          if (selectedType.value === 'TRANSFER') return typeStr.includes('TRANSFER') || typeStr.includes('REMIT');
+          if (selectedType.value === 'PAYMENT') return typeStr.includes('PAY');
+          return true;
+        });
+      }
+
+      // 최신순 정렬 (날짜 기준 내림차순)
+      filtered.sort((a, b) => {
+        const dateA = new Date(a.createdAt || a.transactionDate || a.date || 0);
+        const dateB = new Date(b.createdAt || b.transactionDate || b.date || 0);
+        return dateB - dateA;
+      });
+
+      transactions.value = filtered;
     }
-    transactions.value = merged;
+  } catch (err) {
+    console.log('WalletSection 거래내역 로드 예외', err);
   } finally {
     loading.value = false;
   }

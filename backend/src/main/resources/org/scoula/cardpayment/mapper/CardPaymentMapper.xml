@@ -72,12 +72,32 @@
         )
     </insert>
 
+    <!-- 연결 카드 등록 (linked_card_tbl) -->
+    <insert id="insertLinkedCard">
+        INSERT INTO linked_card_tbl (
+            user_id, card_id, card_company_code, card_name, card_image_name, represent_yn
+        ) VALUES (
+            #{userId}, #{cardId}, 
+            COALESCE(#{cardCompanyCode}, 'KB'), 
+            COALESCE(#{cardName}, 'KB국민 Custom Card'), 
+            COALESCE(#{cardImageName}, 'nori2.png'), 
+            #{representYn}
+        )
+    </insert>
+
     <!-- 기존 대표 카드 해제 (represent_yn = 'N') -->
     <update id="resetPrimaryCardByUserId">
         UPDATE registered_card_tbl
         SET represent_yn = 'N'
         WHERE user_id = #{userId}
           AND delete_yn = 'N'
+    </update>
+
+    <!-- 기존 연결 대표 카드 해제 (linked_card_tbl) -->
+    <update id="resetLinkedPrimaryCardByUserId">
+        UPDATE linked_card_tbl
+        SET represent_yn = 'N'
+        WHERE user_id = #{userId}
     </update>
 
     <!-- 특정 카드 대표로 지정 (represent_yn = 'Y') -->
