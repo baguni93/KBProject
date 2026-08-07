@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/member/search")
+@RequestMapping("/api/member/search")
 @RequiredArgsConstructor
 public class SearchController {
 
