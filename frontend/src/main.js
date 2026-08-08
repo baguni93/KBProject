@@ -1,4 +1,5 @@
 import 'bootstrap/dist/css/bootstrap.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'vue-awesome-paginate/dist/style.css';
 import './assets/main.css';
 import './assets/kb-mobile.css';
