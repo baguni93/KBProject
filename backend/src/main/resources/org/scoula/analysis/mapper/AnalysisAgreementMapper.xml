@@ -24,7 +24,8 @@
                )
         WHERE agreement.agreement_type IN (
                   'ANALYSIS_REQUIRED',
-                  'ANALYSIS_OPTIONAL'
+                  'ANALYSIS_OPTIONAL',
+                  'AI_REQUIRED'
               )
           AND agreement.use_yn = 'Y'
         ORDER BY
