@@ -364,7 +364,7 @@ onMounted(loadPage);
 ========================= */
 
 .balance-card {
-  margin-top: 14px;
+  //margin-top: 14px;
 
   min-height: 126px;
   padding: 22px;
