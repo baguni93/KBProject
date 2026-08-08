@@ -119,7 +119,7 @@ const start = () => {
   margin: 22px 0 0;
   color: #777777;
   font-size: 17px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.6;
 }
 
