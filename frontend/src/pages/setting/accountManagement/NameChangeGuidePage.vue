@@ -2,17 +2,11 @@
   <div class="guide-page">
     <main class="guide-container">
       <header class="page-header">
-        <button
-            class="back-button"
-            type="button"
-            aria-label="이전 화면"
-            @click="goBack"
-        >
+        <button class="back-button" type="button" @click="goBack">
           &lt;
         </button>
 
         <h1>이름 변경</h1>
-
         <div class="header-empty"></div>
       </header>
 
@@ -29,25 +23,27 @@
           휴대폰 번호로 본인인증을 진행해요.
         </p>
 
-        <section class="current-info">
-          <span>현재 이름</span>
-          <strong>{{ userInfo.userName || '-' }}</strong>
-        </section>
+        <div class="name-field">
+          <label>현재 이름</label>
 
-        <section class="input-area">
-          <label for="newUserName">
-            변경할 이름
-          </label>
+          <div class="name-box readonly">
+            {{ userInfo.userName || '-' }}
+          </div>
+        </div>
+
+        <div class="name-field">
+          <label for="newUserName">변경할 이름</label>
 
           <input
               id="newUserName"
               v-model.trim="newUserName"
+              class="name-box"
               maxlength="50"
               placeholder="새로운 이름을 입력해 주세요"
               type="text"
               @input="clearError"
           />
-        </section>
+        </div>
 
         <section class="information-area">
           <div class="information-title">
@@ -67,25 +63,15 @@
         </p>
       </section>
 
-      <button
-          class="next-button"
-          :disabled="!canContinue || loading"
-          type="button"
-          @click="startVerification"
-      >
-        {{ loading ? '확인 중...' : '본인인증 하기' }}
+      <button class="next-button" :disabled="loading || !newUserName" type="button" @click="startVerification">
+        본인인증 하기
       </button>
     </main>
   </div>
 </template>
 
 <script setup>
-import {
-  computed,
-  onMounted,
-  reactive,
-  ref,
-} from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { getUserInfo } from '@/api/userApi';
 import { useAuthStore } from '@/stores/auth';
@@ -105,20 +91,6 @@ const newUserName = ref('');
 const loading = ref(false);
 const errorMessage = ref('');
 
-// 진행 가능 여부
-const canContinue = computed(() => {
-  return (
-      newUserName.value.length > 0
-      && newUserName.value
-      !== userInfo.userName
-  );
-});
-
-// 오류 초기화
-const clearError = () => {
-  errorMessage.value = '';
-};
-
 // 회원정보 조회
 const loadUserInfo = async () => {
   if (!authStore.userId) {
@@ -130,25 +102,14 @@ const loadUserInfo = async () => {
     loading.value = true;
     errorMessage.value = '';
 
-    const data =
-        await getUserInfo(
-            authStore.userId,
-        );
+    const data = await getUserInfo(authStore.userId);
 
-    userInfo.userName =
-        data.userName || '';
-
-    userInfo.birthDate =
-        data.birthDate || '';
-
-    userInfo.phoneNumber =
-        data.phoneNumber || '';
+    userInfo.userName = data.userName || '';
+    userInfo.birthDate = data.birthDate || '';
+    userInfo.phoneNumber = data.phoneNumber || '';
   } catch (error) {
     console.error(error);
-
-    errorMessage.value =
-        error.response?.data?.message
-        || '회원정보를 불러오지 못했습니다.';
+    errorMessage.value = error.response?.data?.message || '회원정보를 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -156,49 +117,41 @@ const loadUserInfo = async () => {
 
 // 이름 변경 본인인증 시작
 const startVerification = async () => {
-  if (!canContinue.value) return;
+  errorMessage.value = '';
 
-  if (
-      newUserName.value
-      === userInfo.userName
-  ) {
-    errorMessage.value =
-        '현재 이름과 다른 이름을 입력해 주세요.';
-
+  if (!newUserName.value) {
+    errorMessage.value = '변경할 이름을 입력해주세요.';
     return;
   }
 
-  sessionStorage.setItem(
-      'nameChangeNewUserName',
-      newUserName.value,
-  );
+  if (newUserName.value === userInfo.userName) {
+    errorMessage.value = '현재 이름과 다른 이름을 입력해주세요.';
+    return;
+  }
+
+  sessionStorage.setItem('nameChangeNewUserName', newUserName.value);
 
   signupStore.setPhoneAuth({
-    userName:
-    userInfo.userName,
-    birthDate:
-    userInfo.birthDate,
-    phoneNumber:
-    userInfo.phoneNumber,
+    userName: newUserName.value,
+    birthDate: userInfo.birthDate,
+    phoneNumber: userInfo.phoneNumber,
     carrierCode: '',
-    verificationPurpose:
-        'NAME_CHANGE',
+    verificationPurpose: 'NAME_CHANGE',
     verificationCode: '',
   });
 
-  signupStore.setVerificationPurpose(
-      'NAME_CHANGE',
-  );
+  signupStore.setVerificationPurpose('NAME_CHANGE');
 
   await router.push('/signup/check');
 };
 
+// 오류 메시지 초기화
+const clearError = () => {
+  errorMessage.value = '';
+};
+
 // 이전 화면
 const goBack = () => {
-  sessionStorage.removeItem(
-      'nameChangeNewUserName',
-  );
-
   router.back();
 };
 
@@ -296,63 +249,49 @@ onMounted(loadUserInfo);
   line-height: 1.6;
 }
 
-.current-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 34px;
-  padding: 16px 24px;
-  border: 1px solid #eeeeee;
-  border-radius: 13px;
-  background: #ffffff;
+.name-field {
+  margin-top: 18px;
   text-align: left;
-  box-sizing: border-box;
 }
 
-.current-info span {
-  color: #888888;
-  font-size: 12px;
+.name-field:first-of-type {
+  margin-top: 34px;
 }
 
-.current-info strong {
-  color: #222222;
+.name-field label {
+  display: block;
+  margin-bottom: 9px;
+  color: #333333;
   font-size: 14px;
   font-weight: 700;
 }
 
-.input-area {
-  margin-top: 20px;
-  text-align: left;
-}
-
-.input-area label {
-  display: block;
-  margin-bottom: 9px;
-  color: #333333;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.input-area input {
+.name-box {
   width: 100%;
   height: 52px;
-  padding: 0 14px;
+  padding: 0 16px;
   border: 1px solid #dddddd;
   border-radius: 10px;
   background: #ffffff;
   color: #222222;
-  font-size: 15px;
-  outline: none;
+  font-size: 16px;
+  font-weight: 500;
   box-sizing: border-box;
 }
 
-.input-area input::placeholder {
-  color: #aaaaaa;
+input.name-box {
+  outline: none;
 }
 
-.input-area input:focus {
+input.name-box:focus {
   border-color: #ffbc2e;
-  box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
+}
+
+.name-box.readonly {
+  display: flex;
+  align-items: center;
+  background: #f7f7f7;
+  color: #777777;
 }
 
 .information-area {

@@ -2,11 +2,7 @@
   <div class="guide-page">
     <main class="guide-container">
       <header class="page-header">
-        <button
-            class="back-button"
-            type="button"
-            @click="goBack"
-        >
+        <button class="back-button" type="button" @click="goBack">
           &lt;
         </button>
 
@@ -28,10 +24,28 @@
           새로운 번호가 계정에 등록돼요.
         </p>
 
-        <section class="current-info">
-          <span>현재 휴대폰 번호</span>
-          <strong>{{ formattedPhoneNumber }}</strong>
-        </section>
+        <div class="phone-field">
+          <label>현재 휴대폰 번호</label>
+
+          <div class="phone-box readonly">
+            {{ formattedPhoneNumber }}
+          </div>
+        </div>
+
+        <div class="phone-field">
+          <label for="newPhoneNumber">새 휴대폰 번호</label>
+
+          <input
+              id="newPhoneNumber"
+              v-model="newPhoneNumber"
+              class="phone-box"
+              maxlength="11"
+              inputmode="numeric"
+              placeholder="'-' 없이 입력해주세요."
+              type="text"
+              @input="formatNewPhoneNumber"
+          />
+        </div>
 
         <section class="information-area">
           <div class="information-title">
@@ -51,12 +65,7 @@
         </p>
       </section>
 
-      <button
-          class="next-button"
-          :disabled="loading"
-          type="button"
-          @click="startVerification"
-      >
+      <button class="next-button" :disabled="loading || !newPhoneNumber" type="button" @click="startVerification">
         새 휴대폰 번호 인증
       </button>
     </main>
@@ -64,12 +73,7 @@
 </template>
 
 <script setup>
-import {
-  computed,
-  onMounted,
-  reactive,
-  ref,
-} from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { getUserInfo } from '@/api/userApi';
 import { useAuthStore } from '@/stores/auth';
@@ -87,19 +91,22 @@ const userInfo = reactive({
 
 const loading = ref(false);
 const errorMessage = ref('');
+const newPhoneNumber = ref('');
 
-// 휴대폰번호 표시
+// 현재 휴대폰번호 표시
 const formattedPhoneNumber = computed(() => {
-  const value =
-      userInfo.phoneNumber
-          .replace(/[^0-9]/g, '');
+  const value = (userInfo.phoneNumber || '').replace(/[^0-9]/g, '');
 
-  if (value.length === 11) {
-    return `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7)}`;
-  }
+  if (value.length === 11) return `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`;
+  if (value.length === 10) return `${value.slice(0, 3)}-${value.slice(3, 6)}-${value.slice(6, 10)}`;
 
   return value || '-';
 });
+
+// 새 휴대폰번호 숫자만 입력
+const formatNewPhoneNumber = () => {
+  newPhoneNumber.value = newPhoneNumber.value.replace(/[^0-9]/g, '');
+};
 
 // 회원정보 조회
 const loadUserInfo = async () => {
@@ -112,25 +119,14 @@ const loadUserInfo = async () => {
     loading.value = true;
     errorMessage.value = '';
 
-    const data =
-        await getUserInfo(
-            authStore.userId,
-        );
+    const data = await getUserInfo(authStore.userId);
 
-    userInfo.userName =
-        data.userName || '';
-
-    userInfo.birthDate =
-        data.birthDate || '';
-
-    userInfo.phoneNumber =
-        data.phoneNumber || '';
+    userInfo.userName = data.userName || '';
+    userInfo.birthDate = data.birthDate || '';
+    userInfo.phoneNumber = data.phoneNumber || '';
   } catch (error) {
     console.error(error);
-
-    errorMessage.value =
-        error.response?.data?.message
-        || '회원정보를 불러오지 못했습니다.';
+    errorMessage.value = error.response?.data?.message || '회원정보를 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -138,21 +134,30 @@ const loadUserInfo = async () => {
 
 // 새 휴대폰번호 본인인증 시작
 const startVerification = async () => {
+  errorMessage.value = '';
+
+  const currentPhoneNumber = userInfo.phoneNumber.replace(/[^0-9]/g, '');
+
+  if (!/^01[016789][0-9]{7,8}$/.test(newPhoneNumber.value)) {
+    errorMessage.value = '휴대폰번호를 확인해주세요.';
+    return;
+  }
+
+  if (newPhoneNumber.value === currentPhoneNumber) {
+    errorMessage.value = '현재 휴대폰번호와 다른 번호를 입력해주세요.';
+    return;
+  }
+
   signupStore.setPhoneAuth({
-    userName:
-    userInfo.userName,
-    birthDate:
-    userInfo.birthDate,
+    userName: userInfo.userName,
+    birthDate: userInfo.birthDate,
     carrierCode: '',
-    phoneNumber: '',
-    verificationPurpose:
-        'PHONE_CHANGE',
+    phoneNumber: newPhoneNumber.value,
+    verificationPurpose: 'PHONE_CHANGE',
     verificationCode: '',
   });
 
-  signupStore.setVerificationPurpose(
-      'PHONE_CHANGE',
-  );
+  signupStore.setVerificationPurpose('PHONE_CHANGE');
 
   await router.push('/signup/check');
 };
@@ -256,28 +261,49 @@ onMounted(loadUserInfo);
   line-height: 1.6;
 }
 
-.current-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 34px;
-  padding: 16px 24px;
-  border: 1px solid #eeeeee;
-  border-radius: 13px;
-  background: #ffffff;
+.phone-field {
+  margin-top: 18px;
   text-align: left;
+}
+
+.phone-field:first-of-type {
+  margin-top: 34px;
+}
+
+.phone-field label {
+  display: block;
+  margin-bottom: 9px;
+  color: #333333;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.phone-box {
+  width: 100%;
+  height: 52px;
+  padding: 0 16px;
+  border: 1px solid #dddddd;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #222222;
+  font-size: 16px;
+  font-weight: 500;
   box-sizing: border-box;
 }
 
-.current-info span {
-  color: #888888;
-  font-size: 12px;
+input.phone-box {
+  outline: none;
 }
 
-.current-info strong {
-  color: #222222;
-  font-size: 14px;
-  font-weight: 700;
+input.phone-box:focus {
+  border-color: #ffbc2e;
+}
+
+.phone-box.readonly {
+  display: flex;
+  align-items: center;
+  background: #f7f7f7;
+  color: #777777;
 }
 
 .information-area {

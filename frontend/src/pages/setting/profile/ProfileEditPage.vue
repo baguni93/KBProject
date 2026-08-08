@@ -236,9 +236,9 @@ const cancel = async () => {
   await router.back();
 };
 
-// 이전 화면
+// 설정 메인 화면
 const goBack = () => {
-  cancel();
+  router.push('/setting');
 };
 
 onMounted(() => {
