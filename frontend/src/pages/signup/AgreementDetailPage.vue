@@ -49,8 +49,8 @@
     </main>
 
     <!-- 3. 하단 버튼 영역 (고정형 버튼) -->
-    <div class="button-area">
-      <button class="next-btn" type="button" @click="goBack">확인</button>
+    <div class="bottom-btn-area.single">
+      <button class="bottom-btn" type="button" @click="goBack">확인</button>
     </div>
   </div>
 </template>

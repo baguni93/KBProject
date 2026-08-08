@@ -46,8 +46,10 @@
       </section>
 
       <!-- 3. 하단 버튼 영역 -->
-      <div class="button-area">
-        <button class="next-btn" type="button" @click="start">시작하기</button>
+      <div class="bottom-btn-area.single">
+        <button class="bottom-btn" type="button" @click="start">
+          시작하기
+        </button>
       </div>
     </main>
   </div>

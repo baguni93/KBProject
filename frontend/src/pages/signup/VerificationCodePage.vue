@@ -52,10 +52,10 @@
     </main>
 
     <!-- 3. 하단 버튼 영역 (위치 및 크기 고정) -->
-    <div class="button-area">
+    <div class="bottom-btn-area.single">
       <button
         v-if="expired && resendCount >= 1"
-        class="next-btn"
+        class="bottom-btn"
         type="button"
         @click="restartVerification"
       >
@@ -64,7 +64,7 @@
 
       <button
         v-else
-        class="next-btn"
+        class="bottom-btn"
         :disabled="verificationCode.length !== 6 || loading || expired"
         type="button"
         @click="verifyCode"
@@ -421,38 +421,6 @@ const goBack = async () => {
   color: #e53935;
   font-size: 14px;
   line-height: 1.5;
-}
-
-/* 3. 하단 버튼 영역 */
-.button-area {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-top: 16px;
-  background: #ffffff;
-}
-
-.next-btn {
-  width: 100%;
-  height: 52px;
-  border: none;
-  border-radius: 14px;
-  background: #ffc400;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.next-btn:active:not(:disabled) {
-  background: #f3aa0b;
-}
-
-.next-btn:disabled {
-  background: #e0e0e0;
-  color: #9e9e9e;
-  cursor: not-allowed;
 }
 
 /* 로딩 오버레이 */

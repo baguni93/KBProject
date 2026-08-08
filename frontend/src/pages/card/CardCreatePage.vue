@@ -15,9 +15,9 @@
       </template>
     </CardEditor>
 
-    <div class="button-area">
+    <div class="bottom-btn-area.single">
       <button
-        class="next-btn"
+        class="bottom-btn"
         :disabled="isNextButtonDisabled"
         @click="handleButtonClick"
       >
@@ -37,7 +37,6 @@ import CardDecorationPanel from '@/components/card-editor/CardDecorationPanel.vu
 import CardRegisterPanel from '@/components/card-editor/CardRegisterPanel.vue';
 import { useRouter } from 'vue-router';
 import { useCardEditorStore } from '@/stores/cardEditorStore';
-import PageHeader from '@/components/common/PageHeader.vue';
 
 const cardStore = useCardEditorStore();
 

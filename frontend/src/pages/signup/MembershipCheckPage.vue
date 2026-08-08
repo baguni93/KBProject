@@ -22,9 +22,9 @@
     </main>
 
     <!-- 3. 하단 버튼 영역 (버튼 크기 및 위치 고정) -->
-    <div class="button-area">
+    <div class="bottom-btn-area.single">
       <button
-        class="next-btn"
+        class="bottom-btn"
         :disabled="loading"
         type="button"
         @click="handleButtonClick"
@@ -137,11 +137,9 @@ const goBack = () => {
 .content-area {
   flex: 1;
   min-height: 0;
-  /* 💡 헤더와의 간격을 적당히 조절합니다 */
   margin-top: 28px;
   overflow-y: auto;
   box-sizing: border-box;
-  padding-right: 2px;
 }
 
 .error-message {

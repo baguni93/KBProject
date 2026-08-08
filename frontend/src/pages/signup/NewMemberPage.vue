@@ -56,8 +56,9 @@
     </main>
 
     <!-- 2. 하단 버튼 영역 (다른 페이지들과 완벽히 일치하는 위치) -->
-    <div class="button-area">
-      <button class="next-btn" type="button" @click="goPin">다음</button>
+
+    <div class="bottom-btn-area single">
+      <button class="bottom-btn" type="button" @click="goPin">다음</button>
     </div>
   </div>
 </template>
@@ -259,31 +260,5 @@ const goPin = () => {
   color: #888888;
   font-size: 12px;
   line-height: 1.4;
-}
-
-/* 하단 버튼 영역 (다른 페이지들과 동일한 규격) */
-.button-area {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-top: 16px;
-  background: #ffffff;
-}
-
-.next-btn {
-  width: 100%;
-  height: 52px;
-  border: none;
-  border-radius: 14px;
-  background: #ffbc2e;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.next-btn:active {
-  background: #f3aa0b;
 }
 </style>
