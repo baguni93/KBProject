@@ -2,17 +2,11 @@
   <div class="card-page">
     <main class="card-container" @click="closeMenu">
       <header class="page-header">
-        <button
-            class="back-button"
-            type="button"
-            aria-label="이전 화면"
-            @click="goBack"
-        >
+        <button class="back-button" type="button" aria-label="이전 화면" @click="goBack">
           &lt;
         </button>
 
         <h1>연결 카드 관리</h1>
-
         <div class="header-empty"></div>
       </header>
 
@@ -35,13 +29,7 @@
             <strong>{{ cardStore.cardCount }}</strong>
           </div>
 
-          <button
-              class="refresh-button"
-              :disabled="loading"
-              type="button"
-              aria-label="카드 목록 새로고침"
-              @click.stop="loadCards"
-          >
+          <button class="refresh-button" :disabled="loading" type="button" aria-label="카드 목록 새로고침" @click.stop="loadCards">
             <span :class="{ rotating: loading }">↻</span>
           </button>
         </div>
@@ -59,10 +47,7 @@
             </button>
           </div>
 
-          <div
-              v-else-if="cardStore.cards.length === 0"
-              class="empty-area"
-          >
+          <div v-else-if="cardStore.cards.length === 0" class="empty-area">
             <div class="empty-icon">💳</div>
 
             <strong>연결된 카드가 없어요</strong>
@@ -74,18 +59,9 @@
           </div>
 
           <div v-else class="card-list">
-            <article
-                v-for="card in cardStore.cards"
-                :key="card.linkedCardId"
-                class="card-item"
-            >
+            <article v-for="card in cardStore.cards" :key="card.linkedCardId" class="card-item">
               <div class="card-image-area">
-                <img
-                    v-if="card.cardImageUrl"
-                    :alt="card.cardName"
-                    :src="card.cardImageUrl"
-                    class="card-image"
-                />
+                <img v-if="card.cardImageUrl" :alt="card.cardName" :src="card.cardImageUrl" class="card-image" />
 
                 <div v-else class="card-image-fallback">
                   💳
@@ -96,10 +72,7 @@
                 <div class="card-title">
                   <strong>{{ card.cardName }}</strong>
 
-                  <span
-                      v-if="card.primaryYn === 'Y'"
-                      class="primary-badge"
-                  >
+                  <span v-if="card.primaryYn === 'Y'" class="primary-badge">
                     대표카드
                   </span>
                 </div>
@@ -114,6 +87,7 @@
               </div>
 
               <button
+                  v-if="cardStore.cards.length > 1"
                   class="menu-button"
                   type="button"
                   aria-label="카드 관리 메뉴"
@@ -123,25 +97,16 @@
               </button>
 
               <div
-                  v-if="openedCardId === card.linkedCardId"
+                  v-if="cardStore.cards.length > 1 && openedCardId === card.linkedCardId"
                   class="card-menu"
                   @click.stop
               >
-                <button
-                    v-if="card.primaryYn !== 'Y'"
-                    type="button"
-                    @click="changePrimary(card)"
-                >
+                <button v-if="card.primaryYn !== 'Y'" type="button" @click="changePrimary(card)">
                   <span class="menu-icon">☆</span>
                   대표카드 설정
                 </button>
 
-                <button
-                    v-if="cardStore.cards.length > 1"
-                    class="delete-button"
-                    type="button"
-                    @click="openDisconnectModal(card)"
-                >
+                <button class="delete-button" type="button" @click="openDisconnectModal(card)">
                   <span class="menu-icon">♲</span>
                   카드 연결 해제
                 </button>
@@ -156,27 +121,14 @@
         {{ toastMessage }}
       </p>
 
-      <button
-          class="connect-button"
-          type="button"
-          @click="goConnect"
-      >
+      <button class="connect-button" type="button" @click="goConnect">
         <span>＋</span>
         카드 연결하기
       </button>
 
-      <div
-          v-if="disconnectTarget"
-          class="modal-overlay"
-          @click.self="closeDisconnectModal"
-      >
+      <div v-if="disconnectTarget" class="modal-overlay" @click.self="closeDisconnectModal">
         <section class="disconnect-modal">
-          <button
-              class="modal-close-button"
-              type="button"
-              aria-label="닫기"
-              @click="closeDisconnectModal"
-          >
+          <button class="modal-close-button" type="button" aria-label="닫기" @click="closeDisconnectModal">
             ×
           </button>
 
@@ -186,11 +138,7 @@
 
           <article class="selected-card">
             <div class="selected-card-image">
-              <img
-                  v-if="disconnectTarget.cardImageUrl"
-                  :alt="disconnectTarget.cardName"
-                  :src="disconnectTarget.cardImageUrl"
-              />
+              <img v-if="disconnectTarget.cardImageUrl" :alt="disconnectTarget.cardName" :src="disconnectTarget.cardImageUrl" />
 
               <span v-else>💳</span>
             </div>
@@ -211,21 +159,11 @@
           </div>
 
           <div class="modal-button-area">
-            <button
-                class="modal-cancel-button"
-                :disabled="disconnecting"
-                type="button"
-                @click="closeDisconnectModal"
-            >
+            <button class="modal-cancel-button" :disabled="disconnecting" type="button" @click="closeDisconnectModal">
               취소
             </button>
 
-            <button
-                class="modal-delete-button"
-                :disabled="disconnecting"
-                type="button"
-                @click="removeCard"
-            >
+            <button class="modal-delete-button" :disabled="disconnecting" type="button" @click="removeCard">
               {{ disconnecting ? '해제 중...' : '연결 해제' }}
             </button>
           </div>
@@ -236,17 +174,9 @@
 </template>
 
 <script setup>
-import {
-  onBeforeUnmount,
-  onMounted,
-  ref,
-} from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import {
-  disconnectCard,
-  getCards,
-  setPrimaryCard,
-} from '@/api/cardApi';
+import { disconnectCard, getCards, setPrimaryCard } from '@/api/cardApi';
 import { useCardStore } from '@/stores/card';
 
 const router = useRouter();
@@ -265,12 +195,9 @@ let toastTimer = null;
 const maskCardNumber = (cardNumber) => {
   if (!cardNumber) return '';
 
-  const onlyNumber = String(cardNumber)
-      .replace(/[^0-9]/g, '');
+  const onlyNumber = String(cardNumber).replace(/[^0-9]/g, '');
 
-  if (onlyNumber.length < 8) {
-    return onlyNumber;
-  }
+  if (onlyNumber.length < 8) return onlyNumber;
 
   return `**** **** **** ${onlyNumber.slice(-4)}`;
 };
@@ -291,19 +218,13 @@ const loadCards = async () => {
 
     const data = await getCards(userId);
 
-    // 백엔드가 배열을 직접 반환하는 경우와
-    // cards 필드에 배열을 담아 반환하는 경우를 모두 처리
-    const cards = Array.isArray(data)
-        ? data
-        : data.cards || [];
+    // 백엔드가 배열을 직접 반환하는 경우와 cards 필드에 배열을 담아 반환하는 경우를 모두 처리
+    const cards = Array.isArray(data) ? data : data.cards || [];
 
     cardStore.setCards(cards);
   } catch (error) {
     console.error(error);
-
-    errorMessage.value =
-        error.response?.data?.message
-        || '카드 목록을 불러오지 못했습니다.';
+    errorMessage.value = error.response?.data?.message || '카드 목록을 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -311,10 +232,7 @@ const loadCards = async () => {
 
 // 관리 메뉴 열기
 const toggleMenu = (linkedCardId) => {
-  openedCardId.value =
-      openedCardId.value === linkedCardId
-          ? null
-          : linkedCardId;
+  openedCardId.value = openedCardId.value === linkedCardId ? null : linkedCardId;
 };
 
 // 관리 메뉴 닫기
@@ -327,10 +245,7 @@ const changePrimary = async (card) => {
   try {
     errorMessage.value = '';
 
-    await setPrimaryCard(
-        cardStore.userId,
-        card.linkedCardId,
-    );
+    await setPrimaryCard(cardStore.userId, card.linkedCardId);
 
     openedCardId.value = null;
 
@@ -339,16 +254,12 @@ const changePrimary = async (card) => {
     showToast('대표카드가 변경되었습니다.');
   } catch (error) {
     console.error(error);
-
-    errorMessage.value =
-        error.response?.data?.message
-        || '대표카드 변경에 실패했습니다.';
+    errorMessage.value = error.response?.data?.message || '대표카드 변경에 실패했습니다.';
   }
 };
 
 // 카드 연결 해제 모달 열기
 const openDisconnectModal = (card) => {
-  // 카드 한 장만 있는 경우 해제를 허용하지 않음
   if (cardStore.cards.length <= 1) return;
 
   openedCardId.value = null;
@@ -364,21 +275,13 @@ const closeDisconnectModal = () => {
 
 // 카드 연결 해제
 const removeCard = async () => {
-  if (
-      !disconnectTarget.value
-      || cardStore.cards.length <= 1
-  ) {
-    return;
-  }
+  if (!disconnectTarget.value || cardStore.cards.length <= 1) return;
 
   try {
     disconnecting.value = true;
     errorMessage.value = '';
 
-    await disconnectCard(
-        cardStore.userId,
-        disconnectTarget.value.linkedCardId,
-    );
+    await disconnectCard(cardStore.userId, disconnectTarget.value.linkedCardId);
 
     disconnectTarget.value = null;
 
@@ -387,10 +290,7 @@ const removeCard = async () => {
     showToast('카드 연결이 해제되었습니다.');
   } catch (error) {
     console.error(error);
-
-    errorMessage.value =
-        error.response?.data?.message
-        || '카드 연결 해제에 실패했습니다.';
+    errorMessage.value = error.response?.data?.message || '카드 연결 해제에 실패했습니다.';
   } finally {
     disconnecting.value = false;
   }
@@ -400,9 +300,7 @@ const removeCard = async () => {
 const showToast = (message) => {
   toastMessage.value = message;
 
-  if (toastTimer) {
-    window.clearTimeout(toastTimer);
-  }
+  if (toastTimer) window.clearTimeout(toastTimer);
 
   toastTimer = window.setTimeout(() => {
     toastMessage.value = '';
@@ -414,9 +312,9 @@ const goConnect = async () => {
   await router.push('/wallet/card/add');
 };
 
-// 이전 화면
+// 설정 메인 화면
 const goBack = () => {
-  router.back();
+  router.push('/setting');
 };
 
 onMounted(() => {
@@ -424,9 +322,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  if (toastTimer) {
-    window.clearTimeout(toastTimer);
-  }
+  if (toastTimer) window.clearTimeout(toastTimer);
 });
 </script>
 
@@ -447,7 +343,7 @@ onBeforeUnmount(() => {
   padding: 10px 28px 140px;
   background: #ffffff;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .page-header {
@@ -503,15 +399,10 @@ onBeforeUnmount(() => {
 }
 
 .card-section {
+  position: relative;
   min-height: 0;
   margin-top: 32px;
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.card-section::-webkit-scrollbar {
-  display: none;
+  overflow: visible;
 }
 
 .card-summary {
@@ -574,6 +465,7 @@ onBeforeUnmount(() => {
 }
 
 .card-list-area {
+  position: relative;
   border: 1px solid #e5e5e5;
   border-radius: 0 0 14px 14px;
   background: #ffffff;
@@ -583,6 +475,7 @@ onBeforeUnmount(() => {
 .card-list {
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
 
 .card-item {
@@ -595,6 +488,7 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid #eeeeee;
   background: #ffffff;
   box-sizing: border-box;
+  overflow: visible;
 }
 
 .card-item:last-child {
@@ -694,7 +588,7 @@ onBeforeUnmount(() => {
 
 .card-menu {
   position: absolute;
-  z-index: 10;
+  z-index: 30;
   top: 58px;
   right: 13px;
   display: flex;
