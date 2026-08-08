@@ -118,14 +118,14 @@
           </div>
         </div>
       </section>
-
-      <section class="ai-insight kb-card">
-        <div class="ai-insight__label">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> AI 분석
-        </div>
-        <p>{{ analysis.aiAnalysisSummary }}</p>
-        <i class="fa-solid fa-chart-pie ai-insight__icon" aria-hidden="true"></i>
-      </section>
+<!-- ai 카테고리 주석처리 ㅇㅅㅇ ㅇㅋㅋ? ㄹㅇ ㅠㅠ-->
+<!--      <section class="ai-insight kb-card">-->
+<!--        <div class="ai-insight__label">-->
+<!--          <i class="fa-solid fa-wand-magic-sparkles"></i> AI 분석-->
+<!--        </div>-->
+<!--        <p>{{ analysis.aiAnalysisSummary }}</p>-->
+<!--        <i class="fa-solid fa-chart-pie ai-insight__icon" aria-hidden="true"></i>-->
+<!--      </section>-->
 
       <section class="recommendation-grid">
         <button type="button" class="recommendation-card kb-card" @click="openCardRecommendation">

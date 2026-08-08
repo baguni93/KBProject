@@ -5,6 +5,8 @@ import AnalysisCheckPage from '@/pages/analysis/AnalysisCheckPage.vue';
 import AnalysisClassificationPage from '@/pages/analysis/AnalysisClassificationPage.vue';
 import AnalysisSubcategoryPage from '@/pages/analysis/AnalysisSubcategoryPage.vue';
 import AnalysisResultPage from '@/pages/analysis/AnalysisResultPage.vue';
+import AnalysisCategorySummaryPage from '@/pages/analysis/AnalysisCategorySummaryPage.vue';
+import AnalysisTransactionListPage from '@/pages/analysis/AnalysisTransactionListPage.vue';
 import AnalysisCategoryEditPage from '@/pages/analysis/AnalysisCategoryEditPage.vue';
 import RecommendationPeriodGuidePage from '@/pages/analysis/RecommendationPeriodGuidePage.vue';
 import CardRecommendationPage from '@/pages/cardRecommendation/CardRecommendationPage.vue';
@@ -65,6 +67,18 @@ export default [
     path: '/analysis/result/:spendingAnalysisId',
     name: 'analysis-result',
     component: AnalysisResultPage,
+    beforeEnter: requireAnalysisAgreement,
+  },
+  {
+    path: '/analysis/result/:spendingAnalysisId/categories',
+    name: 'analysis-category-summary',
+    component: AnalysisCategorySummaryPage,
+    beforeEnter: requireAnalysisAgreement,
+  },
+  {
+    path: '/analysis/result/:spendingAnalysisId/transactions',
+    name: 'analysis-transactions',
+    component: AnalysisTransactionListPage,
     beforeEnter: requireAnalysisAgreement,
   },
   {
