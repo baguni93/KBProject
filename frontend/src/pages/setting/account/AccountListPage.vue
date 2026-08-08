@@ -2,17 +2,11 @@
   <div class="account-page">
     <main class="account-container" @click="closeMenu">
       <header class="page-header">
-        <button
-            class="back-button"
-            type="button"
-            aria-label="이전 화면"
-            @click="goBack"
-        >
+        <button class="back-button" type="button" aria-label="이전 화면" @click="goBack">
           &lt;
         </button>
 
         <h1>연결 계좌 관리</h1>
-
         <div class="header-empty"></div>
       </header>
 
@@ -32,7 +26,7 @@
         <div class="account-summary">
           <div class="account-count">
             <span>연결 계좌</span>
-            <strong>{{ accountStore.accounts.length }}</strong>
+            <strong>{{ accountStore.accountCount }}</strong>
           </div>
 
           <button
@@ -40,7 +34,7 @@
               :disabled="loading"
               type="button"
               aria-label="계좌 목록 새로고침"
-              @click="loadAccounts"
+              @click.stop="loadAccounts"
           >
             <span :class="{ rotating: loading }">↻</span>
           </button>
@@ -51,18 +45,22 @@
             계좌 목록을 불러오고 있어요.
           </p>
 
-          <p v-else-if="errorMessage" class="error-message">
-            {{ errorMessage }}
-          </p>
+          <div v-else-if="errorMessage" class="error-area">
+            <p>{{ errorMessage }}</p>
+
+            <button type="button" @click="loadAccounts">
+              다시 불러오기
+            </button>
+          </div>
 
           <div v-else-if="accountStore.accounts.length === 0" class="empty-area">
-            <div class="empty-icon">₩</div>
+            <div class="empty-icon">🏦</div>
 
             <strong>연결된 계좌가 없어요</strong>
 
             <p>
-              본인 명의 계좌를 연결하고<br />
-              송금과 결제를 시작해 보세요.
+              계좌를 연결하면 송금과 자산 조회 서비스를<br />
+              편리하게 이용할 수 있어요.
             </p>
           </div>
 
@@ -80,13 +78,13 @@
                     class="bank-logo"
                 />
 
-                <span v-else class="bank-logo-fallback">
+                <div v-else class="bank-logo-fallback">
                   {{ getBankInitial(account.bankName) }}
-                </span>
+                </div>
               </div>
 
               <div class="account-info">
-                <div class="bank-title">
+                <div class="account-title">
                   <strong>{{ account.bankName }}</strong>
 
                   <span v-if="account.primaryYn === 'Y'" class="primary-badge">
@@ -124,7 +122,7 @@
                 <button
                     class="delete-button"
                     type="button"
-                    @click="removeAccount(account)"
+                    @click="openDisconnectModal(account)"
                 >
                   <span class="menu-icon">♲</span>
                   계좌 연결 해제
@@ -144,6 +142,60 @@
         <span>＋</span>
         계좌 연결하기
       </button>
+
+      <div
+          v-if="disconnectTarget"
+          class="modal-overlay"
+          @click.self="closeDisconnectModal"
+      >
+        <section class="disconnect-modal">
+          <div class="warning-icon">!</div>
+
+          <h3>계좌 연결을 해제할까요?</h3>
+
+          <article class="selected-account">
+            <div class="selected-bank-logo">
+              <img
+                  v-if="disconnectTarget.bankLogoUrl"
+                  :alt="disconnectTarget.bankName"
+                  :src="disconnectTarget.bankLogoUrl"
+              />
+
+              <span v-else>
+                {{ getBankInitial(disconnectTarget.bankName) }}
+              </span>
+            </div>
+
+            <div class="selected-account-info">
+              <strong>{{ disconnectTarget.bankName }}</strong>
+              <p>{{ maskAccountNumber(disconnectTarget.accountNumber) }}</p>
+            </div>
+          </article>
+
+          <p class="modal-guide">
+            연결을 해제하면 송금, 자동이체,<br />
+            자산조회에 사용할 수 없어요.
+          </p>
+
+          <div class="modal-button-area">
+            <button
+                class="modal-cancel-button"
+                type="button"
+                @click="closeDisconnectModal"
+            >
+              취소
+            </button>
+
+            <button
+                class="modal-delete-button"
+                type="button"
+                @click="removeAccount"
+            >
+              연결 해제
+            </button>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 </template>
@@ -161,28 +213,25 @@ const loading = ref(false);
 const errorMessage = ref('');
 const toastMessage = ref('');
 const openedAccountId = ref(null);
+const disconnectTarget = ref(null);
+
 let toastTimer = null;
-
-// 은행명 첫 글자
-const getBankInitial = (bankName) => {
-  if (!bankName) return '₩';
-
-  return bankName.charAt(0);
-};
 
 // 계좌번호 마스킹
 const maskAccountNumber = (accountNumber) => {
   if (!accountNumber) return '';
 
-  const onlyNumber = String(accountNumber).replace(/[^0-9]/g, '');
+  const value = String(accountNumber).replace(/[^0-9]/g, '');
 
-  if (onlyNumber.length <= 7) return onlyNumber;
+  if (value.length <= 4) return value;
 
-  const frontNumber = onlyNumber.slice(0, 3);
-  const middleLength = onlyNumber.length - 7;
-  const lastNumber = onlyNumber.slice(-4);
+  return `${value.slice(0, 3)}-${'*'.repeat(Math.max(value.length - 7, 1))}-${value.slice(-4)}`;
+};
 
-  return `${frontNumber}-${'*'.repeat(middleLength)}-${lastNumber}`;
+// 은행명 첫 글자
+const getBankInitial = (bankName) => {
+  if (!bankName) return 'B';
+  return bankName.charAt(0);
 };
 
 // 계좌 목록 조회
@@ -199,12 +248,12 @@ const loadAccounts = async () => {
     errorMessage.value = '';
     openedAccountId.value = null;
 
-    const accounts = await getAccounts(userId);
+    const data = await getAccounts(userId);
+    const accounts = Array.isArray(data) ? data : data.accounts || [];
 
     accountStore.setAccounts(accounts);
   } catch (error) {
     console.error(error);
-
     errorMessage.value = error.response?.data?.message || '계좌 목록을 불러오지 못했습니다.';
   } finally {
     loading.value = false;
@@ -214,6 +263,11 @@ const loadAccounts = async () => {
 // 계좌 관리 메뉴 열기
 const toggleMenu = (linkedAccountId) => {
   openedAccountId.value = openedAccountId.value === linkedAccountId ? null : linkedAccountId;
+};
+
+// 계좌 관리 메뉴 닫기
+const closeMenu = () => {
+  openedAccountId.value = null;
 };
 
 // 대표계좌 변경
@@ -227,33 +281,40 @@ const changePrimary = async (account) => {
 
     await loadAccounts();
 
-    showToast('대표 계좌가 변경되었습니다.');
+    showToast('대표계좌가 변경되었습니다.');
   } catch (error) {
     console.error(error);
-
-    errorMessage.value = error.response?.data?.message || '대표 계좌 변경에 실패했습니다.';
+    errorMessage.value = error.response?.data?.message || '대표계좌 변경에 실패했습니다.';
   }
 };
 
-// 계좌 연결 해제
-const removeAccount = async (account) => {
-  const confirmed = window.confirm(`${account.bankName} 계좌 연결을 해제할까요?`);
+// 계좌 연결 해제 모달 열기
+const openDisconnectModal = (account) => {
+  openedAccountId.value = null;
+  disconnectTarget.value = account;
+};
 
-  if (!confirmed) return;
+// 계좌 연결 해제 모달 닫기
+const closeDisconnectModal = () => {
+  disconnectTarget.value = null;
+};
+
+// 계좌 연결 해제
+const removeAccount = async () => {
+  if (!disconnectTarget.value) return;
 
   try {
     errorMessage.value = '';
 
-    await disconnectAccount(accountStore.userId, account.linkedAccountId);
+    await disconnectAccount(accountStore.userId, disconnectTarget.value.linkedAccountId);
 
-    openedAccountId.value = null;
+    disconnectTarget.value = null;
 
     await loadAccounts();
 
     showToast('계좌 연결이 해제되었습니다.');
   } catch (error) {
     console.error(error);
-
     errorMessage.value = error.response?.data?.message || '계좌 연결 해제에 실패했습니다.';
   }
 };
@@ -269,24 +330,19 @@ const showToast = (message) => {
   }, 2000);
 };
 
-// 계좌 관리 메뉴 닫기
-const closeMenu = () => {
-  openedAccountId.value = null;
-};
-
 // 계좌 연결 화면 이동
-const goConnect = () => {
-  accountStore.resetAccountForm();
-
-  router.push('/setting/account/connect');
+const goConnect = async () => {
+  await router.push('/setting/account/connect');
 };
 
-// 설정 홈 화면 이동
-const goBack = async () => {
-  await router.push('/setting');
+// 이전 화면
+const goBack = () => {
+  router.push('/setting');
 };
 
-onMounted(() => {loadAccounts();});
+onMounted(() => {
+  loadAccounts();
+});
 
 onBeforeUnmount(() => {
   if (toastTimer) window.clearTimeout(toastTimer);
@@ -310,13 +366,14 @@ onBeforeUnmount(() => {
   padding: 10px 28px 140px;
   background: #ffffff;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .page-header {
   display: grid;
   grid-template-columns: 38px 1fr 38px;
   min-height: 44px;
+  flex-shrink: 0;
   align-items: center;
 }
 
@@ -344,6 +401,7 @@ onBeforeUnmount(() => {
 }
 
 .title-section {
+  flex-shrink: 0;
   margin-top: 38px;
 }
 
@@ -364,15 +422,10 @@ onBeforeUnmount(() => {
 }
 
 .account-section {
+  position: relative;
   min-height: 0;
   margin-top: 32px;
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.account-section::-webkit-scrollbar {
-  display: none;
+  overflow: visible;
 }
 
 .account-summary {
@@ -385,6 +438,7 @@ onBeforeUnmount(() => {
   border-bottom: 0;
   border-radius: 14px 14px 0 0;
   background: #ffffff;
+  box-sizing: border-box;
 }
 
 .account-count {
@@ -434,6 +488,7 @@ onBeforeUnmount(() => {
 }
 
 .account-list-area {
+  position: relative;
   border: 1px solid #e5e5e5;
   border-radius: 0 0 14px 14px;
   background: #ffffff;
@@ -443,17 +498,20 @@ onBeforeUnmount(() => {
 .account-list {
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
 
 .account-item {
   position: relative;
   display: flex;
-  min-height: 76px;
+  min-height: 80px;
   align-items: center;
-  gap: 12px;
-  padding: 12px 13px;
+  gap: 13px;
+  padding: 13px;
   border-bottom: 1px solid #eeeeee;
   background: #ffffff;
+  box-sizing: border-box;
+  overflow: visible;
 }
 
 .account-item:last-child {
@@ -462,29 +520,30 @@ onBeforeUnmount(() => {
 
 .bank-logo-area {
   display: flex;
+  width: 48px;
+  height: 48px;
   flex: none;
-  width: 40px;
-  height: 40px;
   align-items: center;
   justify-content: center;
 }
 
 .bank-logo {
-  width: 40px;
-  height: 40px;
+  display: block;
+  width: 46px;
+  height: 46px;
   object-fit: contain;
 }
 
 .bank-logo-fallback {
   display: flex;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background: #ffbc2e;
   color: #222222;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
 }
 
@@ -493,13 +552,13 @@ onBeforeUnmount(() => {
   flex: 1;
 }
 
-.bank-title {
+.account-title {
   display: flex;
   align-items: center;
   gap: 7px;
 }
 
-.bank-title strong {
+.account-title strong {
   overflow: hidden;
   color: #222222;
   font-size: 14px;
@@ -521,16 +580,8 @@ onBeforeUnmount(() => {
 
 .account-info p {
   margin: 5px 0 0;
-  color: #777777;
-  font-size: 12px;
-  letter-spacing: 0.2px;
-}
-
-.account-info small {
-  display: block;
-  margin-top: 3px;
-  color: #aaaaaa;
-  font-size: 10px;
+  color: #888888;
+  font-size: 11px;
 }
 
 .menu-button {
@@ -553,17 +604,18 @@ onBeforeUnmount(() => {
 
 .account-menu {
   position: absolute;
-  z-index: 10;
+  z-index: 30;
   top: 58px;
   right: 13px;
   display: flex;
-  width: 148px;
+  width: 150px;
   flex-direction: column;
   padding: 6px;
   border: 1px solid #eeeeee;
   border-radius: 11px;
   background: #ffffff;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
 }
 
 .account-menu button {
@@ -598,22 +650,20 @@ onBeforeUnmount(() => {
 }
 
 .empty-area {
-  padding: 54px 20px 48px;
+  padding: 52px 20px 48px;
   text-align: center;
 }
 
 .empty-icon {
   display: flex;
-  width: 64px;
-  height: 64px;
+  width: 68px;
+  height: 68px;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px;
+  margin: 0 auto 21px;
   border-radius: 22px;
   background: #fff4d6;
-  color: #c58200;
-  font-size: 30px;
-  font-weight: 800;
+  font-size: 31px;
 }
 
 .empty-area strong {
@@ -630,21 +680,36 @@ onBeforeUnmount(() => {
   line-height: 1.55;
 }
 
-.state-message,
-.error-message {
+.state-message {
   margin: 0;
   padding: 70px 20px;
+  color: #777777;
   font-size: 13px;
-  line-height: 1.5;
   text-align: center;
 }
 
-.state-message {
-  color: #777777;
+.error-area {
+  padding: 54px 20px;
+  text-align: center;
 }
 
-.error-message {
+.error-area p {
+  margin: 0;
   color: #e53935;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.error-area button {
+  margin-top: 15px;
+  padding: 8px 14px;
+  border: 1px solid #dddddd;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #555555;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .connect-button {
@@ -680,6 +745,7 @@ onBeforeUnmount(() => {
 
 .toast-message {
   position: absolute;
+  z-index: 50;
   right: 28px;
   bottom: 128px;
   left: 28px;
@@ -688,26 +754,162 @@ onBeforeUnmount(() => {
   gap: 8px;
   margin: 0;
   padding: 14px 15px;
-  border: 1px solid #dfeee2;
   border-radius: 10px;
-  background: #f7fff8;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  color: #3c7350;
+  background: rgba(30, 30, 30, 0.9);
+  color: #ffffff;
   font-size: 12px;
   font-weight: 600;
+  box-sizing: border-box;
 }
 
 .toast-icon {
   display: inline-flex;
   width: 18px;
   height: 18px;
+  flex: none;
   align-items: center;
   justify-content: center;
-  border: 1px solid #42a866;
+  border: 1px solid #ffffff;
   border-radius: 50%;
-  color: #42a866;
+  color: #ffffff;
   font-size: 11px;
   font-weight: 800;
+}
+
+.modal-overlay {
+  position: absolute;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+}
+
+.disconnect-modal {
+  width: 100%;
+  max-width: 330px;
+  padding: 28px 20px 20px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-sizing: border-box;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.warning-icon {
+  display: flex;
+  width: 52px;
+  height: 52px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: #fff1d4;
+  color: #ffae00;
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.disconnect-modal h3 {
+  margin: 20px 0 0;
+  color: #111111;
+  font-size: 19px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.selected-account {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 24px;
+  padding: 14px;
+  border: 1px solid #dddddd;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.selected-bank-logo {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.selected-bank-logo img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+.selected-bank-logo span {
+  display: flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #ffbc2e;
+  color: #222222;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.selected-account-info {
+  min-width: 0;
+}
+
+.selected-account-info strong {
+  display: block;
+  color: #222222;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.selected-account-info p {
+  margin: 5px 0 0;
+  color: #888888;
+  font-size: 12px;
+}
+
+.modal-guide {
+  margin: 20px 0 0;
+  color: #777777;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.modal-button-area {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.modal-cancel-button,
+.modal-delete-button {
+  height: 50px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.modal-cancel-button {
+  border: 1px solid #dddddd;
+  background: #ffffff;
+  color: #333333;
+}
+
+.modal-delete-button {
+  border: 1px solid #ffc7c7;
+  background: #ffe7e7;
+  color: #e53935;
 }
 
 @media (max-width: 360px) {

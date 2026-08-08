@@ -232,9 +232,9 @@ const showSaveMessage = (message) => {
   }, 1800);
 };
 
-// 이전 화면
+// 설정 메인 화면
 const goBack = () => {
-  router.back();
+  router.push('/setting');
 };
 
 onMounted(loadNotificationSetting);

@@ -10,11 +10,7 @@
         <p>본인 확인을 위해<br />정보를 입력해주세요.</p>
       </header>
 
-      <PhoneAuthForm
-          :initial-value="signupStore.phoneAuth"
-          :loading="loading"
-          @submit="sendCode"
-      />
+      <PhoneAuthForm :initial-value="signupStore.phoneAuth" :loading="loading" @submit="sendCode" />
 
       <p v-if="errorMessage" class="page-error">
         {{ errorMessage }}
@@ -41,11 +37,7 @@ const sendCode = async (formData) => {
     loading.value = true;
     errorMessage.value = '';
 
-    const requestData = {
-      ...formData,
-      verificationPurpose: signupStore.phoneAuth.verificationPurpose,
-    };
-
+    const requestData = { ...formData, verificationPurpose: signupStore.phoneAuth.verificationPurpose };
     const response = await loginApi.sendPhoneAuthCode(requestData);
 
     signupStore.setPhoneAuth(requestData);

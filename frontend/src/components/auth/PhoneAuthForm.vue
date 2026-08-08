@@ -2,12 +2,7 @@
   <form class="phone-form" @submit.prevent="submit">
     <div class="input-group">
       <label for="userName">이름</label>
-      <input
-          id="userName"
-          v-model.trim="form.userName"
-          type="text"
-          placeholder="이름을 입력해주세요."
-      />
+      <input id="userName" v-model.trim="form.userName" type="text" placeholder="이름을 입력해주세요." :readonly="isNameChange" />
     </div>
 
     <div class="input-group">
@@ -30,6 +25,7 @@
 
     <div class="input-group">
       <label for="phoneNumber">휴대폰번호</label>
+
       <input
           id="phoneNumber"
           v-model="form.phoneNumber"
@@ -37,6 +33,7 @@
           inputmode="numeric"
           placeholder="'-' 없이 입력해주세요."
           type="text"
+          :readonly="isPhoneChange"
           @input="formatPhoneNumber"
       />
     </div>
@@ -52,7 +49,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 
 const props = defineProps({
   initialValue: {
@@ -68,6 +65,9 @@ const props = defineProps({
 const emit = defineEmits(['submit']);
 const errorMessage = ref('');
 
+const isPhoneChange = computed(() => props.initialValue.verificationPurpose === 'PHONE_CHANGE');
+const isNameChange = computed(() => props.initialValue.verificationPurpose === 'NAME_CHANGE');
+
 const form = reactive({
   userName: props.initialValue.userName || '',
   birthDate: props.initialValue.birthDate || '',
@@ -77,6 +77,7 @@ const form = reactive({
 
 // 숫자만 입력
 const formatPhoneNumber = () => {
+  if (isPhoneChange.value) return;
   form.phoneNumber = form.phoneNumber.replace(/[^0-9]/g, '');
 };
 
@@ -96,7 +97,7 @@ const submit = () => {
 
   emit('submit', {
     ...form,
-    verificationPurpose: 'SIGN_UP',
+    verificationPurpose: props.initialValue.verificationPurpose || 'SIGN_UP',
   });
 };
 </script>
@@ -138,6 +139,11 @@ const submit = () => {
 .input-group input:focus,
 .input-group select:focus {
   border-color: #ffbc2e;
+}
+
+.input-group input:read-only {
+  background: #f7f7f7;
+  color: #777777;
 }
 
 .error-message {
