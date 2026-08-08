@@ -800,6 +800,8 @@ const enterPin = async (num) => {
           startQrPayment();
         } else if (pinTarget.value === 'BARCODE') {
           startBarcodePayment();
+        } else if (pinTarget.value === 'CHARGE') {
+          await executeWalletCharge();
         }
       }
     }
@@ -841,7 +843,7 @@ const openChargeModal = () => {
   showChargeModal.value = true;
 };
 
-const submitWalletCharge = async () => {
+const submitWalletCharge = () => {
   if (chargeAmount.value <= 0) return;
   chargeError.value = '';
   const amtToCharge = Number(chargeAmount.value);
@@ -858,6 +860,13 @@ const submitWalletCharge = async () => {
     return;
   }
 
+  // 3. 보안 PIN 번호 인증 모달 오픈 (PIN 인증 완료 후 executeWalletCharge 실행)
+  pinTarget.value = 'CHARGE';
+  openPinModal();
+};
+
+const executeWalletCharge = async () => {
+  const amtToCharge = Number(chargeAmount.value);
   chargeLoading.value = true;
 
   try {
@@ -868,8 +877,8 @@ const submitWalletCharge = async () => {
       userId: uId,
       walletId: uId,
       amount: amtToCharge,
-      bankCode: '004',
-      accountNumber: '111-001-000001',
+      bankCode: primaryAccount.value?.bankCode || '004',
+      accountNumber: primaryAccount.value?.accountNumber || '111-001-000001',
       memo: '전자지갑 계좌 충전'
     });
 
