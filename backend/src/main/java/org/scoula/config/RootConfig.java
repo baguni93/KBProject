@@ -54,6 +54,7 @@ import javax.sql.DataSource;
         "org.scoula.event.mapper",
         "org.scoula.cardpayment.mapper",
         "org.scoula.insurancerecommendation.mapper",
+        "org.scoula.search.mapper",
 })
 @ComponentScan(basePackages = {
         "org.scoula.member.service",
@@ -83,6 +84,7 @@ import javax.sql.DataSource;
         "org.scoula.event.service",
         "org.scoula.cardpayment.service",
         "org.scoula.insurancerecommendation.service",
+        "org.scoula.search.service",
 
 })
 @EnableTransactionManagement

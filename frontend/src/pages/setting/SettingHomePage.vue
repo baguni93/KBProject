@@ -2,10 +2,10 @@
   <main class="setting-page">
     <header class="setting-header">
       <button
-          class="back-button"
-          type="button"
-          aria-label="이전 화면"
-          @click="goBack"
+        class="back-button"
+        type="button"
+        aria-label="이전 화면"
+        @click="goBack"
       >
         &lt;
       </button>
@@ -17,11 +17,7 @@
 
     <section class="user-area">
       <div class="profile-image-area">
-        <img
-            :src="profileImageUrl"
-            alt="프로필 이미지"
-            class="profile-image"
-        />
+        <img :src="profileImageUrl" alt="프로필 이미지" class="profile-image" />
       </div>
 
       <div class="user-message">
@@ -33,11 +29,11 @@
     <section class="menu-section">
       <div class="menu-list">
         <button
-            v-for="menu in menus"
-            :key="menu.path"
-            class="menu-item"
-            type="button"
-            @click="goMenu(menu.path)"
+          v-for="menu in menus"
+          :key="menu.path"
+          class="menu-item"
+          type="button"
+          @click="goMenu(menu.path)"
         >
           <div class="menu-content">
             <span class="menu-icon">
@@ -116,7 +112,8 @@ const goMenu = async (path) => {
 
 // 이전 화면
 const goBack = () => {
-  router.back();
+  //설정에서 뒤돌아가기는 마이페이지로
+  router.push('/mypage');
 };
 
 onMounted(() => {
