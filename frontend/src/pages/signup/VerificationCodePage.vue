@@ -1,87 +1,83 @@
 <template>
   <div class="signup-page">
-    <main class="signup-container">
-      <button class="back-button" type="button" @click="goBack">
-        &lt;
-      </button>
+    <!-- 1. 상단 영역 (Header + 뒤로가기 버튼) -->
+    <header class="signup-header">
+      <button class="back-button" type="button" @click="goBack">&lt;</button>
+      <h1>인증번호 입력</h1>
+      <p>문자로 받은 인증번호를 입력해 주세요.</p>
+    </header>
 
-      <header class="signup-header">
-        <h1>인증번호 입력</h1>
-
-        <p>
-          문자로 받은 인증번호를<br />
-          입력해 주세요.
-        </p>
-      </header>
-
-      <section class="verification-section">
-        <div class="verification-info">
-          <div class="timer-area">
-            <span>입력시간</span>
-
-            <VerificationTimer
-                :key="timerKey"
-                :seconds="signupStore.expiresIn"
-                @expired="handleExpired"
-            />
-          </div>
-
-          <button
-              class="resend-button"
-              :disabled="resending || resendCount >= 1"
-              type="button"
-              @click="resendCode"
-          >
-            {{ resending ? '재전송 중' : '재전송' }}
-          </button>
+    <!-- 2. 중앙 내용 영역 (휴대폰 본인인증 화면과 구조 통일) -->
+    <main class="content-area">
+      <div class="verification-info">
+        <div class="timer-area">
+          <span>입력시간</span>
+          <VerificationTimer
+            :key="timerKey"
+            :seconds="signupStore.expiresIn"
+            @expired="handleExpired"
+          />
         </div>
 
-        <VerificationCodeInput v-model="verificationCode" :expired="expired" />
-
-        <p v-if="signupStore.developmentCode" class="development-code">
-          개발용 인증번호:
-          {{ signupStore.developmentCode }}
-        </p>
-
-        <p v-if="expired && resendCount === 0" class="error-message">
-          인증시간이 만료되었어요.<br />
-          인증번호를 다시 받아 주세요.
-        </p>
-
-        <p v-else-if="expired && resendCount >= 1" class="error-message">
-          인증 가능 횟수를 초과했어요.<br />
-          본인인증을 다시 진행해 주세요.
-        </p>
-
-        <p v-else-if="errorMessage" class="error-message">
-          {{ errorMessage }}
-        </p>
-      </section>
-
-      <button
-          v-if="expired && resendCount >= 1"
-          class="confirm-button"
+        <button
+          class="resend-button"
+          :disabled="resending || resendCount >= 1"
           type="button"
-          @click="restartVerification"
+          @click="resendCode"
+        >
+          {{ resending ? '재전송 중' : '재전송' }}
+        </button>
+      </div>
+
+      <VerificationCodeInput v-model="verificationCode" :expired="expired" />
+
+      <p v-if="signupStore.developmentCode" class="development-code">
+        개발용 인증번호:
+        {{ signupStore.developmentCode }}
+      </p>
+
+      <p v-if="expired && resendCount === 0" class="error-message">
+        인증시간이 만료되었어요.<br />
+        인증번호를 다시 받아 주세요.
+      </p>
+
+      <p v-else-if="expired && resendCount >= 1" class="error-message">
+        인증 가능 횟수를 초과했어요.<br />
+        본인인증을 다시 진행해 주세요.
+      </p>
+
+      <p v-else-if="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </p>
+    </main>
+
+    <!-- 3. 하단 버튼 영역 (위치 및 크기 고정) -->
+    <div class="bottom-btn-area.single">
+      <button
+        v-if="expired && resendCount >= 1"
+        class="bottom-btn"
+        type="button"
+        @click="restartVerification"
       >
         본인인증 다시 하기
       </button>
 
       <button
-          v-else
-          class="confirm-button"
-          :disabled="verificationCode.length !== 6 || loading || expired"
-          type="button"
-          @click="verifyCode"
+        v-else
+        class="bottom-btn"
+        :disabled="verificationCode.length !== 6 || loading || expired"
+        type="button"
+        @click="verifyCode"
       >
         {{ loading ? '확인 중...' : '확인' }}
       </button>
+    </div>
 
-      <div v-if="loading" class="loading-overlay">
-        <div class="loading-spinner"></div>
-        <span>인증정보를 확인하고 있어요.</span>
-      </div>
-    </main>
+    <!-- 로딩 오버레이 -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <span>인증정보를 확인하고 있어요.</span>
+    </div>
   </div>
 </template>
 
@@ -109,17 +105,14 @@ const resendCount = ref(0);
 
 // 인증번호 오류 메시지 처리
 const getVerificationErrorMessage = (error, fallbackMessage) => {
-  // 서버 자체에 연결되지 않은 경우
-  if (!error.response) return '서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.';
+  if (!error.response)
+    return '서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.';
 
   const status = error.response.status;
   const serverMessage = error.response?.data?.message;
 
-  // 현재 백엔드가 사용자 입력 오류도 500으로 내려주는 구조
   if (status >= 500) return fallbackMessage;
 
-  // 추후 백엔드 예외처리가 수정되면
-  // 서버에서 내려주는 실제 메시지 사용
   return serverMessage || fallbackMessage;
 };
 
@@ -132,7 +125,10 @@ const handleExpired = () => {
 
 // PIN 재설정 인증 완료 처리
 const handlePinReset = async () => {
-  sessionStorage.setItem('pinResetPhoneNumber', signupStore.phoneAuth.phoneNumber);
+  sessionStorage.setItem(
+    'pinResetPhoneNumber',
+    signupStore.phoneAuth.phoneNumber,
+  );
   await router.push('/auth/pin-reset');
 };
 
@@ -188,7 +184,10 @@ const handleSignup = async () => {
   signupStore.setMemberStatus(signupResponse.memberStatus);
 
   if (signupResponse.existingMember) {
-    sessionStorage.setItem('pinLoginPhoneNumber', signupStore.phoneAuth.phoneNumber);
+    sessionStorage.setItem(
+      'pinLoginPhoneNumber',
+      signupStore.phoneAuth.phoneNumber,
+    );
     await router.push('/signup/existing-member');
     return;
   }
@@ -235,8 +234,8 @@ const verifyCode = async () => {
     console.error(error);
 
     errorMessage.value = getVerificationErrorMessage(
-        error,
-        '인증번호가 일치하지 않습니다.'
+      error,
+      '인증번호가 일치하지 않습니다.',
     );
 
     verificationCode.value = '';
@@ -270,8 +269,8 @@ const resendCode = async () => {
     console.error(error);
 
     errorMessage.value = getVerificationErrorMessage(
-        error,
-        '인증번호 재전송에 실패했습니다.'
+      error,
+      '인증번호 재전송에 실패했습니다.',
     );
   } finally {
     resending.value = false;
@@ -319,36 +318,37 @@ const goBack = async () => {
 <style scoped>
 .signup-page {
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  /* 💡 버튼 위치를 일치시키기 위해 하단 패딩을 70px로 적용합니다 */
+  padding: 36px 24px 70px;
   background: #ffffff;
 }
 
-.signup-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  padding: 26px 28px 140px;
-  background: #ffffff;
-  box-sizing: border-box;
+/* 1. 상단 헤더 영역 */
+.signup-header {
+  flex-shrink: 0;
 }
 
 .back-button {
   align-self: flex-start;
-  margin-bottom: 28px;
+  margin-bottom: 16px;
   padding: 0;
   border: 0;
   background: transparent;
   color: #555555;
-  font-size: 28px;
+  font-size: 26px;
   line-height: 1;
   cursor: pointer;
 }
 
 .signup-header h1 {
-  margin: 0 0 20px;
+  margin: 0 0 16px;
   color: #111111;
   font-size: 28px;
   font-weight: 700;
@@ -357,13 +357,24 @@ const goBack = async () => {
 .signup-header p {
   margin: 0;
   color: #777777;
-  font-size: 19px;
-  font-weight: 600;
-  line-height: 1.45;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* 2. 중앙 내용 영역 */
+.content-area {
+  flex: 1;
+  min-height: 0;
+  margin-top: 28px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding-right: 2px;
 }
 
 .verification-section {
-  margin-top: 60px;
+  display: flex;
+  flex-direction: column;
 }
 
 .verification-info {
@@ -412,30 +423,7 @@ const goBack = async () => {
   line-height: 1.5;
 }
 
-.confirm-button {
-  position: absolute;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
-  width: auto;
-  height: 58px;
-  margin: 0;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.confirm-button:disabled {
-  border-color: #dddddd;
-  background: #eeeeee;
-  color: #999999;
-  cursor: not-allowed;
-}
-
+/* 로딩 오버레이 */
 .loading-overlay {
   position: absolute;
   inset: 0;

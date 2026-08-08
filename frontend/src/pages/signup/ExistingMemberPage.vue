@@ -1,7 +1,8 @@
 <template>
-  <div class="member-page">
-    <main class="member-container">
-      <section class="member-content">
+  <div class="signup-page">
+    <!-- 1. 중앙 내용 영역 (기존 스타일 및 정렬 그대로 유지) -->
+    <main class="content-area">
+      <div class="member-content">
         <div class="member-visual">
           <div class="visual-card">
             <span class="person person-left"></span>
@@ -25,7 +26,6 @@
         <section class="guide-list">
           <article class="guide-item">
             <div class="guide-icon">✓</div>
-
             <div>
               <strong>본인인증 완료</strong>
               <p>가입된 회원 정보를 확인했어요.</p>
@@ -34,7 +34,6 @@
 
           <article class="guide-item">
             <div class="guide-icon">●</div>
-
             <div>
               <strong>간편한 PIN 로그인</strong>
               <p>6자리 간편비밀번호로 로그인할 수 있어요.</p>
@@ -43,19 +42,19 @@
 
           <article class="guide-item">
             <div class="guide-icon">🔒</div>
-
             <div>
               <strong>안전한 금융 서비스</strong>
               <p>회원님의 금융 정보를 안전하게 보호해요.</p>
             </div>
           </article>
         </section>
-      </section>
-
-      <button class="bottom-button" type="button" @click="goLogin">
-        로그인
-      </button>
+      </div>
     </main>
+
+    <!-- 2. 하단 버튼 영역 (다른 페이지들과 완벽히 일치하는 위치) -->
+    <div class="bottom-btn-area single">
+      <button class="bottom-btn" type="button" @click="goLogin">다음</button>
+    </div>
   </div>
 </template>
 
@@ -78,22 +77,27 @@ const goLogin = () => {
 </script>
 
 <style scoped>
-.member-page {
+.signup-page {
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  /* 다른 회원가입 페이지들과 완전히 동일한 패딩 적용 */
+  padding: 36px 24px 70px;
   background: #ffffff;
 }
 
-.member-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
+/* 중앙 내용 영역 (내부 스크롤 가능하며 기존 디자인 보존) */
+.content-area {
+  flex: 1;
   min-height: 0;
-  padding: 40px 28px 140px;
-  background: #ffffff;
+  overflow-y: auto;
   box-sizing: border-box;
+  padding-right: 2px;
 }
 
 .member-content {
@@ -260,26 +264,5 @@ const goLogin = () => {
   color: #888888;
   font-size: 12px;
   line-height: 1.4;
-}
-
-.bottom-button {
-  position: absolute;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
-  width: auto;
-  height: 58px;
-  margin: 0;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.bottom-button:active {
-  background: #f2aa10;
 }
 </style>

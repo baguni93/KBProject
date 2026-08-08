@@ -1,10 +1,9 @@
 <template>
   <div class="intro-page">
     <main class="intro-container">
+      <!-- 1. 상단 / 내용 영역 -->
       <section class="intro-content">
-        <div class="service-badge">
-          SOCIAL WALLET
-        </div>
+        <div class="service-badge">SOCIAL WALLET</div>
 
         <h1>
           결제는 순식간,<br />
@@ -46,13 +45,12 @@
         </div>
       </section>
 
-      <button
-          class="start-button"
-          type="button"
-          @click="start"
-      >
-        시작하기
-      </button>
+      <!-- 3. 하단 버튼 영역 -->
+      <div class="bottom-btn-area.single">
+        <button class="bottom-btn" type="button" @click="start">
+          시작하기
+        </button>
+      </div>
     </main>
   </div>
 </template>
@@ -71,13 +69,18 @@ const start = () => {
 <style scoped>
 .intro-page {
   width: 100%;
-  height: 100%;
-  background: #ffffff;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 12px;
 }
 
 .intro-container {
   display: flex;
   flex-direction: column;
+  justify-content: space-between; /* 상단과 하단을 양쪽 끝으로 배치 */
   width: 100%;
   height: 100%;
   padding: 40px 28px 30px;
@@ -87,9 +90,39 @@ const start = () => {
 
 .intro-content {
   display: flex;
-  flex: 1;
-  min-height: 0;
   flex-direction: column;
+}
+
+/* 3. 하단 버튼 영역 */
+.button-area {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 16px;
+  background: #ffffff;
+}
+
+.next-btn {
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: 14px;
+  background: #ffc400;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.next-btn:active:not(:disabled) {
+  background: #f3aa0b;
+}
+
+.next-btn:disabled {
+  background: #e0e0e0;
+  color: #9e9e9e;
+  cursor: not-allowed;
 }
 
 .service-badge {
@@ -126,22 +159,22 @@ const start = () => {
 .wallet-visual {
   position: relative;
   width: 100%;
-  height: 300px;
-  margin-top: 34px;
+  height: 260px;
+  margin-top: 24px;
 }
 
 .visual-glow {
   position: absolute;
-  top: 48px;
+  top: 30px;
   left: 50%;
-  width: 260px;
-  height: 260px;
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
   background: radial-gradient(
-      circle,
-      rgba(255, 188, 46, 0.32) 0%,
-      rgba(255, 188, 46, 0.12) 45%,
-      rgba(255, 188, 46, 0) 72%
+    circle,
+    rgba(255, 188, 46, 0.32) 0%,
+    rgba(255, 188, 46, 0.12) 45%,
+    rgba(255, 188, 46, 0) 72%
   );
   transform: translateX(-50%);
 }
@@ -149,41 +182,41 @@ const start = () => {
 .wallet-card {
   position: absolute;
   left: 50%;
-  width: 250px;
-  height: 154px;
+  width: 230px;
+  height: 142px;
   border-radius: 20px;
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14);
   box-sizing: border-box;
 }
 
 .back-card {
-  top: 80px;
+  top: 50px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 24px;
+  padding: 20px;
   background: #222222;
   color: #ffffff;
   transform: translateX(-56%) rotate(-8deg);
 }
 
 .front-card {
-  top: 112px;
-  padding: 24px;
+  top: 82px;
+  padding: 20px;
   background: linear-gradient(135deg, #ffc43d, #ffad12);
   color: #111111;
   transform: translateX(-44%) rotate(7deg);
 }
 
 .card-label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: 1px;
 }
 
 .card-circle {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border: 2px solid rgba(255, 255, 255, 0.7);
   border-radius: 50%;
 }
@@ -195,38 +228,38 @@ const start = () => {
 }
 
 .card-chip {
-  width: 38px;
-  height: 28px;
-  border-radius: 7px;
+  width: 34px;
+  height: 24px;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.65);
 }
 
 .card-logo {
   display: flex;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background: #111111;
   color: #ffffff;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
 }
 
 .card-text {
   display: flex;
   flex-direction: column;
-  margin-top: 35px;
+  margin-top: 26px;
 }
 
 .card-text strong {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
 }
 
 .card-text span {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 11px;
   font-weight: 600;
 }
@@ -235,71 +268,29 @@ const start = () => {
   position: absolute;
   z-index: 3;
   display: flex;
-  width: 54px;
-  height: 54px;
+  width: 48px;
+  height: 48px;
   align-items: center;
   justify-content: center;
-  border: 5px solid #ffffff;
+  border: 4px solid #ffffff;
   border-radius: 50%;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14);
-  font-size: 21px;
+  font-size: 18px;
   font-weight: 800;
   box-sizing: border-box;
 }
 
 .left-bubble {
-  top: 66px;
-  left: 18px;
+  top: 40px;
+  left: 10px;
   background: #ffffff;
   color: #ffb516;
 }
 
 .right-bubble {
-  right: 14px;
-  bottom: 42px;
+  right: 10px;
+  bottom: 20px;
   background: #222222;
   color: #ffbc2e;
-}
-
-.start-button {
-  width: 100%;
-  height: 58px;
-  margin-top: auto;
-  margin-bottom: 28px;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.start-button:active {
-  background: #f3aa0b;
-}
-
-@media (max-height: 760px) {
-  .intro-container {
-    padding-top: 24px;
-    padding-bottom: 22px;
-  }
-
-  .intro-content h1 {
-    margin-top: 18px;
-    font-size: 30px;
-  }
-
-  .intro-content p {
-    margin-top: 14px;
-    font-size: 15px;
-  }
-
-  .wallet-visual {
-    height: 280px;
-    margin-top: 24px;
-    transform: scale(0.9);
-    transform-origin: top center;
-  }
 }
 </style>

@@ -315,28 +315,6 @@
             class="giant-card-bg"
             alt="giant card"
           />
-          <div class="giant-card-overlay"></div>
-
-          <div class="giant-card-top p-3 d-flex justify-content-between align-items-center">
-            <div class="chip-ic-lg"></div>
-            <span class="giant-rep-badge">KB국민 대표카드</span>
-          </div>
-
-          <div class="giant-card-center-signal text-center my-auto px-2">
-            <div class="nfc-signal-icon-wrap mb-2">
-              <i class="bi bi-wifi text-warning fs-1"></i>
-            </div>
-            <span class="signal-tag-text">결제 단말기 뒷면에 스마트폰을 대어주세요</span>
-          </div>
-
-          <div class="giant-card-bottom p-3 text-start">
-            <div class="giant-card-name">
-              {{ registeredCards[currentCardIdx]?.cardAlias || registeredCards[currentCardIdx]?.cardName || 'KB국민 노리2 체크카드' }}
-            </div>
-            <div class="giant-card-number">
-              {{ formatMaskedCardNum(registeredCards[currentCardIdx]?.cardNum) }}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -800,6 +778,8 @@ const enterPin = async (num) => {
           startQrPayment();
         } else if (pinTarget.value === 'BARCODE') {
           startBarcodePayment();
+        } else if (pinTarget.value === 'CHARGE') {
+          await executeWalletCharge();
         }
       }
     }
@@ -841,7 +821,7 @@ const openChargeModal = () => {
   showChargeModal.value = true;
 };
 
-const submitWalletCharge = async () => {
+const submitWalletCharge = () => {
   if (chargeAmount.value <= 0) return;
   chargeError.value = '';
   const amtToCharge = Number(chargeAmount.value);
@@ -858,6 +838,13 @@ const submitWalletCharge = async () => {
     return;
   }
 
+  // 3. 보안 PIN 번호 인증 모달 오픈 (PIN 인증 완료 후 executeWalletCharge 실행)
+  pinTarget.value = 'CHARGE';
+  openPinModal();
+};
+
+const executeWalletCharge = async () => {
+  const amtToCharge = Number(chargeAmount.value);
   chargeLoading.value = true;
 
   try {
@@ -868,8 +855,8 @@ const submitWalletCharge = async () => {
       userId: uId,
       walletId: uId,
       amount: amtToCharge,
-      bankCode: '004',
-      accountNumber: '111-001-000001',
+      bankCode: primaryAccount.value?.bankCode || '004',
+      accountNumber: primaryAccount.value?.accountNumber || '111-001-000001',
       memo: '전자지갑 계좌 충전'
     });
 
@@ -1492,18 +1479,19 @@ onUnmounted(() => {
 
 .spay-giant-card {
   position: relative;
-  width: 82%;
-  max-width: 320px;
-  height: 62vh;
-  max-height: 460px;
-  border-radius: 24px;
+  width: 320px;
+  height: 202px;
+  aspect-ratio: 1.58 / 1;
+  border-radius: 18px;
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.8), 0 0 25px rgba(255, 188, 46, 0.3);
-  border: 2px solid rgba(255, 188, 46, 0.6);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 25px rgba(255, 188, 46, 0.4);
+  border: 2px solid rgba(255, 188, 46, 0.7);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  transform: rotate(90deg);
+  transition: transform 0.4s ease-in-out;
 }
 
 .giant-card-bg {
@@ -1513,12 +1501,13 @@ onUnmounted(() => {
   height: 100%;
   object-fit: cover;
   z-index: 1;
+  filter: brightness(1.12) contrast(1.06);
 }
 
 .giant-card-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(15,23,42,0.3) 0%, rgba(15,23,42,0.75) 100%);
+  background: rgba(0, 0, 0, 0.1);
   z-index: 2;
 }
 

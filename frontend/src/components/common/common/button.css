@@ -6,22 +6,27 @@
 ======================================== */
 
 .bottom-btn-area {
-    position: absolute;
-    right: 28px;
-    bottom: 58px;
-    left: 28px;
+  /* position: absolute;
+  right: 28px;
+  bottom: 58px;
+  left: 28px; */
 }
 
 /* 하단 단일 버튼 */
 .bottom-btn-area.single {
-    display: block;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 16px;
+  background: #ffffff;
 }
 
 /* 하단 2분할 버튼 (50% : 50%) */
 .bottom-btn-area.double {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 }
 
 /* ========================================
@@ -31,29 +36,28 @@
 ======================================== */
 
 .bottom-btn {
-    width: 100%;
-    height: 58px;
-    box-sizing: border-box;
-    border: 1px solid var(--color-primary-border);
-    border-radius: 10px;
-    background: var(--color-primary);
-    color: var(--color-text-main);
-    font-size: 18px;
-    font-weight: 800;
-    cursor: pointer;
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: 14px;
+  background: #ffbc2e;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
 /* 클릭 상태 */
 .bottom-btn:active:not(:disabled) {
-    background: var(--color-primary-active);
+  background: var(--color-primary-active);
 }
 
 /* 비활성화 */
 .bottom-btn:disabled {
-    border-color: var(--color-border-main);
-    background: var(--color-bg-disabled);
-    color: var(--color-text-disabled);
-    cursor: not-allowed;
+  border-color: var(--color-border-main);
+  background: var(--color-bg-disabled);
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
 }
 
 /* ========================================
@@ -63,29 +67,29 @@
 ======================================== */
 
 .content-add-btn {
-    width: 100%;
-    height: 58px;
-    box-sizing: border-box;
-    border: 1px dashed var(--color-border-main);
-    border-radius: 10px;
-    background: var(--color-bg-page);
-    color: var(--color-text-main);
-    font-size: 18px;
-    font-weight: 800;
-    cursor: pointer;
+  width: 100%;
+  height: 58px;
+  box-sizing: border-box;
+  border: 1px dashed var(--color-border-main);
+  border-radius: 10px;
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 /* 클릭 상태 */
 .content-add-btn:active:not(:disabled) {
-    background: var(--color-bg-screen);
+  background: var(--color-bg-screen);
 }
 
 /* 비활성화 */
 .content-add-btn:disabled {
-    border-color: var(--color-border-main);
-    background: var(--color-bg-disabled);
-    color: var(--color-text-disabled);
-    cursor: not-allowed;
+  border-color: var(--color-border-main);
+  background: var(--color-bg-disabled);
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
 }
 
 /* ========================================
@@ -95,46 +99,46 @@
 ======================================== */
 
 .content-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    width: 100%;
-    height: 44px;
-    box-sizing: border-box;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 44px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 /* 노란색 버튼 */
 .content-btn.primary {
-    border: 1px solid var(--color-primary-border);
-    background: var(--color-primary);
-    color: var(--color-text-main);
+  border: 1px solid var(--color-primary-border);
+  background: var(--color-primary);
+  color: var(--color-text-main);
 }
 
 /* 흰색 버튼 */
 .content-btn.secondary {
-    border: 1px solid var(--color-border-main);
-    background: var(--color-bg-page);
-    color: var(--color-text-body);
+  border: 1px solid var(--color-border-main);
+  background: var(--color-bg-page);
+  color: var(--color-text-body);
 }
 
 /* 클릭 상태 */
 .content-btn.primary:active:not(:disabled) {
-    background: var(--color-primary-active);
+  background: var(--color-primary-active);
 }
 
 .content-btn.secondary:active:not(:disabled) {
-    background: var(--color-bg-screen);
+  background: var(--color-bg-screen);
 }
 
 /* 비활성화 */
 .content-btn:disabled {
-    border-color: var(--color-border-main);
-    background: var(--color-bg-disabled);
-    color: var(--color-text-disabled);
-    cursor: not-allowed;
+  border-color: var(--color-border-main);
+  background: var(--color-bg-disabled);
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
 }

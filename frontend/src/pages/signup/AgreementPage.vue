@@ -1,61 +1,57 @@
 <template>
   <div class="signup-page">
-    <main class="signup-container">
-      <section class="signup-header">
-        <h1>약관 동의</h1>
+    <!-- 1. 상단 영역 (Header) -->
+    <section class="signup-header">
+      <h1>약관 동의</h1>
+      <p>가입을 위해 약관에 동의해주세요.</p>
+    </section>
 
-        <p>
-          가입을 위해 약관에<br />
-          동의해주세요.
-        </p>
-      </section>
-
-      <section class="agreement-section">
-        <label class="all-agreement">
-          <input
-              :checked="signupStore.isAllChecked"
-              type="checkbox"
-              @change="changeAll"
-          />
-
-          <span class="check-box"></span>
-          <strong>전체 동의</strong>
-        </label>
-
-        <div class="divider"></div>
-
-        <AgreementCheckItem
-            v-for="agreement in signupStore.agreements"
-            :key="agreement.agreementId"
-            :model-value="agreement.agreed"
-            :title="agreement.agreementName"
-            :required="agreement.requiredYn === 'Y'"
-            detail-mode="navigate"
-            @update:model-value="(agreed) => changeAgreement({ agreementType: agreement.agreementType, agreed })"
-            @open-detail="showAgreementDetail(agreement.agreementType)"
+    <!-- 2. 중앙 내용 영역 -->
+    <section class="agreement-section">
+      <label class="all-agreement">
+        <input
+          :checked="signupStore.isAllChecked"
+          type="checkbox"
+          @change="changeAll"
         />
+        <span class="check-box"></span>
+        <strong>전체 동의</strong>
+      </label>
 
-        <div class="divider bottom-divider"></div>
-      </section>
+      <div class="divider"></div>
 
-      <p
-          v-if="errorMessage"
-          class="error-message"
-      >
+      <AgreementCheckItem
+        v-for="agreement in signupStore.agreements"
+        :key="agreement.agreementId"
+        :model-value="agreement.agreed"
+        :title="agreement.agreementName"
+        :required="agreement.requiredYn === 'Y'"
+        detail-mode="navigate"
+        @update:model-value="
+          (agreed) =>
+            changeAgreement({ agreementType: agreement.agreementType, agreed })
+        "
+        @open-detail="showAgreementDetail(agreement.agreementType)"
+      />
+
+      <div class="divider bottom-divider"></div>
+
+      <p v-if="errorMessage" class="error-message">
         {{ errorMessage }}
       </p>
+    </section>
 
-      <div class="bottom-btn-area single">
-        <button
-            class="bottom-btn"
-            :disabled="!signupStore.isRequiredChecked"
-            type="button"
-            @click="next"
-        >
-          다음
-        </button>
-      </div>
-    </main>
+    <!-- 3. 하단 버튼 영역 -->
+    <div class="bottom-btn-area.single">
+      <button
+        class="bottom-btn"
+        :disabled="!signupStore.isRequiredChecked"
+        type="button"
+        @click="next"
+      >
+        다음
+      </button>
+    </div>
   </div>
 </template>
 
@@ -88,10 +84,7 @@ const changeAll = (event) => {
 
 // 개별 동의
 const changeAgreement = ({ agreementType, agreed }) => {
-  signupStore.setAgreementChecked(
-      agreementType,
-      agreed,
-  );
+  signupStore.setAgreementChecked(agreementType, agreed);
 };
 
 // 약관 상세 이동
@@ -110,39 +103,46 @@ onMounted(loadAgreements);
 <style scoped>
 .signup-page {
   width: 100%;
-  height: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  /* 💡 하단 패딩을 20px -> 40px로 늘려 버튼 위치를 위로 올립니다 */
+  padding: 36px 24px 70px;
   background: #ffffff;
 }
 
-.signup-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  padding: 82px 28px 140px;
-  background: #ffffff;
-  box-sizing: border-box;
+/* 1. 상단 헤더 영역 */
+.signup-header {
+  flex-shrink: 0;
 }
 
 .signup-header h1 {
-  margin: 0 0 28px;
+  margin: 0 0 16px;
   color: #111111;
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
 }
 
 .signup-header p {
   margin: 0;
   color: #777777;
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.35;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
+/* 2. 중앙 내용 영역 */
 .agreement-section {
-  margin-top: 66px;
+  flex: 1;
+  min-height: 0;
+  /* 💡 헤더와의 간격을 적당히 조절합니다 */
+  margin-top: 28px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding-right: 2px;
 }
 
 .all-agreement {
@@ -161,8 +161,8 @@ onMounted(loadAgreements);
 
 .check-box {
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   margin-right: 14px;
   border: 1px solid #999999;
   border-radius: 6px;
@@ -177,9 +177,9 @@ onMounted(loadAgreements);
 
 .all-agreement input:checked + .check-box::after {
   display: block;
-  width: 8px;
-  height: 14px;
-  margin: 4px 0 0 9px;
+  width: 7px;
+  height: 13px;
+  margin: 4px 0 0 8px;
   border: solid #ffffff;
   border-width: 0 2px 2px 0;
   content: '';
@@ -187,18 +187,19 @@ onMounted(loadAgreements);
 }
 
 .all-agreement strong {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
+  color: #111111;
 }
 
 .divider {
   height: 1px;
-  margin: 20px 0 12px;
-  background: #dddddd;
+  margin: 12px 0 8px;
+  background: #eeeeee;
 }
 
 .bottom-divider {
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .error-message {

@@ -86,7 +86,6 @@ const router = createRouter({
     ...feed,
     ...mypage,
     ...settlement,
-    ...auth,
     ...signup,
     ...setting,
     ...analysis,
