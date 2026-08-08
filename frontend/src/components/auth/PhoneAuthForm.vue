@@ -2,7 +2,13 @@
   <form class="phone-form" @submit.prevent="submit">
     <div class="input-group">
       <label for="userName">이름</label>
-      <input id="userName" v-model.trim="form.userName" type="text" placeholder="이름을 입력해주세요." :readonly="isNameChange" />
+      <input
+        id="userName"
+        v-model.trim="form.userName"
+        type="text"
+        placeholder="이름을 입력해주세요."
+        :readonly="isNameChange"
+      />
     </div>
 
     <div class="input-group">
@@ -25,26 +31,21 @@
 
     <div class="input-group">
       <label for="phoneNumber">휴대폰번호</label>
-
       <input
-          id="phoneNumber"
-          v-model="form.phoneNumber"
-          maxlength="11"
-          inputmode="numeric"
-          placeholder="'-' 없이 입력해주세요."
-          type="text"
-          :readonly="isPhoneChange"
-          @input="formatPhoneNumber"
+        id="phoneNumber"
+        v-model="form.phoneNumber"
+        maxlength="11"
+        inputmode="numeric"
+        placeholder="'-' 없이 입력해주세요."
+        type="text"
+        :readonly="isPhoneChange"
+        @input="formatPhoneNumber"
       />
     </div>
 
     <p v-if="errorMessage" class="error-message">
       {{ errorMessage }}
     </p>
-
-    <button class="submit-button" :disabled="loading" type="submit">
-      {{ loading ? '요청 중...' : '인증번호 받기' }}
-    </button>
   </form>
 </template>
 
@@ -65,8 +66,12 @@ const props = defineProps({
 const emit = defineEmits(['submit']);
 const errorMessage = ref('');
 
-const isPhoneChange = computed(() => props.initialValue.verificationPurpose === 'PHONE_CHANGE');
-const isNameChange = computed(() => props.initialValue.verificationPurpose === 'NAME_CHANGE');
+const isPhoneChange = computed(
+  () => props.initialValue.verificationPurpose === 'PHONE_CHANGE',
+);
+const isNameChange = computed(
+  () => props.initialValue.verificationPurpose === 'NAME_CHANGE',
+);
 
 const form = reactive({
   userName: props.initialValue.userName || '',
@@ -75,22 +80,20 @@ const form = reactive({
   phoneNumber: props.initialValue.phoneNumber || '',
 });
 
-// 숫자만 입력
 const formatPhoneNumber = () => {
   if (isPhoneChange.value) return;
   form.phoneNumber = form.phoneNumber.replace(/[^0-9]/g, '');
 };
 
-// 입력 확인
 const validate = () => {
   if (!form.userName) return '이름을 입력해주세요.';
   if (!form.birthDate) return '생년월일을 입력해주세요.';
   if (!form.carrierCode) return '통신사를 선택해주세요.';
-  if (!/^01[016789][0-9]{7,8}$/.test(form.phoneNumber)) return '휴대폰번호를 확인해주세요.';
+  if (!/^01[016789][0-9]{7,8}$/.test(form.phoneNumber))
+    return '휴대폰번호를 확인해주세요.';
   return '';
 };
 
-// 인증 요청
 const submit = () => {
   errorMessage.value = validate();
   if (errorMessage.value) return;
@@ -100,14 +103,17 @@ const submit = () => {
     verificationPurpose: props.initialValue.verificationPurpose || 'SIGN_UP',
   });
 };
+
+// 부모에서 버튼을 눌렀을 때 실행할 수 있도록 노출
+defineExpose({
+  submitForm: submit,
+});
 </script>
 
 <style scoped>
 .phone-form {
   display: flex;
-  flex: 1;
   flex-direction: column;
-  min-height: 0;
 }
 
 .input-group {
@@ -150,23 +156,5 @@ const submit = () => {
   margin: 0;
   color: #d32f2f;
   font-size: 14px;
-}
-
-.submit-button {
-  width: 100%;
-  height: 58px;
-  margin-top: auto;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.submit-button:disabled {
-  border-color: #dddddd;
-  background: #eeeeee;
-  color: #999999;
 }
 </style>

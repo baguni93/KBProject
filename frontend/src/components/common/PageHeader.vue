@@ -3,11 +3,11 @@
     <!-- 왼쪽 영역 -->
     <div class="header-side header-left">
       <button
-          v-if="showBack"
-          type="button"
-          class="header-icon-btn"
-          aria-label="이전 화면"
-          @click="handleBack"
+        v-if="showBack"
+        type="button"
+        class="header-icon-btn"
+        aria-label="이전 화면"
+        @click="handleBack"
       >
         <i class="fa-solid fa-chevron-left"></i>
       </button>
@@ -21,11 +21,11 @@
     <!-- 오른쪽 영역 -->
     <div class="header-side header-right">
       <button
-          v-if="showRefresh"
-          type="button"
-          class="header-icon-btn"
-          aria-label="새로고침"
-          @click="emit('refresh')"
+        v-if="showRefresh"
+        type="button"
+        class="header-icon-btn"
+        aria-label="새로고침"
+        @click="emit('refresh')"
       >
         <i class="fa-solid fa-rotate-right"></i>
       </button>
@@ -64,10 +64,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits([
-  'back',
-  'refresh',
-]);
+const emit = defineEmits(['back', 'refresh']);
 
 // 이전 화면
 const handleBack = () => {
@@ -81,7 +78,7 @@ const handleBack = () => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
+@import '@/components/common/common/common.css';
 
 /* ========================================
    공통 페이지 헤더
@@ -133,7 +130,7 @@ const handleBack = () => {
 .header-title {
   margin: 0;
   color: var(--color-text-main);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.4;
   text-align: center;

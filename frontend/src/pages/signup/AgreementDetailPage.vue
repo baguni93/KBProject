@@ -1,10 +1,28 @@
 <template>
-  <div class="detail-page">
-    <main class="detail-container">
-      <button class="back-button" type="button" @click="goBack">
-        &lt;
-      </button>
+  <div class="page">
+    <!-- 1. 상단 헤더 영역 (PageHeader 사용 또는 기존 구조 유지) -->
+    <header class="header-area">
+      <PageHeader
+        :title="
+          loading ? '불러오는 중...' : agreement.agreementName || '약관 상세'
+        "
+        :custom-back="true"
+        @back="goBack"
+      />
+      <div v-if="!loading && !errorMessage" class="badge-wrapper">
+        <span
+          :class="[
+            'agreement-type',
+            agreement.requiredYn === 'Y' ? 'required' : 'optional',
+          ]"
+        >
+          {{ agreement.requiredYn === 'Y' ? '필수 약관' : '선택 약관' }}
+        </span>
+      </div>
+    </header>
 
+    <!-- 2. 중앙 내용 영역 (카드 에디터처럼 flex: 1 및 내부 스크롤 적용) -->
+    <main class="content-area">
       <section v-if="loading" class="status-message">
         약관을 불러오는 중입니다.
       </section>
@@ -13,36 +31,27 @@
         {{ errorMessage }}
       </section>
 
-      <section v-else class="detail-content">
-        <header class="detail-header">
-          <h1>{{ agreement.agreementName }}</h1>
-
-          <span
-              :class="[
-              'agreement-type',
-              agreement.requiredYn === 'Y' ? 'required' : 'optional',
-            ]"
-          >
-            {{ agreement.requiredYn === 'Y' ? '필수 약관' : '선택 약관' }}
-          </span>
-        </header>
-
+      <template v-else>
         <div class="agreement-scroll">
           {{ agreement.agreementContent }}
         </div>
 
         <label class="consent-label">
           <input
-              :checked="isAgreed"
-              type="checkbox"
-              @change="changeAgreement"
+            :checked="isAgreed"
+            type="checkbox"
+            @change="changeAgreement"
           />
-
           <span class="check-box"></span>
           <span>위 약관에 동의합니다.</span>
         </label>
-      </section>
+      </template>
     </main>
+
+    <!-- 3. 하단 버튼 영역 (고정형 버튼) -->
+    <div class="button-area">
+      <button class="next-btn" type="button" @click="goBack">확인</button>
+    </div>
   </div>
 </template>
 
@@ -51,6 +60,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import agreementApi from '@/api/agreementApi';
 import { useSignupStore } from '@/stores/signup';
+import PageHeader from '@/components/common/PageHeader.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -62,7 +72,7 @@ const errorMessage = ref('');
 
 const isAgreed = computed(() => {
   const item = signupStore.agreements.find(
-      (agreement) => agreement.agreementType === route.params.agreementType,
+    (item) => item.agreementType === route.params.agreementType,
   );
 
   return item?.agreed ?? false;
@@ -73,7 +83,7 @@ const loadAgreement = async () => {
   try {
     loading.value = true;
     agreement.value = await agreementApi.getAgreementDetail(
-        route.params.agreementType,
+      route.params.agreementType,
     );
   } catch (error) {
     console.error(error);
@@ -86,8 +96,8 @@ const loadAgreement = async () => {
 // 약관 동의
 const changeAgreement = (event) => {
   signupStore.setAgreementChecked(
-      route.params.agreementType,
-      event.target.checked,
+    route.params.agreementType,
+    event.target.checked,
   );
 };
 
@@ -100,59 +110,30 @@ onMounted(loadAgreement);
 </script>
 
 <style scoped>
-.detail-page {
+.page {
   width: 100%;
-  height: 100%;
-  background: #ffffff;
-}
-
-.detail-container {
-  position: relative;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 100%;
   min-height: 0;
-  padding: 26px 28px 30px;
-  background: #ffffff;
   box-sizing: border-box;
+  overflow: hidden;
+  padding: 12px;
+  background: #ffffff;
 }
 
-.back-button {
-  align-self: flex-start;
-  margin-bottom: 28px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #555555;
-  font-size: 28px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.detail-content {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.detail-header {
+.header-area {
   flex-shrink: 0;
 }
 
-.detail-header h1 {
-  margin: 0 0 20px;
-  color: #111111;
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.4;
+.badge-wrapper {
+  margin-top: 8px;
+  padding: 0 4px;
 }
 
 .agreement-type {
   display: inline-block;
-  margin-bottom: 20px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -164,34 +145,37 @@ onMounted(loadAgreement);
   color: #777777;
 }
 
+/* 중앙 콘텐츠 영역: 카드 에디터의 .card-editor와 동일한 역할 */
+.content-area {
+  flex: 1;
+  min-height: 0;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .agreement-scroll {
   flex: 1;
   min-height: 0;
-  padding: 18px;
+  padding: 16px;
   border: 1px solid #dddddd;
-  border-radius: 10px;
+  border-radius: 12px;
   color: #333333;
-  font-size: 15px;
-  line-height: 1.8;
+  font-size: 14px;
+  line-height: 1.6;
   white-space: pre-wrap;
-
   overflow-y: auto;
-
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.agreement-scroll::-webkit-scrollbar {
-  display: none;
+  box-sizing: border-box;
 }
 
 .consent-label {
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  min-height: 64px;
-  margin-top: 16px;
-  border-top: 1px solid #dddddd;
+  min-height: 52px;
+  margin-top: 12px;
+  padding: 0 4px;
   cursor: pointer;
 }
 
@@ -204,9 +188,9 @@ onMounted(loadAgreement);
 
 .check-box {
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  margin-right: 14px;
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
   border: 1px solid #999999;
   border-radius: 6px;
   background: #ffffff;
@@ -220,9 +204,9 @@ onMounted(loadAgreement);
 
 .consent-label input:checked + .check-box::after {
   display: block;
-  width: 8px;
-  height: 14px;
-  margin: 4px 0 0 9px;
+  width: 6px;
+  height: 12px;
+  margin: 3px 0 0 8px;
   border: solid #ffffff;
   border-width: 0 2px 2px 0;
   content: '';
@@ -231,8 +215,34 @@ onMounted(loadAgreement);
 
 .consent-label span:last-child {
   color: #222222;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
+}
+
+/* 하단 버튼 영역: 카드 에디터와 동일한 구조 및 스타일 적용 */
+.button-area {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 0 8px;
+  background: #ffffff;
+}
+
+.next-btn {
+  width: 85%;
+  height: 46px;
+  border: none;
+  border-radius: 14px;
+  background: #ffc400;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.next-btn:active {
+  background: #f3aa0b;
 }
 
 .status-message {

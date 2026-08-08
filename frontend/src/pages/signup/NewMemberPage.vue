@@ -1,7 +1,8 @@
 <template>
-  <div class="member-page">
-    <main class="member-container">
-      <section class="member-content">
+  <div class="signup-page">
+    <!-- 1. 중앙 내용 영역 (기존 스타일 및 정렬 그대로 유지) -->
+    <main class="content-area">
+      <div class="member-content">
         <div class="member-visual">
           <div class="visual-card">
             <span class="person-head"></span>
@@ -51,12 +52,13 @@
             </div>
           </article>
         </section>
-      </section>
-
-      <button class="bottom-button" type="button" @click="goPin">
-        다음
-      </button>
+      </div>
     </main>
+
+    <!-- 2. 하단 버튼 영역 (다른 페이지들과 완벽히 일치하는 위치) -->
+    <div class="button-area">
+      <button class="next-btn" type="button" @click="goPin">다음</button>
+    </div>
   </div>
 </template>
 
@@ -72,22 +74,27 @@ const goPin = () => {
 </script>
 
 <style scoped>
-.member-page {
+.signup-page {
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  /* 다른 회원가입 페이지들과 완전히 동일한 패딩 적용 */
+  padding: 36px 24px 70px;
   background: #ffffff;
 }
 
-.member-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
+/* 중앙 내용 영역 (내부 스크롤 가능하며 기존 디자인 보존) */
+.content-area {
+  flex: 1;
   min-height: 0;
-  padding: 40px 28px 140px;
-  background: #ffffff;
+  overflow-y: auto;
   box-sizing: border-box;
+  padding-right: 2px;
 }
 
 .member-content {
@@ -254,24 +261,29 @@ const goPin = () => {
   line-height: 1.4;
 }
 
-.bottom-button {
-  position: absolute;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
-  width: auto;
-  height: 58px;
-  margin: 0;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
+/* 하단 버튼 영역 (다른 페이지들과 동일한 규격) */
+.button-area {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 16px;
+  background: #ffffff;
 }
 
-.bottom-button:active {
-  background: #f2aa10;
+.next-btn {
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: 14px;
+  background: #ffbc2e;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.next-btn:active {
+  background: #f3aa0b;
 }
 </style>
