@@ -22,7 +22,7 @@
     <div class="card-add-body">
       <div class="form-card">
         
-        <!-- KB국민카드 실물 3D 프리뷰 플레이트 (실물 카드 이미지 & 카드 별칭 실시간 반영) -->
+        <!-- KB국민카드 실물 프리뷰 플레이트 -->
         <div class="card-preview-plate">
           <div class="plate-background-overlay"></div>
           
@@ -129,7 +129,7 @@
             </div>
           </div>
 
-          <!-- 보안 숫자 키패드 (HTML 캔버스 Screen 2-1 맞춤) -->
+          <!-- 보안 숫자 키패드 -->
           <div class="keypad-container my-3 p-2 bg-light rounded-3 border">
             <div class="text-center text-muted small fw-bold mb-2">
               <i class="bi bi-shield-lock-fill text-warning me-1"></i>보안 키패드 입력

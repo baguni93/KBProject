@@ -1,10 +1,10 @@
 <template>
   <Teleport to="body">
     <div v-if="show" class="receipt-modal-root">
-      <!-- 1. 독립 백드롭 레이어 (오직 배경을 누를 때만 닫힘) -->
+      <!-- 1. 독립 백드롭 레이어 -->
       <div class="receipt-modal-backdrop" @click="closeModal"></div>
 
-      <!-- 2. 독립 모달 컨텐츠 레이어 (백드롭과 완전히 분리된 상위 레이어) -->
+      <!-- 2. 모달 컨텐츠 레이어 -->
       <div class="receipt-modal-container">
         <div class="modal-card bg-white rounded-4 shadow-lg p-4 position-relative">
           <!-- 닫기 X 버튼 -->
@@ -18,7 +18,7 @@
           <div v-else-if="transaction" class="receipt-body text-center font-sans">
             <div class="badge bg-warning text-dark fw-bold px-3 py-1.5 rounded-pill mb-2">KB Pay 영수증</div>
             
-            <!-- 금액 (공통 28px typography 적용) -->
+            <!-- 금액 -->
             <h2 class="text-28-bold text-dark my-2">{{ formatCurrency(transaction.amount) }}</h2>
             <div class="badge bg-light text-secondary border px-2.5 py-1 mb-3 text-13">
               {{ getTransactionTypeBadge(transaction.transactionType) }}
@@ -48,13 +48,30 @@
 
             <hr class="my-3 border-dashed" />
 
-            <!-- 결제(PAYMENT) 내역 전용: 피드 글 남기기 및 더치페이하기 기능 -->
-            <template v-if="transaction.transactionType === 'PAYMENT'">
-              <!-- 피드 글 남기기 & 공개 범위 선택 입력 -->
+            <!-- 거래 내역 피드 글 남기기 (사진/이미지 첨부 지원) -->
+            <template v-if="transaction">
               <div class="text-start mb-3">
-                <label class="form-label text-dark small fw-bold">
-                  <i class="bi bi-chat-heart-fill me-1 text-warning"></i>피드 글 남기기
+                <label class="form-label text-dark small fw-bold d-flex justify-content-between align-items-center">
+                  <span><i class="bi bi-chat-heart-fill me-1 text-warning"></i>피드 글 남기기</span>
+                  <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-bold py-0 px-2" @click="triggerFileInput">
+                    <i class="bi bi-camera-fill me-1"></i> 사진 첨부
+                  </button>
                 </label>
+
+                <!-- 숨김 파일 인풋 -->
+                <input
+                  ref="fileInput"
+                  type="file"
+                  accept="image/*"
+                  class="d-none"
+                  @change="onFileSelected"
+                />
+
+                <!-- 이미지 미리보기 썸네일 -->
+                <div v-if="imagePreviewUrl" class="image-preview-box position-relative my-2">
+                  <img :src="imagePreviewUrl" class="img-thumbnail rounded-3 shadow-xs" style="max-height: 120px; object-fit: cover;" />
+                  <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 bg-dark p-1 rounded-circle m-1" style="font-size: 10px;" @click="removeImage"></button>
+                </div>
 
                 <div class="input-group mb-2">
                   <input
@@ -144,12 +161,12 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useUserStore } from '@/stores/user';
+import { useAuthStore } from '@/stores/auth';
 import api from '@/api';
 import transactionApi from '@/api/transactionApi';
 
 const router = useRouter();
-const userStore = useUserStore();
+const authStore = useAuthStore();
 
 const props = defineProps({
   show: Boolean,
@@ -165,8 +182,36 @@ const loading = ref(false);
 const saving = ref(false);
 const savedSuccess = ref(false);
 
+// 사진/이미지 첨부 전용 상태
+const fileInput = ref(null);
+const selectedFile = ref(null);
+const imagePreviewUrl = ref('');
+
+const triggerFileInput = () => {
+  if (fileInput.value) {
+    fileInput.value.click();
+  }
+};
+
+const onFileSelected = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    selectedFile.value = file;
+    imagePreviewUrl.value = URL.createObjectURL(file);
+  }
+};
+
+const removeImage = () => {
+  selectedFile.value = null;
+  imagePreviewUrl.value = '';
+  if (fileInput.value) {
+    fileInput.value.value = '';
+  }
+};
+
 const closeModal = () => {
   savedSuccess.value = false;
+  removeImage();
   emit('close');
 };
 
@@ -228,6 +273,7 @@ const fetchDetail = async () => {
   if (!props.transactionId) return;
   loading.value = true;
   savedSuccess.value = false;
+  removeImage();
   try {
     const data = await transactionApi.getTransactionDetail(props.transactionId);
     if (data) {
@@ -277,17 +323,34 @@ const saveMemo = async () => {
     }
   }
 
-  // 송금 피드와 동일하게 백엔드 DB(FeedService.create)로 진짜 결제 피드 생성
+  // 송금 피드와 동일하게 이미지 파일 포함 Multipart POST로 백엔드 DB(FeedService.create) 피드 게시
   try {
-    await api.post('/api/feeds', {
-      userId: userStore.userId || 1,
-      targetId: props.transactionId,
-      feedType: 'PAYMENT',
-      content: contentMsg,
-      visibility: editVisibility.value || 'PUBLIC'
-    });
+    const formData = new FormData();
+    formData.append('userId', authStore.userId || 1);
+    formData.append('targetId', props.transactionId);
+    formData.append('feedType', transaction.value?.transactionType || 'PAYMENT');
+    formData.append('content', contentMsg);
+    formData.append('visibility', editVisibility.value || 'PUBLIC');
+
+    if (selectedFile.value) {
+      formData.append('files', selectedFile.value);
+    }
+
+    await api.post('/api/feeds', formData);
   } catch (e) {
-    console.log('Payment feed DB save error:', e);
+    console.log('Payment feed DB save error fallback:', e);
+    // JSON 폴백
+    try {
+      await api.post('/api/feeds', {
+        userId: authStore.userId || 1,
+        targetId: props.transactionId,
+        feedType: transaction.value?.transactionType || 'PAYMENT',
+        content: contentMsg,
+        visibility: editVisibility.value || 'PUBLIC'
+      });
+    } catch (err2) {
+      console.log('Payment feed JSON fallback error:', err2);
+    }
   }
 
   saving.value = false;
@@ -318,11 +381,7 @@ watch(() => props.show, (newVal) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-}
-
-.receipt-modal-root * {
-  font-family: inherit;
+  font-family: 'Pretendard', -apple-system, sans-serif;
 }
 
 .receipt-modal-backdrop {
@@ -349,9 +408,6 @@ watch(() => props.show, (newVal) => {
 .border-dashed {
   border-top: 1px dashed #cbd5e1;
 }
-.fw-extrabold {
-  font-weight: 800;
-}
 
 .vis-opt-grid {
   display: flex;
@@ -369,10 +425,6 @@ watch(() => props.show, (newVal) => {
   color: #475569;
   cursor: pointer;
   transition: all 0.2s ease;
-}
-
-.vis-chip-btn:hover {
-  background: #f1f5f9;
 }
 
 .vis-chip-btn.active {
