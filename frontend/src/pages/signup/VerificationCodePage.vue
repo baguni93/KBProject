@@ -107,6 +107,22 @@ const expired = ref(false);
 const timerKey = ref(0);
 const resendCount = ref(0);
 
+// 인증번호 오류 메시지 처리
+const getVerificationErrorMessage = (error, fallbackMessage) => {
+  // 서버 자체에 연결되지 않은 경우
+  if (!error.response) return '서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.';
+
+  const status = error.response.status;
+  const serverMessage = error.response?.data?.message;
+
+  // 현재 백엔드가 사용자 입력 오류도 500으로 내려주는 구조
+  if (status >= 500) return fallbackMessage;
+
+  // 추후 백엔드 예외처리가 수정되면
+  // 서버에서 내려주는 실제 메시지 사용
+  return serverMessage || fallbackMessage;
+};
+
 // 인증시간 만료
 const handleExpired = () => {
   expired.value = true;
@@ -117,7 +133,6 @@ const handleExpired = () => {
 // PIN 재설정 인증 완료 처리
 const handlePinReset = async () => {
   sessionStorage.setItem('pinResetPhoneNumber', signupStore.phoneAuth.phoneNumber);
-
   await router.push('/auth/pin-reset');
 };
 
@@ -127,7 +142,6 @@ const handleNameChange = async () => {
 
   if (!authStore.userId || !newUserName) {
     await router.replace('/setting/account-management/name');
-
     return;
   }
 
@@ -137,9 +151,7 @@ const handleNameChange = async () => {
   });
 
   authStore.setUserName(newUserName);
-
   sessionStorage.removeItem('nameChangeNewUserName');
-
   signupStore.reset();
 
   await router.replace({
@@ -177,9 +189,7 @@ const handleSignup = async () => {
 
   if (signupResponse.existingMember) {
     sessionStorage.setItem('pinLoginPhoneNumber', signupStore.phoneAuth.phoneNumber);
-
     await router.push('/signup/existing-member');
-
     return;
   }
 
@@ -188,13 +198,12 @@ const handleSignup = async () => {
 
 // 인증번호 확인
 const verifyCode = async () => {
-  if (verificationCode.value.length !== 6 || loading.value || expired.value) {
-    return;
-  }
+  if (loading.value || expired.value) return;
+
+  errorMessage.value = '';
 
   try {
     loading.value = true;
-    errorMessage.value = '';
 
     const verificationPurpose = signupStore.phoneAuth.verificationPurpose;
 
@@ -225,7 +234,10 @@ const verifyCode = async () => {
   } catch (error) {
     console.error(error);
 
-    errorMessage.value = error.response?.data?.message || '인증번호가 일치하지 않습니다.';
+    errorMessage.value = getVerificationErrorMessage(
+        error,
+        '인증번호가 일치하지 않습니다.'
+    );
 
     verificationCode.value = '';
   } finally {
@@ -235,9 +247,7 @@ const verifyCode = async () => {
 
 // 인증번호 재발급
 const resendCode = async () => {
-  if (resendCount.value >= 1 || resending.value) {
-    return;
-  }
+  if (resendCount.value >= 1 || resending.value) return;
 
   try {
     resending.value = true;
@@ -252,13 +262,17 @@ const resendCode = async () => {
     signupStore.setDevelopmentCode(response.verificationCode);
 
     resendCount.value += 1;
+
     verificationCode.value = '';
     expired.value = false;
     timerKey.value += 1;
   } catch (error) {
     console.error(error);
 
-    errorMessage.value = error.response?.data?.message || '인증번호 재전송에 실패했습니다.';
+    errorMessage.value = getVerificationErrorMessage(
+        error,
+        '인증번호 재전송에 실패했습니다.'
+    );
   } finally {
     resending.value = false;
   }
@@ -273,13 +287,11 @@ const restartVerification = async () => {
 
   if (verificationPurpose === 'NAME_CHANGE') {
     await router.replace('/setting/account-management/name');
-
     return;
   }
 
   if (verificationPurpose === 'PHONE_CHANGE') {
     await router.replace('/setting/account-management/phone');
-
     return;
   }
 
@@ -292,13 +304,11 @@ const goBack = async () => {
 
   if (verificationPurpose === 'NAME_CHANGE') {
     await router.replace('/setting/account-management/name');
-
     return;
   }
 
   if (verificationPurpose === 'PHONE_CHANGE') {
     await router.replace('/setting/account-management/phone');
-
     return;
   }
 

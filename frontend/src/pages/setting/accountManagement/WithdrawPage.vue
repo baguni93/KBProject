@@ -2,24 +2,16 @@
   <div class="withdraw-page">
     <main class="withdraw-container">
       <header class="page-header">
-        <button
-            class="back-button"
-            type="button"
-            aria-label="이전 화면"
-            @click="goBack"
-        >
+        <button class="back-button" type="button" aria-label="이전 화면" @click="goBack">
           &lt;
         </button>
 
         <h1>회원탈퇴</h1>
-
         <div class="header-empty"></div>
       </header>
 
       <section class="withdraw-content">
-        <div class="warning-icon">
-          !
-        </div>
+        <div class="warning-icon">!</div>
 
         <h2>
           정말 회원탈퇴를<br />
@@ -42,49 +34,21 @@
         </section>
 
         <section class="reason-area">
-          <label for="withdrawalReason">
-            탈퇴 사유
-          </label>
+          <label for="withdrawalReason">탈퇴 사유</label>
 
-          <select
-              id="withdrawalReason"
-              v-model="withdrawalReason"
-              :disabled="loading"
-          >
-            <option value="">
-              탈퇴 사유를 선택해 주세요
-            </option>
-
-            <option value="LOW_USAGE">
-              서비스를 자주 이용하지 않아요
-            </option>
-
-            <option value="INCONVENIENT">
-              서비스 이용이 불편해요
-            </option>
-
-            <option value="PRIVACY">
-              개인정보가 걱정돼요
-            </option>
-
-            <option value="REJOIN">
-              새로운 계정으로 다시 가입하고 싶어요
-            </option>
-
-            <option value="OTHER">
-              기타
-            </option>
+          <select id="withdrawalReason" v-model="withdrawalReason" :disabled="loading">
+            <option value="">탈퇴 사유를 선택해 주세요</option>
+            <option value="LOW_USAGE">서비스를 자주 이용하지 않아요</option>
+            <option value="INCONVENIENT">서비스 이용이 불편해요</option>
+            <option value="PRIVACY">개인정보가 걱정돼요</option>
+            <option value="REJOIN">새로운 계정으로 다시 가입하고 싶어요</option>
+            <option value="OTHER">기타</option>
           </select>
         </section>
 
         <section class="pin-area">
-          <label for="pinPassword">
-            간편비밀번호 확인
-          </label>
-
-          <p>
-            본인 확인을 위해 현재 간편비밀번호를 입력해 주세요.
-          </p>
+          <label for="pinPassword">간편비밀번호 확인</label>
+          <p>본인 확인을 위해 현재 간편비밀번호를 입력해 주세요.</p>
 
           <div
               :class="{ error: !!errorMessage }"
@@ -98,15 +62,12 @@
                 v-for="index in 6"
                 :key="index"
                 :class="{
-                filled: pinPassword.length >= index,
-                active: pinPassword.length === index - 1 && !errorMessage,
-              }"
+                  filled: pinPassword.length >= index,
+                  active: pinPassword.length === index - 1 && !errorMessage,
+                }"
                 class="pin-box"
             >
-              <span
-                  v-if="pinPassword.length >= index"
-                  class="pin-dot"
-              ></span>
+              <span v-if="pinPassword.length >= index" class="pin-dot"></span>
             </div>
 
             <input
@@ -130,21 +91,41 @@
 
         <label class="agreement-check">
           <input v-model="agreed" :disabled="loading" type="checkbox" />
-
-          <span>
-            탈퇴 시 안내사항을 확인했으며 이에 동의합니다.
-          </span>
+          <span>탈퇴 시 안내사항을 확인했으며 이에 동의합니다.</span>
         </label>
       </section>
 
-      <button
-          class="withdraw-button"
-          :disabled="!canWithdraw || loading"
-          type="button"
-          @click="withdraw"
-      >
+      <button class="withdraw-button" :disabled="!canWithdraw || loading" type="button" @click="openWithdrawModal">
         {{ loading ? '탈퇴 처리 중...' : '회원탈퇴' }}
       </button>
+
+      <div v-if="showWithdrawModal" class="modal-overlay" @click.self="closeWithdrawModal">
+        <div class="withdraw-modal">
+          <div class="modal-warning-icon">!</div>
+
+          <h3>회원탈퇴를 진행할까요?</h3>
+
+          <p>
+            탈퇴 후에는 일부 정보를 복구할 수 없으며<br />
+            서비스 이용이 제한돼요.
+          </p>
+
+          <div class="modal-info">
+            <strong>탈퇴 사유</strong>
+            <span>{{ withdrawalReasonLabel }}</span>
+          </div>
+
+          <div class="modal-buttons">
+            <button class="modal-cancel-button" type="button" @click="closeWithdrawModal">
+              취소
+            </button>
+
+            <button class="modal-withdraw-button" type="button" @click="withdraw">
+              회원탈퇴
+            </button>
+          </div>
+        </div>
+      </div>
 
       <div v-if="loading" class="loading-overlay">
         <div class="loading-spinner"></div>
@@ -169,13 +150,21 @@ const withdrawalReason = ref('');
 const agreed = ref(false);
 const loading = ref(false);
 const errorMessage = ref('');
+const showWithdrawModal = ref(false);
+
+const withdrawalReasonMap = {
+  LOW_USAGE: '서비스를 자주 이용하지 않아요',
+  INCONVENIENT: '서비스 이용이 불편해요',
+  PRIVACY: '개인정보가 걱정돼요',
+  REJOIN: '새로운 계정으로 다시 가입하고 싶어요',
+  OTHER: '기타',
+};
 
 // 탈퇴 가능 여부
-const canWithdraw = computed(() =>
-    withdrawalReason.value.length > 0
-    && pinPassword.value.length === 6
-    && agreed.value,
-);
+const canWithdraw = computed(() => withdrawalReason.value.length > 0 && pinPassword.value.length === 6 && agreed.value);
+
+// 탈퇴 사유 표시
+const withdrawalReasonLabel = computed(() => withdrawalReasonMap[withdrawalReason.value] || '-');
 
 // PIN 입력창 포커스
 const focusPinInput = async () => {
@@ -195,6 +184,17 @@ const changePin = (event) => {
   if (event.target.value !== value) event.target.value = value;
 };
 
+// 탈퇴 확인 모달 열기
+const openWithdrawModal = () => {
+  if (!canWithdraw.value || loading.value) return;
+  showWithdrawModal.value = true;
+};
+
+// 탈퇴 확인 모달 닫기
+const closeWithdrawModal = () => {
+  showWithdrawModal.value = false;
+};
+
 // 회원탈퇴
 const withdraw = async () => {
   if (!canWithdraw.value || loading.value) return;
@@ -204,15 +204,10 @@ const withdraw = async () => {
     return;
   }
 
-  const confirmed = window.confirm(
-      '회원탈퇴를 진행하면 계정을 복구하기 어려울 수 있습니다. 정말 탈퇴할까요?',
-  );
-
-  if (!confirmed) return;
-
   try {
     loading.value = true;
     errorMessage.value = '';
+    showWithdrawModal.value = false;
 
     await withdrawUser(authStore.userId, {
       pinPassword: pinPassword.value,
@@ -229,9 +224,14 @@ const withdraw = async () => {
     console.error(error);
 
     pinPassword.value = '';
-    errorMessage.value =
-        error.response?.data?.message
-        || '회원탈퇴에 실패했습니다. 간편비밀번호를 확인해 주세요.';
+
+    const serverMessage = error.response?.data?.message || '';
+
+    if (serverMessage.includes('간편비밀번호') || serverMessage.includes('비밀번호')) {
+      errorMessage.value = '간편비밀번호가 일치하지 않습니다.';
+    } else {
+      errorMessage.value = serverMessage || '회원탈퇴에 실패했습니다. 다시 시도해주세요.';
+    }
 
     await focusPinInput();
   } finally {
@@ -241,18 +241,10 @@ const withdraw = async () => {
 
 // 이전 화면
 const goBack = () => {
-  if (pinPassword.value || withdrawalReason.value || agreed.value) {
-    const confirmed = window.confirm('입력한 내용을 취소하고 이전 화면으로 이동할까요?');
-
-    if (!confirmed) return;
-  }
-
   router.back();
 };
 
-onMounted(() => {
-  focusPinInput();
-});
+onMounted(focusPinInput);
 </script>
 
 <style scoped>
@@ -313,7 +305,7 @@ onMounted(() => {
 }
 
 .withdraw-content {
-  margin-top: 38px;
+  margin-top: 34px;
   text-align: center;
 }
 
@@ -344,21 +336,20 @@ onMounted(() => {
   margin: 16px 0 0;
   color: #777777;
   font-size: 14px;
-  font-weight: 400;
   line-height: 1.6;
 }
 
 .warning-area {
   margin-top: 26px;
-  padding: 16px;
+  padding: 18px;
   border-radius: 14px;
-  background: #fff7f7;
+  background: #fff6f6;
   text-align: left;
 }
 
 .warning-area strong {
-  color: #d32f2f;
-  font-size: 12px;
+  color: #e53935;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -366,13 +357,13 @@ onMounted(() => {
   margin: 12px 0 0;
   padding-left: 17px;
   color: #777777;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.8;
 }
 
 .reason-area,
 .pin-area {
-  margin-top: 22px;
+  margin-top: 24px;
   text-align: left;
 }
 
@@ -381,8 +372,8 @@ onMounted(() => {
   display: block;
   margin-bottom: 9px;
   color: #333333;
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .reason-area select {
@@ -392,27 +383,20 @@ onMounted(() => {
   border: 1px solid #dddddd;
   border-radius: 10px;
   background: #ffffff;
-  color: #444444;
+  color: #333333;
   font-size: 14px;
   outline: none;
   box-sizing: border-box;
-  cursor: pointer;
 }
 
 .reason-area select:focus {
-  border-color: #ffbc2e;
-  box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
-}
-
-.reason-area select:disabled {
-  background: #f7f7f7;
-  color: #aaaaaa;
-  cursor: not-allowed;
+  border-color: #e53935;
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.08);
 }
 
 .pin-area > p {
   margin: 0 0 12px;
-  color: #999999;
+  color: #888888;
   font-size: 11px;
   line-height: 1.5;
 }
@@ -434,29 +418,23 @@ onMounted(() => {
   justify-content: center;
   border: 1px solid #dddddd;
   border-radius: 12px;
-  background: #fafafa;
+  background: #ffffff;
   box-sizing: border-box;
-  transition:
-      border-color 0.2s,
-      background 0.2s,
-      box-shadow 0.2s;
 }
 
 .pin-box.active {
-  border-color: #ffbc2e;
-  background: #fffaf0;
-  box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
+  border-color: #e53935;
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.08);
 }
 
 .pin-box.filled {
-  border-color: #ffbc2e;
-  background: #fff8e5;
+  border-color: #cccccc;
+  background: #fafafa;
 }
 
 .pin-boxes.error .pin-box {
   border-color: #e53935;
   background: #fff7f7;
-  box-shadow: none;
 }
 
 .pin-dot {
@@ -478,13 +456,14 @@ onMounted(() => {
 .error-message {
   margin: 10px 0 0;
   color: #e53935;
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 600;
   line-height: 1.5;
 }
 
 .agreement-check {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   margin-top: 20px;
   text-align: left;
@@ -493,19 +472,14 @@ onMounted(() => {
 
 .agreement-check input {
   flex: none;
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
   margin: 0;
   accent-color: #e53935;
-  cursor: pointer;
-}
-
-.agreement-check input:disabled {
-  cursor: not-allowed;
 }
 
 .agreement-check span {
-  color: #666666;
+  color: #555555;
   font-size: 11px;
   line-height: 1.5;
 }
@@ -527,10 +501,6 @@ onMounted(() => {
   cursor: pointer;
 }
 
-.withdraw-button:active:not(:disabled) {
-  background: #d32f2f;
-}
-
 .withdraw-button:disabled {
   border-color: #dddddd;
   background: #eeeeee;
@@ -538,9 +508,111 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
+.modal-overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.46);
+  box-sizing: border-box;
+}
+
+.withdraw-modal {
+  width: 100%;
+  max-width: 340px;
+  padding: 28px 22px 20px;
+  border-radius: 18px;
+  background: #ffffff;
+  text-align: center;
+  box-sizing: border-box;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
+}
+
+.modal-warning-icon {
+  display: flex;
+  width: 58px;
+  height: 58px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: #fff0f0;
+  color: #e53935;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.withdraw-modal h3 {
+  margin: 0;
+  color: #111111;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.withdraw-modal > p {
+  margin: 14px 0 0;
+  color: #777777;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.modal-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22px;
+  padding: 15px 16px;
+  border: 1px solid #eeeeee;
+  border-radius: 12px;
+  background: #fafafa;
+  text-align: left;
+}
+
+.modal-info strong {
+  color: #555555;
+  font-size: 12px;
+}
+
+.modal-info span {
+  color: #222222;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.modal-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.modal-cancel-button,
+.modal-withdraw-button {
+  height: 50px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-cancel-button {
+  border: 1px solid #dddddd;
+  background: #ffffff;
+  color: #333333;
+}
+
+.modal-withdraw-button {
+  border: 1px solid #ffcaca;
+  background: #ffe7e7;
+  color: #e53935;
+}
+
 .loading-overlay {
   position: absolute;
-  z-index: 10;
+  z-index: 110;
   inset: 0;
   display: flex;
   flex-direction: column;

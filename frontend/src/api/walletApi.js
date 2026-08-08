@@ -45,6 +45,14 @@ export default {
     return data;
   },
 
+  // PIN-001: 백엔드 DB 유저 간편비밀번호(PIN) 검증 API
+  async verifyPin(userId, pinPassword) {
+    const { data } = await api.post(`/api/users/${userId}/pin/verify`, {
+      pinPassword: pinPassword,
+    });
+    return data;
+  },
+
   // DB 등록 실물 카드 목록 조회
   async getUserCards(userId = 1) {
     const { data } = await api.get(`${BASE_URL}/cards/user/${userId}`);

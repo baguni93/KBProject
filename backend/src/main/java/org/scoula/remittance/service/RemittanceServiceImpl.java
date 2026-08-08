@@ -72,9 +72,10 @@ public class RemittanceServiceImpl implements RemittanceService {
         remittanceDTO.setStatus("SUCCESS");
         remittanceMapper.insertRemittance(remittanceDTO);
 
-        // 지갑/친구 송금 피드 및 이미지 등록
+        // 지갑/친구 송금 및 이미지 첨부 송금 피드 및 이미지 등록
         org.scoula.feed.dto.FeedResponseDTO feedRes = null;
-        if (!"ACCOUNT".equalsIgnoreCase(remittanceDTO.getReceiverType())) {
+        boolean hasFiles = remittanceDTO.getFiles() != null && !remittanceDTO.getFiles().isEmpty();
+        if (!"ACCOUNT".equalsIgnoreCase(remittanceDTO.getReceiverType()) || hasFiles) {
             String content = (remittanceDTO.getContent() != null && !remittanceDTO.getContent().isEmpty())
                     ? remittanceDTO.getContent() : (remittanceDTO.getMemo() != null ? remittanceDTO.getMemo() : "송금 완료");
 
@@ -99,9 +100,12 @@ public class RemittanceServiceImpl implements RemittanceService {
 
             // 팀원이 작성한 FeedService를 호출하여 피드 생성
             feedRes = feedService.create(feedRequest);
+            if (feedRes != null) {
+                remittanceDTO.setFeedId(feedRes.getFeedId());
+            }
 
-            // 첨부파일 저장 (파일 경로 예외 발생 시 피드 및 송금 거래가 롤백되지 않도록 안전 처리)
-            if (feedRes != null && remittanceDTO.getFiles() != null && !remittanceDTO.getFiles().isEmpty()) {
+            // 첨부파일 저장 (c:/upload/feed/ 경로에 실제 파일 저장 및 DB 등록)
+            if (feedRes != null && hasFiles) {
                 for (org.springframework.web.multipart.MultipartFile part : remittanceDTO.getFiles()) {
                     if (part == null || part.isEmpty()) {
                         continue;

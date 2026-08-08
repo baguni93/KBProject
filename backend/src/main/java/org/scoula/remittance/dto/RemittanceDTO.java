@@ -30,6 +30,7 @@ public class RemittanceDTO {
     private String feedType;    // REMITTANCE
     private String content;     // 피드 내용
     private String visibility;  // PUBLIC, FRIENDS, PRIVATE
+    private Integer feedId;     // 생성된 피드 ID
 
     // 피드 사진 첨부용 필드 (JSON 직렬화 시 InputStream 오류 방지)
     @com.fasterxml.jackson.annotation.JsonIgnore

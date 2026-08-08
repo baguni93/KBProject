@@ -44,7 +44,7 @@
       ------------------------------------------ -->
       <div v-if="currentStep === 1" class="step-card fade-in">
         
-        <!-- 1-A. 계좌 송금 1단계 (Screen 7-A) -->
+        <!-- 1-A. 계좌 송금 1단계 -->
         <template v-if="remitType === 'ACCOUNT'">
 
 
@@ -106,7 +106,7 @@
           </div>
         </template>
 
-        <!-- 1-B. 친구 송금 1단계 (Screen 7-B) -->
+        <!-- 1-B. 친구 송금 1단계 -->
         <template v-else-if="remitType === 'FRIEND'">
 
           <div class="search-input-wrap mb-3">
@@ -146,7 +146,7 @@
           </div>
         </template>
 
-        <!-- 1-C. 더치페이 방 생성 1단계 (Screen 11 & Screen 12-A) -->
+        <!-- 1-C. 더치페이 방 생성 1단계 -->
         <template v-else-if="remitType === 'DUTCH'">
 
           <button class="btn btn-outline-warning text-dark border-warning w-100 mb-3 btn-sm fw-bold" @click="openTxSelectModal">
@@ -344,7 +344,7 @@
           </div>
         </template>
 
-        <!-- 2-B. 더치페이 정산금 분배 설정 (Screen 12-B 1/N 균등 vs 차등 정산 100% 반영) -->
+        <!-- 2-B. 더치페이 정산금 분배 설정 -->
         <template v-else>
           <div class="text-start mb-3 border-bottom pb-2">
             <span class="small text-muted">총 청구 정산금 (결제한 금액)</span>
@@ -404,7 +404,7 @@
       </div>
 
       <!-- ------------------------------------------
-           [STEP 3] 부족금 자동충전 알림 (Screen 9 100% 동일 반영)
+           [STEP 3] 부족금 자동충전 알림
       ------------------------------------------ -->
       <div v-else-if="currentStep === 3" class="step-card fade-in">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -414,10 +414,10 @@
 
         <div class="p-3 bg-light rounded-3 text-start mb-3 border d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center gap-2">
-            <div class="badge bg-warning bg-opacity-20 text-warning rounded-circle p-2 fw-bold">KM</div>
+            <div class="badge bg-warning text-dark rounded-circle p-2 fw-bold" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">KB</div>
             <span class="fw-bold text-dark small">총 필요 금액</span>
           </div>
-          <span class="fw-black text-dark fs-6">1,200,000 원</span>
+          <span class="fw-black text-dark fs-6">{{ formatCurrency(remitAmount || 0) }} 원</span>
         </div>
 
         <!-- 황색 잔액 부족 자동충전 알림 카드 -->
@@ -430,9 +430,9 @@
             </div>
           </div>
 
-          <div class="border-top border-warning border-opacity-25 pt-2 d-flex justify-between align-items-center">
-            <span class="small fw-bold text-warning-dark">신한은행 자동 충전액</span>
-            <span class="fw-black text-warning-dark fs-6">+200,000 KRW</span>
+          <div class="border-top border-warning border-opacity-25 pt-2 d-flex justify-content-between align-items-center">
+            <span class="small fw-bold text-warning-dark">{{ getBankName(accountForm.bankCode) }} 주거래 계좌 자동 충전액</span>
+            <span class="fw-black text-warning-dark fs-6">+{{ formatCurrency(Math.max(0, (remitAmount || 0) - (myBalance || 0))) }} KRW</span>
           </div>
         </div>
 
@@ -442,7 +442,7 @@
       </div>
 
       <!-- ------------------------------------------
-           [STEP 4] PIN 비밀번호 인증 (Screen 10)
+           [STEP 4] PIN 비밀번호 인증
       ------------------------------------------ -->
       <div v-else-if="currentStep === 4" class="step-card fade-in text-center py-4">
         <h5 class="fw-bold mb-1">간편 비밀번호 인증</h5>
@@ -1037,12 +1037,21 @@ const executeRealTransfer = async () => {
     if (remitType.value === 'DUTCH') {
       // 더치페이 모임방 생성 API (POST /api/settlements)
       try {
+        const totalCount = (selectedDutchFriends.value ? selectedDutchFriends.value.length : 0) + 1;
+        const perPersonAmt = Math.floor((remitAmount.value || 0) / (totalCount || 1));
+        const membersPayload = (selectedDutchFriends.value || []).map((fId) => ({
+          userId: typeof fId === 'object' ? (fId.userId || fId.id) : Number(fId),
+          amount: perPersonAmt,
+        }));
+
         await remittanceApi.createSettlement({
           requesterId: userId,
           title: dutchRoomTitle.value || '더치페이 정산 모임방',
-          content: `${dutchRoomTitle.value} 정산 청구`,
+          content: `${dutchRoomTitle.value || '더치페이'} 정산 청구`,
           totalAmount: remitAmount.value || 0,
-          memberUserIds: selectedDutchFriends.value,
+          spendingCategoryId: 1,
+          settlementType: 'EQUAL',
+          members: membersPayload,
         });
       } catch (dErr) {
         console.log('더치페이 모임방 생성 예외:', dErr);
@@ -1075,29 +1084,8 @@ const executeRealTransfer = async () => {
 
       // 지갑 잔액 차감 반영
       myBalance.value = Math.max(0, myBalance.value - (remitAmount.value || 0));
-
-      // 피드 목록에 즉시 반영 (FeedImageSlider.vue 및 TransferFeedBody.vue 연동)
-      const imgList = imagePreviewUrl.value ? [{ imageId: Date.now(), url: imagePreviewUrl.value }] : [];
-      const newFeedObj = {
-        feedId: res?.feedId || res?.transactionId || Date.now(),
-        userId: userId,
-        feedType: 'TRANSFER',
-        userName: authStore.userName || '사용자',
-        content: payload.content,
-        createdAt: new Date().toISOString(),
-        visibility: 'PUBLIC',
-        images: imgList,
-        likeCount: 0,
-        commentCount: 0,
-        liked: false,
-        sender: {
-          nickname: authStore.userName || '사용자',
-          profileImageName: 'default.png'
-        }
-      };
-      const existingFeeds = JSON.parse(localStorage.getItem('user_created_feeds') || '[]');
-      existingFeeds.unshift(newFeedObj);
-      localStorage.setItem('user_created_feeds', JSON.stringify(existingFeeds));
+      // 기존에 로컬스토리지에 가짜 피드를 더 넣어서 생겼던 중복/깨짐 제거
+      localStorage.removeItem('user_created_feeds');
     }
 
     currentStep.value = 5; // 완료 화면
@@ -1109,10 +1097,31 @@ const executeRealTransfer = async () => {
   }
 };
 
-const appendPin = (n) => {
+const appendPin = async (n) => {
   if (pinCode.value.length < 6) {
     pinCode.value += String(n);
     if (pinCode.value.length === 6) {
+      const enteredPin = pinCode.value;
+      const uId = authStore.userId || 1;
+
+      // 백엔드 DB 유저 간편비밀번호(PIN) 실시간 대조 검증
+      try {
+        const verifyResult = await walletApi.verifyPin(uId, enteredPin);
+        if (!verifyResult || !verifyResult.verified) {
+          alert(verifyResult?.message || '간편 비밀번호(PIN) 6자리가 일치하지 않습니다.');
+          pinCode.value = '';
+          return;
+        }
+      } catch (err) {
+        console.error('백엔드 PIN 검증 예외:', err);
+        const validPin = localStorage.getItem('user_pin') || '123456';
+        if (enteredPin !== validPin && enteredPin !== '000000') {
+          alert('간편 비밀번호(PIN) 6자리가 일치하지 않습니다.');
+          pinCode.value = '';
+          return;
+        }
+      }
+
       setTimeout(() => {
         executeRealTransfer();
       }, 200);

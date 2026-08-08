@@ -156,7 +156,18 @@ const login = async () => {
     console.error(error);
 
     pinPassword.value = '';
-    errorMessage.value = error.response?.data?.message || '간편비밀번호가 일치하지 않습니다.';
+
+    const status = error.response?.status;
+
+    if (!error.response) {
+      errorMessage.value = '서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.';
+    } else if (status >= 500) {
+      errorMessage.value = '간편비밀번호가 일치하지 않습니다.';
+    } else {
+      errorMessage.value =
+          error.response?.data?.message ||
+          '로그인에 실패했습니다. 다시 시도해주세요.';
+    }
 
     await focusPinInput();
   } finally {

@@ -172,9 +172,9 @@ const goWithdraw = () => {
   router.push('/setting/account-management/withdraw');
 };
 
-// 이전 화면
+// 설정 메인 화면
 const goBack = () => {
-  router.back();
+  router.push('/setting');
 };
 
 onMounted(loadUserInfo);

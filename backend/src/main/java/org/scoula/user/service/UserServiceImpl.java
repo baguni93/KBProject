@@ -177,12 +177,16 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("이름 변경을 위한 휴대폰 본인인증이 필요합니다.");
         }
 
-        if (verification.getUserName() == null || !verification.getUserName().trim().equals(user.getUserName())) {
+        if (verification.getBirthDate() == null || !verification.getBirthDate().equals(user.getBirthDate())) {
             throw new IllegalArgumentException("본인인증 정보가 회원정보와 일치하지 않습니다.");
         }
 
-        if (verification.getBirthDate() == null || !verification.getBirthDate().equals(user.getBirthDate())) {
+        if (verification.getPhoneNumber() == null || !verification.getPhoneNumber().equals(user.getPhoneNumber())) {
             throw new IllegalArgumentException("본인인증 정보가 회원정보와 일치하지 않습니다.");
+        }
+
+        if (verification.getUserName() == null || !verification.getUserName().trim().equals(newUserName)) {
+            throw new IllegalArgumentException("인증한 이름과 변경할 이름이 일치하지 않습니다.");
         }
 
         int updateResult = userMapper.updateUserName(userId, newUserName);
