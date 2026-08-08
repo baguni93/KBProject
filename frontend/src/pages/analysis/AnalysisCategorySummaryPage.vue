@@ -134,7 +134,7 @@ onMounted(loadAnalysis);
 }
 
 .category-summary-content {
-  margin-top: 14px;
+  //margin-top: 14px;
 }
 
 .summary-head {

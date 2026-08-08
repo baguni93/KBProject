@@ -238,7 +238,7 @@ onMounted(loadPage);
 }
 
 .transaction-content {
-  margin-top: 14px;
+  //margin-top: 14px;
 }
 
 .transaction-filter {

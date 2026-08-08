@@ -40,14 +40,7 @@
       </form>
     </section>
 
-    <section v-if="conversionResult" class="kb-section">
-      <div class="kb-section-title-row"><h2 class="kb-section-title text-20-bold">최근 전환 결과</h2></div>
-      <div class="result-card kb-card">
-        <div class="result-check"><i class="fa-solid fa-check"></i></div>
-        <div><strong class="text-15-bold">{{ formatNumber(conversionResult.convertedPoint) }}P 전환 완료</strong><span class="text-13">{{ conversionResult.convertedAt }}</span></div>
-        <strong class="text-15-bold">{{ formatNumber(conversionResult.walletBalance) }}원</strong>
-      </div>
-    </section>
+
   </div>
 </template>
 
@@ -103,7 +96,7 @@ onMounted(initialize);
 ========================= */
 
 .balance-card {
-  margin-top: 14px;
+  //margin-top: 14px;
   min-height: 126px;
   padding: 22px;
   display: flex;

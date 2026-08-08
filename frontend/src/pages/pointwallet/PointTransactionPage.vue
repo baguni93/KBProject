@@ -177,7 +177,7 @@ onMounted(loadTransactions);
 }
 
 .transaction-section {
-  padding-top: 14px;
+  //padding-top: 14px;
 }
 
 .result-count {

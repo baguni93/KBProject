@@ -443,7 +443,7 @@ onBeforeUnmount(stopStatusPolling);
 
 /* 공용 헤더 다음 첫 콘텐츠는 14px 간격으로 시작 */
 .analysis-content-start {
-  margin-top: 14px;
+  //margin-top: 14px;
 }
 
 .analysis-content-start .kb-toast {
