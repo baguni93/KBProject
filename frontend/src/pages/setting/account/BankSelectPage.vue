@@ -96,7 +96,10 @@ const goBack = () => {
   router.back();
 };
 
-onMounted(loadBanks);
+onMounted(() => {
+  accountStore.resetAccountForm();
+  loadBanks();
+});
 </script>
 
 <style scoped>
