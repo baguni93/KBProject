@@ -10,7 +10,7 @@ import java.util.List;
 public interface EventService {
 
     // 1. 이벤트 메인 페이지
-    EventMainDTO getEventMainPageData(Integer userId);
+    EventMainDTO getEventMainPageData(int userId);
 
     // 2. 참여가능 이벤트 리스트 전체 조회(진행중 탭)
     List<EventResponseDTO> getActiveEventsProgress(Integer userId);
@@ -19,10 +19,10 @@ public interface EventService {
     List<EventResponseDTO> getJoinedEventsProgress(Integer userId, String yearMonth);
 
     // 4. 일반 이벤트 참여 처리
-    boolean participateEvent(Integer userId,  Integer eventId);
-
-    // 5. 이벤트 리워드 수령 처리
-    boolean receiveEventReward(Integer userId,  Integer eventId);
+//    boolean participateEvent(Integer userId,  Integer eventId);
+//
+//    // 5. 이벤트 리워드 수령 처리
+//    boolean receiveEventReward(Integer userId,  Integer eventId);
 
     // 6. 챌린지 참여 처리 및 리워드 수령 처리
     boolean claimChallengeReward(Integer userId,  Integer eventId);
@@ -31,5 +31,9 @@ public interface EventService {
     List<EventGetResponseDTO> joinEvent(int userId, int eventId);
     List<EventGetAttendanceResponseDTO> getAttendanceEventList(int userId);
     List<EventGetResponseDTO> getEventList(int userId);
+
+    List<EventGetResponseDTO> receiveEventReward(int userId, int eventId, int rewardId);
+
+    List<EventGetAttendanceResponseDTO> receiveAttendanceEventReward(int eventId, int userId, int rewardId);
 
 }

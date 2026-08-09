@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 public class UserChallengeDTO {
     // 사용자 이벤트 챌린지 현황
+    private int userChallengeId;
     private Integer userChallengeLevel;     // 현재 챌린지 레벨
     private Integer userChallengeExe;       // 현재 누적 경험치
     private Integer userChallengeMaxExe;    // 레벨업에 필요한 목표 경험치
