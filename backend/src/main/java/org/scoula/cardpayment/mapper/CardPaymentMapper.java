@@ -21,7 +21,11 @@ public interface CardPaymentMapper {
 
     int insertCard(CardRegisterDTO cardRegisterDTO);
 
+    int insertLinkedCard(CardRegisterDTO cardRegisterDTO);
+
     int resetPrimaryCardByUserId(@Param("userId") Integer userId);
+
+    int resetLinkedPrimaryCardByUserId(@Param("userId") Integer userId);
 
     int setPrimaryCard(@Param("cardId") Integer cardId, @Param("userId") Integer userId);
 

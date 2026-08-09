@@ -1,5 +1,6 @@
 package org.scoula.cardpayment.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CardRegisterDTO {
     private Integer cardId;
     private Integer userId;
@@ -19,4 +21,8 @@ public class CardRegisterDTO {
     private String cardPassword;
     private String representYn;
     private String cardName;
+    private String cardAlias;
+    private String cardImgUrl;
+    private String cardCompanyCode;
+    private String cardImageName;
 }

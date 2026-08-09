@@ -1,5 +1,7 @@
 package org.scoula.pointwallet.service;
 
+import org.scoula.exception.CustomException;
+import org.scoula.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.pointwallet.common.PointReasonType;
@@ -7,8 +9,6 @@ import org.scoula.pointwallet.common.RandomBoxIssueReason;
 import org.scoula.pointwallet.common.RandomBoxStatus;
 import org.scoula.pointwallet.domain.UserRandomBoxVO;
 import org.scoula.pointwallet.dto.*;
-import org.scoula.pointwallet.exception.PointWalletErrorCode;
-import org.scoula.pointwallet.exception.PointWalletException;
 import org.scoula.pointwallet.mapper.RandomBoxMapper;
 import org.scoula.pointwallet.policy.RandomBoxIssuePolicy;
 import org.scoula.pointwallet.policy.RandomBoxRewardPolicy;
@@ -97,8 +97,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
 
         // 이미 해당 조건으로, 랜덤박스가 지급되었습니다.
         if (duplicateCount > 0) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.RANDOM_BOX_ALREADY_ISSUED
+            throw new CustomException(
+                    ErrorCode.RANDOM_BOX_ALREADY_ISSUED
             );
         }
 
@@ -132,8 +132,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                         insertedCount
                 );
 
-                throw new PointWalletException(
-                        PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+                throw new CustomException(
+                        ErrorCode.POINT_WALLET_PROCESS_ERROR
                 );
             }
             // 유니크 키 에러가 일어나면,
@@ -150,9 +150,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                         .build();
             }
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.RANDOM_BOX_ALREADY_ISSUED,
-                    exception
+            throw new CustomException(
+                    ErrorCode.RANDOM_BOX_ALREADY_ISSUED
             );
         }
 
@@ -165,8 +164,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                     sourceId
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -183,8 +182,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                     randomBoxVO.getUserRandomBoxId()
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -209,9 +208,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
         if (todayIssuedCount
                 >= RandomBoxIssuePolicy.FEED_SHARE_DAILY_LIMIT) {
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.RANDOM_BOX_DAILY_LIMIT_EXCEEDED,
-                    "피드 송신으로 받을 수 있는 랜덤박스는 하루 최대 10개입니다."
+            throw new CustomException(
+                    ErrorCode.RANDOM_BOX_DAILY_LIMIT_EXCEEDED
             );
         }
     }
@@ -228,9 +226,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
 
         // 지급 사유를 읽어오지 못했을 때
         if (issueReason == null) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.INVALID_REQUEST,
-                    "랜덤박스 지급 사유가 필요합니다."
+            throw new CustomException(
+                    ErrorCode.INVALID_REQUEST
             );
         }
 
@@ -245,9 +242,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
             String message
     ) {
         if (value == null || value <= 0) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.INVALID_REQUEST,
-                    message
+            throw new CustomException(
+                    ErrorCode.INVALID_REQUEST
             );
         }
     }
@@ -280,8 +276,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
 
         // 랜덤박스가 존재하지 않거나, 현재 사용자의 랜덤박스가 아니다.
         if (randomBox == null) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.RANDOM_BOX_NOT_FOUND
+            throw new CustomException(
+                    ErrorCode.RANDOM_BOX_NOT_FOUND
             );
         }
 
@@ -292,8 +288,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
         if (RandomBoxStatus.OPENED.name()
                 .equals(currentStatus)) {
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.RANDOM_BOX_ALREADY_OPENED
+            throw new CustomException(
+                    ErrorCode.RANDOM_BOX_ALREADY_OPENED
             );
         }
 
@@ -309,8 +305,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                     currentStatus
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -330,9 +326,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
 
         // 랜덤박스 개봉에 실패했거나, 이미 다른 요청에서 처리된 랜덤박스인 경우
         if (updatedCount != 1) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.RANDOM_BOX_ALREADY_PROCESSED,
-                    "랜덤박스가 이미 개봉되었거나 다른 요청에서 처리되었습니다."
+            throw new CustomException(
+                    ErrorCode.RANDOM_BOX_ALREADY_PROCESSED
             );
         }
 
@@ -360,8 +355,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                     userRandomBoxId
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -497,10 +492,9 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                     );
 
             if (updatedCount != 1) {
-                throw new PointWalletException(
-                        PointWalletErrorCode.RANDOM_BOX_ALREADY_PROCESSED,
-                        "모두 열기 처리 중 이미 처리된 랜덤박스가 발견되었습니다."
-                );
+                throw new CustomException(
+                        ErrorCode.RANDOM_BOX_ALREADY_PROCESSED
+            );
             }
 
             /*
@@ -527,8 +521,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
                         userRandomBoxId
                 );
 
-                throw new PointWalletException(
-                        PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+                throw new CustomException(
+                        ErrorCode.POINT_WALLET_PROCESS_ERROR
                 );
             }
 

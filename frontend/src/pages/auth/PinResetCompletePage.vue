@@ -64,26 +64,32 @@ const goLogin = () => {
 
 <style scoped>
 .complete-page {
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
-  overflow: auto;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
 }
 
 .complete-container {
+  position: relative;
   display: flex;
-  flex: none;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
   flex-direction: column;
-  width: 390px;
-  height: 844px;
-  padding: 74px 28px 30px;
+  padding: 10px 28px 140px;
   background: #ffffff;
-  overflow: hidden;
+  box-sizing: border-box;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.complete-container::-webkit-scrollbar {
+  display: none;
 }
 
 .complete-content {
+  padding-top: 38px;
   text-align: center;
 }
 
@@ -91,7 +97,7 @@ const goLogin = () => {
   position: relative;
   width: 170px;
   height: 170px;
-  margin: 34px auto 36px;
+  margin: 0 auto 36px;
 }
 
 .check-circle {
@@ -164,41 +170,47 @@ const goLogin = () => {
 .complete-content h1 {
   margin: 0;
   color: #111111;
-  font-size: 28px;
+  font-size: 25px;
   font-weight: 800;
-  line-height: 1.35;
-  letter-spacing: -0.8px;
+  line-height: 1.4;
+  letter-spacing: -0.7px;
 }
 
 .complete-content > p {
-  margin: 20px 0 0;
+  margin: 16px 0 0;
   color: #777777;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 1.65;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
 }
 
 .guide-area {
   display: flex;
   align-items: center;
   gap: 15px;
-  margin-top: 54px;
+  margin-top: 42px;
   padding: 18px;
-  border-radius: 18px;
+  border-radius: 16px;
   background: #fff9e9;
   text-align: left;
+  box-sizing: border-box;
 }
 
 .guide-icon {
   display: flex;
   flex: none;
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   align-items: center;
   justify-content: center;
-  border-radius: 15px;
-  background: #ffbc2e;
-  font-size: 20px;
+  border-radius: 16px;
+  background: #ffecb3;
+  color: #ffbc2e;
+  font-size: 21px;
+}
+
+.guide-area > div:last-child {
+  min-width: 0;
 }
 
 .guide-area strong {
@@ -213,14 +225,19 @@ const goLogin = () => {
   color: #888888;
   font-size: 11px;
   line-height: 1.5;
+  word-break: keep-all;
 }
 
 .login-button {
-  width: 100%;
+  position: absolute;
+  right: 28px;
+  bottom: 58px;
+  left: 28px;
+  width: auto;
   height: 58px;
-  margin-top: auto;
+  margin: 0;
   border: 1px solid #cc9200;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #ffbc2e;
   color: #111111;
   font-size: 18px;
@@ -230,5 +247,17 @@ const goLogin = () => {
 
 .login-button:active {
   background: #f2aa10;
+}
+
+@media (max-width: 360px) {
+  .complete-container {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .login-button {
+    right: 20px;
+    left: 20px;
+  }
 }
 </style>

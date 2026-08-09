@@ -15,9 +15,7 @@ import { useFeedStore } from '@/stores/feed';
 const feedStore = useFeedStore();
 
 const displayedFeeds = computed(() => {
-  const localFeeds = JSON.parse(localStorage.getItem('user_created_feeds') || '[]');
-  const storeFeeds = feedStore.publicFeeds || [];
-  return [...localFeeds, ...storeFeeds];
+  return feedStore.publicFeeds || [];
 });
 </script>
 

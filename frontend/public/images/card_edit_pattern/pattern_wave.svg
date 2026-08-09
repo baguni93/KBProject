@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <g fill="#ffffff" stroke="#ffffff" opacity="0.8">
+    <!-- 미니 힙스터 체커보드 타일 -->
+    <rect x="0" y="0" width="8" height="8" stroke="none" opacity="0.9"/>
+    <rect x="8" y="8" width="8" height="8" stroke="none" opacity="0.9"/>
+    
+    <rect x="20" y="20" width="8" height="8" stroke="none" opacity="0.9"/>
+    <rect x="28" y="28" width="8" height="8" stroke="none" opacity="0.9"/>
+
+    <!-- 사이버 크로스 체인 라인 -->
+    <path d="M 32 4 L 32 12 M 28 8 L 36 8" stroke-width="1.2" fill="none" opacity="0.6"/>
+    <path d="M 12 24 L 12 32 M 8 28 L 16 28" stroke-width="1.2" fill="none" opacity="0.6"/>
+  </g>
+</svg>

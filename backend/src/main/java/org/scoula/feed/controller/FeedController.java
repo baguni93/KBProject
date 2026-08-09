@@ -86,6 +86,12 @@ public class FeedController {
         UploadFiles.downloadImage(response, file);
     }
 
+    @GetMapping("/feedImage/{imageName}")
+    public void viewFeedImage(@PathVariable String imageName, HttpServletResponse response) {
+        File file = new File(UploadPathName.getFeedPath() + imageName);
+        UploadFiles.downloadImage(response, file);
+    }
+
     @GetMapping("/cardImage/{imageName}")
     public void viewCardImage(@PathVariable String imageName, HttpServletResponse response) {
         File file = new File(UploadPathName.getCardPath()+imageName);

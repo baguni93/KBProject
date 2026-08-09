@@ -52,12 +52,11 @@ import { computed, onMounted, ref } from 'vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import SettlementCard from '@/components/my/SettlementCard.vue';
 import { useSettlementStore } from '@/stores/settlement';
-import { useUserStore } from '@/stores/user';
+import { useAuthStore } from '@/stores/auth.js';
+const authStore = useAuthStore();
+const userId = authStore.userId;
 
 const settlementStore = useSettlementStore();
-const userStore = useUserStore();
-
-const userId = userStore.userId;
 
 const currentTab = ref('active');
 

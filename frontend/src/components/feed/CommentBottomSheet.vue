@@ -1,5 +1,5 @@
 <template>
-  <Teleport to="#app-container">
+  <Teleport to="body">
     <Transition name="bottom-sheet">
       <div v-if="modelValue" class="overlay" @click.self="close">
         <div class="sheet">
@@ -70,11 +70,9 @@
 <script setup>
 import { ref, watch } from 'vue';
 import commentApi from '@/api/commentApi';
-
-import { useUserStore } from '@/stores/user';
-
-const userStore = useUserStore();
-const userId = userStore.userId;
+import { useAuthStore } from '@/stores/auth.js';
+const authStore = useAuthStore();
+const userId = authStore.userId;
 
 const props = defineProps({
   modelValue: Boolean,
@@ -206,12 +204,15 @@ const close = () => {
 }
 
 .overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
+
   background: rgba(0, 0, 0, 0.35);
+
   display: flex;
   justify-content: center;
   align-items: flex-end;
+
   z-index: 9999;
 }
 

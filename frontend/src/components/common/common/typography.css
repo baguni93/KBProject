@@ -1,0 +1,58 @@
+/* ========================================
+   공통 Typography
+   - 굵기: 500 기본 / 600 강조
+======================================== */
+
+/* 가장 큰 제목 */
+.text-32-bold {
+    font-size: 32px;
+    font-weight: 600;
+}
+
+/* 페이지 대표 제목 */
+.text-30-bold {
+    font-size: 30px;
+    font-weight: 600;
+}
+
+/* 금액, 잔액, 포인트 */
+.text-28-bold {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+/* 섹션 제목 */
+.text-20-bold {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* 헤더 제목, 주요 버튼 */
+.text-18-bold {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* 일반 텍스트 */
+.text-15 {
+    font-size: 15px;
+    font-weight: 500;
+}
+
+/* 일반 강조 텍스트 */
+.text-15-bold {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* 작은 보조 텍스트 */
+.text-13 {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* 작은 강조 텍스트 */
+.text-13-bold {
+    font-size: 13px;
+    font-weight: 600;
+}

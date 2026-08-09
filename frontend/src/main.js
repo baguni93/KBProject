@@ -1,8 +1,11 @@
 import 'bootstrap/dist/css/bootstrap.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'vue-awesome-paginate/dist/style.css';
 import './assets/main.css';
 import './assets/kb-mobile.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+
+import '@/components/common/common/common.css';
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';

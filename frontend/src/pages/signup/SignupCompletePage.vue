@@ -59,23 +59,21 @@ const goAccountConnect = () => {
 
 <style scoped>
 .complete-page {
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
-  overflow: auto;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
 }
 
 .complete-container {
+  position: relative;
   display: flex;
-  flex: none;
   flex-direction: column;
-  width: 390px;
-  height: 844px;
-  padding: 64px 28px 30px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 40px 28px 140px;
   background: #ffffff;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .complete-content {
@@ -101,6 +99,7 @@ const goAccountConnect = () => {
   box-shadow: 0 20px 38px rgba(255, 181, 18, 0.26);
   text-align: left;
   transform: translateX(-50%) rotate(-5deg);
+  box-sizing: border-box;
 }
 
 .wallet-logo {
@@ -146,6 +145,7 @@ const goAccountConnect = () => {
   color: #ffffff;
   font-size: 28px;
   font-weight: 800;
+  box-sizing: border-box;
 }
 
 .confetti {
@@ -200,24 +200,24 @@ const goAccountConnect = () => {
 .complete-content h1 {
   margin: 0;
   color: #111111;
-  font-size: 27px;
+  font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.8px;
 }
 
 .complete-description {
-  margin: 20px 0 0;
+  margin: 18px 0 0;
   color: #777777;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 1.65;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .account-guide {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-top: 54px;
+  margin-top: 42px;
   padding: 20px;
   border: 1px solid #f1e2b5;
   border-radius: 18px;
@@ -239,6 +239,10 @@ const goAccountConnect = () => {
   font-weight: 800;
 }
 
+.guide-text {
+  min-width: 0;
+}
+
 .guide-text strong {
   display: block;
   color: #222222;
@@ -254,11 +258,15 @@ const goAccountConnect = () => {
 }
 
 .connect-button {
-  width: 100%;
+  position: absolute;
+  right: 28px;
+  bottom: 58px;
+  left: 28px;
+  width: auto;
   height: 58px;
-  margin-top: auto;
-  border: 1px solid #d79700;
-  border-radius: 12px;
+  margin: 0;
+  border: 1px solid #cc9200;
+  border-radius: 10px;
   background: #ffbc2e;
   color: #111111;
   font-size: 18px;

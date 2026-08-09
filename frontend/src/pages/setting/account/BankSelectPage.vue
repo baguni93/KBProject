@@ -96,67 +96,75 @@ const goBack = () => {
   router.back();
 };
 
-onMounted(loadBanks);
+onMounted(() => {
+  accountStore.resetAccountForm();
+  loadBanks();
+});
 </script>
 
 <style scoped>
 .account-page {
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
-  overflow: auto;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
 }
 
 .account-container {
+  position: relative;
   display: flex;
-  flex: none;
   flex-direction: column;
-  width: 390px;
-  height: 844px;
-  padding: 26px 28px 30px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 26px 28px 140px;
   background: #ffffff;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .back-button {
   align-self: flex-start;
+  margin-bottom: 28px;
   padding: 0;
   border: 0;
   background: transparent;
   color: #555555;
   font-size: 28px;
   line-height: 1;
-}
-
-.page-header {
-  margin-top: 48px;
+  cursor: pointer;
 }
 
 .page-header h1 {
-  margin: 0;
+  margin: 0 0 28px;
   color: #111111;
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.8px;
+  font-size: 30px;
+  font-weight: 700;
 }
 
 .page-header p {
-  margin: 17px 0 0;
+  margin: 0;
   color: #777777;
-  font-size: 16px;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.35;
 }
 
 .bank-section {
+  flex: 1;
   min-height: 0;
-  margin-top: 42px;
+  margin-top: 54px;
+  padding-bottom: 8px;
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.bank-section::-webkit-scrollbar {
+  display: none;
 }
 
 .bank-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px 12px;
 }
 
@@ -168,12 +176,19 @@ onMounted(loadBanks);
   align-items: center;
   justify-content: center;
   gap: 10px;
+  padding: 10px 6px;
   border: 1px solid #eeeeee;
   border-radius: 16px;
   background: #ffffff;
   color: #333333;
   font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.bank-item:active {
+  background: #fafafa;
 }
 
 .bank-item.selected {
@@ -183,6 +198,7 @@ onMounted(loadBanks);
 }
 
 .bank-logo {
+  display: block;
   width: 40px;
   height: 40px;
   object-fit: contain;
@@ -194,13 +210,24 @@ onMounted(loadBanks);
   justify-content: center;
   border-radius: 50%;
   background: #ffbc2e;
+  color: #111111;
   font-weight: 800;
+}
+
+.bank-item span {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .state-message,
 .error-message {
   margin: 30px 0;
   font-size: 14px;
+  line-height: 1.5;
   text-align: center;
 }
 
@@ -213,21 +240,30 @@ onMounted(loadBanks);
 }
 
 .next-button {
-  width: 100%;
+  position: absolute;
+  right: 28px;
+  bottom: 58px;
+  left: 28px;
+  width: auto;
   height: 58px;
-  flex: none;
-  margin-top: auto;
+  margin: 0;
   border: 1px solid #cc9200;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #ffbc2e;
   color: #111111;
   font-size: 18px;
   font-weight: 800;
+  cursor: pointer;
+}
+
+.next-button:active:not(:disabled) {
+  background: #f2aa10;
 }
 
 .next-button:disabled {
   border-color: #dddddd;
   background: #eeeeee;
-  color: #aaaaaa;
+  color: #999999;
+  cursor: not-allowed;
 }
 </style>

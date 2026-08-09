@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+  <g stroke="#ffffff" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="0.8">
+    <!-- 키치 지그재그 워터 -->
+    <path d="M0 15 L10 5 L20 15 L30 5 L40 15 L50 5 L60 15" />
+    <!-- 미니 라인 하트 -->
+    <path d="M25 40 C25 35, 20 32, 17 35 C14 32, 9 35, 9 40 C9 46, 17 50, 17 50 C17 50, 25 46, 25 40 Z" stroke-width="1" />
+    <path d="M55 40 C55 35, 50 32, 47 35 C44 32, 39 35, 39 40 C39 46, 47 50, 47 50 C47 50, 55 46, 55 40 Z" stroke-width="1" />
+  </g>
+</svg>

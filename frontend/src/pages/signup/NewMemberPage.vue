@@ -1,7 +1,8 @@
 <template>
-  <div class="member-page">
-    <main class="member-container">
-      <section class="member-content">
+  <div class="signup-page">
+    <!-- 1. 중앙 내용 영역 (기존 스타일 및 정렬 그대로 유지) -->
+    <main class="content-area">
+      <div class="member-content">
         <div class="member-visual">
           <div class="visual-card">
             <span class="person-head"></span>
@@ -51,12 +52,14 @@
             </div>
           </article>
         </section>
-      </section>
-
-      <button class="bottom-button" type="button" @click="goPin">
-        다음
-      </button>
+      </div>
     </main>
+
+    <!-- 2. 하단 버튼 영역 (다른 페이지들과 완벽히 일치하는 위치) -->
+
+    <div class="bottom-btn-area single">
+      <button class="bottom-btn" type="button" @click="goPin">다음</button>
+    </div>
   </div>
 </template>
 
@@ -72,24 +75,27 @@ const goPin = () => {
 </script>
 
 <style scoped>
-.member-page {
+.signup-page {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
-  overflow: auto;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  /* 다른 회원가입 페이지들과 완전히 동일한 패딩 적용 */
+  padding: 36px 24px 70px;
+  background: #ffffff;
 }
 
-.member-container {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  width: 390px;
-  height: 844px;
-  padding: 52px 28px 30px;
-  background: #ffffff;
-  overflow: hidden;
+/* 중앙 내용 영역 (내부 스크롤 가능하며 기존 디자인 보존) */
+.content-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding-right: 2px;
 }
 
 .member-content {
@@ -153,6 +159,7 @@ const goPin = () => {
   font-size: 30px;
   font-weight: 700;
   line-height: 1;
+  box-sizing: border-box;
 }
 
 .confetti {
@@ -193,7 +200,7 @@ const goPin = () => {
 .member-content h1 {
   margin: 0;
   color: #111111;
-  font-size: 27px;
+  font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.7px;
 }
@@ -201,13 +208,13 @@ const goPin = () => {
 .member-description {
   margin: 18px 0 0;
   color: #777777;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 1.6;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .guide-list {
-  margin-top: 48px;
+  margin-top: 42px;
   padding: 6px 18px;
   border-radius: 20px;
   background: #fafafa;
@@ -217,9 +224,9 @@ const goPin = () => {
 
 .guide-item {
   display: flex;
+  min-height: 86px;
   align-items: center;
   gap: 14px;
-  min-height: 86px;
   border-bottom: 1px solid #eeeeee;
 }
 
@@ -238,6 +245,7 @@ const goPin = () => {
   background: #fff2c9;
   color: #bc7d00;
   font-size: 17px;
+  font-weight: 800;
 }
 
 .guide-item strong {
@@ -252,22 +260,5 @@ const goPin = () => {
   color: #888888;
   font-size: 12px;
   line-height: 1.4;
-}
-
-.bottom-button {
-  width: 100%;
-  height: 58px;
-  margin-top: auto;
-  border: 1px solid #d99900;
-  border-radius: 12px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.bottom-button:active {
-  background: #f2aa10;
 }
 </style>

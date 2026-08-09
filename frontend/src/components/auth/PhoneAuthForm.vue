@@ -2,123 +2,163 @@
   <form class="phone-form" @submit.prevent="submit">
     <div class="input-group">
       <label for="userName">이름</label>
+
       <input
-          id="userName"
-          v-model.trim="form.userName"
-          type="text"
-          placeholder="이름을 입력해주세요."
+        id="userName"
+        v-model.trim="form.userName"
+        type="text"
+        placeholder="이름을 입력해주세요."
+        :readonly="isNameChange"
       />
     </div>
 
     <div class="input-group">
       <label for="birthDate">생년월일</label>
+
       <input id="birthDate" v-model="form.birthDate" type="date" />
     </div>
 
     <div class="input-group">
       <label for="carrierCode">통신사</label>
+
       <select id="carrierCode" v-model="form.carrierCode">
         <option value="">통신사를 선택해주세요.</option>
+
         <option value="SKT">SKT</option>
+
         <option value="KT">KT</option>
+
         <option value="LGU">LG U+</option>
+
         <option value="SKT_MVNO">SKT 알뜰폰</option>
+
         <option value="KT_MVNO">KT 알뜰폰</option>
+
         <option value="LGU_MVNO">LG U+ 알뜰폰</option>
       </select>
     </div>
 
     <div class="input-group">
       <label for="phoneNumber">휴대폰번호</label>
+
       <input
-          id="phoneNumber"
-          v-model="form.phoneNumber"
-          maxlength="11"
-          inputmode="numeric"
-          placeholder="'-' 없이 입력해주세요."
-          type="text"
-          @input="formatPhoneNumber"
+        id="phoneNumber"
+        v-model="form.phoneNumber"
+        maxlength="11"
+        inputmode="numeric"
+        placeholder="'-' 없이 입력해주세요."
+        type="text"
+        :readonly="isPhoneChange"
+        @input="formatPhoneNumber"
       />
     </div>
 
     <p v-if="errorMessage" class="error-message">
       {{ errorMessage }}
     </p>
-
-    <button class="submit-button" :disabled="loading" type="submit">
-      {{ loading ? '요청 중...' : '인증번호 받기' }}
-    </button>
   </form>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 
 const props = defineProps({
   initialValue: {
     type: Object,
+
     default: () => ({}),
   },
+
   loading: {
     type: Boolean,
+
     default: false,
   },
 });
 
 const emit = defineEmits(['submit']);
+
 const errorMessage = ref('');
+
+const isPhoneChange = computed(
+  () => props.initialValue.verificationPurpose === 'PHONE_CHANGE',
+);
+
+const isNameChange = computed(
+  () => props.initialValue.verificationPurpose === 'NAME_CHANGE',
+);
 
 const form = reactive({
   userName: props.initialValue.userName || '',
+
   birthDate: props.initialValue.birthDate || '',
+
   carrierCode: props.initialValue.carrierCode || '',
+
   phoneNumber: props.initialValue.phoneNumber || '',
 });
 
-// 숫자만 입력
 const formatPhoneNumber = () => {
+  if (isPhoneChange.value) return;
+
   form.phoneNumber = form.phoneNumber.replace(/[^0-9]/g, '');
 };
 
-// 입력 확인
 const validate = () => {
   if (!form.userName) return '이름을 입력해주세요.';
+
   if (!form.birthDate) return '생년월일을 입력해주세요.';
+
   if (!form.carrierCode) return '통신사를 선택해주세요.';
-  if (!/^01[016789][0-9]{7,8}$/.test(form.phoneNumber)) return '휴대폰번호를 확인해주세요.';
+
+  if (!/^01[016789][0-9]{7,8}$/.test(form.phoneNumber))
+    return '휴대폰번호를 확인해주세요.';
+
   return '';
 };
 
-// 인증 요청
 const submit = () => {
   errorMessage.value = validate();
+
   if (errorMessage.value) return;
 
   emit('submit', {
     ...form,
-    verificationPurpose: 'SIGN_UP',
+
+    verificationPurpose: props.initialValue.verificationPurpose || 'SIGN_UP',
   });
 };
+
+// 부모에서 버튼을 눌렀을 때 실행할 수 있도록 노출
+
+defineExpose({
+  submitForm: submit,
+});
 </script>
 
 <style scoped>
 .phone-form {
   display: flex;
-  flex: 1;
   flex-direction: column;
-  min-height: 0;
+  /* 💡 정석적인 방법: 컨텐츠 영역 내부에서 안전한 패딩을 부여합니다 */
+  padding: 0 4px;
 }
 
 .input-group {
   display: flex;
+
   flex-direction: column;
+
   margin-bottom: 22px;
 }
 
 .input-group label {
   margin-bottom: 9px;
+
   color: #333333;
+
   font-size: 14px;
+
   font-weight: 600;
 }
 
@@ -127,40 +167,41 @@ const submit = () => {
   width: 100%;
   height: 52px;
   padding: 0 14px;
-  border: 1px solid #dddddd;
-  border-radius: 8px;
-  background: #ffffff;
+  border: 1px solid #dddddd !important;
+
+  /* 모서리를 모두 둥글게 할 때 */
+  border-radius: 8px !important;
+
+  /* (만약 왼쪽만 둥글게 하고 싶다면 이걸로 사용하세요) */
+  /* border-radius: 8px 0 0 8px !important; */
+
+  background: #ffffff !important;
   color: #222222;
   font-size: 16px;
   outline: none;
-}
+  box-sizing: border-box !important;
 
+  /* 💡 핵심: 브라우저가 모서리를 직각으로 강제하는 성질을 없앱니다 */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
 .input-group input:focus,
 .input-group select:focus {
   border-color: #ffbc2e;
 }
 
+.input-group input:read-only {
+  background: #f7f7f7;
+
+  color: #777777;
+}
+
 .error-message {
   margin: 0;
+
   color: #d32f2f;
+
   font-size: 14px;
-}
-
-.submit-button {
-  width: 100%;
-  height: 58px;
-  margin-top: auto;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.submit-button:disabled {
-  border-color: #dddddd;
-  background: #eeeeee;
-  color: #999999;
 }
 </style>

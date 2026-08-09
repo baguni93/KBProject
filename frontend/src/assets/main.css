@@ -1,11 +1,28 @@
+/* 💡 1. 최상단: 모든 @import 구문을 맨 위에 배치 */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;200;300;400;500;600;700;800;900&display=swap');
-* {
-  font-family: 'Noto Sans KR';
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Nanum+Pen+Script&display=swap');
+
+/* 💡 2. 그 다음: @font-face 작성 */
+@font-face {
+  font-family: 'GmarketSansMedium';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff')
+    format('woff');
+  font-weight: normal;
+  font-style: normal;
 }
 
-.main {
-  max-width: 700px;
-  margin: 0 auto;
+/* 💡 3. * { ... } 대신 body에 기본 폰트 지정 (상속되도록 설정) */
+body {
+  font-family:
+    'Noto Sans KR',
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    Roboto,
+    sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
 /* #app {

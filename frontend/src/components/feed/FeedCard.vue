@@ -5,7 +5,7 @@
       <CardProfile
         :user-id="feed.userId"
         :profile-image-name="feed.sender ? feed.sender.profileImageName : null"
-        :nickname="feed.sender ? feed.sender.nickname : (feed.userName || '회원')"
+        :nickname="feed.sender ? feed.sender.nickname : feed.userName || '회원'"
         :created-at="feed.createdAt"
         :visibility="feed.visibility"
         :show-visibility="true"
@@ -40,12 +40,10 @@ import FeedTypeTags from './FeedTypeTags.vue';
 import FeedMoreButton from './FeedMoreButton.vue';
 import CommentBottomSheet from './CommentBottomSheet.vue';
 import { useFeedStore } from '@/stores/feed';
+import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
-
-//test user Id
-import { useUserStore } from '@/stores/user';
-const userStore = useUserStore();
-const userId = userStore.userId;
+const authStore = useAuthStore();
+const userId = authStore.userId;
 
 const router = useRouter();
 const feedStore = useFeedStore();
@@ -63,7 +61,7 @@ const handleLike = async () => {
   try {
     await feedStore.toggleLike({
       feedId: feedId.value,
-      userId,
+      userId: userId,
     });
   } catch (e) {
     console.log(e);

@@ -1,5 +1,5 @@
 <template>
-  <Teleport to="#app-container">
+  <Teleport to="body">
     <Transition name="bottom">
       <div v-if="modelValue" class="modal-background" @click="close">
         <div class="bottom-sheet" @click.stop>
@@ -49,14 +49,9 @@ const remove = () => {
   transition: opacity 0.25s ease;
 }
 
-.bottom-enter-from,
-.bottom-leave-to {
-  opacity: 0;
-}
-
 .bottom-enter-active .bottom-sheet,
 .bottom-leave-active .bottom-sheet {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .bottom-enter-from .bottom-sheet,
@@ -64,24 +59,27 @@ const remove = () => {
   transform: translateY(100%);
 }
 
+.bottom-enter-to .bottom-sheet,
+.bottom-leave-from .bottom-sheet {
+  transform: translateY(0);
+}
+
 .modal-background {
-  position: absolute;
+  position: fixed;
   inset: 0;
 
   background: rgba(0, 0, 0, 0.35);
 
   display: flex;
   align-items: flex-end;
+  justify-content: center;
 
-  z-index: 1000;
+  z-index: 10000;
 }
 
 .bottom-sheet {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-
-  width: 100%;
+  width: 430px;
+  max-width: 100%;
 
   background: white;
 
@@ -92,6 +90,8 @@ const remove = () => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+
+  box-sizing: border-box;
 }
 
 .menu-item {

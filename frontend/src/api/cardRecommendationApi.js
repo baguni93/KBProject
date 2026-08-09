@@ -13,6 +13,20 @@ export default {
     return data;
   },
 
+  async startAsync(spendingAnalysisId) {
+    const { data } = await api.post(
+      `${ANALYSIS_URL}/${spendingAnalysisId}/card-recommendations/async`,
+    );
+    return data;
+  },
+
+  async getStatus(spendingAnalysisId) {
+    const { data } = await api.get(
+      `${ANALYSIS_URL}/${spendingAnalysisId}/card-recommendations/status`,
+    );
+    return data;
+  },
+
   async getRecommendations(
     spendingAnalysisId,
     cardType = 'CREDIT',
