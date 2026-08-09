@@ -30,10 +30,9 @@
 import { computed } from 'vue';
 import VisibilityBadge from '../common/VisibilityBadge.vue';
 import { formatRelativeDate } from '@/util/data';
-//test user Id
-import { useUserStore } from '@/stores/user';
-const userStore = useUserStore();
-const myUserId = userStore.userId;
+import { useAuthStore } from '@/stores/auth.js';
+const authStore = useAuthStore();
+const myUserId = authStore.userId;
 
 const props = defineProps({
   userId: {

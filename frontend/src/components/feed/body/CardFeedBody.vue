@@ -24,6 +24,8 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router';
+const router = useRouter();
 defineProps({
   feed: {
     type: Object,
@@ -33,7 +35,7 @@ defineProps({
 
 const issueCard = () => {
   console.log('커스텀 카드 발급 버튼 클릭');
-
+  router.push('/card/create');
   // 카드 발급 API 호출 예정
 };
 </script>

@@ -83,9 +83,25 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         }
         if (cardRegisterDTO.getExpiryDate() == null || cardRegisterDTO.getExpiryDate().trim().isEmpty()) {
             cardRegisterDTO.setExpiryDate("12/28");
+        } else {
+            String exp = cardRegisterDTO.getExpiryDate().replaceAll("[^0-9/]", "");
+            if (exp.contains("/")) {
+                String[] parts = exp.split("/");
+                String mm = parts[0];
+                String yy = parts.length > 1 ? parts[1] : "28";
+                if (yy.length() == 4) yy = yy.substring(2);
+                if (mm.length() == 1) mm = "0" + mm;
+                exp = mm + "/" + yy;
+            } else if (exp.length() == 4) {
+                exp = exp.substring(0, 2) + "/" + exp.substring(2);
+            }
+            if (exp.length() > 5) exp = exp.substring(0, 5);
+            cardRegisterDTO.setExpiryDate(exp);
         }
         if (cardRegisterDTO.getCvv() == null || cardRegisterDTO.getCvv().trim().isEmpty()) {
             cardRegisterDTO.setCvv("777");
+        } else if (cardRegisterDTO.getCvv().length() > 4) {
+            cardRegisterDTO.setCvv(cardRegisterDTO.getCvv().substring(0, 4));
         }
         if (cardRegisterDTO.getCardPassword() == null || cardRegisterDTO.getCardPassword().trim().isEmpty()) {
             cardRegisterDTO.setCardPassword("1234");
@@ -94,11 +110,20 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         if (existingCards == 0 || "Y".equalsIgnoreCase(cardRegisterDTO.getRepresentYn())) {
             cardRegisterDTO.setRepresentYn("Y");
             cardPaymentMapper.resetPrimaryCardByUserId(userId);
+            cardPaymentMapper.resetLinkedPrimaryCardByUserId(userId);
         } else {
             cardRegisterDTO.setRepresentYn("N");
         }
 
         cardPaymentMapper.insertCard(cardRegisterDTO);
+
+        // 지갑 및 결제 화면(linked_card_tbl) 연동을 위한 카러셀 카드 동기화 등록
+        try {
+            cardPaymentMapper.insertLinkedCard(cardRegisterDTO);
+        } catch (Exception e) {
+            log.warn("linked_card_tbl 동기화 생성 경고: {}", e.getMessage());
+        }
+
         return getPrimaryCard(userId);
     }
 

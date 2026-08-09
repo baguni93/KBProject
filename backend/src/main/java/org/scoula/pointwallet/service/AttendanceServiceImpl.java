@@ -1,12 +1,12 @@
 package org.scoula.pointwallet.service;
 
+import org.scoula.exception.CustomException;
+import org.scoula.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.pointwallet.common.PointReasonType;
 import org.scoula.pointwallet.domain.AttendanceVO;
 import org.scoula.pointwallet.dto.*;
-import org.scoula.pointwallet.exception.PointWalletErrorCode;
-import org.scoula.pointwallet.exception.PointWalletException;
 import org.scoula.pointwallet.mapper.AttendanceMapper;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -56,8 +56,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         // 이미 오늘 출석을 완료한 경우.
         if (todayAttendanceCount > 0) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.ALREADY_ATTENDED
+            throw new CustomException(
+                    ErrorCode.ALREADY_ATTENDED
             );
         }
 
@@ -78,9 +78,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                     );
         } catch (DuplicateKeyException exception) {
             // 이미 출석을 완료한 경우
-            throw new PointWalletException(
-                    PointWalletErrorCode.ALREADY_ATTENDED,
-                    exception
+            throw new CustomException(
+                    ErrorCode.ALREADY_ATTENDED
             );
         }
 
@@ -91,8 +90,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                     insertedCount
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -102,8 +101,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                     userId
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -127,8 +126,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                     attendanceVO.getAttendanceId()
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -157,8 +156,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                     randomBoxResult
             );
 
-            throw new PointWalletException(
-                    PointWalletErrorCode.INTERNAL_PROCESS_ERROR
+            throw new CustomException(
+                    ErrorCode.POINT_WALLET_PROCESS_ERROR
             );
         }
 
@@ -197,9 +196,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     private void validateAttendanceRequest(Integer userId) {
         if (userId == null || userId <= 0) {
-            throw new PointWalletException(
-                    PointWalletErrorCode.INVALID_REQUEST,
-                    "유효한 사용자 ID가 필요합니다."
+            throw new CustomException(
+                    ErrorCode.INVALID_REQUEST
             );
         }
     }

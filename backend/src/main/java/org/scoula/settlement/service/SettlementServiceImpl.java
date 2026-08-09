@@ -67,15 +67,15 @@ public class SettlementServiceImpl implements SettlementService{
 
         var settlementResponseDTO = get(settlementVO.getSettlementId());
 
-        for(var member : settlementResponseDTO.getMembers()){
-
-            messagingTemplate.convertAndSendToUser(
-                    String.valueOf(member.getUserId()),
-                    "/queue/settlements",
-                    settlementResponseDTO
-            );
-
-        }
+//        for(var member : settlementResponseDTO.getMembers()){
+//
+//            messagingTemplate.convertAndSendToUser(
+//                    String.valueOf(member.getUserId()),
+//                    "/queue/settlements",
+//                    settlementResponseDTO
+//            );
+//
+//        }
 
         return settlementResponseDTO;
     }
@@ -92,17 +92,6 @@ public class SettlementServiceImpl implements SettlementService{
                     settlementVO.getSettlementId(),
                     Enum.NotificationType.SETTLEMENT_REQUEST
             );
-            try {
-                notificationService.create(
-                        NotificationRequestDTO.builder()
-                                .receiverId(member.getUserId())
-                                .senderId(settlementVO.getRequesterId())
-                                .notificationType(Enum.NotificationType.SETTLEMENT_REQUEST)
-                                .targetId(settlementVO.getSettlementId())
-                                .build());
-            } catch (Exception e) {
-                log.warn("알림 생성 중 오류 발생 (무시하고 정산 진행): {}", e.getMessage());
-            }
         }
     }
 
@@ -309,15 +298,15 @@ public class SettlementServiceImpl implements SettlementService{
             throw new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND);
         }
 
-//        if (settlementVO.getLastReminderDate() != null) {
-//            long diff = System.currentTimeMillis() - settlementVO.getLastReminderDate().getTime();
-//
-//            // 6시간 = 6 * 60 * 60 * 1000
-//            if (diff < 6 * 60 * 60 * 1000L) {
-//                // 아직 6시간이 지나지 않음
-//                throw new CustomException(ErrorCode.SETTLEMENT_CAN_NOT_REMINE);
-//            }
-//        }
+        if (settlementVO.getLastReminderDate() != null) {
+            long diff = System.currentTimeMillis() - settlementVO.getLastReminderDate().getTime();
+
+            // 6시간 = 6 * 60 * 60 * 1000
+            if (diff < 6 * 60 * 60 * 1000L) {
+                // 아직 6시간이 지나지 않음
+                throw new CustomException(ErrorCode.SETTLEMENT_CAN_NOT_REMINE);
+            }
+        }
 
         var remineMemberList = settlementVO.getMembers().stream()
                 .filter(member ->

@@ -104,9 +104,7 @@
 
 
     <!-- 가장 최근 인증 요청 조회 -->
-    <select
-            id="findLatestPhoneAuth"
-            resultMap="phoneAuthMap">
+    <select id="findLatestPhoneAuth" resultMap="phoneAuthMap">
 
         SELECT
             verification_id,
@@ -151,9 +149,7 @@
 
 
     <!-- 가입 회원 여부 확인 -->
-    <select
-            id="countUserByPhoneNumber"
-            resultType="int">
+    <select id="countUserByPhoneNumber" resultType="int">
 
         SELECT COUNT(*)
         FROM user_tbl
@@ -220,9 +216,7 @@
 
 
     <!-- Refresh Token 조회 -->
-    <select
-            id="findRefreshToken"
-            resultType="org.scoula.login.domain.RefreshTokenVO">
+    <select id="findRefreshToken" resultType="org.scoula.login.domain.RefreshTokenVO">
 
         SELECT
             refresh_token_id,
@@ -257,8 +251,7 @@
     </delete>
 
     <!-- PIN_RESET 목적의 인증 완료 기록 조회 -->
-    <select id="findVerifiedPinResetId"
-            resultType="java.lang.Long">
+    <select id="findVerifiedPinResetId" resultType="java.lang.Long">
 
         SELECT verification_id
         FROM verification_tbl
@@ -269,6 +262,28 @@
         ORDER BY requested_at DESC
         LIMIT 1
 
+    </select>
+
+    <select id="findVerifiedPhoneAuth" resultType="org.scoula.login.domain.PhoneAuthVO">
+        SELECT
+            verification_id,
+            user_id,
+            user_name,
+            birth_date,
+            carrier_code,
+            phone_number,
+            verification_code,
+            verification_purpose,
+            requested_at,
+            verified_yn,
+            fail_count
+        FROM verification_tbl
+        WHERE phone_number = #{phoneNumber}
+          AND verification_purpose = #{verificationPurpose}
+          AND verified_yn = 'Y'
+          AND requested_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+        ORDER BY requested_at DESC
+        LIMIT 1
     </select>
 
 

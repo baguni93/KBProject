@@ -43,11 +43,9 @@ import { ref } from 'vue';
 import FriendCard from './FriendCard.vue';
 import { useFriendStore } from '@/stores/friend.js';
 import { useRouter } from 'vue-router';
-
-//test user Id
-import { useUserStore } from '@/stores/user';
-const userStore = useUserStore();
-const userId = userStore.userId;
+import { useAuthStore } from '@/stores/auth.js';
+const authStore = useAuthStore();
+const userId = authStore.userId;
 
 const friendStore = useFriendStore();
 const router = useRouter();

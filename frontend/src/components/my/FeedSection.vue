@@ -56,8 +56,7 @@ onMounted(async () => {
     const list = await feedStore.getMyList({
       userId: props.userId,
     });
-    const localCreatedFeeds = JSON.parse(localStorage.getItem('user_created_feeds') || '[]');
-    myFeeds.value = [...localCreatedFeeds, ...(list || [])];
+    myFeeds.value = list || [];
   } else {
     memberFeeds.value = await feedStore.getMemberList({
       userId: props.userId,

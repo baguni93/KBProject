@@ -54,7 +54,7 @@ public class ProfileController {
         return ResponseEntity.ok(profileService.updateProfileImage(userId, image));
     }
 
-    // 프로필 이미지 조회
+    // PROFILE-004 프로필 이미지 조회
     @GetMapping("/image")
     public void getProfileImage(
             @PathVariable Long userId,
@@ -65,4 +65,19 @@ public class ProfileController {
 
         UploadFiles.downloadImage(response, imageFile);
     }
+
+    // PROFILE-005 프로필 이미지 삭제
+    @DeleteMapping("/image")
+    public ResponseEntity<Map<String, Object>> deleteProfileImage(
+            @PathVariable Long userId
+    ) {
+        boolean result = profileService.deleteProfileImage(userId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", result);
+        response.put("message", "프로필 이미지가 삭제되었습니다.");
+
+        return ResponseEntity.ok(response);
+    }
+
 }

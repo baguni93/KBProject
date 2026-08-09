@@ -2,9 +2,11 @@ package org.scoula.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.scoula.login.domain.PhoneAuthVO;
 import org.scoula.login.mapper.LoginMapper;
 import org.scoula.notifsetting.domain.NotificationSettingVO;
 import org.scoula.notifsetting.mapper.NotificationSettingMapper;
+import org.scoula.pointwallet.service.PointWalletService;
 import org.scoula.user.domain.UserVO;
 import org.scoula.user.dto.*;
 import org.scoula.user.mapper.UserMapper;
@@ -25,6 +27,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final LoginMapper loginMapper;
     private final NotificationSettingMapper notificationSettingMapper;
+    private final PointWalletService pointWalletService;
     private final PasswordEncoder passwordEncoder;
 
     // private static final long REJOIN_WAIT_HOURS = 24L;
@@ -97,6 +100,9 @@ public class UserServiceImpl implements UserService {
             throw new IllegalStateException("알림 설정 저장 중 오류가 발생했습니다.");
         }
 
+        // 회원가입 시 포인트 지갑 자동 생성
+        pointWalletService.createWallet(user.getUserId().intValue());
+
         log.info("회원가입 완료: userId={}", user.getUserId());
 
         return user.getUserId();
@@ -141,19 +147,118 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void changeUserName(Long userId, UserNameChangeDTO changeDTO) {
-        // NAME_CHANGE 인증 완료 확인
-        // 이름 변경
-        // 사용한 인증 기록 삭제
+        UserVO user = getActiveUser(userId);
+
+        if (changeDTO == null) {
+            throw new IllegalArgumentException("이름 변경 정보가 필요합니다.");
+        }
+
+        if (changeDTO.getPhoneNumber() == null || changeDTO.getPhoneNumber().trim().isEmpty()) {
+            throw new IllegalArgumentException("휴대폰번호가 필요합니다.");
+        }
+
+        if (changeDTO.getNewUserName() == null || changeDTO.getNewUserName().trim().isEmpty()) {
+            throw new IllegalArgumentException("변경할 이름을 입력해주세요.");
+        }
+
+        String phoneNumber = changeDTO.getPhoneNumber().trim();
+        String newUserName = changeDTO.getNewUserName().trim();
+
+        if (!phoneNumber.equals(user.getPhoneNumber())) {
+            throw new IllegalArgumentException("현재 회원의 휴대폰번호와 일치하지 않습니다.");
+        }
+
+        if (newUserName.length() > 50) {
+            throw new IllegalArgumentException("이름은 50자 이하로 입력해주세요.");
+        }
+
+        if (newUserName.equals(user.getUserName())) {
+            throw new IllegalArgumentException("현재 이름과 다른 이름을 입력해주세요.");
+        }
+
+        PhoneAuthVO verification = loginMapper.findVerifiedPhoneAuth(phoneNumber, "NAME_CHANGE");
+
+        if (verification == null) {
+            throw new IllegalArgumentException("이름 변경을 위한 휴대폰 본인인증이 필요합니다.");
+        }
+
+        if (verification.getBirthDate() == null || !verification.getBirthDate().equals(user.getBirthDate())) {
+            throw new IllegalArgumentException("본인인증 정보가 회원정보와 일치하지 않습니다.");
+        }
+
+        if (verification.getPhoneNumber() == null || !verification.getPhoneNumber().equals(user.getPhoneNumber())) {
+            throw new IllegalArgumentException("본인인증 정보가 회원정보와 일치하지 않습니다.");
+        }
+
+        if (verification.getUserName() == null || !verification.getUserName().trim().equals(newUserName)) {
+            throw new IllegalArgumentException("인증한 이름과 변경할 이름이 일치하지 않습니다.");
+        }
+
+        int updateResult = userMapper.updateUserName(userId, newUserName);
+
+        if (updateResult != 1) {
+            throw new IllegalStateException("이름 변경에 실패했습니다.");
+        }
+
+        int deleteResult = loginMapper.deleteVerificationById(verification.getVerificationId());
+
+        if (deleteResult != 1) {
+            throw new IllegalStateException("본인인증 정보 처리에 실패했습니다.");
+        }
+
+        log.info("회원 이름 변경 완료: userId={}", userId);
     }
+
 
     // 회원 휴대폰번호 변경
     @Override
     @Transactional
     public void changePhoneNumber(Long userId, UserPhoneChangeDTO changeDTO) {
-        // PHONE_CHANGE 인증 완료 확인
-        // 새 번호 중복 확인
-        // 휴대폰번호 변경
-        // 사용한 인증 기록 삭제
+        UserVO user = getActiveUser(userId);
+
+        if (changeDTO == null) throw new IllegalArgumentException("휴대폰번호 변경 정보가 필요합니다.");
+
+        if (changeDTO.getNewPhoneNumber() == null || changeDTO.getNewPhoneNumber().trim().isEmpty()) {
+            throw new IllegalArgumentException("새 휴대폰번호를 입력해주세요.");
+        }
+
+        String newPhoneNumber = changeDTO.getNewPhoneNumber().trim();
+
+        if (!newPhoneNumber.matches("^01[016789]\\d{7,8}$")) throw new IllegalArgumentException("올바른 휴대폰번호 형식이 아닙니다.");
+
+        if (newPhoneNumber.equals(user.getPhoneNumber())) {
+            throw new IllegalArgumentException("현재 휴대폰번호와 다른 번호를 입력해주세요.");
+        }
+
+        UserVO existingUser = userMapper.findByPhoneNumber(newPhoneNumber);
+
+        if (existingUser != null && "ACTIVE".equals(existingUser.getUserStatus())) {
+            throw new IllegalArgumentException("이미 가입된 휴대폰번호입니다.");
+        }
+
+        PhoneAuthVO verification = loginMapper.findVerifiedPhoneAuth(newPhoneNumber, "PHONE_CHANGE");
+
+        if (verification == null) {
+            throw new IllegalArgumentException("휴대폰번호 변경을 위한 본인인증이 필요합니다.");
+        }
+
+        if (verification.getUserName() == null || !verification.getUserName().trim().equals(user.getUserName())) {
+            throw new IllegalArgumentException("본인인증 정보가 회원정보와 일치하지 않습니다.");
+        }
+
+        if (verification.getBirthDate() == null || !verification.getBirthDate().equals(user.getBirthDate())) {
+            throw new IllegalArgumentException("본인인증 정보가 회원정보와 일치하지 않습니다.");
+        }
+
+        int updateResult = userMapper.updatePhoneNumber(userId, newPhoneNumber);
+
+        if (updateResult != 1) throw new IllegalStateException("휴대폰번호 변경에 실패했습니다.");
+
+        int deleteResult = loginMapper.deleteVerificationById(verification.getVerificationId());
+
+        if (deleteResult != 1) throw new IllegalStateException("본인인증 정보 처리에 실패했습니다.");
+
+        log.info("회원 휴대폰번호 변경 완료: userId={}", userId);
     }
 
     // 닉네임 중복 확인
@@ -313,11 +418,27 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("PIN이 일치하지 않습니다.");
         }
 
+        // 회원 상태 변경
         int result = userMapper.withdraw(userId);
 
         if (result != 1) {
             throw new IllegalStateException("회원 탈퇴 처리에 실패했습니다.");
         }
+
+        // 닉네임 즉시 익명화
+        long timestamp = System.currentTimeMillis();
+        String anonymousNickname =
+                "wd" + userId + "_" + (timestamp % 100000);
+
+        int nicknameResult =
+                userMapper.anonymizeNickname(userId, anonymousNickname);
+
+        if (nicknameResult != 1) {
+            throw new IllegalStateException("탈퇴 회원 닉네임 익명화에 실패했습니다.");
+        }
+
+        // Refresh Token 즉시 삭제
+        loginMapper.deleteRefreshTokenByUserId(userId);
 
         log.info("회원탈퇴 완료: userId={}", userId);
     }
@@ -371,22 +492,19 @@ public class UserServiceImpl implements UserService {
         Long userId = withdrawnUser.getUserId();
         long timestamp = System.currentTimeMillis();
 
-        String anonymousPhoneNumber = "wd" + userId + "_" + (timestamp % 100000);
-        String anonymousNickname = "wd" + userId + "_" + (timestamp % 100000);
+        String anonymousPhoneNumber =
+                "wd" + userId + "_" + (timestamp % 100000);
 
-        int phoneResult = userMapper.anonymizePhoneNumber(userId, anonymousPhoneNumber);
+        int phoneResult =
+                userMapper.anonymizePhoneNumber(userId, anonymousPhoneNumber);
 
         if (phoneResult != 1) {
-            throw new IllegalStateException("탈퇴 회원 휴대폰번호 익명화에 실패했습니다.");
+            throw new IllegalStateException(
+                    "탈퇴 회원 휴대폰번호 익명화에 실패했습니다."
+            );
         }
 
-        int nicknameResult = userMapper.anonymizeNickname(userId, anonymousNickname);
-
-        if (nicknameResult != 1) {
-            throw new IllegalStateException("탈퇴 회원 닉네임 익명화에 실패했습니다.");
-        }
-
-        log.info("탈퇴 회원 익명화 완료: userId={}", userId);
+        log.info("탈퇴 회원 휴대폰번호 익명화 완료: userId={}", userId);
     }
 
     // 활성 회원 조회

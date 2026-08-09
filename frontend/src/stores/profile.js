@@ -17,7 +17,7 @@ export const useProfileStore = defineStore('profile', () => {
   // 프로필 조회
   const getProfile = async (userId) => {
     try {
-      const res = await api.get(`/api/users/${userId}/profile`);
+      const res = await api.get(`/api/profile/${userId}`);
       profile.value = res.data;
       return profile.value;
     } catch (e) {
@@ -26,7 +26,7 @@ export const useProfileStore = defineStore('profile', () => {
         userId: userId,
         nickname: '김국민',
         introduction: 'KB Pay와 함께하는 즐거운 일상',
-        imageName: null
+        imageName: null,
       };
       return profile.value;
     }

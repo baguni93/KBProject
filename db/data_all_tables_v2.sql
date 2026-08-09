@@ -1,4 +1,3 @@
-
 USE kbproject;
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -34,6 +33,7 @@ DROP TABLE IF EXISTS `settlement_tbl`;
 DROP TABLE IF EXISTS `friend_tbl`;
 DROP TABLE IF EXISTS `friend_request_tbl`;
 DROP TABLE IF EXISTS `kb_insurance_recommendation_tbl`;
+DROP TABLE IF EXISTS `kb_insurance_category_match_tbl`;
 DROP TABLE IF EXISTS `kb_insurance_coverage_tbl`;
 DROP TABLE IF EXISTS `kb_insurance_product_tbl`;
 DROP TABLE IF EXISTS `card_recommendation_detail_tbl`;
@@ -1003,20 +1003,21 @@ CREATE TABLE settlement_member_tbl
 -- 30.알림 테이블
 DROP TABLE IF EXISTS notification_tbl;
 
-CREATE TABLE notification_tbl (
-    notification_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림번호',
+CREATE TABLE notification_tbl
+(
+    notification_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림번호',
 
-    receiver_id INT NOT NULL COMMENT '수신자번호',
+    receiver_id       INT         NOT NULL COMMENT '수신자번호',
 
-    sender_id INT NOT NULL COMMENT '발신자번호',
+    sender_id         INT         NOT NULL COMMENT '발신자번호',
 
     notification_type VARCHAR(30) NULL COMMENT '알림유형',
 
-    target_id INT NULL COMMENT '대상번호',
+    target_id         INT         NULL COMMENT '대상번호',
 
-    status VARCHAR(10) NOT NULL DEFAULT 'UNREAD' COMMENT '읽음상태',
+    status            VARCHAR(10) NOT NULL DEFAULT 'UNREAD' COMMENT '읽음상태',
 
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    created_at        DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
     CONSTRAINT fk_notification_receiver
         FOREIGN KEY (receiver_id)
@@ -1029,26 +1030,26 @@ CREATE TABLE notification_tbl (
     CONSTRAINT chk_notification_type
         CHECK (
             notification_type IN (
-                'LIKE',
-                'COMMENT',
-                'FRIEND_REQUEST',
-                'FRIEND_ACCEPT',
-                'FRIEND_REJECT',
-                'SETTLEMENT_REQUEST',
-                'SETTLEMENT_PAYMENT',
-                'SETTLEMENT_CANCEL',
-                'SETTLEMENT_COMPLETE',
-                'SETTLEMENT_REMIND'
-            )
-        ),
+                                  'LIKE',
+                                  'COMMENT',
+                                  'FRIEND_REQUEST',
+                                  'FRIEND_ACCEPT',
+                                  'FRIEND_REJECT',
+                                  'SETTLEMENT_REQUEST',
+                                  'SETTLEMENT_PAYMENT',
+                                  'SETTLEMENT_CANCEL',
+                                  'SETTLEMENT_COMPLETE',
+                                  'SETTLEMENT_REMIND'
+                )
+            ),
 
     CONSTRAINT chk_notification_status
         CHECK (
             status IN (
-                'READ',
-                'UNREAD'
+                       'READ',
+                       'UNREAD'
+                )
             )
-        )
 );
 -- ============================================
 
@@ -1702,33 +1703,33 @@ DROP TABLE IF EXISTS event_tbl;
 
 CREATE TABLE event_tbl
 (
-    event_id       INT AUTO_INCREMENT PRIMARY KEY COMMENT '이벤트ID',
+    event_id                INT AUTO_INCREMENT PRIMARY KEY COMMENT '이벤트ID',
 
-    event_name     VARCHAR(100) NULL COMMENT '이벤트명',
+    event_name              VARCHAR(100) NULL COMMENT '이벤트명',
 
-    event_desc     TEXT         NULL COMMENT '이벤트상세설명',
+    event_desc              TEXT         NULL COMMENT '이벤트상세설명',
 
-    event_type     VARCHAR(20)  NULL COMMENT '이벤트유형',
+    event_type              VARCHAR(20)  NULL COMMENT '이벤트유형',
 
-    event_status   VARCHAR(10)  NOT NULL DEFAULT 'OPEN' COMMENT '이벤트 진행 토글',
+    event_status            VARCHAR(10)  NOT NULL DEFAULT 'OPEN' COMMENT '이벤트 진행 토글',
 
-    event_img_name VARCHAR(255) NULL COMMENT '이벤트 이미지 이름',
+    event_img_name          VARCHAR(255) NULL COMMENT '이벤트 이미지 이름',
 
-    event_target   INT          NOT NULL COMMENT '이벤트 최종 목표',
+    event_target            INT          NOT NULL COMMENT '이벤트 최종 목표',
 
-    event_level    INT          NOT NULL DEFAULT 1 COMMENT '이벤트 최종 난이도',
+    event_level             INT          NOT NULL DEFAULT 1 COMMENT '이벤트 최종 난이도',
 
-    event_daily_limit_count INT NOT NULL DEFAULT 0 COMMENT '이벤트 일일 참여 가능 횟수',
+    event_daily_limit_count INT          NOT NULL DEFAULT 0 COMMENT '이벤트 일일 참여 가능 횟수',
 
-    start_at       DATETIME     NULL COMMENT '시작일시',
+    start_at                DATETIME     NULL COMMENT '시작일시',
 
-    end_at         DATETIME     NULL COMMENT '종료일시',
+    end_at                  DATETIME     NULL COMMENT '종료일시',
 
-    created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
+    created_at              DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
 
     CONSTRAINT chk_event_type
         CHECK (
-            event_type IN ('ATTENDANCE', 'PERMANENT', 'LIMITED', 'SEASON', 'PROMOTION', 'LUCKYDRAW' )
+            event_type IN ('ATTENDANCE', 'PERMANENT', 'LIMITED', 'SEASON', 'PROMOTION', 'LUCKYDRAW')
             ),
 
     CONSTRAINT chk_event_status
@@ -1736,10 +1737,10 @@ CREATE TABLE event_tbl
             event_status IN ('OPEN', 'CLOSE')
             ),
 
-    CONSTRAINT chk_event_daily_limit_count 
+    CONSTRAINT chk_event_daily_limit_count
         CHECK (
             event_daily_limit_count >= 0
-           )
+            )
 );
 
 -- 48.이벤트 리워드 테이블
@@ -1750,11 +1751,11 @@ CREATE TABLE event_reward_tbl
 (
     reward_id    INT AUTO_INCREMENT PRIMARY KEY COMMENT '리워드ID',
 
-    event_id     INT     NOT NULL COMMENT '이벤트ID',
+    event_id     INT NOT NULL COMMENT '이벤트ID',
 
-    reward_point INT     NULL     DEFAULT 0 COMMENT '리워드포인트',
+    reward_point INT NULL DEFAULT 0 COMMENT '리워드포인트',
 
-    reward_exe   INT     NULL COMMENT '리워드경험치',
+    reward_exe   INT NULL COMMENT '리워드경험치',
 
     CONSTRAINT fk_event_reward_event
         FOREIGN KEY (event_id)
@@ -1806,23 +1807,23 @@ CREATE TABLE event_user_tbl
     event_user_id INT AUTO_INCREMENT PRIMARY KEY,
 
     -- 참여한 이벤트 ID
-    event_id INT NOT NULL,
+    event_id      INT NOT NULL,
 
     -- 참여한 사용자 ID
-    user_id INT NOT NULL,
+    user_id       INT NOT NULL,
 
     -- 이벤트 참여 시작 시간
-    joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    joined_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     -- 이벤트 테이블과 연결
     CONSTRAINT fk_event_user_event
         FOREIGN KEY (event_id)
-        REFERENCES event_tbl(event_id),
+            REFERENCES event_tbl (event_id),
 
     -- 사용자 테이블과 연결
     CONSTRAINT fk_event_user_member
         FOREIGN KEY (user_id)
-        REFERENCES user_tbl(user_id),
+            REFERENCES user_tbl (user_id),
 
 
     -- 한 사용자는 같은 이벤트에 중복 참여 불가
@@ -1833,26 +1834,27 @@ CREATE TABLE event_user_tbl
 -- 50. 이벤트 - 출석체크 참여이력 테이블
 DROP TABLE IF EXISTS event_attendance_tbl;
 
-CREATE TABLE event_attendance_tbl (
+CREATE TABLE event_attendance_tbl
+(
     participation_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '참여ID',
 
-    event_id INT NOT NULL COMMENT '이벤트ID',
+    event_id         INT      NOT NULL COMMENT '이벤트ID',
 
-    user_id INT NOT NULL COMMENT '사용자ID',
+    user_id          INT      NOT NULL COMMENT '사용자ID',
 
-    participated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '참여일시',
+    participated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '참여일시',
 
     CONSTRAINT fk_event_attendance_event
         FOREIGN KEY (event_id)
-        REFERENCES event_tbl(event_id),
+            REFERENCES event_tbl (event_id),
 
     CONSTRAINT fk_event_attendance_user
         FOREIGN KEY (user_id)
-        REFERENCES user_tbl(user_id),
-        
+            REFERENCES user_tbl (user_id),
+
     CONSTRAINT uk_event_attendance_date
         UNIQUE (event_id, user_id, participated_at)
-) COMMENT='이벤트 - 출석체크 참여이력 테이블';
+) COMMENT ='이벤트 - 출석체크 참여이력 테이블';
 
 
 -- 51. 이벤트 리워드 수령이력 테이블 정의서
@@ -2101,6 +2103,47 @@ CREATE TABLE merchant_category_mapping_tbl
             )
 );
 
+-- 58. 소비카테고리 <-> 보험 종류 매칭 정책 테이블
+CREATE TABLE kb_insurance_category_match_tbl
+(
+    insurance_category_match_id INT AUTO_INCREMENT PRIMARY KEY
+        COMMENT '보험 추천 카테고리 매핑 ID',
+
+    insurance_product_id        INT          NOT NULL
+        COMMENT '보험 상품 ID',
+
+    spending_category_id        INT          NOT NULL
+        COMMENT '소비 카테고리 ID',
+
+    recommendation_reason       VARCHAR(255) NULL
+        COMMENT '추천 사유 기본 문구',
+
+    priority                    INT          NOT NULL DEFAULT 1
+        COMMENT '같은 카테고리 내 표시 순서',
+
+    active_yn                   CHAR(1)      NOT NULL DEFAULT 'Y'
+        COMMENT '추천 관계 사용 여부',
+
+    created_at                  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+        COMMENT '생성 일시',
+
+    CONSTRAINT fk_insurance_match_product
+        FOREIGN KEY (insurance_product_id)
+            REFERENCES kb_insurance_product_tbl (insurance_product_id),
+
+    CONSTRAINT fk_insurance_match_spending_category
+        FOREIGN KEY (spending_category_id)
+            REFERENCES spending_category_tbl (spending_category_id),
+
+    CONSTRAINT uk_insurance_category_match
+        UNIQUE (insurance_product_id, spending_category_id),
+
+    CONSTRAINT chk_insurance_match_active
+        CHECK (active_yn IN ('Y', 'N'))
+);
+
+
+
 USE kbproject;
 
 START TRANSACTION;
@@ -2161,7 +2204,7 @@ VALUES (1, 1, '004', '110-111-111111', '테스트회원1', 'Y', 'CONNECTED'),
        (6, 3, '004', '110-333-222222', '테스트회원3', 'N', 'CONNECTED');
 
 -- ---------------------------------------------------------------------
--- 4. agreement_tbl (4건)
+-- 4. agreement_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO agreement_tbl (agreement_id,
                            agreement_type,
@@ -2169,38 +2212,63 @@ INSERT INTO agreement_tbl (agreement_id,
                            agreement_content,
                            required_yn,
                            use_yn)
-VALUES (1, 'SERVICE', '서비스 이용약관',
+VALUES (1,
+        'SERVICE',
+        '서비스 이용약관',
         '제1조 (목적)\n본 약관은 KB 금융 플랫폼(이하 "서비스")의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항을 규정하는 것을 목적으로 합니다.\n\n제2조 (회원가입)\n1. 회원은 본인 명의의 휴대폰 인증을 통해 가입할 수 있습니다.\n2. 허위 정보 또는 타인의 정보를 이용한 경우 서비스 이용이 제한될 수 있습니다.\n\n제3조 (서비스 이용)\n회원은 다음과 같은 서비스를 이용할 수 있습니다.\n1. 전자지갑 생성 및 이용\n2. 본인 명의 계좌 연결\n3. 포인트 조회 및 이용\n4. 피드 작성 및 조회\n5. 카드 추천 및 관련 서비스 이용\n\n제4조 (회원의 의무)\n회원은 다음 행위를 해서는 안 됩니다.\n1. 타인의 개인정보를 도용하는 행위\n2. 거짓 정보를 입력하거나 제공하는 행위\n3. 서비스의 정상적인 운영을 방해하는 행위\n4. 관련 법령 또는 본 약관을 위반하는 행위\n\n제5조 (서비스 이용 제한)\n회사는 회원이 관련 법령 또는 본 약관을 위반한 경우 서비스 이용을 제한하거나 회원 자격을 정지할 수 있습니다.',
-        'Y', 'Y'),
-       (2, 'PRIVACY', '개인정보 수집 및 이용 동의',
+        'Y',
+        'Y'),
+       (2,
+        'PRIVACY',
+        '개인정보 수집 및 이용 동의',
         '1. 수집하는 개인정보 항목\n회사는 회원가입 및 서비스 제공을 위해 다음 정보를 수집합니다.\n- 이름\n- 휴대폰번호\n- 이메일\n- 암호화된 비밀번호\n- 닉네임\n\n2. 개인정보 수집 및 이용 목적\n수집한 개인정보는 다음 목적으로 이용됩니다.\n- 회원가입 및 본인 확인\n- 회원 식별 및 계정 관리\n- 고객 문의 및 서비스 안내\n- 전자지갑 생성과 금융 서비스 제공\n- 부정 이용 방지 및 서비스 보안\n\n3. 개인정보 보유 및 이용 기간\n회사는 회원 탈퇴 시까지 개인정보를 보유하며, 관계 법령에 따라 보관이 필요한 경우 해당 기간 동안 별도로 보관합니다.\n\n4. 동의 거부 권리 및 불이익\n회원은 개인정보 수집 및 이용에 대한 동의를 거부할 권리가 있습니다. 다만, 필수 정보 수집에 동의하지 않는 경우 회원가입 및 서비스 이용이 제한될 수 있습니다.',
-        'Y', 'Y'),
-       (3, 'ELECTRONIC_FINANCE', '전자금융거래 이용약관',
+        'Y',
+        'Y'),
+       (3,
+        'ELECTRONIC_FINANCE',
+        '전자금융거래 이용약관',
         '제1조 (이용 가능한 금융 서비스)\n회원은 다음과 같은 금융 관련 서비스를 이용할 수 있습니다.\n1. 전자지갑 생성 및 이용\n2. 본인 명의 계좌 연결\n3. 포인트 적립 및 사용\n4. 결제 및 송금 서비스\n\n제2조 (전자지갑 생성)\n회원가입이 완료되면 회원의 서비스 이용을 위한 전자지갑이 자동으로 생성될 수 있습니다.\n\n제3조 (계좌 연결)\n회원은 본인 명의의 계좌만 연결할 수 있으며, 계좌 연결 과정에서 추가적인 본인 인증이 요구될 수 있습니다.\n\n제4조 (서비스 이용 제한)\n다음의 경우 금융 서비스 이용이 제한될 수 있습니다.\n1. 본인 인증에 실패한 경우\n2. 비정상적이거나 의심스러운 금융 거래가 확인된 경우\n3. 타인 명의의 계좌를 연결한 경우\n4. 관련 법령 또는 약관을 위반한 경우\n\n제5조 (회원의 책임)\n회원은 본인의 인증정보와 계정정보를 안전하게 관리해야 하며, 이를 타인에게 제공하거나 공유해서는 안 됩니다.',
-        'Y', 'Y'),
-       (4, 'MARKETING', '마케팅 정보 수신 동의',
+        'Y',
+        'Y'),
+       (4,
+        'ANALYSIS_REQUIRED',
+        '소비정보 수집 및 이용 동의',
+        '1. 수집하는 소비정보 항목\n회사는 소비 분석 서비스 제공을 위해 다음 정보를 수집합니다.\n- 가맹점명\n- 결제금액\n- 결제일시\n- 소비 카테고리\n- 결제 및 거래 내역\n\n2. 소비정보 수집 및 이용 목적\n수집한 소비정보는 다음 목적으로 이용됩니다.\n- 소비 내역 조회 및 관리\n- 소비 카테고리 분류\n- 기간별 소비 패턴 분석\n- 소비 분석 결과 및 통계 제공\n- 맞춤형 소비 관리 서비스 제공\n\n3. 소비정보 보유 및 이용 기간\n회사는 소비 분석 서비스 이용 기간 동안 소비정보를 보유하며, 회원 탈퇴 또는 서비스 이용 동의 철회 시 해당 정보를 지체 없이 삭제합니다. 다만, 관계 법령에 따라 보관이 필요한 경우에는 해당 기간 동안 별도로 보관합니다.\n\n4. 동의 거부 권리 및 불이익\n회원은 소비정보 수집 및 이용에 대한 동의를 거부할 권리가 있습니다. 다만, 본 동의는 소비 분석 서비스 제공을 위한 필수 동의이므로 동의하지 않는 경우 소비 분석 기능을 이용할 수 없습니다.',
+        'Y',
+        'Y'),
+       (5,
+        'MARKETING',
+        '마케팅 정보 수신 동의',
         '1. 수신 가능한 마케팅 정보\n회사는 회원의 동의를 받은 경우 다음과 같은 정보를 제공할 수 있습니다.\n- 이벤트 및 프로모션 안내\n- 신규 서비스 및 기능 안내\n- 카드 및 금융상품 관련 정보\n- 맞춤형 금융 혜택\n- 포인트 및 리워드 관련 정보\n\n2. 마케팅 정보 수신 방법\n마케팅 정보는 다음 방법으로 제공될 수 있습니다.\n- 앱 푸시 알림\n- SMS 문자메시지\n- 이메일\n\n3. 동의 거부 및 철회\n회원은 마케팅 정보 수신에 동의하지 않아도 기본 서비스를 이용할 수 있습니다.\n동의 후에도 언제든지 설정 화면에서 수신 여부를 변경하거나 철회할 수 있습니다.\n\n4. 안내사항\n마케팅 수신 동의와 관계없이 서비스 이용, 보안, 거래 내역 등 필수 안내는 제공될 수 있습니다.',
-        'N', 'Y'),
-       (5, 'ANALYSIS_REQUIRED', '소비정보 수집 및 분석 동의',
-        '맞춤형 소비 분석을 제공하기 위해 결제 거래의 가맹점명, 결제금액, 결제일시 및 소비 카테고리 정보를 수집·이용합니다. 수집된 정보는 소비 패턴 분석과 분석 결과 제공 목적으로만 사용됩니다.',
-        'Y', 'Y'),
-       (6, 'ANALYSIS_OPTIONAL', '맞춤형 금융상품 추천 정보 활용 동의',
-        '소비 분석 결과를 바탕으로 카드와 보험 등 맞춤형 금융상품을 추천하기 위해 분석 결과를 활용합니다. 선택 약관에 동의하지 않아도 소비 분석 기능은 이용할 수 있습니다.', 'N', 'Y');
+        'N',
+        'Y'),
+       (6,
+        'ANALYSIS_OPTIONAL',
+        '금융상품 추천 정보 활용 동의',
+        '1. 활용하는 정보 항목\n회사는 맞춤형 금융상품 추천 서비스를 제공하기 위해 다음 정보를 활용합니다.\n- 소비 카테고리별 지출 내역\n- 기간별 소비금액\n- 소비 패턴 분석 결과\n- 보유하거나 연결한 계좌 및 카드 정보\n- 금융상품 이용 및 관심 정보\n\n2. 정보 활용 목적\n수집 및 분석된 정보는 다음 목적으로 활용됩니다.\n- 회원의 소비 성향 분석\n- 카드 및 금융상품 추천\n- 회원별 맞춤형 금융 혜택 안내\n- 금융상품 추천 서비스 개선\n\n3. 정보 보유 및 이용 기간\n회사는 맞춤형 금융상품 추천 서비스 이용 기간 동안 해당 정보를 활용하며, 회원 탈퇴 또는 동의 철회 시 지체 없이 활용을 중단하고 관련 정보를 삭제합니다. 다만, 관계 법령에 따라 보관이 필요한 경우에는 해당 기간 동안 별도로 보관합니다.\n\n4. 동의 거부 및 철회\n회원은 맞춤형 금융상품 추천을 위한 정보 활용에 동의하지 않을 권리가 있으며, 동의 후에도 언제든지 설정 화면에서 철회할 수 있습니다. 동의하지 않더라도 소비 분석을 포함한 기본 서비스는 정상적으로 이용할 수 있습니다.',
+        'N',
+        'Y'),
+       (7,
+        'AI_REQUIRED',
+        'AI 기반 소비분석 및 추천 서비스 이용 동의',
+        '1. AI 활용 정보 항목\n회사는 AI 기반 소비분석 및 금융상품 추천 서비스 제공을 위해 다음 정보를 활용할 수 있습니다.\n- 소비 카테고리별 지출 내역\n- 결제금액 및 결제일시\n- 소비 패턴 분석 결과\n- 소비 카테고리 정보\n- 서비스 이용 과정에서 생성된 분석 정보\n\n2. AI 활용 목적\n해당 정보는 다음 목적으로 활용됩니다.\n- 소비 패턴 분석 및 AI 분석 결과 생성\n- 소비 성향에 따른 AI 칭호 및 요약 제공\n- 카드 및 보험 등 금융상품 추천 보조\n- 소비 분석 및 추천 서비스 품질 개선\n\n3. AI 처리 결과 안내\nAI가 생성하는 분석 결과 및 추천 내용은 회원의 소비정보를 기반으로 자동 생성되며, 실제 금융상품 가입 또는 금융 의사결정을 대신하지 않습니다. 회원은 AI가 제공하는 결과를 참고 정보로 활용할 수 있습니다.\n\n4. 정보 보유 및 이용 기간\n회사는 AI 기반 소비분석 및 추천 서비스 이용 기간 동안 해당 정보를 활용하며, 회원 탈퇴 또는 동의 철회 시 관련 정보의 활용을 중단합니다. 다만, 관계 법령에 따라 보관이 필요한 경우에는 해당 기간 동안 별도로 보관할 수 있습니다.\n\n5. 동의 거부 권리 및 불이익\n회원은 AI 기반 소비분석 및 추천 서비스 이용을 위한 정보 활용에 동의하지 않을 권리가 있습니다. 다만, 본 동의는 AI 기반 소비분석 및 추천 기능 제공을 위한 필수 동의이므로 동의하지 않는 경우 해당 기능을 이용할 수 없습니다.',
+        'Y',
+        'Y');
 
--- ---------------------------------------------------------------------
+            -- ---------------------------------------------------------------------
 -- 5. user_agreement_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO user_agreement_tbl (user_agreement_id,
+            INSERT INTO user_agreement_tbl (user_agreement_id,
                                 user_id,
                                 agreement_id,
                                 agreed_yn,
                                 agreed_at)
 VALUES (1, 1, 1, 'Y', '2026-07-01 09:05:00'),
-       (2, 1, 2, 'Y', '2026-07-01 09:05:10'),
-       (3, 2, 1, 'Y', '2026-07-02 10:05:00'),
-       (4, 2, 2, 'Y', '2026-07-02 10:05:10'),
-       (5, 3, 1, 'Y', '2026-07-03 11:05:00'),
-       (6, 3, 3, 'N', '2026-07-03 11:05:10');
+        (2, 1, 2, 'Y', '2026-07-01 09:05:10'),
+        (3, 2, 1, 'Y', '2026-07-02 10:05:00'),
+        (4, 2, 2, 'Y', '2026-07-02 10:05:10'),
+        (5, 3, 1, 'Y', '2026-07-03 11:05:00'),
+        (6, 3, 3, 'N', '2026-07-03 11:05:10');
 
 -- ---------------------------------------------------------------------
 -- 6. wallet_tbl (3건)
@@ -2387,104 +2455,115 @@ VALUES (1, 1, 1, 1, 500, '2026-07-18 12:00:00'),
 -- ---------------------------------------------------------------------
 -- 17. spending_analysis_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO spending_analysis_tbl (spending_analysis_id,
-                                   user_id,
-                                   analysis_period,
-                                   representative_category_id,
-                                   ai_title,
-                                   ai_analysis_summary,
-                                   ai_card_recommendation_summary,
-                                   ai_insurance_recommendation_summary,
-                                   created_at)
-VALUES (
-        1, 1, 1, 4,'한 달 온라인 쇼핑 탐험가','최근 한 달 동안 온라인쇼핑 지출 비중이 가장 높고 자동차와 생활 지출이 뒤를 잇고 있습니다.',
-        NULL,
-        NULL,
-        '2026-07-01 00:00:00'),
-       (2, 1, 3, 10,
-        '여행에 진심인 소비자',
-        '최근 세 달 동안 여행 지출이 가장 높고 온라인쇼핑과 주거·통신 지출도 큰 편입니다.',
-        NULL,
-        NULL,
-        '2026-07-02 00:00:00'),
-       (3, 2, 1, 6,
-        '대중교통 마스터',
-        '교통비 비중이 높고 이동이 잦은 소비 패턴입니다.',
-        NULL,
-        NULL,
-        '2026-07-03 00:00:00'),
-       (4, 2, 12, 1,
-        '알뜰 식비 관리자',
-        '연간 식비가 안정적으로 관리되고 있습니다.',
-        NULL,
-        NULL,
-        '2026-07-04 00:00:00'),
-       (5, 3, 3, 2,
-        '커피와 함께하는 사람',
-        '카페와 간식 관련 결제가 많은 편입니다.',
-        NULL,
-        NULL,
-        '2026-07-05 00:00:00'),
-       (6, 3, 12, 6,
-        '움직이는 저축러',
-        '교통 지출과 저축이 균형을 이루고 있습니다.',
-        NULL,
-        NULL,
-        '2026-07-06 00:00:00'),
-       (7, 1, 12, 10,
-        '여행에 미친 지갑의 순례자',
-        '최근 12개월 동안 여행 지출 비중이 가장 높고, 주거·통신과 교육 지출도 큰 편입니다.',
-        '최근 12개월 소비에서 온라인쇼핑과 자동차 관련 지출이 두드러집니다. 신용카드는 온라인쇼핑 할인에 강한 KB국민 톡톡O 카드가, 체크카드는 자동차 관련 할인 혜택이 있는 KB국민 직장인보너스체크카드가 가장 유리합니다.',
-        NULL,
-        '2026-08-03 09:00:00');
+
+-- # INSERT INTO spending_analysis_tbl (spending_analysis_id,
+-- #                                    user_id,
+-- #                                    analysis_period,
+-- #                                    representative_category_id,
+-- #                                    ai_title,
+-- #                                    ai_analysis_summary,
+-- #                                    ai_card_recommendation_summary,
+-- #                                    ai_insurance_recommendation_summary,
+-- #                                    created_at)
+-- 시연용으로 잠시 빼두겠습니다.
+-- # INSERT INTO spending_analysis_tbl (spending_analysis_id,
+-- #                                    user_id,
+-- #                                    analysis_period,
+-- #                                    representative_category_id,
+-- #                                    ai_title,
+-- #                                    ai_analysis_summary,
+-- #                                    ai_card_recommendation_summary,
+-- #                                    ai_insurance_recommendation_summary,
+-- #                                    created_at)
+-- # VALUES (1, 1, 1, 4, '한 달 온라인 쇼핑 탐험가', '최근 한 달 동안 온라인쇼핑 지출 비중이 가장 높고 자동차와 생활 지출이 뒤를 잇고 있습니다.',
+-- #         NULL,
+-- #         NULL,
+-- #         '2026-07-01 00:00:00'),
+-- #        (2, 1, 3, 10,
+-- #         '여행에 진심인 소비자',
+-- #         '최근 세 달 동안 여행 지출이 가장 높고 온라인쇼핑과 주거·통신 지출도 큰 편입니다.',
+-- #         NULL,
+-- #         NULL,
+-- #         '2026-07-02 00:00:00'),
+-- #        (3, 2, 1, 6,
+-- #         '대중교통 마스터',
+-- #         '교통비 비중이 높고 이동이 잦은 소비 패턴입니다.',
+-- #         NULL,
+-- #         NULL,
+-- #         '2026-07-03 00:00:00'),
+-- #        (4, 2, 12, 1,
+-- #         '알뜰 식비 관리자',
+-- #         '연간 식비가 안정적으로 관리되고 있습니다.',
+-- #         NULL,
+-- #         NULL,
+-- #         '2026-07-04 00:00:00'),
+-- #        (5, 3, 3, 2,
+-- #         '커피와 함께하는 사람',
+-- #         '카페와 간식 관련 결제가 많은 편입니다.',
+-- #         NULL,
+-- #         NULL,
+-- #         '2026-07-05 00:00:00'),
+-- #        (6, 3, 12, 6,
+-- #         '움직이는 저축러',
+-- #         '교통 지출과 저축이 균형을 이루고 있습니다.',
+-- #         NULL,
+-- #         NULL,
+-- #         '2026-07-06 00:00:00'),
+-- #        (7, 1, 12, 10,
+-- #         '여행에 미친 지갑의 순례자',
+-- #         '최근 12개월 동안 여행 지출 비중이 가장 높고, 주거·통신과 교육 지출도 큰 편입니다.',
+-- #         '최근 12개월 소비에서 온라인쇼핑과 자동차 관련 지출이 두드러집니다. 신용카드는 온라인쇼핑 할인에 강한 KB국민 톡톡O 카드가, 체크카드는 자동차 관련 할인 혜택이 있는 KB국민 직장인보너스체크카드가 가장 유리합니다.',
+-- #         NULL,
+-- #         '2026-08-03 09:00:00');
 -- ---------------------------------------------------------------------
 -- 18. spending_analysis_category_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO spending_analysis_category_tbl (analysis_category_id,
-                                            spending_analysis_id,
-                                            spending_category_id,
-                                            spending_amount,
-                                            spending_ratio,
-                                            transaction_count,
-                                            created_at)
-VALUES (1, 1, 4, 119000, 23.27, 1, '2026-07-01 00:05:00'),
-       (2, 1, 7, 72000, 14.08, 1, '2026-07-01 00:05:00'),
-       (7, 1, 3, 68400, 13.38, 1, '2026-07-01 00:05:00'),
-       (8, 1, 8, 55000, 10.75, 1, '2026-07-01 00:05:00'),
-       (9, 1, 12, 47000, 9.19, 1, '2026-07-01 00:05:00'),
-       (10, 1, 6, 43800, 8.56, 1, '2026-07-01 00:05:00'),
-       (11, 1, 5, 32900, 6.43, 1, '2026-07-01 00:05:00'),
-       (12, 1, 11, 28000, 5.48, 1, '2026-07-01 00:05:00'),
-       (13, 1, 13, 23500, 4.60, 1, '2026-07-01 00:05:00'),
-       (14, 1, 1, 21800, 4.26, 1, '2026-07-01 00:05:00'),
-       (3, 2, 10, 636000, 37.75, 3, '2026-07-02 00:05:00'),
-       (4, 2, 4, 261800, 15.54, 3, '2026-07-02 00:05:00'),
-       (5, 3, 6, 90000, 75.00, 30, '2026-07-03 00:05:00'),
-       (6, 3, 1, 30000, 25.00, 5, '2026-07-03 00:05:00'),
-       (15, 2, 8, 143000, 8.49, 2, '2026-07-02 00:05:00'),
-       (16, 2, 11, 123000, 7.30, 2, '2026-07-02 00:05:00'),
-       (17, 2, 3, 86700, 5.15, 2, '2026-07-02 00:05:00'),
-       (18, 2, 12, 85500, 5.08, 2, '2026-07-02 00:05:00'),
-       (19, 2, 5, 77900, 4.62, 2, '2026-07-02 00:05:00'),
-       (20, 2, 7, 72000, 4.27, 1, '2026-07-02 00:05:00'),
-       (21, 2, 6, 60600, 3.60, 2, '2026-07-02 00:05:00'),
-       (22, 2, 1, 55800, 3.31, 2, '2026-07-02 00:05:00'),
-       (23, 2, 9, 52000, 3.09, 1, '2026-07-02 00:05:00'),
-       (24, 2, 13, 23500, 1.39, 1, '2026-07-02 00:05:00'),
-       (25, 2, 2, 6900, 0.41, 1, '2026-07-02 00:05:00'),
-       (26, 7, 10, 636000, 17.10, 3, '2026-08-03 09:00:05'),
-       (27, 7, 8, 602000, 16.19, 4, '2026-08-03 09:00:05'),
-       (28, 7, 11, 592000, 15.92, 4, '2026-08-03 09:00:05'),
-       (29, 7, 4, 442700, 11.90, 5, '2026-08-03 09:00:05'),
-       (30, 7, 7, 315000, 8.47, 3, '2026-08-03 09:00:05'),
-       (31, 7, 13, 295500, 7.95, 4, '2026-08-03 09:00:05'),
-       (32, 7, 3, 209500, 5.63, 4, '2026-08-03 09:00:05'),
-       (33, 7, 1, 154300, 4.15, 5, '2026-08-03 09:00:05'),
-       (34, 7, 9, 152000, 4.09, 2, '2026-08-03 09:00:05'),
-       (35, 7, 12, 140500, 3.78, 3, '2026-08-03 09:00:05'),
-       (36, 7, 5, 77900, 2.09, 2, '2026-08-03 09:00:05'),
-       (37, 7, 6, 75100, 2.02, 3, '2026-08-03 09:00:05'),
-       (38, 7, 2, 26400, 0.71, 4, '2026-08-03 09:00:05');
+# 분석 시연용 주석처리
+# INSERT INTO spending_analysis_category_tbl (analysis_category_id,
+#                                             spending_analysis_id,
+#                                             spending_category_id,
+#                                             spending_amount,
+#                                             spending_ratio,
+#                                             transaction_count,
+#                                             created_at)
+# VALUES (1, 1, 4, 119000, 23.27, 1, '2026-07-01 00:05:00'),
+#        (2, 1, 7, 72000, 14.08, 1, '2026-07-01 00:05:00'),
+#        (7, 1, 3, 68400, 13.38, 1, '2026-07-01 00:05:00'),
+#        (8, 1, 8, 55000, 10.75, 1, '2026-07-01 00:05:00'),
+#        (9, 1, 12, 47000, 9.19, 1, '2026-07-01 00:05:00'),
+#        (10, 1, 6, 43800, 8.56, 1, '2026-07-01 00:05:00'),
+#        (11, 1, 5, 32900, 6.43, 1, '2026-07-01 00:05:00'),
+#        (12, 1, 11, 28000, 5.48, 1, '2026-07-01 00:05:00'),
+#        (13, 1, 13, 23500, 4.60, 1, '2026-07-01 00:05:00'),
+#        (14, 1, 1, 21800, 4.26, 1, '2026-07-01 00:05:00'),
+#        (3, 2, 10, 636000, 37.75, 3, '2026-07-02 00:05:00'),
+#        (4, 2, 4, 261800, 15.54, 3, '2026-07-02 00:05:00'),
+#        (5, 3, 6, 90000, 75.00, 30, '2026-07-03 00:05:00'),
+#        (6, 3, 1, 30000, 25.00, 5, '2026-07-03 00:05:00'),
+#        (15, 2, 8, 143000, 8.49, 2, '2026-07-02 00:05:00'),
+#        (16, 2, 11, 123000, 7.30, 2, '2026-07-02 00:05:00'),
+#        (17, 2, 3, 86700, 5.15, 2, '2026-07-02 00:05:00'),
+#        (18, 2, 12, 85500, 5.08, 2, '2026-07-02 00:05:00'),
+#        (19, 2, 5, 77900, 4.62, 2, '2026-07-02 00:05:00'),
+#        (20, 2, 7, 72000, 4.27, 1, '2026-07-02 00:05:00'),
+#        (21, 2, 6, 60600, 3.60, 2, '2026-07-02 00:05:00'),
+#        (22, 2, 1, 55800, 3.31, 2, '2026-07-02 00:05:00'),
+#        (23, 2, 9, 52000, 3.09, 1, '2026-07-02 00:05:00'),
+#        (24, 2, 13, 23500, 1.39, 1, '2026-07-02 00:05:00'),
+#        (25, 2, 2, 6900, 0.41, 1, '2026-07-02 00:05:00'),
+#        (26, 7, 10, 636000, 17.10, 3, '2026-08-03 09:00:05'),
+#        (27, 7, 8, 602000, 16.19, 4, '2026-08-03 09:00:05'),
+#        (28, 7, 11, 592000, 15.92, 4, '2026-08-03 09:00:05'),
+#        (29, 7, 4, 442700, 11.90, 5, '2026-08-03 09:00:05'),
+#        (30, 7, 7, 315000, 8.47, 3, '2026-08-03 09:00:05'),
+#        (31, 7, 13, 295500, 7.95, 4, '2026-08-03 09:00:05'),
+#        (32, 7, 3, 209500, 5.63, 4, '2026-08-03 09:00:05'),
+#        (33, 7, 1, 154300, 4.15, 5, '2026-08-03 09:00:05'),
+#        (34, 7, 9, 152000, 4.09, 2, '2026-08-03 09:00:05'),
+#        (35, 7, 12, 140500, 3.78, 3, '2026-08-03 09:00:05'),
+#        (36, 7, 5, 77900, 2.09, 2, '2026-08-03 09:00:05'),
+#        (37, 7, 6, 75100, 2.02, 3, '2026-08-03 09:00:05'),
+#        (38, 7, 2, 26400, 0.71, 4, '2026-08-03 09:00:05');
 -- ---------------------------------------------------------------------
 -- 19. kb_card_product_tbl (4건)
 -- ---------------------------------------------------------------------
@@ -2530,57 +2609,54 @@ VALUES (1, 1, 2, '카페 이용 할인', NULL, 10.00, 10000, 300000, '스타벅�
 -- ---------------------------------------------------------------------
 -- 21. card_recommendation_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO card_recommendation_tbl
-(
-    card_recommendation_id,
-    spending_analysis_id,
-    card_product_id,
-    recommendation_rank,
-    expected_benefit_amount,
-    created_at
-)
-VALUES
-    -- CREDIT
-    (1, 7, 2, 1, 27355, '2026-08-03 09:10:05'),
-    (2, 7, 1, 2,  2690, '2026-08-03 09:10:05'),
-
-    -- CHECK
-    (3, 7, 4, 1, 13600, '2026-08-03 09:10:05'),
-    (4, 7, 3, 2,  6560, '2026-08-03 09:10:05');
+# 카드 추천 시연용 주석처리
+# INSERT INTO card_recommendation_tbl
+# (card_recommendation_id,
+#  spending_analysis_id,
+#  card_product_id,
+#  recommendation_rank,
+#  expected_benefit_amount,
+#  created_at)
+# VALUES
+#     -- CREDIT
+#     (1, 7, 2, 1, 27355, '2026-08-03 09:10:05'),
+#     (2, 7, 1, 2, 2690, '2026-08-03 09:10:05'),
+#
+#     -- CHECK
+#     (3, 7, 4, 1, 13600, '2026-08-03 09:10:05'),
+#     (4, 7, 3, 2, 6560, '2026-08-03 09:10:05');
 -- ---------------------------------------------------------------------
 -- 22. card_recommendation_detail_tbl (7건)
 -- ---------------------------------------------------------------------
-
-INSERT INTO card_recommendation_detail_tbl
-(
-    card_recommendation_detail_id,
-    card_recommendation_id,
-    card_benefit_id,
-    eligible_spending_amount,
-    eligible_transaction_count,
-    eligible_month_count,
-    expected_benefit_amount,
-    created_at
-)
-VALUES
-    -- card_recommendation_id = 1
-    -- KB국민 톡톡O 카드
-    (1, 1, 3, 261800, 3, 3, 26180, '2026-08-03 09:10:10'),
-    (2, 1, 4,  23500, 1, 1,  1175, '2026-08-03 09:10:10'),
-
-    -- card_recommendation_id = 2
-    -- KB국민 My WE:SH 카드
-    (3, 2, 1,  6900, 1, 1,  690, '2026-08-03 09:10:10'),
-    (4, 2, 2, 55800, 2, 2, 2000, '2026-08-03 09:10:10'),
-
-    -- card_recommendation_id = 3
-    -- KB국민 직장인보너스체크카드
-    (5, 3, 7, 315000, 3, 2, 13600, '2026-08-03 09:10:10'),
-
-    -- card_recommendation_id = 4
-    -- KB국민 노리2 체크카드
-    (6, 4, 5, 60600, 2, 2, 6060, '2026-08-03 09:10:10'),
-    (7, 4, 6,  6900, 1, 1,  500, '2026-08-03 09:10:10');
+# 소비분석 용 주석처리
+# INSERT INTO card_recommendation_detail_tbl
+# (card_recommendation_detail_id,
+#  card_recommendation_id,
+#  card_benefit_id,
+#  eligible_spending_amount,
+#  eligible_transaction_count,
+#  eligible_month_count,
+#  expected_benefit_amount,
+#  created_at)
+# VALUES
+#     -- card_recommendation_id = 1
+#     -- KB국민 톡톡O 카드
+#     (1, 1, 3, 261800, 3, 3, 26180, '2026-08-03 09:10:10'),
+#     (2, 1, 4, 23500, 1, 1, 1175, '2026-08-03 09:10:10'),
+#
+#     -- card_recommendation_id = 2
+#     -- KB국민 My WE:SH 카드
+#     (3, 2, 1, 6900, 1, 1, 690, '2026-08-03 09:10:10'),
+#     (4, 2, 2, 55800, 2, 2, 2000, '2026-08-03 09:10:10'),
+#
+#     -- card_recommendation_id = 3
+#     -- KB국민 직장인보너스체크카드
+#     (5, 3, 7, 315000, 3, 2, 13600, '2026-08-03 09:10:10'),
+#
+#     -- card_recommendation_id = 4
+#     -- KB국민 노리2 체크카드
+#     (6, 4, 5, 60600, 2, 2, 6060, '2026-08-03 09:10:10'),
+#     (7, 4, 6, 6900, 1, 1, 500, '2026-08-03 09:10:10');
 
 -- ---------------------------------------------------------------------
 -- 23. kb_insurance_product_tbl (5건)
@@ -2593,16 +2669,50 @@ INSERT INTO kb_insurance_product_tbl (insurance_product_id,
                                       insurance_image,
                                       application_url,
                                       created_at)
-VALUES (1, 'KB손해보험 다이렉트 자동차보험', '자동차', '자동차 사고 발생 시 대인, 대물, 자기신체손해 등을 보장하는 온라인 전용 자동차보험입니다.', 50000,
-        'kb_auto_insurance.png', 'kb_auto_apply.html', '2026-07-01 09:00:00'),
-       (2, 'KB손해보험 건강보험', '건강', '질병 및 상해로 인한 의료비 부담을 대비할 수 있는 종합 건강보험 상품입니다.', 30000, 'kb_health_insurance.png',
-        'kb_health_apply.html', '2026-07-01 09:10:00'),
-       (3, 'KB손해보험 실손의료비보험', '실손', '병원 진료 및 치료 과정에서 발생하는 의료비를 보장하는 실손형 보험 상품입니다.', 15000, 'kb_silson_insurance.png',
-        'kb_silson_apply.html', '2026-07-01 09:20:00'),
-       (4, 'KB손해보험 운전자보험', '운전자', '자동차 사고 발생 시 운전자에게 필요한 법률 비용 및 사고 관련 위험을 보장합니다.', 12000, 'kb_driver_insurance.png',
-        'kb_driver_apply.html', '2026-07-01 09:30:00'),
-       (5, 'KB손해보험 여행자보험', '여행', '국내외 여행 중 발생할 수 있는 사고, 질병, 휴대품 손해 등을 보장합니다.', 8000, 'kb_travel_insurance.png',
-        'kb_travel_apply.html', '2026-07-01 09:40:00');
+VALUES (1, 'KB 5.10.10 플러스 건강보험', '건강·실비',
+        '질병과 상해에 따른 진단, 입원, 수술 위험을 종합적으로 대비하는 건강보험 상품입니다.',
+        45000, 'kb_51010_health_insurance.png', 'kb_51010_health_apply.html', '2026-07-01 09:00:00'),
+
+       (2, 'KB손보 실손의료비보장보험', '건강·실비',
+        '질병 또는 상해로 실제 부담한 입원 및 통원 의료비를 보장하는 실손의료보험 상품입니다.',
+        18000, 'kb_medical_expense_insurance.png', 'kb_medical_expense_apply.html', '2026-07-01 09:10:00'),
+
+       (3, 'KB손보 간편가입 실손의료비보장보험', '건강·실비',
+        '간편한 가입 절차를 통해 질병 또는 상해로 발생한 실제 의료비 부담을 대비하는 실손의료보험 상품입니다.',
+        23000, 'kb_easy_medical_expense_insurance.png', 'kb_easy_medical_expense_apply.html', '2026-07-01 09:20:00'),
+
+       (4, '해외여행보험', '여행자',
+        '해외여행 중 발생할 수 있는 상해, 질병, 휴대품 손해 등의 위험을 대비하는 여행자보험입니다.',
+        15000, 'kb_overseas_travel_insurance.png', 'kb_overseas_travel_apply.html', '2026-07-01 09:30:00'),
+
+       (5, '해외장기체류(유학연수생)보험', '여행자',
+        '해외 유학이나 연수 기간 중 발생할 수 있는 상해와 질병 등의 위험을 장기간 보장하는 보험입니다.',
+        60000, 'kb_study_abroad_insurance.png', 'kb_study_abroad_apply.html', '2026-07-01 09:40:00'),
+
+       (6, '해외장기체류(출장주재원)보험', '여행자',
+        '해외 출장 또는 주재 기간 중 발생할 수 있는 상해와 질병 등의 위험을 장기간 보장하는 보험입니다.',
+        70000, 'kb_overseas_worker_insurance.png', 'kb_overseas_worker_apply.html', '2026-07-01 09:50:00'),
+
+       (7, 'KB자동차보험', '운전자',
+        '자동차 사고로 인한 대인, 대물 및 차량 관련 손해를 대비하는 자동차보험 상품입니다.',
+        65000, 'kb_auto_insurance.png', 'kb_auto_apply.html', '2026-07-01 10:00:00'),
+
+       (8, 'KB 플러스 운전자 상해보험', '운전자',
+        '운전 중 발생할 수 있는 상해와 교통사고 처리 비용 등 운전자 관련 위험을 대비하는 보험입니다.',
+        15000, 'kb_driver_injury_insurance.png', 'kb_driver_injury_apply.html', '2026-07-01 10:10:00'),
+
+       (9, 'KB The 건강한 치아보험', '치아',
+        '충치 치료, 보철 치료 등 치과 진료로 발생할 수 있는 비용 부담을 대비하는 치아보험 상품입니다.',
+        25000, 'kb_dental_insurance.png', 'kb_dental_apply.html', '2026-07-01 10:20:00'),
+
+       (10, 'KB 금쪽같은 펫보험(강아지)', '펫',
+        '강아지의 질병과 상해로 인한 동물병원 치료비 등의 부담을 대비하는 반려동물보험입니다.',
+        35000, 'kb_pet_dog_insurance.png', 'kb_pet_dog_apply.html', '2026-07-01 10:30:00'),
+
+       (11, 'KB 금쪽같은 펫보험(고양이)', '펫',
+        '고양이의 질병과 상해로 인한 동물병원 치료비 등의 부담을 대비하는 반려동물보험입니다.',
+        30000, 'kb_pet_cat_insurance.png', 'kb_pet_cat_apply.html', '2026-07-01 10:40:00');
+
 
 -- ---------------------------------------------------------------------
 -- 24. kb_insurance_coverage_tbl (12건)
@@ -2614,33 +2724,55 @@ INSERT INTO kb_insurance_coverage_tbl (insurance_coverage_id,
                                        coverage_description,
                                        coverage_limit,
                                        created_at)
-VALUES (1, 1, '대인배상', 100000000, '자동차 사고로 타인의 신체 피해 발생 시 손해를 보장합니다.', '사고당', '2026-07-01 10:00:00'),
-       (2, 1, '대물배상', 200000000, '자동차 사고로 타인의 차량 및 재산 피해 발생 시 보장합니다.', '사고당', '2026-07-01 10:10:00'),
-       (3, 1, '자기신체사고', 50000000, '자동차 사고로 본인에게 발생한 상해를 보장합니다.', '사고당', '2026-07-01 10:20:00'),
-       (4, 2, '암 진단비', 30000000, '암 진단 확정 시 진단비를 지급합니다.', '1회', '2026-07-01 10:30:00'),
-       (5, 2, '질병 입원비', 50000, '질병으로 입원 치료 시 입원 일당을 지급합니다.', '입원일 기준', '2026-07-01 10:40:00'),
-       (6, 2, '수술비', 1000000, '질병 및 상해 수술 발생 시 수술비를 지급합니다.', '수술별', '2026-07-01 10:50:00'),
-       (7, 3, '입원 의료비', 50000000, '입원 치료 과정에서 발생한 의료비를 보장합니다.', '연간 한도', '2026-07-01 11:00:00'),
-       (8, 3, '통원 의료비', 30000000, '외래 진료 및 통원 치료 비용을 보장합니다.', '연간 한도', '2026-07-01 11:10:00'),
-       (9, 4, '교통사고 처리 지원금', 50000000, '교통사고 발생 시 형사 합의 관련 비용을 지원합니다.', '사고당', '2026-07-01 11:20:00'),
-       (10, 4, '벌금 보장', 20000000, '자동차 사고 관련 벌금 발생 시 보장합니다.', '사고당', '2026-07-01 11:30:00'),
-       (11, 5, '여행 중 상해 의료비', 10000000, '여행 중 발생한 상해 치료 비용을 보장합니다.', '사고당', '2026-07-01 11:40:00'),
-       (12, 5, '휴대품 손해', 1000000, '여행 중 휴대품 분실 및 파손 발생 시 보장합니다.', '사고당', '2026-07-01 11:50:00');
+VALUES (1, 1, '질병 진단비', 30000000, '약관에서 정한 주요 질병으로 진단 확정된 경우 진단비를 지급합니다.', '최초 1회', '2026-07-01 11:00:00'),
+       (2, 1, '질병·상해 수술비', 2000000, '질병 또는 상해로 약관에서 정한 수술을 받은 경우 수술비를 지급합니다.', '수술 1회당', '2026-07-01 11:05:00'),
 
+       (3, 2, '입원 의료비', 50000000, '질병 또는 상해로 입원 치료 시 실제 부담한 의료비를 약관에 따라 보장합니다.', '연간 한도', '2026-07-01 11:10:00'),
+       (4, 2, '통원 의료비', 30000000, '외래 진료 및 처방 조제 시 실제 부담한 의료비를 약관에 따라 보장합니다.', '연간 한도', '2026-07-01 11:15:00'),
+
+       (5, 3, '간편가입 입원 의료비', 50000000, '간편가입 대상자가 입원 치료 시 실제 부담한 의료비를 약관에 따라 보장합니다.', '연간 한도', '2026-07-01 11:20:00'),
+       (6, 3, '간편가입 통원 의료비', 30000000, '간편가입 대상자가 통원 치료 시 실제 부담한 의료비를 약관에 따라 보장합니다.', '연간 한도', '2026-07-01 11:25:00'),
+
+       (7, 4, '해외여행 중 상해 의료비', 30000000, '해외여행 중 상해로 치료를 받은 경우 의료비를 약관에 따라 보장합니다.', '여행 기간 중', '2026-07-01 11:30:00'),
+       (8, 4, '휴대품 손해', 1000000, '해외여행 중 휴대품의 도난 또는 파손으로 발생한 손해를 보장합니다.', '여행 기간 중', '2026-07-01 11:35:00'),
+
+       (9, 5, '유학·연수 중 상해 의료비', 50000000, '해외 유학 또는 연수 중 상해로 발생한 의료비를 약관에 따라 보장합니다.', '보험기간 중', '2026-07-01 11:40:00'),
+       (10, 5, '유학·연수 중 질병 의료비', 50000000, '해외 유학 또는 연수 중 질병으로 발생한 의료비를 약관에 따라 보장합니다.', '보험기간 중',
+        '2026-07-01 11:45:00'),
+
+       (11, 6, '출장·주재 중 상해 의료비', 50000000, '해외 출장 또는 주재 중 상해로 발생한 의료비를 약관에 따라 보장합니다.', '보험기간 중', '2026-07-01 11:50:00'),
+       (12, 6, '출장·주재 중 질병 의료비', 50000000, '해외 출장 또는 주재 중 질병으로 발생한 의료비를 약관에 따라 보장합니다.', '보험기간 중',
+        '2026-07-01 11:55:00'),
+
+       (13, 7, '대인배상', 100000000, '자동차 사고로 타인의 신체에 피해가 발생한 경우 손해를 보장합니다.', '사고당', '2026-07-01 12:00:00'),
+       (14, 7, '대물배상', 200000000, '자동차 사고로 타인의 차량이나 재산에 피해가 발생한 경우 손해를 보장합니다.', '사고당', '2026-07-01 12:05:00'),
+
+       (15, 8, '교통사고 처리 지원금', 50000000, '운전 중 교통사고로 형사합의 비용 등이 발생한 경우 약관에 따라 지원합니다.', '사고당', '2026-07-01 12:10:00'),
+       (16, 8, '운전자 상해 보장', 30000000, '교통사고로 운전자 본인에게 상해가 발생한 경우 약관에 따라 보장합니다.', '사고당', '2026-07-01 12:15:00'),
+
+       (17, 9, '충전 치료비', 300000, '충치 등으로 충전 치료를 받은 경우 약관에서 정한 금액을 지급합니다.', '치아 1개당', '2026-07-01 12:20:00'),
+       (18, 9, '보철 치료비', 1000000, '임플란트, 브리지 등 보철 치료를 받은 경우 약관에서 정한 금액을 지급합니다.', '치아 1개당', '2026-07-01 12:25:00'),
+
+       (19, 10, '강아지 질병·상해 치료비', 10000000, '강아지가 질병 또는 상해로 동물병원 치료를 받은 경우 비용을 보장합니다.', '연간 한도', '2026-07-01 12:30:00'),
+       (20, 10, '강아지 수술비', 2000000, '강아지가 질병 또는 상해로 수술을 받은 경우 비용을 보장합니다.', '수술 1회당', '2026-07-01 12:35:00'),
+
+       (21, 11, '고양이 질병·상해 치료비', 10000000, '고양이가 질병 또는 상해로 동물병원 치료를 받은 경우 비용을 보장합니다.', '연간 한도', '2026-07-01 12:40:00'),
+       (22, 11, '고양이 수술비', 2000000, '고양이가 질병 또는 상해로 수술을 받은 경우 비용을 보장합니다.', '수술 1회당', '2026-07-01 12:45:00');
 -- ---------------------------------------------------------------------
 -- 25. kb_insurance_recommendation_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO kb_insurance_recommendation_tbl (insurance_recommendation_id,
-                                             spending_analysis_id,
-                                             insurance_product_id,
-                                             recommendation_reason,
-                                             created_at)
-VALUES (1, 1, 2, '의료와 생활 소비를 함께 고려해 건강보험을 추천합니다.', '2026-07-01 02:00:00'),
-       (2, 1, 3, '병원비 부담을 줄이기 위해 실손보험을 추천합니다.', '2026-07-01 02:10:00'),
-       (3, 2, 3, '정기적인 의료비 지출 가능성에 대비할 수 있습니다.', '2026-07-02 02:00:00'),
-       (4, 3, 5, '이동이 잦은 소비 패턴을 고려해 여행자보험을 추천합니다.', '2026-07-03 02:00:00'),
-       (5, 4, 2, '장기적인 건강 관리에 적합한 상품입니다.', '2026-07-04 02:00:00'),
-       (6, 5, 5, '여가와 외출 소비가 많아 여행 보장이 유용합니다.', '2026-07-05 02:00:00');
+# 시연용 주석처리
+# INSERT INTO kb_insurance_recommendation_tbl (insurance_recommendation_id,
+#                                              spending_analysis_id,
+#                                              insurance_product_id,
+#                                              recommendation_reason,
+#                                              created_at)
+# VALUES (1, 1, 1, '최근 3개월 내 병원 관련 소비가 확인되어 건강 위험에 대비할 수 있는 상품을 추천합니다.', '2026-07-01 13:00:00'),
+#        (2, 1, 2, '최근 3개월 내 병원 관련 소비가 확인되어 실제 의료비 부담을 줄일 수 있는 상품을 추천합니다.', '2026-07-01 13:05:00'),
+#        (3, 2, 9, '최근 3개월 내 치과 관련 소비가 확인되어 치과 치료비에 대비할 수 있는 상품을 추천합니다.', '2026-07-02 13:00:00'),
+#        (4, 3, 4, '최근 3개월 내 여행 관련 소비가 확인되어 해외여행 중 발생할 수 있는 위험에 대비하는 상품을 추천합니다.', '2026-07-03 13:00:00'),
+#        (5, 4, 8, '최근 3개월 내 자동차 관련 소비가 확인되어 운전자 사고와 상해 위험에 대비하는 상품을 추천합니다.', '2026-07-04 13:00:00'),
+#        (6, 5, 10, '최근 3개월 내 반려동물 관련 소비가 확인되어 강아지의 질병과 상해 치료비에 대비하는 상품을 추천합니다.', '2026-07-05 13:00:00');
 
 -- ---------------------------------------------------------------------
 -- 26. friend_request_tbl (6건)
@@ -2675,47 +2807,39 @@ VALUES (1, 1, 2, '2026-07-10 10:05:00'),
 -- ---------------------------------------------------------------------
 -- 28. settlement_tbl (3건)
 -- ---------------------------------------------------------------------
-INSERT INTO settlement_tbl (
-    settlement_id, requester_id, title, content, total_amount,
-    status, created_at, settlement_type, spending_category_id,
-    last_reminder_date, completed_at
-)
-VALUES
-(1, 1, '저녁 식사 정산', '저녁 식사 정산', 30000, 'REQUEST', '2026-07-20 19:00:00', 'EQUAL', 1, NULL, NULL),
-(2, 2, '카페 모임 정산', '카페 모임 정산', 24000, 'COMPLETE', '2026-07-21 15:00:00', 'EQUAL', 2, '2026-07-21 17:00:00', '2026-07-21 18:00:00'),
-(3, 3, '택시비 정산', '택시비 정산', 18000, 'CANCEL', '2026-07-22 23:00:00', 'UNEQUAL', 6, NULL, NULL);
+INSERT INTO settlement_tbl (settlement_id, requester_id, title, content, total_amount,
+                            status, created_at, settlement_type, spending_category_id,
+                            last_reminder_date, completed_at)
+VALUES (1, 1, '저녁 식사 정산', '저녁 식사 정산', 30000, 'REQUEST', '2026-07-20 19:00:00', 'EQUAL', 1, NULL, NULL),
+       (2, 2, '카페 모임 정산', '카페 모임 정산', 24000, 'COMPLETE', '2026-07-21 15:00:00', 'EQUAL', 2, '2026-07-21 17:00:00',
+        '2026-07-21 18:00:00'),
+       (3, 3, '택시비 정산', '택시비 정산', 18000, 'CANCEL', '2026-07-22 23:00:00', 'UNEQUAL', 6, NULL, NULL);
 
 -- ---------------------------------------------------------------------
 -- 29. settlement_member_tbl (6건)
 -- ---------------------------------------------------------------------
 
-INSERT INTO settlement_member_tbl (
-    settlement_member_id, settlement_id, user_id,
-    amount, status, created_at, completed_at
-)
-VALUES
-(1, 1, 2, 15000, 'REQUEST',  '2026-07-20 19:01:00', NULL),
-(2, 1, 3, 15000, 'REQUEST',  '2026-07-20 19:01:00', NULL),
-(3, 2, 1, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 17:30:00'),
-(4, 2, 3, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 18:00:00'),
-(5, 3, 1,  8000, 'CANCEL',   '2026-07-22 23:01:00', NULL),
-(6, 3, 2, 10000, 'CANCEL',   '2026-07-22 23:01:00', NULL);
+INSERT INTO settlement_member_tbl (settlement_member_id, settlement_id, user_id,
+                                   amount, status, created_at, completed_at)
+VALUES (1, 1, 2, 15000, 'REQUEST', '2026-07-20 19:01:00', NULL),
+       (2, 1, 3, 15000, 'REQUEST', '2026-07-20 19:01:00', NULL),
+       (3, 2, 1, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 17:30:00'),
+       (4, 2, 3, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 18:00:00'),
+       (5, 3, 1, 8000, 'CANCEL', '2026-07-22 23:01:00', NULL),
+       (6, 3, 2, 10000, 'CANCEL', '2026-07-22 23:01:00', NULL);
 
 -- ---------------------------------------------------------------------
 -- 30. notification_tbl (6건)
 -- ---------------------------------------------------------------------
 
-INSERT INTO notification_tbl (
-    notification_id, receiver_id, sender_id,
-    notification_type, target_id, status, created_at
-)
-VALUES
-(1, 2, 1, 'FRIEND_REQUEST',    1, 'READ',    '2026-07-10 10:00:00'),
-(2, 3, 1, 'FRIEND_REQUEST',    2, 'UNREAD',  '2026-07-11 10:00:00'),
-(3, 2, 1, 'SETTLEMENT_REQUEST',1, 'UNREAD',  '2026-07-20 19:01:00'),
-(4, 3, 2, 'COMMENT',           1, 'READ',    '2026-07-21 20:00:00'),
-(5, 1, 3, 'LIKE',              2, 'UNREAD',  '2026-07-22 20:00:00'),
-(6, 1, 2, 'SETTLEMENT_REQUEST',2, 'READ',    '2026-07-23 20:00:00');
+INSERT INTO notification_tbl (notification_id, receiver_id, sender_id,
+                              notification_type, target_id, status, created_at)
+VALUES (1, 2, 1, 'FRIEND_REQUEST', 1, 'READ', '2026-07-10 10:00:00'),
+       (2, 3, 1, 'FRIEND_REQUEST', 2, 'UNREAD', '2026-07-11 10:00:00'),
+       (3, 2, 1, 'SETTLEMENT_REQUEST', 1, 'UNREAD', '2026-07-20 19:01:00'),
+       (4, 3, 2, 'COMMENT', 1, 'READ', '2026-07-21 20:00:00'),
+       (5, 1, 3, 'LIKE', 2, 'UNREAD', '2026-07-22 20:00:00'),
+       (6, 1, 2, 'SETTLEMENT_REQUEST', 2, 'READ', '2026-07-23 20:00:00');
 
 -- ---------------------------------------------------------------------
 -- 31. financial_transaction_tbl (6건)
@@ -2935,25 +3059,22 @@ VALUES (1, 1, '포인트 지갑 충전', '2026-07-20 09:01:00', '2026-07-20 09:0
 -- ---------------------------------------------------------------------
 -- 39. feed_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO feed_tbl (
-    feed_id,
-    user_id,
-    target_id,
-    feed_status,
-    feed_type,
-    content,
-    visibility,
-    created_at,
-    updated_at
-)
-VALUES
-(1, 1, 1, 'ACTIVE', 'PAYMENT',    '지갑 충전 완료', 'PUBLIC',  '2026-07-20 09:05:00', '2026-07-20 09:05:00'),
-(2, 1, 2, 'ACTIVE', 'TRANSFER',   '친구에게 송금', 'FRIEND',  '2026-07-20 10:05:00', '2026-07-20 10:05:00'),
-(3, 2, 3, 'ACTIVE', 'PAYMENT',    '지갑 충전 완료', 'PRIVATE', '2026-07-21 09:05:00', '2026-07-21 09:05:00'),
-(4, 2, 4, 'ACTIVE', 'SETTLEMENT', '정산 완료',     'FRIEND',  '2026-07-21 18:05:00', '2026-07-21 18:05:00'),
-(5, 3, 5, 'ACTIVE', 'TRANSFER',   '여행비 송금',   'PUBLIC',  '2026-07-22 11:05:00', '2026-07-22 11:05:00'),
-(6, 3, 6, 'ACTIVE', 'PAYMENT',    '교통비 결제',   'PRIVATE', '2026-07-23 08:05:00', '2026-07-23 08:05:00');
-
+INSERT INTO feed_tbl (feed_id,
+                      user_id,
+                      target_id,
+                      feed_status,
+                      feed_type,
+                      content,
+                      visibility,
+                      created_at,
+                      updated_at)
+VALUES (1, 1, 1, 'ACTIVE', 'PAYMENT', '지갑 충전 완료', 'PUBLIC', '2026-07-20 09:05:00', '2026-07-20 09:05:00'),
+       (2, 1, 2, 'ACTIVE', 'TRANSFER', '친구에게 송금', 'FRIEND', '2026-07-20 10:05:00', '2026-07-20 10:05:00'),
+       (3, 2, 3, 'ACTIVE', 'PAYMENT', '지갑 충전 완료', 'PRIVATE', '2026-07-21 09:05:00', '2026-07-21 09:05:00'),
+       (4, 2, 4, 'ACTIVE', 'SETTLEMENT', '정산 완료', 'FRIEND', '2026-07-21 18:05:00', '2026-07-21 18:05:00'),
+       (5, 3, 5, 'ACTIVE', 'TRANSFER', '여행비 송금', 'PUBLIC', '2026-07-22 11:05:00', '2026-07-22 11:05:00'),
+       (6, 1, 6, 'ACTIVE', 'CARD', '내 커스텀 카드 자랑하기', 'PUBLIC', '2026-07-23 08:05:00', '2026-07-23 08:05:00'),
+       (7, 1, 5, 'ACTIVE', 'EVENT', '7월 출석 이벤트 달성', 'PUBLIC', '2026-07-22 11:05:00', '2026-07-22 11:05:00');
 -- ---------------------------------------------------------------------
 -- 40. feed_image_tbl (6건)
 -- ---------------------------------------------------------------------
@@ -3065,65 +3186,82 @@ VALUES (1, 1, 1, 'KB-CARD-001', '나만의 옐로우카드', 'REQUEST', '2026-07
 -- ---------------------------------------------------------------------
 -- 47. event_tbl (20건)
 -- ---------------------------------------------------------------------
- INSERT INTO event_tbl (
-    event_id,
-    event_name,
-    event_desc,
-    event_type,
-    event_status,
-    event_img_name,
-    event_target,
-    event_level,
-    event_daily_limit_count,
-    start_at,
-    end_at,
-    created_at
-) VALUES
+INSERT INTO event_tbl (event_id,
+                       event_name,
+                       event_desc,
+                       event_type,
+                       event_status,
+                       event_img_name,
+                       event_target,
+                       event_level,
+                       event_daily_limit_count,
+                       start_at,
+                       end_at,
+                       created_at)
+VALUES
 -- 매일 출석체크 (event_id = 1) 
-(
-    1,
-    '매일매일 출석체크',
-    '매일 앱에 방문하여 출석 도장을 찍고 혜택을 받아보세요!',
-    'ATTENDANCE',
-    'OPEN',
-    'calendar.png',
-    10,
-    3,
-    1,
-    '2026-01-01 00:00:00',
-    '2026-12-01 00:00:00',
-    '2026-01-01 00:00:00' 
-),
+(1,
+ '매일매일 출석체크',
+ '매일 앱에 방문하여 출석 도장을 찍고 혜택을 받아보세요!',
+ 'ATTENDANCE',
+ 'OPEN',
+ 'attendance_event.png',
+ 10,
+ 3,
+ 1,
+ '2026-01-01 00:00:00',
+ '2026-12-01 00:00:00',
+ '2026-01-01 00:00:00'),
 -- 피드 첫 등록 (event_id = 2) 
-(
-    2,
-    '초보자를 위한 가이드 : 첫 피드 작성',
-    '첫 일상 피드를 등록하고 웰컴 포인트를 받으세요!',
-    'PERMANENT',
-    'OPEN',
-    'social-media.png',
-    1,
-    1,
-    1,
-    '2026-07-01 00:00:00',
-	'2026-12-01 00:00:00',
-    '2026-07-01 00:00:00' 
-),
+(2,
+ '초보자를 위한 가이드 : 첫 피드 작성',
+ '첫 일상 피드를 등록하고 웰컴 포인트를 받으세요!',
+ 'PERMANENT',
+ 'OPEN',
+ 'attendance_event.png',
+ 1,
+ 1,
+ 1,
+ '2026-07-01 00:00:00',
+ '2026-12-01 00:00:00',
+ '2026-07-01 00:00:00'),
 -- 커스텀 카드 신규 등록 (event_id = 5)
-(
-    3,
-    '나만의 스타일, 커스텀 카드 만들기',
-    '내 취향대로 디자인하는 커스텀 카드를 신규 등록해 보세요.',
-    'PERMANENT', 
-    'OPEN',
-    'credit-card.png',
-    1,
-    2,
-    1,
-    '2026-07-15 00:00:00',
-	'2026-12-01 00:00:00',
-    '2026-07-01 00:00:00'
-);
+(3,
+ '나만의 스타일, 커스텀 카드 만들기',
+ '내 취향대로 디자인하는 커스텀 카드를 신규 등록해 보세요.',
+ 'PERMANENT',
+ 'OPEN',
+ 'attendance_event.png',
+ 1,
+ 2,
+ 1,
+ '2026-07-15 00:00:00',
+ '2026-12-01 00:00:00',
+ '2026-07-01 00:00:00'),
+(4,
+ '나만의 스타일, 커스텀 카드 만들기',
+ '내 취향대로 디자인하는 커스텀 카드를 신규 등록해 보세요.',
+ 'PERMANENT',
+ 'OPEN',
+ 'attendance_event.png',
+ 1,
+ 2,
+ 1,
+ '2026-07-15 00:00:00',
+ '2026-12-01 00:00:00',
+ '2026-07-01 00:00:00'),
+(5,
+ '나만의 스타일, 커스텀 카드 만들기',
+ '내 취향대로 디자인하는 커스텀 카드를 신규 등록해 보세요.',
+ 'PERMANENT',
+ 'OPEN',
+ 'attendance_event.png',
+ 1,
+ 2,
+ 1,
+ '2026-07-15 00:00:00',
+ '2026-12-01 00:00:00',
+ '2026-07-01 00:00:00');
 
 -- ---------------------------------------------------------------------
 -- 48. event_reward_tbl (5건)
@@ -3132,11 +3270,11 @@ INSERT INTO event_reward_tbl (reward_id,
                               event_id,
                               reward_point,
                               reward_exe)
-VALUES (1, 1, 100, 10),
-       (2, 2,  200, 20),
-       (3, 3,  500, 50);
+VALUES (1, 5, 100, 10),
+       (2, 2, 200, 20),
+       (3, 3, 500, 50);
 
-       
+
 
 -- ---------------------------------------------------------------------
 -- 49. event_participation_tbl (5건)
@@ -3154,15 +3292,15 @@ VALUES (1, 1, 100, 10),
 -- ---------------------------------------------------------------------
 -- 51. event_reward_receive_tbl (4건)
 -- ---------------------------------------------------------------------
--- INSERT INTO event_reward_receive_tbl (recv_id,
---                                       event_id,
---                                       reward_id,
---                                       user_id,
---                                       received_at)
--- VALUES (1, 1, 1, 1, '2026-07-01 08:10:00'),
--- 	(2, 1, 1, 2, '2026-07-01 08:25:00'),
--- 	(3, 2, 2, 1, '2026-07-01 08:50:00'),
--- 	(4, 2, 2, 2, '2026-07-05 09:00:00');
+INSERT INTO event_reward_receive_tbl (recv_id,
+                                      event_id,
+                                      reward_id,
+                                      user_id,
+                                      received_at)
+VALUES (2, 1, 1, 2, '2026-07-01 08:25:00'),
+       (3, 2, 2, 1, '2026-07-01 08:50:00'),
+       (4, 2, 2, 2, '2026-07-05 09:00:00'),
+       (5, 5, 1, 1, '2026-07-01 08:10:00');
 
 -- ---------------------------------------------------------------------
 -- 52. event_challenge_tbl (4건)
@@ -3218,6 +3356,8 @@ VALUES (1, 1, 1, 'KB', 'KB 대표카드', 'linked_kb_1.png', 'Y'),
 
 -- ---------------------------------------------------------------------
 -- 57. merchant_category_mapping_tbl (21건)
+-- AI 분류 저장 후 재활용 테이블
+-- 오류율 5퍼센트 넘으면 삭제 한다.
 -- ---------------------------------------------------------------------
 
 INSERT INTO merchant_category_mapping_tbl (merchant_name,
@@ -3268,5 +3408,41 @@ VALUES
     -- 병원 하위 카테고리
     ('서울내과', 16, 0),
     ('스마일치과', 19, 0);
+
+
+-- ---------------------------------------------------------------------
+-- 58. kb_insurance_category_match_tbl (11건)
+-- 소비 카테고리<-> 보험 종류 매칭 규칙 저장 테이블
+-- ex) 여행-> 여행자보험, 치아-> 치과보험
+-- ---------------------------------------------------------------------
+
+INSERT INTO kb_insurance_category_match_tbl
+(insurance_product_id,
+ spending_category_id,
+ recommendation_reason,
+ priority,
+ active_yn)
+VALUES
+    -- 병원 → 건강·실비
+    (1, 13, '최근 병원 이용 내역을 바탕으로 건강 보장 상품을 추천합니다.', 1, 'Y'),
+    (2, 13, '최근 병원 이용 내역을 바탕으로 실손의료비 보장 상품을 추천합니다.', 2, 'Y'),
+    (3, 13, '최근 병원 이용 내역을 바탕으로 간편가입 실손 상품을 추천합니다.', 3, 'Y'),
+
+    -- 여행 → 여행자보험
+    (4, 10, '최근 여행 관련 소비가 있어 해외여행보험을 추천합니다.', 1, 'Y'),
+    (5, 10, '최근 여행 관련 소비가 있어 장기체류 보험을 함께 추천합니다.', 2, 'Y'),
+    (6, 10, '최근 여행 관련 소비가 있어 출장·주재원 보험을 함께 추천합니다.', 3, 'Y'),
+
+    -- 자동차 → 자동차보험·운전자보험
+    (7, 7, '최근 자동차 관련 소비가 있어 자동차보험을 추천합니다.', 1, 'Y'),
+    (8, 7, '최근 자동차 관련 소비가 있어 운전자 상해보험을 추천합니다.', 2, 'Y'),
+
+    -- 치과 → 치아보험
+    (9, 19, '최근 치과 이용 내역이 있어 치아보험을 추천합니다.', 1, 'Y'),
+
+    -- 반려동물 → 펫보험
+    (10, 12, '최근 반려동물 관련 소비가 있어 강아지 펫보험을 추천합니다.', 1, 'Y'),
+    (11, 12, '최근 반려동물 관련 소비가 있어 고양이 펫보험을 추천합니다.', 2, 'Y');
+
 COMMIT;
 

@@ -33,11 +33,9 @@
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useSettlementStore } from '@/stores/settlement';
-
-import { useUserStore } from '@/stores/user';
-
-const userStore = useUserStore();
-const userId = userStore.userId;
+import { useAuthStore } from '@/stores/auth.js';
+const authStore = useAuthStore();
+const userId = authStore.userId;
 
 const router = useRouter();
 const route = useRoute();

@@ -46,6 +46,12 @@ public interface LoginMapper {
     // PIN 재설정용 인증 완료 정보 조회
     Long findVerifiedPinResetId(@Param("phoneNumber") String phoneNumber);
 
+    // 이름·휴대폰번호 변경용 인증 완료 정보 조회
+    PhoneAuthVO findVerifiedPhoneAuth(
+            @Param("phoneNumber") String phoneNumber,
+            @Param("verificationPurpose") String verificationPurpose
+    );
+
     // PIN 재설정 완료 후 인증 정보 삭제
     int deleteVerificationById(@Param("verificationId") Long verificationId);
 
