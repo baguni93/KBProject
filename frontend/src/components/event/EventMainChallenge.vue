@@ -2,10 +2,7 @@
   <div class="challenge-card" v-if="challenge">
     <!-- 이벤트 챌린지 배경 추가 예정-->
     <div class="challenge-background">
-      <div class="level-label">
-        <i class="fa-solid fa-bolt zap-icon"></i>
-        <span class="label-text">이벤트 챌린지</span>
-      </div>
+      <p>이벤트 챌린지</p>
     </div>
     <!-- 이벤트 챌린지 대시보드 -->
     <div class="challenge-status">
@@ -84,47 +81,18 @@ const claimReward = () => {
 };
 </script>
 <style scoped>
-.challenge-card {
-  width: 100%;
-  background-color: #1e222b;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: column;
-}
-
-/* 상단 배경 영역 (차후 구현 예정) */
 .challenge-background {
-  position: relative;
-  padding: 16px 16px 10px 16px;
-  box-sizing: border-box;
 }
 
-.level-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.zap-icon {
-  font-size: 13px;
-  color: #ffb703;
-}
-
-.label-text {
-  font-size: 13px;
-  font-weight: bold;
-  color: #ffffff;
-}
-
-/* 챌린지 대시보드 */
+/* 챌린지 데이터 대시보드 */
 .challenge-status {
-  padding: 0 16px 16px 16px;
+  background-color: #1e222b;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   box-sizing: border-box;
+  border-radius: 12px;
 }
 
 .status-row-top {

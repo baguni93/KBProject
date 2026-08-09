@@ -15,8 +15,8 @@ public class EventChallengeUserVO {
     private Integer userChallengeId;
     private Integer userId;
     private Integer challengeId;
-    private Integer challengeLevel;
-    private Integer challengeExe;
+    private Integer currentLevel;
+    private Integer currentTarget;
     private String status;
     private LocalDateTime updatedAt;
 }

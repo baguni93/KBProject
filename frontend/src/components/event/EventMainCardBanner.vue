@@ -31,13 +31,12 @@ const goToCustomCard = () => {
 .banner-card {
   background-color: #14171a;
   border-radius: 16px;
-  padding: 14px 20px;
-  min-height: 90px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  margin-bottom: 0;
+  margin-bottom: 16px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
 }

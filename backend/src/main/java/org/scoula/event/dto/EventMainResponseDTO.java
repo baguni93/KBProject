@@ -17,6 +17,5 @@ public class EventMainResponseDTO {
 
     private UserChallengeDTO userChallenge;
 
-//    private List<EventResponseDTO> activeEvents;
-    private  List<EventGetResponseDTO> activeEvents;
+    private List<EventResponseDTO> activeEvents;
 }

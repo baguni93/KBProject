@@ -13,6 +13,7 @@
     </button>
   </div>
 </template>
+
 <script setup>
 import { ref, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
@@ -43,9 +44,13 @@ onMounted(() => {
 const reloadPoint = async () => {
   try {
     const resData = await pointWalletApi.getWallet();
+
     localPoint.value = resData.point;
+
+    //console.log('포인트 재조회 성공:', localPoint.value);
   } catch (error) {
-    // 예외 처리
+    //console.error('포인트 재조회 실패:', error);
+    //alert('포인트 조회에 실패하였습니다. 잠시 후 다시 시도해 주세요.');
   }
 };
 
@@ -59,17 +64,16 @@ const goToPointWallet = () => {
 .point-card {
   background-color: #ffb703;
   border-radius: 20px;
-  padding: 16px 20px;
-  min-height: 104px;
+  padding: 24px 20px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: stretch;
   box-shadow: 0 4px 12px rgba(255, 183, 3, 0.2);
-  margin-bottom: 0;
+  margin-bottom: 16px;
   position: relative;
 }
 
-.point-card.clickable {
+.point-card.clcikable {
   cursor: pointer;
 }
 
@@ -86,10 +90,10 @@ const goToPointWallet = () => {
 }
 
 .point-value {
-  font-size: 30px;
+  font-size: 36px;
   font-weight: 800;
   color: #000;
-  margin-top: 4px;
+  margin-top: 6px;
   line-height: 1;
 }
 
@@ -101,6 +105,13 @@ const goToPointWallet = () => {
   font-size: 20px;
   font-weight: 700;
   margin-left: 2px;
+}
+
+.point-action {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
 }
 
 .reload-btn {
@@ -124,8 +135,7 @@ const goToPointWallet = () => {
 .reload-btn:hover {
   background-color: rgba(255, 255, 255, 0.4);
 }
-
 .reload-btn:active {
-  transform: rotate(180deg);
+  transform: rotate(180px);
 }
 </style>

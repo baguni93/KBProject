@@ -38,7 +38,7 @@ onMounted(async () => {
 });
 
 const goToEventMain = () => {
-  router.push('/event/main');
+  router.push('/event');
 };
 
 const goToPointWallet = () => {

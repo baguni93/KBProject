@@ -14,12 +14,7 @@ import java.time.LocalDateTime;
 public class EventRewardReceiveVO {
     private Integer recvId;
     private Integer eventId;
-    private String eventName;
-    private String eventType;
-    private String eventImgName;
     private Integer rewardId;
     private Integer userId;
-    private Integer rewardPoint;
-    private Integer rewardExe;
     private LocalDateTime receivedAt;
 }

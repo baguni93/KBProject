@@ -34,13 +34,8 @@ defineProps({
     default: () => ({
       eventId: 0,
       eventName: '',
-      eventDesc: '',
-      eventImgName: '',
-      rewardId: 0,
-      recvId: 0,
+      joinedDate: '',
       rewardPoint: 0,
-      rewardExe: 0,
-      receivedAt: '',
     }),
   },
 });
@@ -59,24 +54,19 @@ const formatToFullDate = (dateSrc) => {
 
 // 이벤트 배너 이미지 아이콘 처리
 // 임시로 이모지 사용
-const getEventImg = (eventName) => {
-  const name = eventName || '';
-
-  if (name.includes('출석')) return '☀️';
-  if (name.includes('피드')) return '📄';
-  if (name.includes('카드')) return '🎨';
-  if (name.includes('결제') || name.includes('지갑')) return '💳';
-  if (name.includes('정산')) return '📜';
-  if (name.includes('박스') || name.includes('랜덤')) return '🎁';
-  if (name.includes('분석')) return '📊';
-
+const getEventImg = (title) => {
+  if (!title) return '📢';
+  if (title.includes('출석')) return '📅';
+  if (title.includes('피드')) return '📝';
+  if (title.includes('카드')) return '🎨';
+  if (title.includes('결제') || title.includes('지갑')) return '💳';
+  if (title.includes('소비') || title.includes('분석')) return '📊';
   return '💡';
 };
 </script>
 
 <style scoped>
 .history-item-card {
-  width: 100%;
   background-color: #f8f9fa;
   border-radius: 16px;
   padding: 16px;
@@ -87,7 +77,6 @@ const getEventImg = (eventName) => {
   gap: 12px;
   box-sizing: border-box;
 }
-
 .card-top {
   display: flex;
   align-items: center;
@@ -104,7 +93,6 @@ const getEventImg = (eventName) => {
   height: 44px;
   background-color: #fffde7;
   border-radius: 12px;
-  flex-shrink: 0;
 }
 
 .img-icon {
@@ -115,51 +103,33 @@ const getEventImg = (eventName) => {
   display: flex;
   flex-direction: column;
   text-align: left;
-  flex: 1;
-  min-width: 0;
-  margin-right: 8px;
 }
 
 .event-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #2b3a4a;
   margin: 0 0 2px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .event-date {
   font-size: 12px;
   color: #adb5bd;
   font-weight: 500;
-  margin: 0;
 }
 
-/* 참여완료 배지  */
 .complete-tag {
   margin-left: auto;
-  align-self: center;
+  align-self: flex-start;
   background-color: #e8f5e9;
   color: #2e7d32;
   font-size: 11px;
   font-weight: bold;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 20px;
   display: flex;
   align-items: center;
   gap: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.complete-txt {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
 }
 
 .check-icon {
