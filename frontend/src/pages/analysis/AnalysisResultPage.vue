@@ -119,12 +119,12 @@
       <section class="recommendation-grid">
         <button type="button" class="recommendation-card kb-card" @click="openCardRecommendation">
           <span class="recommendation-icon card"><i class="fa-regular fa-credit-card"></i></span>
-          <span><strong class="text-15-bold">카드 추천</strong><small class="text-13">나에게 맞는 카드 찾기</small></span>
+          <span><strong class="text-15-bold">카드 추천</strong><small class="text-13">나에게 맞는<br/> 카드 찾기</small></span>
           <i class="fa-solid fa-chevron-right"></i>
         </button>
         <button type="button" class="recommendation-card kb-card" @click="openInsuranceRecommendation">
           <span class="recommendation-icon insurance"><i class="fa-solid fa-shield-heart"></i></span>
-          <span><strong class="text-15-bold">보험 추천</strong><small class="text-13">나에게 맞는 보험 찾기</small></span>
+          <span><strong class="text-15-bold">보험 추천</strong><small class="text-13">나에게 맞는<br/> 보험 찾기</small></span>
           <i class="fa-solid fa-chevron-right"></i>
         </button>
       </section>
@@ -139,7 +139,7 @@
           <label>
             <span class="text-13">카테고리</span>
             <select v-model="selectedCategoryId">
-              <option value="ALL">전체 카테고리</option>
+              <option value="ALL">전체</option>
               <option
                   v-for="category in topCategories"
                   :key="category.spendingCategoryId"
