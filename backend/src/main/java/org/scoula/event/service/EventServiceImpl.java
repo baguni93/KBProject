@@ -315,6 +315,7 @@ public class EventServiceImpl implements EventService{
         //리펙토링 할 때
         //일반 이벤트 get return  EventGetResponseDTO
         //출석 이벤트 get return  EventGetAttendanceResponseDTO
+
         return getEventList(userId);
     }
 
@@ -328,6 +329,10 @@ public class EventServiceImpl implements EventService{
         //리펙토링 할 때
         //일반 이벤트 get return  EventGetResponseDTO
         //출석 이벤트 get return  EventGetAttendanceResponseDTO
+
+        // 이벤트 참여 이력 생성
+        eventMapper.createAttendanceParticipation(userId, eventId);
+
         return getAttendanceEventList(userId);
     }
 
@@ -344,23 +349,13 @@ public class EventServiceImpl implements EventService{
                 .findFirst()
                 .orElse(0);
 
-        // 이벤트 참여 이력 생성
-        EventParticipationVO participationVO = EventParticipationVO.builder()
-                .eventId(eventId)
-                .userId(userId)
-                .build();
-        eventMapper.createParticipation(participationVO);
-
         // 보상 수령 이력 생성
-        EventRewardReceiveVO rewardReceiveVO = EventRewardReceiveVO.builder()
-                .eventId(eventId)
-                .rewardId(rewardId)
-                .userId(userId)
-                .build();
-        eventMapper.createEventRewardReceive(rewardReceiveVO);
+        eventMapper.createEventRewardReceive(userId, eventId, rewardId);
 
         // 포인트 업데이트
-        eventMapper.updateUserPoint(userId, rewardPoint);
+        // 보완하기
+//        eventMapper.createUserPointTransaction(userId, rewardPoint);
+//        eventMapper.updateUserPoint(userId);
 
         return getEventList(userId);
     }
@@ -376,24 +371,24 @@ public class EventServiceImpl implements EventService{
                 .findFirst()
                 .orElse(0);
 
-        // 이벤트 참여 이력 생성
-        EventParticipationVO participationVO = EventParticipationVO.builder()
-                .eventId(eventId)
-                .userId(userId)
-                .build();
-        eventMapper.createParticipation(participationVO);
-
         // 보상 수령 이력 생성
-        EventRewardReceiveVO rewardReceiveVO = EventRewardReceiveVO.builder()
-                .eventId(eventId)
-                .rewardId(rewardId)
-                .userId(userId)
-                .build();
-        eventMapper.createEventRewardReceive(rewardReceiveVO);
+        eventMapper.createEventRewardReceive(userId, eventId, rewardId);
 
         // 포인트 업데이트
-        eventMapper.updateUserPoint(userId, rewardPoint);
+        // 보완하기
+//        eventMapper.createUserPointTransaction(userId, rewardPoint);
+//        eventMapper.updateUserPoint(userId, rewardPoint);
 
         return getAttendanceEventList(userId);
     }
+
+    @Override
+    @Transactional
+    public List<EventGetResponseDTO> createParticipation(int userId, int eventId){
+
+        eventMapper.createParticipation(userId, eventId);
+
+        return getEventList(userId);
+    }
+
 }

@@ -100,8 +100,8 @@ const router = createRouter({
       },
     },
     {
-      // path: '/event/list',
-      path: '/event/eventList',
+      path: '/event/list',
+      //path: '/event/eventList',
       name: 'EventList',
       component: EventListPage,
       alias: '/event/eventList/joined',

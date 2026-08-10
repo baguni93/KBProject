@@ -3,13 +3,13 @@ import api from '@/api';
 const BASE_URL = '/api/event';
 
 export default {
-  // EVT-001 : 이벤트 메인화면 조회
+  // 이벤트 메인화면 조회 (포인트 + 커스텀 카드)
   async getEventMain(userId) {
     const { data } = await api.get(`${BASE_URL}/main`, { params: { userId } });
     return data;
   },
 
-  // EVT-002 : 이벤트 리스트 조회
+  // 이벤트 리스트 조회
   async getEventList(userId) {
     // const { data } = await api.get(`${BASE_URL}/list`, { params: { userId } });
     const { data } = await api.get(`${BASE_URL}/eventList`, {
@@ -35,7 +35,7 @@ export default {
   },
 
   // 이벤트 참여 처리
-  async joinEvent(eventId, userId) {
+  async joinEvent(userId, eventId) {
     const { data } = await api.post(`${BASE_URL}/joinEvent/${eventId}`, null, {
       params: { userId },
     });
@@ -43,7 +43,7 @@ export default {
   },
 
   //  출석체크 참여
-  async joinAttendanceEvent(eventId, userId) {
+  async joinAttendanceEvent(userId, eventId) {
     const { data } = await api.post(
       `${BASE_URL}/joinAttendanceEvent/${eventId}`,
       null,
@@ -51,8 +51,21 @@ export default {
     );
     return data;
   },
-  // 이벤트 참여 + 리워드 수령 처리
-  async receiveEventReward(eventId, userId, rewardId) {
+
+  // 이벤트 참여이력 생성
+  async createParticipation(userId, eventId) {
+    const { data } = await api.post(
+      `${BASE_URL}/participateEvent/${eventId}`,
+      null,
+      {
+        params: { userId },
+      },
+    );
+    return data;
+  },
+
+  // 이벤트 리워드 수령 처리
+  async receiveEventReward(userId, eventId, rewardId) {
     const { data } = await api.post(
       `${BASE_URL}/receiveEventReward/${eventId}/rewards/${rewardId}`,
       null,
@@ -65,8 +78,8 @@ export default {
     return data;
   },
 
-  // 출석체크 이벤트 참여 +  리워드 수령 처리
-  async receiveAttendanceEventReward(eventId, userId, rewardId) {
+  // 출석체크  리워드 수령 처리
+  async receiveAttendanceEventReward(userId, eventId, rewardId) {
     const { data } = await api.post(
       `${BASE_URL}/receiveAttendanceEventReward/${eventId}/rewards/${rewardId}`,
       null,

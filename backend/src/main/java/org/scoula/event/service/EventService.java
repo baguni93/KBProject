@@ -4,6 +4,7 @@ import org.scoula.event.dto.EventGetAttendanceResponseDTO;
 import org.scoula.event.dto.EventGetResponseDTO;
 import org.scoula.event.dto.EventMainDTO;
 import org.scoula.event.dto.EventResponseDTO;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -34,6 +35,7 @@ public interface EventService {
 
     List<EventGetResponseDTO> receiveEventReward(int userId, int eventId, int rewardId);
 
-    List<EventGetAttendanceResponseDTO> receiveAttendanceEventReward(int eventId, int userId, int rewardId);
+    List<EventGetAttendanceResponseDTO> receiveAttendanceEventReward(int userId, int eventId, int rewardId);
 
+    List<EventGetResponseDTO> createParticipation(int userId, int eventId);
 }

@@ -116,6 +116,14 @@ public class EventController {
         return ResponseEntity.ok(eventService.joinAttendanceEvent(userId, eventId));
     }
 
+    // 이벤트 참여이력 생성
+    @PostMapping("/participateEvent/{eventId}")
+    public ResponseEntity<List<EventGetResponseDTO>> createParticipation(
+            @RequestParam(value = "userId") int userId,
+            @PathVariable int eventId) {
+        return ResponseEntity.ok(eventService.createParticipation(userId, eventId));
+    }
+
     // 이벤트 보상수령 처리
     @PostMapping("/receiveEventReward/{eventId}/rewards/{rewardId}")
     public ResponseEntity<List<EventGetResponseDTO>> receiveEventReward(
@@ -123,7 +131,7 @@ public class EventController {
             @PathVariable int eventId,
             @PathVariable int rewardId) {
 
-        List<EventGetResponseDTO> updatedList = eventService.receiveEventReward(eventId, userId, rewardId);
+        List<EventGetResponseDTO> updatedList = eventService.receiveEventReward(userId, eventId, rewardId);
         return ResponseEntity.ok(updatedList);
     }
 
@@ -134,7 +142,7 @@ public class EventController {
             @PathVariable int eventId,
             @PathVariable int rewardId) {
 
-        List<EventGetAttendanceResponseDTO> updatedList = eventService.receiveAttendanceEventReward(eventId, userId, rewardId);
+        List<EventGetAttendanceResponseDTO> updatedList = eventService.receiveAttendanceEventReward(userId, eventId, rewardId);
         return ResponseEntity.ok(updatedList);
     }
 }

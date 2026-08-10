@@ -155,16 +155,16 @@ const getEventStatus = (item) => {
   // 4. 참여하기
   if (isJoined) {
     return {
-      text: '참여',
-      styleClass: 'bg-yellow',
+      text: '참여중',
+      styleClass: 'bg-gray',
       status: 'PROGRESS',
-      disabled: false,
+      disabled: true,
     };
   }
 
   // 5. 기본 참여 가능
   return {
-    text: '시작하기',
+    text: '참여',
     styleClass: 'bg-yellow',
     status: 'READY',
     disabled: false,

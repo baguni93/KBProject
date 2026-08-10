@@ -53,7 +53,7 @@ import EventMainCardBanner from '@/components/event/EventMainCardBanner.vue';
 import EventMainChallenge from '@/components/event/EventMainChallenge.vue';
 import EventItem from '@/components/event/EventItem.vue';
 
-/// 유저 아이디
+// 유저 아이디
 import { useAuthStore } from '@/stores/auth';
 const authStore = useAuthStore();
 const userId = authStore.userId ?? 1;
@@ -113,7 +113,6 @@ onMounted(() => {
 });
 
 // 이벤트 참여/보상 수령 처리
-// 이벤트 참여/보상 수령 처리
 const onEventAction = async ({
   eventId,
   eventName,
@@ -122,7 +121,7 @@ const onEventAction = async ({
 }) => {
   if (!eventId) return;
 
-  if (!userId.value) {
+  if (!userId) {
     alert('올바른 사용자 정보가 아닙니다.');
     return;
   }
@@ -137,26 +136,37 @@ const onEventAction = async ({
   const actionMap = {
     // 1. 이벤트 참여 시작 / 출석체크
     READY: {
-      action: () =>
-        isAttendance
-          ? eventApi.joinAttendanceEvent(eventId, userId.value)
-          : eventApi.joinEvent(eventId, userId.value),
+      action: async () => {
+        // 이벤트 시작 / 출석체크 시작 내역 생성 API 먼저 실행
+        try {
+          if (isAttendance) {
+            await eventApi.joinAttendanceEvent(userId, eventId);
+          } else {
+            await eventApi.joinEvent(userId, eventId);
+          }
+        } catch (err) {
+          console.warn('이미 참가 등록된 이벤트입니다.', err);
+        }
+
+        // 이벤트 참여이력 바로 생성되도록
+        return await eventApi.createParticipation(userId, eventId);
+      },
       msg: `[${eventName}] 이벤트 참여를 시작합니다.`,
     },
 
     // 2. 출석체크
     ATTENDANCE: {
-      action: () => eventApi.joinAttendanceEvent(eventId, userId.value),
+      action: () => eventApi.joinAttendanceEvent(userId, eventId),
       msg: `[${eventName}] 출석체크가 완료되었습니다.`,
     },
     ATTENDANCE_READY: {
-      action: () => eventApi.joinAttendanceEvent(eventId, userId.value),
+      action: () => eventApi.joinAttendanceEvent(userId, eventId),
       msg: `[${eventName}] 출석체크가 완료되었습니다.`,
     },
 
     // 3. 진행 중 이벤트
     PROGRESS: {
-      action: () => eventApi.joinEvent(eventId, userId.value),
+      action: () => eventApi.createParticipation(userId, eventId),
       msg: `[${eventName}] 이벤트 참여가 완료되었습니다.`,
     },
 
@@ -172,12 +182,8 @@ const onEventAction = async ({
     REWARD_CLAIM: {
       action: () =>
         isAttendance
-          ? eventApi.receiveAttendanceEventReward(
-              eventId,
-              userId.value,
-              rewardId,
-            )
-          : eventApi.receiveEventReward(eventId, userId.value, rewardId),
+          ? eventApi.receiveAttendanceEventReward(eventId, userId, rewardId)
+          : eventApi.receiveEventReward(eventId, userId, rewardId),
       msg: `[${eventName}] 보상 수령이 완료되었습니다!`,
     },
   };

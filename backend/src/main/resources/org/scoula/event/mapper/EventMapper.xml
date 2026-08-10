@@ -64,9 +64,15 @@
         LIMIT 1;
     </select>
 
-<!--    이벤트 참여 - 참여이력 데이터 생성 -->
+<!--    이벤트 참여이력 데이터 생성 -->
     <insert id="createParticipation">
         INSERT INTO event_participation_tbl (event_id, user_id, participated_at)
+        VALUES (#{eventId}, #{userId}, NOW())
+    </insert>
+
+    <!--  출석체크 이벤트 참여이력 데이터 생성 -->
+    <insert id="createAttendanceParticipation">
+        INSERT INTO event_attendance_tbl (event_id, user_id, participated_at)
         VALUES (#{eventId}, #{userId}, NOW())
     </insert>
 
@@ -91,14 +97,26 @@
                              updated_at = NOW()
     </insert>
 
-    <!--    포인트(리워드) 수령 처리-->
-    <update id="updateUserPoint">
-        UPDATE point_wallet_tbl
-        SET point_balance = point_balance + #{point},
-            updated_at = NOW()
-        WHERE user_id = #{userId}
+    <!-- 포인트(리워드) 수령 내역 생성-->
+    <update id="createUserPointTransaction">
+        INSERT INTO point_transaction_tbl (point_wallet_id,
+                                           transaction_type,
+                                           point_amount,
+                                           reason_type,
+                                           created_at)
+        VALUES ( #{pointWalletId},
+                 #{transactionType},
+                 #{pointAmount},
+                 #{reasonType},
+                 CURRENT_TIMESTAMP)
     </update>
 
+    <!-- 포인트 수령 반영 처리 -->
+    <update id="updateUserPoint">
+        UPDATE point_wallet_tbl
+        SET point_balance = point_balance + #{pointAmount}
+        WHERE point_wallet_id = #{pointWalletId}
+    </update>
 
 <!--    사용자 이벤트 챌린지 -->
     <update id="updateUserChallengeTarget">
@@ -131,12 +149,6 @@
 #                  WHERE event_id = #{eventId} AND user_id = #{userId} AND DATE(participated_at) = CURDATE()
 #              ) AS today_part
     </select>
-
-    <!--  이벤트 - 출석 데이터 생성 -->
-    <insert id="createAttendanceParticipation">
-        INSERT INTO event_attendance_tbl (event_id, user_id, participated_at)
-        VALUES (#{eventId}, #{userId}, NOW())
-    </insert>
 
     <select id="checkRewardAlreadyReceived" resultType="java.lang.Integer">
         SELECT COUNT(*)
