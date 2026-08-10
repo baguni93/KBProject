@@ -52,11 +52,14 @@ import PointView from '@/components/finance/PointView.vue';
 import EventMainCardBanner from '@/components/event/EventMainCardBanner.vue';
 import EventMainChallenge from '@/components/event/EventMainChallenge.vue';
 import EventItem from '@/components/event/EventItem.vue';
+import { useAuthStore } from '@/stores/auth';
 
 // user
 import { useUserStore } from '@/stores/user';
 const userStore = useUserStore();
-const { userId } = storeToRefs(userStore);
+
+const authStore = useAuthStore();
+const userId = authStore.userId ?? 1;
 
 const router = useRouter();
 
