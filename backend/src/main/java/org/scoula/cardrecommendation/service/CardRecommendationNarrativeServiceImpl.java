@@ -17,6 +17,19 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/*
+ * OpenAI API를 호출해 카드 한 장의 추천 이유를 자연어로 생성한다.
+ *
+ * 입력:
+ * - 사용자의 소비 카테고리 분석 결과
+ * - 현재 설명할 카드의 예상 할인액/순위
+ * - 해당 카드에서 실제 계산된 혜택 결과
+ *
+ * 출력:
+ * - card_recommendation_tbl.ai_recommendation_summary에 저장할 카드별 AI 문구
+ *
+ * AI 호출이 실패해도 추천 전체가 실패하지 않도록 fallback 문구를 반환한다.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -28,6 +41,10 @@ public class CardRecommendationNarrativeServiceImpl
 
     private final OpenAIClient openAIClient;
 
+    /*
+     * 카드 한 장 단위로 GPT를 호출한다.
+     * ServiceImpl에서 신용/체크 각각 TOP 3만 이 메서드를 호출하므로 최대 6회 호출된다.
+     */
     @Override
     public String createCardSummary(
             List<CardRecommendationCategoryVO> categories,
@@ -69,6 +86,10 @@ public class CardRecommendationNarrativeServiceImpl
         }
     }
 
+    /*
+     * GPT에게 전달할 프롬프트를 만든다.
+     * 계산된 숫자와 혜택 정보만 제공하여 없는 혜택을 만들어내지 않도록 제한한다.
+     */
     private String createPrompt(
             List<CardRecommendationCategoryVO> categories,
             CardProductCalculationResult cardResult,
@@ -189,6 +210,10 @@ public class CardRecommendationNarrativeServiceImpl
                 + description;
     }
 
+    /*
+     * GPT 호출 실패/빈 응답 시 사용할 기본 추천문구.
+     * 이미 계산된 카드 정보만 사용하므로 추천 기능 자체는 계속 동작한다.
+     */
     private String createFallbackSummary(
             List<CardRecommendationCategoryVO> categories,
             CardProductCalculationResult cardResult
