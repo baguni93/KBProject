@@ -83,6 +83,32 @@ const router = createRouter({
       name: 'signup-complete',
       component: SignupCompletePage,
     },
+    {
+      path: '/finance',
+      name: 'Finance',
+      component: FinancePage,
+      meta: {
+        showBottomNav: true,
+      },
+    },
+    {
+      path: '/event/main',
+      name: 'EventMain',
+      component: EventPage,
+      meta: {
+        showBottomNav: true,
+      },
+    },
+    {
+      // path: '/event/list',
+      path: '/event/eventList',
+      name: 'EventList',
+      component: EventListPage,
+      alias: '/event/eventList/joined',
+      meta: {
+        showBottomNav: true,
+      },
+    },
     ...feed,
     ...mypage,
     ...settlement,
