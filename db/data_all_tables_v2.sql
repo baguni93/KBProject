@@ -571,8 +571,6 @@ CREATE TABLE spending_analysis_tbl
     representative_category_id          INT          NOT NULL COMMENT '가장 많이 소비한 대표 카테고리',
     ai_title                            VARCHAR(100) NOT NULL COMMENT 'AI 생성 칭호',
     ai_analysis_summary                 TEXT         NOT NULL COMMENT 'AI가 생성한 소비 분석 요약',
-    ai_card_recommendation_summary      TEXT         NULL COMMENT 'AI가 생성한 카드 추천 요약',
-    ai_insurance_recommendation_summary TEXT         NULL COMMENT 'AI가 생성한 보험 추천 요약',
     created_at                          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '분석 일자',
 
     CONSTRAINT fk_spending_analysis_user
@@ -695,9 +693,10 @@ CREATE TABLE card_recommendation_tbl
     card_recommendation_id  INT AUTO_INCREMENT PRIMARY KEY COMMENT '카드 추천 PK',
     spending_analysis_id    INT      NOT NULL COMMENT '소비분석 ID',
     card_product_id         INT      NOT NULL COMMENT '추천 카드',
-    recommendation_rank     INT      NOT NULL COMMENT '추천 순위',
-    expected_benefit_amount INT      NULL COMMENT '예상 할인 금액',
-    created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '추천 일시',
+    recommendation_rank       INT      NOT NULL COMMENT '추천 순위',
+    expected_benefit_amount   INT      NULL COMMENT '예상 할인 금액',
+    ai_recommendation_summary TEXT     NULL COMMENT 'AI가 생성한 카드별 추천 요약',
+    created_at                DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '추천 일시',
 
     CONSTRAINT uq_card_recommendation
         UNIQUE (spending_analysis_id, card_product_id),
@@ -828,7 +827,8 @@ CREATE TABLE kb_insurance_recommendation_tbl
     insurance_recommendation_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '보험 추천 PK',
     spending_analysis_id        INT           NOT NULL COMMENT '소비분석 ID',
     insurance_product_id        INT           NOT NULL COMMENT '추천 보험 ID',
-    recommendation_reason       VARCHAR(1000) NOT NULL COMMENT '추천이유',
+    recommendation_reason       VARCHAR(1000) NOT NULL COMMENT '규칙 기반 추천 이유',
+    ai_recommendation_summary   TEXT          NULL COMMENT 'AI가 생성한 보험 상품별 추천 요약',
     created_at                  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '추천 생성 일시',
 
     CONSTRAINT uq_insurance_recommendation
@@ -2462,8 +2462,6 @@ VALUES (1, 1, 1, 1, 500, '2026-07-18 12:00:00'),
 -- #                                    representative_category_id,
 -- #                                    ai_title,
 -- #                                    ai_analysis_summary,
--- #                                    ai_card_recommendation_summary,
--- #                                    ai_insurance_recommendation_summary,
 -- #                                    created_at)
 -- 시연용으로 잠시 빼두겠습니다.
 -- # INSERT INTO spending_analysis_tbl (spending_analysis_id,
@@ -2472,48 +2470,32 @@ VALUES (1, 1, 1, 1, 500, '2026-07-18 12:00:00'),
 -- #                                    representative_category_id,
 -- #                                    ai_title,
 -- #                                    ai_analysis_summary,
--- #                                    ai_card_recommendation_summary,
--- #                                    ai_insurance_recommendation_summary,
 -- #                                    created_at)
 -- # VALUES (1, 1, 1, 4, '한 달 온라인 쇼핑 탐험가', '최근 한 달 동안 온라인쇼핑 지출 비중이 가장 높고 자동차와 생활 지출이 뒤를 잇고 있습니다.',
--- #         NULL,
--- #         NULL,
 -- #         '2026-07-01 00:00:00'),
 -- #        (2, 1, 3, 10,
 -- #         '여행에 진심인 소비자',
 -- #         '최근 세 달 동안 여행 지출이 가장 높고 온라인쇼핑과 주거·통신 지출도 큰 편입니다.',
--- #         NULL,
--- #         NULL,
 -- #         '2026-07-02 00:00:00'),
 -- #        (3, 2, 1, 6,
 -- #         '대중교통 마스터',
 -- #         '교통비 비중이 높고 이동이 잦은 소비 패턴입니다.',
--- #         NULL,
--- #         NULL,
 -- #         '2026-07-03 00:00:00'),
 -- #        (4, 2, 12, 1,
 -- #         '알뜰 식비 관리자',
 -- #         '연간 식비가 안정적으로 관리되고 있습니다.',
--- #         NULL,
--- #         NULL,
 -- #         '2026-07-04 00:00:00'),
 -- #        (5, 3, 3, 2,
 -- #         '커피와 함께하는 사람',
 -- #         '카페와 간식 관련 결제가 많은 편입니다.',
--- #         NULL,
--- #         NULL,
 -- #         '2026-07-05 00:00:00'),
 -- #        (6, 3, 12, 6,
 -- #         '움직이는 저축러',
 -- #         '교통 지출과 저축이 균형을 이루고 있습니다.',
--- #         NULL,
--- #         NULL,
 -- #         '2026-07-06 00:00:00'),
 -- #        (7, 1, 12, 10,
 -- #         '여행에 미친 지갑의 순례자',
 -- #         '최근 12개월 동안 여행 지출 비중이 가장 높고, 주거·통신과 교육 지출도 큰 편입니다.',
--- #         '최근 12개월 소비에서 온라인쇼핑과 자동차 관련 지출이 두드러집니다. 신용카드는 온라인쇼핑 할인에 강한 KB국민 톡톡O 카드가, 체크카드는 자동차 관련 할인 혜택이 있는 KB국민 직장인보너스체크카드가 가장 유리합니다.',
--- #         NULL,
 -- #         '2026-08-03 09:00:00');
 -- ---------------------------------------------------------------------
 -- 18. spending_analysis_category_tbl (6건)
@@ -2607,7 +2589,7 @@ VALUES (1, 1, 2, '카페 이용 할인', NULL, 10.00, 10000, 300000, '스타벅�
         '2026-07-01 11:00:00');
 
 -- ---------------------------------------------------------------------
--- 21. card_recommendation_tbl (6건)
+-- 21. card_recommendation_tbl (4건)
 -- ---------------------------------------------------------------------
 # 카드 추천 시연용 주석처리
 # INSERT INTO card_recommendation_tbl
@@ -2616,15 +2598,24 @@ VALUES (1, 1, 2, '카페 이용 할인', NULL, 10.00, 10000, 300000, '스타벅�
 #  card_product_id,
 #  recommendation_rank,
 #  expected_benefit_amount,
+#  ai_recommendation_summary,
 #  created_at)
 # VALUES
 #     -- CREDIT
-#     (1, 7, 2, 1, 27355, '2026-08-03 09:10:05'),
-#     (2, 7, 1, 2, 2690, '2026-08-03 09:10:05'),
+#     (1, 7, 2, 1, 27355,
+#      '온라인쇼핑 지출 비중이 높은 소비패턴과 잘 맞는 카드입니다. 온라인 쇼핑 할인 혜택을 중심으로 가장 높은 예상 할인액을 받을 수 있어 신용카드 1위로 추천합니다.',
+#      '2026-08-03 09:10:05'),
+#     (2, 7, 1, 2, 2690,
+#      '카페와 음식점 등 일상생활 영역을 자주 이용하는 소비자에게 잘 맞는 카드입니다. 생활 밀착형 혜택을 활용할 수 있어 신용카드 2위로 추천합니다.',
+#      '2026-08-03 09:10:05'),
 #
 #     -- CHECK
-#     (3, 7, 4, 1, 13600, '2026-08-03 09:10:05'),
-#     (4, 7, 3, 2, 6560, '2026-08-03 09:10:05');
+#     (3, 7, 4, 1, 13600,
+#      '자동차 관련 지출이 있는 소비패턴과 잘 맞는 체크카드입니다. 자동차 관련 가맹점 할인 혜택을 활용할 수 있어 체크카드 1위로 추천합니다.',
+#      '2026-08-03 09:10:05'),
+#     (4, 7, 3, 2, 6560,
+#      '교통과 카페 등 생활 영역의 소비에 혜택을 받을 수 있는 체크카드입니다. 일상적인 이동과 카페 이용 패턴을 고려해 체크카드 2위로 추천합니다.',
+#      '2026-08-03 09:10:05');
 -- ---------------------------------------------------------------------
 -- 22. card_recommendation_detail_tbl (7건)
 -- ---------------------------------------------------------------------
@@ -2766,13 +2757,32 @@ VALUES (1, 1, '질병 진단비', 30000000, '약관에서 정한 주요 질병�
 #                                              spending_analysis_id,
 #                                              insurance_product_id,
 #                                              recommendation_reason,
+#                                              ai_recommendation_summary,
 #                                              created_at)
-# VALUES (1, 1, 1, '최근 3개월 내 병원 관련 소비가 확인되어 건강 위험에 대비할 수 있는 상품을 추천합니다.', '2026-07-01 13:00:00'),
-#        (2, 1, 2, '최근 3개월 내 병원 관련 소비가 확인되어 실제 의료비 부담을 줄일 수 있는 상품을 추천합니다.', '2026-07-01 13:05:00'),
-#        (3, 2, 9, '최근 3개월 내 치과 관련 소비가 확인되어 치과 치료비에 대비할 수 있는 상품을 추천합니다.', '2026-07-02 13:00:00'),
-#        (4, 3, 4, '최근 3개월 내 여행 관련 소비가 확인되어 해외여행 중 발생할 수 있는 위험에 대비하는 상품을 추천합니다.', '2026-07-03 13:00:00'),
-#        (5, 4, 8, '최근 3개월 내 자동차 관련 소비가 확인되어 운전자 사고와 상해 위험에 대비하는 상품을 추천합니다.', '2026-07-04 13:00:00'),
-#        (6, 5, 10, '최근 3개월 내 반려동물 관련 소비가 확인되어 강아지의 질병과 상해 치료비에 대비하는 상품을 추천합니다.', '2026-07-05 13:00:00');
+# VALUES (1, 1, 1,
+#         '최근 3개월 내 병원 관련 소비가 확인되어 건강 위험에 대비할 수 있는 상품을 추천합니다.',
+#         '최근 병원 관련 지출이 확인되어 예상치 못한 질병이나 치료비 부담에 대비할 필요가 있습니다. 건강 관련 보장을 폭넓게 준비하려는 소비패턴에 잘 맞는 상품입니다.',
+#         '2026-07-01 13:00:00'),
+#        (2, 1, 2,
+#         '최근 3개월 내 병원 관련 소비가 확인되어 실제 의료비 부담을 줄일 수 있는 상품을 추천합니다.',
+#         '병원 이용 지출이 확인된 만큼 실제 치료 과정에서 발생할 수 있는 의료비 부담을 줄이는 데 초점을 둔 상품입니다. 반복적인 의료비 지출에 대비하려는 경우 활용도가 높습니다.',
+#         '2026-07-01 13:05:00'),
+#        (3, 2, 9,
+#         '최근 3개월 내 치과 관련 소비가 확인되어 치과 치료비에 대비할 수 있는 상품을 추천합니다.',
+#         '치과 관련 소비가 확인되어 충치 치료나 보철 등 치과 진료비에 대한 대비 필요성이 있습니다. 치과 이용 패턴을 고려했을 때 관련 보장을 준비하는 데 적합한 상품입니다.',
+#         '2026-07-02 13:00:00'),
+#        (4, 3, 4,
+#         '최근 3개월 내 여행 관련 소비가 확인되어 해외여행 중 발생할 수 있는 위험에 대비하는 상품을 추천합니다.',
+#         '여행 관련 지출이 나타나는 소비패턴을 고려하면 여행 중 발생할 수 있는 사고나 의료비 위험을 함께 대비하는 것이 좋습니다. 여행 빈도가 있는 사용자에게 잘 맞는 상품입니다.',
+#         '2026-07-03 13:00:00'),
+#        (5, 4, 8,
+#         '최근 3개월 내 자동차 관련 소비가 확인되어 운전자 사고와 상해 위험에 대비하는 상품을 추천합니다.',
+#         '자동차 관련 소비가 확인되어 운전 중 발생할 수 있는 사고와 비용 위험을 대비할 필요가 있습니다. 차량 이용이 꾸준한 소비패턴에 적합한 운전자 보장 상품입니다.',
+#         '2026-07-04 13:00:00'),
+#        (6, 5, 10,
+#         '최근 3개월 내 반려동물 관련 소비가 확인되어 강아지의 질병과 상해 치료비에 대비하는 상품을 추천합니다.',
+#         '반려동물 관련 지출이 확인되어 갑작스러운 질병이나 상해로 발생하는 동물병원 비용에 대비할 필요가 있습니다. 강아지 의료비 부담을 줄이는 데 초점을 둔 상품입니다.',
+#         '2026-07-05 13:00:00');
 
 -- ---------------------------------------------------------------------
 -- 26. friend_request_tbl (6건)
@@ -2925,8 +2935,44 @@ VALUES (1, NULL, 1, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 10000, NULL,
        (53, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 55000, '몽글몽글 펫살롱', 12, '2025-10-18 14:25:00'),
        (54, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 100000, 'KB국민은행 적금', 9, '2025-09-27 09:30:00'),
        (55, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 56000, '수성못 한식당', 1, '2025-09-11 19:15:00'),
-       (56, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 7800, '블루보틀 대구점', 2, '2025-08-16 10:40:00');
+       (56, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 7800, '블루보틀 대구점', 2, '2025-08-16 10:40:00'),
+-- 회원 2 식비 소비내역 추가 (최근 1개월 이내) -> 회원 테이블 2는 식비만 결제할 것임
+       -- 너무어지럽다.
+    (57, NULL, 2, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+    12500, '한솥도시락 동성로점', 1, '2026-08-09 12:20:00'),
 
+(58, NULL, 2, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+    21800, '배달의민족', 1, '2026-08-07 19:30:00'),
+
+(59, NULL, 2, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+    9500, '김밥천국 대구점', 1, '2026-08-05 13:10:00'),
+
+(60, NULL, 2, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+    32000, '동성로 한식당', 1, '2026-08-03 18:40:00'),
+
+(61, NULL, 2, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+    17800, '맥도날드 대구점', 1, '2026-08-01 12:15:00'),
+
+(62, NULL, 2, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+    26500, '배달의민족', 1, '2026-07-30 20:05:00'),
+
+(63, NULL, 2, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+    14000, '홍콩반점 대구점', 1, '2026-07-28 13:25:00'),
+
+(64, NULL, 2, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+    38500, '아웃백 대구점', 1, '2026-07-25 19:10:00'),
+
+(65, NULL, 2, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+    11800, '한솥도시락 계명대점', 1, '2026-07-22 12:35:00'),
+
+(66, NULL, 2, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+    22900, '요기요', 1, '2026-07-19 20:15:00'),
+
+(67, NULL, 2, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+    16500, '본죽 대구점', 1, '2026-07-15 11:50:00'),
+
+(68, NULL, 2, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
+    28700, '배달의민족', 1, '2026-07-11 19:40:00');
 
 
 -- ---------------------------------------------------------------------

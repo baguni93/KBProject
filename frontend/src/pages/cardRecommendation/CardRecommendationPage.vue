@@ -7,19 +7,6 @@
     />
 
     <div class="recommendation-content-start">
-    <div
-        v-if="message"
-        :class="[
-        'kb-toast',
-        messageType === 'success'
-          ? 'kb-toast--success'
-          : messageType === 'info'
-            ? 'kb-toast--info'
-            : 'kb-toast--error',
-      ]"
-    >
-      {{ message }}
-    </div>
 
     <section class="recommendation-intro kb-card">
       <div class="intro-icon" aria-hidden="true">
@@ -27,24 +14,32 @@
       </div>
       <div>
         <span class="text-13-bold">12개월 소비분석 기반</span>
-        <h2 class="text-20-bold">내 소비에 맞는 카드를 비교했어요</h2>
-        <p class="text-13">실제 결제내역과 카드별 전월 실적·월 할인 한도를 반영합니다.</p>
+        <h2 class="text-20-bold">내 소비에 맞는 카드를 추천해요</h2>
+        <p class="text-13">실제 결제내역과 카드별 전월 실적·월 할인 한도를 반영한 추천입니다.</p>
       </div>
     </section>
 
-    <div v-if="loading" class="kb-card kb-loading recommendation-loading">
-      <div class="spinner-border kb-spinner"></div>
-      <div class="text-13">1년간의 소비분석 결과로 가장 많이 할인되는 카드를 찾고 있어요</div>
-      <small class="text-13">화면을 벗어나도 추천 작업은 계속 진행되며, 다시 들어오면 결과를 확인할 수 있어요.</small>
-    </div>
+      <div v-if="loading" class="kb-card kb-loading recommendation-loading">
+        <div class="spinner-border kb-spinner"></div>
+
+        <div class="text-13">
+          1년간의 소비분석 결과로 가장 많이 할인되는 카드를 찾고 있어요
+        </div>
+
+        <small class="text-13">
+          <strong class="loading-highlight">
+            화면을 벗어나도 추천 작업은 계속 진행돼요 <br/> 다시 들어오면 결과를 확인할 수 있어요.
+          </strong>
+        </small>
+      </div>
 
     <template v-else-if="recommendationData">
-      <section v-if="recommendationData.aiCardRecommendationSummary" class="ai-summary kb-card">
+      <section v-if="topRecommendationSummary" class="ai-summary kb-card">
         <div class="ai-summary__label text-13-bold">
           <i class="fa-solid fa-wand-magic-sparkles"></i>
           AI 추천 요약
         </div>
-        <p class="text-13">{{ recommendationData.aiCardRecommendationSummary }}</p>
+        <p class="text-13">{{ topRecommendationSummary }}</p>
       </section>
 
       <section class="filter-section">
@@ -65,38 +60,42 @@
         </div>
       </section>
 
-      <section class="filter-section">
-        <div class="section-label-row">
-          <h2 class="text-15-bold">비교 기준</h2>
-        </div>
-        <div class="segmented-control fee-mode-control" role="tablist" aria-label="연회비 적용 방식">
-          <button
-              v-for="option in feeModeOptions"
-              :key="option.value"
-              type="button"
-              :class="['text-13-bold', { active: selectedFeeMode === option.value }]"
-              @click="changeFeeMode(option.value)"
-          >
-            {{ option.label }}
-          </button>
-        </div>
-        <p class="filter-description text-13">{{ selectedFeeModeDescription }}</p>
-      </section>
-
       <section class="kb-section recommendation-list-section">
         <div class="kb-section-title-row">
           <h2 class="kb-section-title text-20-bold">{{ selectedCardTypeLabel }} 추천 TOP 3</h2>
-          <span class="result-count text-13">{{ recommendations.length }}개</span>
+
         </div>
 
         <div v-if="recommendations.length" class="recommendation-list">
           <article
               v-for="card in recommendations"
               :key="card.cardRecommendationId"
-              class="recommendation-item kb-card"
+              :class="[
+                'recommendation-item',
+                'kb-card',
+                { 'has-annual-fee-toggle': card.cardType === 'CREDIT' },
+              ]"
           >
             <div class="rank-badge" :class="`rank-${card.recommendationRank}`">
               {{ card.recommendationRank }}위
+            </div>
+
+            <div
+                v-if="card.cardType === 'CREDIT'"
+                class="annual-fee-toggle-row"
+            >
+              <span class="text-13-bold">연회비 포함</span>
+              <button
+                  type="button"
+                  class="annual-fee-switch"
+                  :class="{ active: isAnnualFeeIncluded(card.cardRecommendationId) }"
+                  role="switch"
+                  :aria-checked="isAnnualFeeIncluded(card.cardRecommendationId)"
+                  :aria-label="`${card.cardName} 예상 할인액에 연회비 포함`"
+                  @click.stop="toggleAnnualFee(card.cardRecommendationId)"
+              >
+                <span class="annual-fee-switch__knob"></span>
+              </button>
             </div>
 
             <div class="card-visual">
@@ -118,21 +117,15 @@
               <p class="text-13">{{ card.cardDescription }}</p>
             </div>
 
-            <div
-                class="benefit-summary"
-                :class="{
-                  'benefit-summary--two-column': selectedFeeMode !== 'NET_BENEFIT',
-                }"
-            >
+            <div class="benefit-summary benefit-summary--two-column">
               <div>
-                <span class="text-13">{{ displayBenefitLabel }}</span>
-                <strong class="text-15-bold" :class="{ negative: Number(card.displayBenefitAmount) < 0 }">
-                  {{ formatSignedAmount(card.displayBenefitAmount) }}원
-                </strong>
-              </div>
-              <div v-if="selectedFeeMode === 'NET_BENEFIT'">
                 <span class="text-13">예상 할인액</span>
-                <strong class="text-15-bold">{{ formatCardAmount(card.expectedBenefitAmount) }}원</strong>
+                <strong
+                    class="text-15-bold"
+                    :class="{ negative: getDisplayedBenefitAmount(card) < 0 }"
+                >
+                  {{ formatCardAmount(getDisplayedBenefitAmount(card)) }}원
+                </strong>
               </div>
               <div>
                 <span class="text-13">연회비</span>
@@ -184,25 +177,23 @@ import cardRecommendationApi from '@/api/cardRecommendationApi';
 import PageHeader from '@/components/common/PageHeader.vue';
 import {
   CARD_RECOMMENDATION_CARD_TYPES,
-  CARD_RECOMMENDATION_FEE_MODES,
   formatCardAmount,
   getCardImagePath,
   getCardRecommendationErrorMessage,
   getCardTypeLabel,
-  getFeeModeLabel,
   normalizeCardType,
-  normalizeFeeMode,
 } from '@/util/cardRecommendation';
 
 const route = useRoute();
 const router = useRouter();
 const cardTypeOptions = CARD_RECOMMENDATION_CARD_TYPES;
-const feeModeOptions = CARD_RECOMMENDATION_FEE_MODES;
 
 const spendingAnalysisId = Number(route.params.spendingAnalysisId);
 const selectedCardType = ref(normalizeCardType(route.query.cardType));
-const selectedFeeMode = ref(normalizeFeeMode(route.query.feeMode));
+const selectedFeeMode = ref('MAX_BENEFIT');
 const recommendationData = ref(null);
+const recommendationCache = ref({});
+const annualFeeIncludedByCard = ref({});
 const creationResult = ref(null);
 const loading = ref(false);
 const message = ref('');
@@ -216,20 +207,14 @@ const selectedCardTypeLabel = computed(
     () => getCardTypeLabel(selectedCardType.value),
 );
 
-const selectedFeeModeLabel = computed(
-    () => getFeeModeLabel(selectedFeeMode.value),
+const topRecommendation = computed(() =>
+    recommendations.value.find(
+        (card) => Number(card.recommendationRank) === 1,
+    ) ?? recommendations.value[0] ?? null,
 );
 
-const selectedFeeModeDescription = computed(
-    () =>
-        feeModeOptions.find((option) => option.value === selectedFeeMode.value)
-            ?.description ?? '',
-);
-
-const displayBenefitLabel = computed(() =>
-    selectedFeeMode.value === 'NET_BENEFIT'
-        ? '연회비 차감 후 예상 할인액'
-        : '예상 할인액',
+const topRecommendationSummary = computed(
+    () => topRecommendation.value?.aiRecommendationSummary ?? '',
 );
 
 const creationStatusLabel = computed(() => {
@@ -246,17 +231,29 @@ const updateQuery = () => {
     params: {spendingAnalysisId},
     query: {
       cardType: selectedCardType.value,
-      feeMode: selectedFeeMode.value,
     },
   });
 };
 
-const loadRecommendationList = async () => {
-  recommendationData.value = await cardRecommendationApi.getRecommendations(
-      spendingAnalysisId,
-      selectedCardType.value,
-      selectedFeeMode.value,
+const loadRecommendationLists = async () => {
+  const results = await Promise.all(
+      cardTypeOptions.map((option) =>
+          cardRecommendationApi.getRecommendations(
+              spendingAnalysisId,
+              option.value,
+              selectedFeeMode.value,
+          ),
+      ),
   );
+
+  const nextCache = {};
+  cardTypeOptions.forEach((option, index) => {
+    nextCache[option.value] = results[index];
+  });
+
+  recommendationCache.value = nextCache;
+  recommendationData.value =
+      recommendationCache.value[selectedCardType.value] ?? null;
 };
 
 // 2초마다 백엔드에 작업이 완료되었는지 호출한다.(비동기 처리용도)
@@ -279,7 +276,7 @@ const completeRecommendationLoading = async (status) => {
       recommendationCount: Number(status?.recommendationCount ?? 0),
     };
 
-    await loadRecommendationList();
+    await loadRecommendationLists();
     messageType.value = status?.created ? 'success' : 'info';
     message.value =
         status?.message || '카드 추천 결과를 불러왔습니다.';
@@ -356,6 +353,8 @@ const reloadRecommendations = async () => {
   stopStatusPolling();
   loading.value = true;
   recommendationData.value = null;
+  recommendationCache.value = {};
+  annualFeeIncludedByCard.value = {};
   message.value = '';
 
   try {
@@ -395,35 +394,39 @@ const reloadRecommendations = async () => {
   }
 };
 
-const reloadListOnly = async () => {
-  loading.value = true;
-  message.value = '';
-
-  try {
-    await loadRecommendationList();
-    updateQuery();
-  } catch (error) {
-    messageType.value = 'error';
-    message.value = getCardRecommendationErrorMessage(
-        error,
-        '카드 추천 목록을 불러오지 못했습니다.',
-    );
-  } finally {
-    loading.value = false;
-  }
-};
-
-const changeCardType = async (cardType) => {
+const changeCardType = (cardType) => {
   if (selectedCardType.value === cardType) return;
+
   selectedCardType.value = cardType;
-  await reloadListOnly();
+  recommendationData.value =
+      recommendationCache.value[cardType] ?? null;
+  updateQuery();
 };
 
-const changeFeeMode = async (feeMode) => {
-  if (selectedFeeMode.value === feeMode) return;
-  selectedFeeMode.value = feeMode;
-  await reloadListOnly();
+const isAnnualFeeIncluded = (cardRecommendationId) =>
+    Boolean(annualFeeIncludedByCard.value[cardRecommendationId]);
+
+const toggleAnnualFee = (cardRecommendationId) => {
+  annualFeeIncludedByCard.value = {
+    ...annualFeeIncludedByCard.value,
+    [cardRecommendationId]:
+        !isAnnualFeeIncluded(cardRecommendationId),
+  };
 };
+
+const getDisplayedBenefitAmount = (card) => {
+  const expectedBenefitAmount = Number(card?.expectedBenefitAmount ?? 0);
+
+  if (
+      card?.cardType !== 'CREDIT' ||
+      !isAnnualFeeIncluded(card?.cardRecommendationId)
+  ) {
+    return expectedBenefitAmount;
+  }
+
+  return expectedBenefitAmount - Number(card?.annualFee ?? 0);
+};
+
 
 const openDetail = (cardRecommendationId) =>
     router.push({
@@ -432,7 +435,6 @@ const openDetail = (cardRecommendationId) =>
       query: {
         spendingAnalysisId,
         cardType: selectedCardType.value,
-        feeMode: selectedFeeMode.value,
       },
     });
 
@@ -442,12 +444,6 @@ const goBack = () =>
       params: {spendingAnalysisId},
     });
 
-const formatSignedAmount = (value) => {
-  const amount = Number(value ?? 0);
-  return amount < 0
-      ? `-${formatCardAmount(Math.abs(amount))}`
-      : formatCardAmount(amount);
-};
 
 const getCardInitial = (cardName = '') => {
   const normalized = String(cardName)
@@ -587,8 +583,7 @@ onBeforeUnmount(stopStatusPolling);
   box-shadow: 0 2px 7px rgba(0, 0, 0, .08);
 }
 
-.card-type-control,
-.fee-mode-control {
+.card-type-control {
   grid-template-columns: repeat(2, 1fr);
 }
 
@@ -639,6 +634,54 @@ onBeforeUnmount(stopStatusPolling);
 
 .rank-badge.rank-3 {
   background: #ead6c6;
+}
+
+.annual-fee-toggle-row {
+  position: absolute;
+  top: 11px;
+  right: 13px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--color-text-main);
+}
+
+.annual-fee-switch {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  flex: 0 0 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #e3e5e8;
+  cursor: pointer;
+  transition: background-color .18s ease;
+}
+
+.annual-fee-switch__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-bg-page);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
+  transition: transform .18s ease;
+}
+
+.annual-fee-switch.active {
+  background: var(--color-primary);
+}
+
+.annual-fee-switch.active .annual-fee-switch__knob {
+  transform: translateX(16px);
+}
+
+.recommendation-item.has-annual-fee-toggle .card-visual {
+  margin-top: 30px;
 }
 
 .card-visual {
@@ -704,13 +747,13 @@ onBeforeUnmount(stopStatusPolling);
 }
 
 .card-copy p {
-  display: -webkit-box;
+  display: block;
   margin: 0;
   color: var(--color-text-sub);
   line-height: 1.55;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .benefit-summary {
@@ -772,5 +815,10 @@ onBeforeUnmount(stopStatusPolling);
 .error-state p {
   margin: 7px 0 16px;
   color: var(--color-text-sub);
+}
+
+.loading-highlight {
+  font-weight: 700;
+  color: var(--color-text-main);
 }
 </style>

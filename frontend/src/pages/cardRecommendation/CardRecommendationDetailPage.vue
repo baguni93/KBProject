@@ -7,7 +7,6 @@
     />
 
     <div class="detail-content-start">
-    <div v-if="message" class="kb-toast kb-toast--error">{{ message }}</div>
 
     <div v-if="loading" class="kb-card kb-loading">
       <div class="spinner-border kb-spinner"></div>
@@ -41,14 +40,14 @@
       <section class="amount-card kb-card">
         <div class="amount-card__title">
           <span class="text-15-bold">12개월 예상 혜택</span>
-          <small class="text-13">연회비 반영 전·후 금액을 함께 비교해요.</small>
+
         </div>
 
         <div class="comparison-amount-grid">
           <div class="comparison-amount comparison-amount--primary">
             <span class="text-13-bold">연회비 제외</span>
             <strong class="text-18-bold">{{ formatCardAmount(detail.expectedBenefitAmount) }}원</strong>
-            <small class="text-13">카드 혜택으로 받는 예상 할인액</small>
+            <small class="text-13">카드 혜택으로 받는 <br/>예상 할인액</small>
           </div>
 
           <div class="comparison-amount">
@@ -56,7 +55,7 @@
             <strong class="text-18-bold" :class="{ negative: Number(detail.netBenefitAmount) < 0 }">
               {{ formatSignedAmount(detail.netBenefitAmount) }}원
             </strong>
-            <small class="text-13">예상 할인액에서 연회비를 차감한 금액</small>
+            <small class="text-13">예상 할인액에서 <br/>연회비를 차감한 금액</small>
           </div>
         </div>
 
@@ -66,9 +65,9 @@
         </div>
       </section>
 
-      <section v-if="detail.aiCardRecommendationSummary" class="ai-summary kb-card">
+      <section v-if="detail.aiRecommendationSummary" class="ai-summary kb-card">
         <div class="text-13-bold"><i class="fa-solid fa-wand-magic-sparkles"></i> AI 추천 분석</div>
-        <p class="text-13">{{ detail.aiCardRecommendationSummary }}</p>
+        <p class="text-13">{{ detail.aiRecommendationSummary }}</p>
       </section>
 
       <section class="kb-section">
@@ -129,13 +128,21 @@
 
 
 
-      <div class="page-actions">
-        <button type="button" class="content-btn secondary" @click="goBack">추천 목록으로</button>
-        <button type="button" class="content-btn primary" @click="checkApplication">카드 신청 하러 가기</button>
-      </div>
-
-      <div v-if="applicationMessage" class="kb-toast kb-toast--info application-message">
-        {{ applicationMessage }}
+      <div class="bottom-btn-area double card-detail-actions">
+        <button
+          type="button"
+          class="bottom-btn card-detail-secondary"
+          @click="goBack"
+        >
+          추천 목록으로
+        </button>
+        <button
+          type="button"
+          class="bottom-btn"
+          @click="checkApplication"
+        >
+          카드 신청 하러 가기
+        </button>
       </div>
     </template>
 
@@ -573,11 +580,18 @@ onMounted(loadDetail);
   margin: 3px 0 0;
 }
 
-.page-actions {
+.card-detail-actions {
   margin-top: 16px;
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 9px;
+}
+
+.card-detail-secondary {
+  border: 1px solid var(--color-border-main);
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
+}
+
+.card-detail-secondary:active:not(:disabled) {
+  background: var(--color-bg-screen);
 }
 
 .application-message {
@@ -594,8 +608,7 @@ onMounted(loadDetail);
 }
 
 @media (max-width: 360px) {
-  .comparison-amount-grid,
-  .page-actions {
+  .comparison-amount-grid {
     grid-template-columns: 1fr;
   }
 }

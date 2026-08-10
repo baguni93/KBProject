@@ -3,9 +3,6 @@
     <PageHeader title="카테고리별 소비" />
 
     <div class="category-summary-content">
-      <div v-if="message" class="kb-toast kb-toast--error text-13">
-        {{ message }}
-      </div>
 
       <div v-if="loading" class="kb-card kb-loading text-13">
         <div class="spinner-border kb-spinner" role="status"></div>
@@ -24,7 +21,7 @@
         <section class="kb-section category-section">
           <div class="kb-section-title-row">
             <h2 class="kb-section-title text-20-bold">전체 카테고리</h2>
-            <span class="category-count text-13">{{ sortedCategories.length }}개</span>
+            <span class="category-count text-13">{{ totalPaymentTransactionCount }}건</span>
           </div>
 
           <div class="category-list kb-card">
@@ -60,7 +57,7 @@
 
               <div class="category-amount">
                 <strong class="text-15-bold">{{ formatAnalysisNumber(category.spendingAmount) }}원</strong>
-                <span class="text-13">{{ category.transactionCount }}건</span>
+                <span class="text-13">{{ getCategoryTransactionCount(category.spendingCategoryId) }}건</span>
               </div>
             </div>
           </div>
@@ -86,6 +83,11 @@ const route = useRoute();
 const analysis = ref(null);
 const loading = ref(false);
 const message = ref('');
+const periodTransactions = ref([]);
+
+const totalPaymentTransactionCount = computed(
+  () => periodTransactions.value.length,
+);
 
 const sortedCategories = computed(() =>
   [...(analysis.value?.categories ?? [])].sort(
@@ -101,6 +103,28 @@ const formatRatio = (value) => {
   return Number.isInteger(ratio) ? ratio : ratio.toFixed(1);
 };
 
+const categoryTransactionCountMap = computed(() => {
+  const countMap = new Map();
+
+  for (const transaction of periodTransactions.value) {
+    const categoryId =
+      transaction.parentCategoryId ?? transaction.spendingCategoryId;
+
+    if (categoryId == null) continue;
+
+    const normalizedCategoryId = Number(categoryId);
+    countMap.set(
+      normalizedCategoryId,
+      (countMap.get(normalizedCategoryId) ?? 0) + 1,
+    );
+  }
+
+  return countMap;
+});
+
+const getCategoryTransactionCount = (spendingCategoryId) =>
+  categoryTransactionCountMap.value.get(Number(spendingCategoryId)) ?? 0;
+
 const loadAnalysis = async () => {
   const id = Number(route.params.spendingAnalysisId);
   if (!Number.isInteger(id) || id <= 0) {
@@ -113,8 +137,11 @@ const loadAnalysis = async () => {
   message.value = '';
   try {
     analysis.value = await analysisApi.getAnalysisDetail(id);
+    const transactionData = await analysisApi.getTransactions(analysis.value.period);
+    periodTransactions.value = transactionData.transactions ?? [];
   } catch (error) {
     analysis.value = null;
+    periodTransactions.value = [];
     message.value = getAnalysisErrorMessage(error, '카테고리별 소비를 불러오지 못했습니다.');
   } finally {
     loading.value = false;

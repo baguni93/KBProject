@@ -615,8 +615,6 @@ CREATE TABLE spending_analysis_tbl
     representative_category_id          INT          NOT NULL COMMENT '가장 많이 소비한 대표 카테고리',
     ai_title                            VARCHAR(100) NOT NULL COMMENT 'AI 생성 칭호',
     ai_analysis_summary                 TEXT         NOT NULL COMMENT 'AI가 생성한 소비 분석 요약',
-    ai_card_recommendation_summary      TEXT         NULL COMMENT 'AI가 생성한 카드 추천 요약',
-    ai_insurance_recommendation_summary TEXT         NULL COMMENT 'AI가 생성한 보험 추천 요약',
     created_at                          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '분석 일자',
 
     CONSTRAINT fk_spending_analysis_user
@@ -737,9 +735,10 @@ CREATE TABLE card_recommendation_tbl
     card_recommendation_id  INT AUTO_INCREMENT PRIMARY KEY COMMENT '카드 추천 PK',
     spending_analysis_id    INT      NOT NULL COMMENT '소비분석 ID',
     card_product_id         INT      NOT NULL COMMENT '추천 카드',
-    recommendation_rank     INT      NOT NULL COMMENT '추천 순위',
-    expected_benefit_amount INT      NULL COMMENT '예상 할인 금액',
-    created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '추천 일시',
+    recommendation_rank       INT      NOT NULL COMMENT '추천 순위',
+    expected_benefit_amount   INT      NULL COMMENT '예상 할인 금액',
+    ai_recommendation_summary TEXT     NULL COMMENT 'AI가 생성한 카드별 추천 요약',
+    created_at                DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '추천 일시',
 
     CONSTRAINT uq_card_recommendation
         UNIQUE (spending_analysis_id, card_product_id),
@@ -868,7 +867,8 @@ CREATE TABLE kb_insurance_recommendation_tbl
     insurance_recommendation_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '보험 추천 PK',
     spending_analysis_id        INT           NOT NULL COMMENT '소비분석 ID',
     insurance_product_id        INT           NOT NULL COMMENT '추천 보험 ID',
-    recommendation_reason       VARCHAR(1000) NOT NULL COMMENT '추천이유',
+    recommendation_reason       VARCHAR(1000) NOT NULL COMMENT '규칙 기반 추천 이유',
+    ai_recommendation_summary   TEXT          NULL COMMENT 'AI가 생성한 보험 상품별 추천 요약',
     created_at                  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '추천 생성 일시',
 
     CONSTRAINT uq_insurance_recommendation

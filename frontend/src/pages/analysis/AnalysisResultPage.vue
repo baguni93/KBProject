@@ -8,16 +8,6 @@
 
     <div class="result-content-start">
 
-    <div
-        v-if="message"
-        :class="[
-        'kb-toast',
-        messageType === 'info' ? 'kb-toast--info' : 'kb-toast--error',
-      ]"
-    >
-      {{ message }}
-    </div>
-
     <div v-if="loading" class="kb-card kb-loading">
       <div class="spinner-border kb-spinner"></div>
       <div class="text-13">분석 결과를 불러오는 중이에요.</div>
@@ -80,7 +70,7 @@
       <section class="kb-section">
         <div class="kb-section-title-row">
           <h2 class="kb-section-title text-20-bold">카테고리별 소비</h2>
-          <span class="category-count text-13">{{ sortedCategories.length }}개 카테고리</span>
+          <span class="category-count text-13">{{ totalCategoryTransactionCount }}건</span>
         </div>
         <div class="result-list kb-card">
           <div
@@ -113,12 +103,12 @@
             </div>
             <div class="result-category-amount">
               <strong class="text-15-bold">{{ formatAnalysisNumber(category.spendingAmount) }}원</strong>
-              <span class="text-13">{{ category.transactionCount }}건</span>
+              <span class="text-13">{{ getCategoryTransactionCount(category.spendingCategoryId) }}건</span>
             </div>
           </div>
         </div>
       </section>
-<!-- ai 카테고리 주석처리 ㅇㅅㅇ ㅇㅋㅋ? ㄹㅇ ㅠㅠ-->
+<!-- ai 카테고리 주석처리 -->
 <!--      <section class="ai-insight kb-card">-->
 <!--        <div class="ai-insight__label">-->
 <!--          <i class="fa-solid fa-wand-magic-sparkles"></i> AI 분석-->
@@ -130,12 +120,12 @@
       <section class="recommendation-grid">
         <button type="button" class="recommendation-card kb-card" @click="openCardRecommendation">
           <span class="recommendation-icon card"><i class="fa-regular fa-credit-card"></i></span>
-          <span><strong class="text-15-bold">카드 추천</strong><small class="text-13">나에게 맞는 카드 찾기</small></span>
+          <span><strong class="text-15-bold">카드 추천</strong><small class="text-13">나에게 맞는 <br/>카드 찾기</small></span>
           <i class="fa-solid fa-chevron-right"></i>
         </button>
         <button type="button" class="recommendation-card kb-card" @click="openInsuranceRecommendation">
           <span class="recommendation-icon insurance"><i class="fa-solid fa-shield-heart"></i></span>
-          <span><strong class="text-15-bold">보험 추천</strong><small class="text-13">나에게 맞는 보험 찾기</small></span>
+          <span><strong class="text-15-bold">보험 추천</strong><small class="text-13">나에게 맞는 <br/>보험 찾기</small></span>
           <i class="fa-solid fa-chevron-right"></i>
         </button>
       </section>
@@ -150,7 +140,7 @@
           <label>
             <span class="text-13">카테고리</span>
             <select v-model="selectedCategoryId">
-              <option value="ALL">전체 카테고리</option>
+              <option value="ALL">전체</option>
               <option
                   v-for="category in topCategories"
                   :key="category.spendingCategoryId"
@@ -283,6 +273,34 @@ const sortedCategories = computed(() =>
 const topCategories = computed(() =>
     categories.value.filter((category) => category.parentCategoryId == null),
 );
+
+
+const categoryTransactionCountMap = computed(() => {
+  const countMap = new Map();
+
+  for (const transaction of transactions.value) {
+    const categoryId =
+        transaction.parentCategoryId ?? transaction.spendingCategoryId;
+
+    if (categoryId == null) continue;
+
+    const normalizedCategoryId = Number(categoryId);
+    countMap.set(
+        normalizedCategoryId,
+        (countMap.get(normalizedCategoryId) ?? 0) + 1,
+    );
+  }
+
+  return countMap;
+});
+
+const totalCategoryTransactionCount = computed(
+    () => transactions.value.length,
+);
+
+const getCategoryTransactionCount = (spendingCategoryId) =>
+    categoryTransactionCountMap.value.get(Number(spendingCategoryId)) ?? 0;
+
 
 const filteredTransactions = computed(() => {
   const filtered = transactions.value.filter((transaction) => {

@@ -3,21 +3,18 @@
     <PageHeader title="전체 소비내역" />
 
     <div class="transaction-content">
-      <div v-if="message" class="kb-toast kb-toast--error text-13">
-        {{ message }}
-      </div>
 
       <div v-if="loading" class="kb-card kb-loading text-13">
         <div class="spinner-border kb-spinner" role="status"></div>
         <div>전체 소비내역을 불러오는 중이에요.</div>
       </div>
 
-      <template v-else-if="analysis">
+      <template v-else>
         <section class="transaction-filter kb-card">
           <label>
             <span class="text-13-bold">카테고리</span>
             <select v-model="selectedCategoryId" class="text-13">
-              <option value="ALL">전체 카테고리</option>
+              <option value="ALL">전체</option>
               <option
                 v-for="category in topCategories"
                 :key="category.spendingCategoryId"
@@ -120,7 +117,6 @@ import {
 const PAGE_SIZE = 10;
 const route = useRoute();
 const router = useRouter();
-const analysis = ref(null);
 const categories = ref([]);
 const transactions = ref([]);
 const loading = ref(false);
@@ -179,26 +175,16 @@ const pageNumbers = computed(() =>
 );
 
 const loadPage = async () => {
-  const id = Number(route.params.spendingAnalysisId);
-  if (!Number.isInteger(id) || id <= 0) {
-    analysis.value = null;
-    message.value = '올바른 소비 분석 ID가 필요합니다.';
-    return;
-  }
-
   loading.value = true;
   message.value = '';
   try {
-    const [analysisData, transactionData, categoryData] = await Promise.all([
-      analysisApi.getAnalysisDetail(id),
-      analysisApi.getAnalysisResultTransactions(id),
+    const [transactionData, categoryData] = await Promise.all([
+      analysisApi.getAllTransactions(),
       analysisApi.getCategories(),
     ]);
-    analysis.value = analysisData;
     transactions.value = transactionData.transactions ?? [];
     categories.value = categoryData.categories ?? [];
   } catch (error) {
-    analysis.value = null;
     transactions.value = [];
     categories.value = [];
     message.value = getAnalysisErrorMessage(error, '전체 소비내역을 불러오지 못했습니다.');
@@ -212,7 +198,7 @@ const goToCategoryEdit = (transaction) =>
     name: 'analysis-category-edit',
     params: { transactionId: transaction.transactionId },
     query: {
-      period: analysis.value?.period ?? 1,
+      period: 12,
       returnTo: route.fullPath,
     },
   });
@@ -225,7 +211,6 @@ watch(totalPages, (pages) => {
   if (currentPage.value > pages) currentPage.value = pages;
 });
 
-watch(() => route.params.spendingAnalysisId, loadPage);
 onMounted(loadPage);
 </script>
 

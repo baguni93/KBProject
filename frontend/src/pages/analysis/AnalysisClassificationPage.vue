@@ -7,15 +7,6 @@
     />
 
     <div class="classification-content">
-      <div
-        v-if="message"
-        :class="[
-          'kb-toast',
-          messageType === 'success' ? 'kb-toast--success' : 'kb-toast--error',
-        ]"
-      >
-        {{ message }}
-      </div>
 
       <div v-if="loading" class="kb-card kb-loading text-13">
         <div class="spinner-border kb-spinner"></div>

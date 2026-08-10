@@ -76,7 +76,7 @@ export default [
     beforeEnter: requireAnalysisAgreement,
   },
   {
-    path: '/analysis/result/:spendingAnalysisId/transactions',
+    path: '/analysis/transactions',
     name: 'analysis-transactions',
     component: AnalysisTransactionListPage,
     beforeEnter: requireAnalysisAgreement,

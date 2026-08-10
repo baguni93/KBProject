@@ -7,15 +7,6 @@
     />
 
     <div class="check-content-start">
-    <div
-      v-if="message"
-      :class="[
-        'kb-toast',
-        messageType === 'info' ? 'kb-toast--info' : 'kb-toast--error',
-      ]"
-    >
-      {{ message }}
-    </div>
 
     <div v-if="loading" class="kb-card kb-loading check-loading text-13">
       <div class="spinner-border kb-spinner" role="status"></div>

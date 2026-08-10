@@ -45,9 +45,6 @@ public class CardRecommendationServiceImpl
                     .spendingAnalysisId(spendingAnalysisId)
                     .created(false)
                     .recommendationCount(existingCount)
-                    .aiCardRecommendationSummary(
-                            analysis.getAiCardRecommendationSummary()
-                    )
                     .message("기존 카드 추천 결과를 불러왔습니다.")
                     .build();
         }
@@ -102,25 +99,18 @@ public class CardRecommendationServiceImpl
                         spendingAnalysisId
                 );
 
-        CardProductCalculationResult topCredit =
-                findTopResult(results, CardType.CREDIT);
-        CardProductCalculationResult topCheck =
-                findTopResult(results, CardType.CHECK);
-
-        String summary = narrativeService.createSummary(
+        generateTopRecommendationSummaries(
                 categories,
-                topCredit,
-                topCheck
+                results,
+                benefits
         );
 
         /*
          * 실제 저장은 별도 빈에서 하나의 트랜잭션으로 처리한다.
-         * 거래 계산과 AI 문장 생성이 모두 끝난 뒤 저장을 시작한다.
+         * 거래 계산과 카드별 AI 문장 생성이 모두 끝난 뒤 저장을 시작한다.
          */
         saveService.saveRecommendations(
-                userId,
                 spendingAnalysisId,
-                summary,
                 results
         );
 
@@ -135,7 +125,6 @@ public class CardRecommendationServiceImpl
                 .spendingAnalysisId(spendingAnalysisId)
                 .created(true)
                 .recommendationCount(results.size())
-                .aiCardRecommendationSummary(summary)
                 .message("카드 추천 결과를 생성했습니다.")
                 .build();
     }
@@ -206,6 +195,9 @@ public class CardRecommendationServiceImpl
                                     calculateDisplayBenefit(row, feeMode)
                             )
                             .recommendationRank(index + 1)
+                            .aiRecommendationSummary(
+                                    row.getAiRecommendationSummary()
+                            )
                             .build()
             );
         }
@@ -215,9 +207,6 @@ public class CardRecommendationServiceImpl
                 .analysisPeriod(analysis.getAnalysisPeriod())
                 .cardType(cardType.name())
                 .feeMode(feeMode.name())
-                .aiCardRecommendationSummary(
-                        analysis.getAiCardRecommendationSummary()
-                )
                 .recommendationCount(items.size())
                 .recommendations(items)
                 .build();
@@ -323,8 +312,8 @@ public class CardRecommendationServiceImpl
                 )
                 .recommendationRank(displayRank)
                 .feeMode(feeMode.name())
-                .aiCardRecommendationSummary(
-                        header.getAiCardRecommendationSummary()
+                .aiRecommendationSummary(
+                        header.getAiRecommendationSummary()
                 )
                 .benefits(benefits)
                 .build();
@@ -421,17 +410,23 @@ public class CardRecommendationServiceImpl
         }
     }
 
-    private CardProductCalculationResult findTopResult(
+    private void generateTopRecommendationSummaries(
+            List<CardRecommendationCategoryVO> categories,
             List<CardProductCalculationResult> results,
-            CardType type
+            List<CardBenefitVO> benefits
     ) {
-        return results.stream()
+        results.stream()
+                .filter(Objects::nonNull)
                 .filter(result -> result.getProduct() != null)
-                .filter(result -> type.name().equals(
-                        result.getProduct().getCardType()
-                ))
-                .min(createCalculationComparator())
-                .orElse(null);
+                .filter(result -> result.getRecommendationRank() != null)
+                .filter(result -> result.getRecommendationRank() <= DISPLAY_LIMIT)
+                .forEach(result -> result.setAiRecommendationSummary(
+                        narrativeService.createCardSummary(
+                                categories,
+                                result,
+                                benefits
+                        )
+                ));
     }
 
     private Comparator<CardProductCalculationResult>

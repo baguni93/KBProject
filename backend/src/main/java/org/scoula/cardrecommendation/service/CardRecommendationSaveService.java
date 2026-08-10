@@ -6,9 +6,7 @@ import java.util.List;
 
 public interface CardRecommendationSaveService {
     void saveRecommendations(
-            Integer userId,
             Integer spendingAnalysisId,
-            String aiSummary,
             List<CardProductCalculationResult> results
     );
 }

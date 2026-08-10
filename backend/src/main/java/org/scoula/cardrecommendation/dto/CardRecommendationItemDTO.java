@@ -21,4 +21,5 @@ public class CardRecommendationItemDTO {
     private Integer expectedBenefitAmount;
     private Integer displayBenefitAmount;
     private Integer recommendationRank;
+    private String aiRecommendationSummary;
 }

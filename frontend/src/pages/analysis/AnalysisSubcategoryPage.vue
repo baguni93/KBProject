@@ -7,9 +7,6 @@
     />
 
     <div class="subcategory-content">
-      <div v-if="message" class="kb-toast kb-toast--error">
-        {{ message }}
-      </div>
 
       <div v-if="loading" class="kb-card kb-loading">
         <div class="spinner-border kb-spinner"></div>

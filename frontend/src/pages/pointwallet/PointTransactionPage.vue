@@ -6,13 +6,6 @@
       @refresh="loadTransactions"
     />
 
-    <div
-      v-if="message"
-      class="kb-toast kb-toast--error"
-    >
-      {{ message }}
-    </div>
-
     <div class="transaction-tabs">
       <CommonTabBar
           :tabs="transactionTypeOptions"

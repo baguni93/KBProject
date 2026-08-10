@@ -3,15 +3,6 @@
     <PageHeader title="최근 소비 분석 결과" :showBack="false" />
 
     <div class="analysis-content-start">
-      <div
-          v-if="message"
-          :class="[
-          'kb-toast',
-          messageType === 'info' ? 'kb-toast--info' : 'kb-toast--error',
-        ]"
-      >
-        {{ message }}
-      </div>
 
       <div :class="['analysis-tabs', { 'is-loading': pageLoading }]">
         <CommonTabBar
@@ -289,7 +280,7 @@ const loadLatestAnalysis = async () => {
 const loadTransactions = async () => {
   transactionsLoading.value = true;
   try {
-    const result = await analysisApi.getTransactions(selectedPeriod.value);
+    const result = await analysisApi.getAllTransactions();
     transactions.value = result.transactions ?? [];
   } catch (error) {
     transactions.value = [];
@@ -410,14 +401,7 @@ const goToCategorySummary = () => {
 };
 
 const goToAllTransactions = () => {
-  if (!latestAnalysis.value?.spendingAnalysisId) {
-    goToCheck();
-    return;
-  }
-  router.push({
-    name: 'analysis-transactions',
-    params: {spendingAnalysisId: latestAnalysis.value.spendingAnalysisId},
-  });
+  router.push({name: 'analysis-transactions'});
 };
 
 const goToCategoryEdit = (transaction) =>
@@ -446,9 +430,6 @@ onBeforeUnmount(stopStatusPolling);
   //margin-top: 14px;
 }
 
-.analysis-content-start .kb-toast {
-  margin-bottom: 12px;
-}
 
 .analysis-tabs.is-loading {
   pointer-events: none;

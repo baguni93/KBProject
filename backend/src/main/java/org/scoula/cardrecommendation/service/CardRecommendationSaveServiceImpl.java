@@ -21,9 +21,7 @@ public class CardRecommendationSaveServiceImpl
     @Override
     @Transactional
     public void saveRecommendations(
-            Integer userId,
             Integer spendingAnalysisId,
-            String aiSummary,
             List<CardProductCalculationResult> results
     ) {
         try {
@@ -39,6 +37,9 @@ public class CardRecommendationSaveServiceImpl
                                 )
                                 .expectedBenefitAmount(
                                         result.getExpectedBenefitAmount()
+                                )
+                                .aiRecommendationSummary(
+                                        result.getAiRecommendationSummary()
                                 )
                                 .build();
 
@@ -94,19 +95,6 @@ public class CardRecommendationSaveServiceImpl
                         );
                     }
                 }
-            }
-
-            int updated = cardRecommendationMapper
-                    .updateCardRecommendationSummary(
-                            userId,
-                            spendingAnalysisId,
-                            aiSummary
-                    );
-
-            if (updated != 1) {
-                throw new CustomException(
-                        ErrorCode.CARD_RECOMMENDATION_SAVE_FAILED
-                );
             }
 
         } catch (CustomException e) {
