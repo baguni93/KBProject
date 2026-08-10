@@ -86,7 +86,10 @@ const message = ref('');
 const periodTransactions = ref([]);
 
 const totalPaymentTransactionCount = computed(
-  () => periodTransactions.value.length,
+  () =>
+    periodTransactions.value.filter(
+      (transaction) => transaction.spendingCategoryId != null,
+    ).length,
 );
 
 const sortedCategories = computed(() =>
