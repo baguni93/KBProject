@@ -9,10 +9,10 @@ import java.util.List;
 
 public interface EventMapper {
     // 1. 현재 보유 포인트
-    Integer getUserPoint(@Param("userId") Integer userId);
+    Integer getUserPoint(@Param("userId") int userId);
 
     // 2. 현재 챌린지 참여현황 조회
-    UserChallengeDTO getUserChallengeStatus(@Param("userId") Integer userId);
+    UserChallengeDTO getEventChallengeUser(@Param("userId") int userId);
 
     // 3. 현재 참여 가능 이벤트 목록 조회
     List<EventResponseDTO> getActiveEventProgressList(@Param("userId") Integer userId);
@@ -38,19 +38,16 @@ public interface EventMapper {
 
     int updateUserChallengeTarget(@Param("userId") Integer userId);
 
-    EventResponseDTO getEventRewardInfoByEventId(Integer eventId);
+    //EventResponseDTO getEventRewardInfoByEventId(Integer eventId);
 
 
     int getParticipationCount(@Param("eventId") Integer eventId, @Param("userId") Integer userId);
 
-    // 48번째 줄 수정
     int getTodayParticipationCount(@Param("eventId") Integer eventId, @Param("userId") Integer userId, @Param("eventType") String eventType);
 
-    // 50번째 줄 수정
     int createAttendanceParticipation(@Param("eventId") Integer eventId, @Param("userId") Integer userId);
 
-    // 52번째 줄 수정
-    boolean checkRewardAlreadyReceived(@Param("eventId") Integer eventId, @Param("userId") Integer userId, @Param("rewardId") Integer rewardId);
+    //boolean checkRewardAlreadyReceived(@Param("eventId") Integer eventId, @Param("userId") Integer userId, @Param("rewardId") Integer rewardId);
 
     List<EventNormalVO> getEvent(int userId);
 
@@ -59,4 +56,6 @@ public interface EventMapper {
     List<EventAttendanceVO> getAttendanceEvent(int userId);
 
     void joinAttendanceEvent(@Param("userId")int userId, @Param("eventId") int eventId);
+
+
 }
