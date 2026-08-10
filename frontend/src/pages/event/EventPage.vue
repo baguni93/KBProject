@@ -52,12 +52,9 @@ import PointView from '@/components/finance/PointView.vue';
 import EventMainCardBanner from '@/components/event/EventMainCardBanner.vue';
 import EventMainChallenge from '@/components/event/EventMainChallenge.vue';
 import EventItem from '@/components/event/EventItem.vue';
+
+/// 유저 아이디
 import { useAuthStore } from '@/stores/auth';
-
-// user
-import { useUserStore } from '@/stores/user';
-const userStore = useUserStore();
-
 const authStore = useAuthStore();
 const userId = authStore.userId ?? 1;
 
@@ -69,10 +66,16 @@ const activeEvents = ref([]);
 
 // 메인 페이지 데이터 로드
 const fetchMainData = async () => {
-  if (!userId.value) return;
+  if (!userId) return;
 
   try {
-    const data = await eventApi.getEventMain(userId.value);
+    //const dataOrigin = await eventApi.getEventMain(userId);
+
+    const data = await eventApi.getEventList(userId);
+
+    //console.log(' Origin : ', dataOrigin);
+    console.log('참여 가능한 이벤트 리스트 조회 : ', data);
+    activeEvents.value = data;
 
     userPoint.value = data.currentPoint || 0;
 
@@ -87,19 +90,19 @@ const fetchMainData = async () => {
 
     console.log(rawEvents);
 
-    if (Array.isArray(rawEvents)) {
-      activeEvents.value = rawEvents.filter((item) => {
-        if (!item) return false;
-        const eventStatus = item.buttonStatus;
+    // if (Array.isArray(rawEvents)) {
+    //   activeEvents.value = rawEvents.filter((item) => {
+    //     if (!item) return false;
+    //     const eventStatus = item.buttonStatus;
 
-        return (
-          !eventStatus ||
-          (eventStatus !== 'COMPLETE' && eventStatus !== 'ATTENDANCE')
-        );
-      });
-    } else {
-      activeEvents.value = [];
-    }
+    //     return (
+    //       !eventStatus ||
+    //       (eventStatus !== 'COMPLETE' && eventStatus !== 'ATTENDANCE')
+    //     );
+    //   });
+    // } else {
+    //   activeEvents.value = [];
+    // }
   } catch (err) {
     console.error('데이터 로드 실패', err);
   }
@@ -204,6 +207,10 @@ const onEventAction = async ({
       '이벤트 참여 처리 요청 중 오류가 발생했습니다.';
     alert(errorMsg);
   }
+};
+
+const goToEventList = () => {
+  router.push('/event/list');
 };
 </script>
 
