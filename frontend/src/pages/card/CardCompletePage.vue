@@ -12,7 +12,7 @@
 
       <!-- 발급된 카드 미리보기 (정중앙 정렬) -->
       <div class="card-preview-box">
-        <CardCanvasPreview ref="childRef" />
+        <CardCanvasPreview />
       </div>
     </div>
 
@@ -24,10 +24,7 @@
       <button class="share-btn" @click="handleAddCard">
         간편 결제 연동하기
       </button>
-      <!-- 부모 화면에 있는 버튼에서 자식 함수를 호출 -->
-      <button @click="handleParentClick">
-        부모가 자식에게 캡처 명령 내리기
-      </button>
+
       <button class="confirm-btn" @click="handleConfirm">확인</button>
     </div>
 
@@ -46,11 +43,13 @@
           <!-- 전체 공개 -->
           <div
             class="option-card"
-            :class="{ active: selectedScope === 'public' }"
-            @click="selectedScope = 'public'"
+            :class="{ active: selectedScope === 'PUBLIC' }"
+            @click="selectedScope = 'PUBLIC'"
           >
             <div class="option-icon-text">
-              <div class="icon-circle">🌍</div>
+              <div class="icon-circle">
+                <i :class="config.visibilityMap.PUBLIC.icon"></i>
+              </div>
               <div class="text-group">
                 <div class="option-title">전체 공개</div>
                 <div class="option-desc">
@@ -60,7 +59,7 @@
             </div>
             <div class="radio-icon">
               <i
-                v-if="selectedScope === 'public'"
+                v-if="selectedScope === 'PUBLIC'"
                 class="fa-solid fa-circle-check"
               ></i>
               <div v-else class="radio-empty"></div>
@@ -70,11 +69,13 @@
           <!-- 친구 공개 -->
           <div
             class="option-card"
-            :class="{ active: selectedScope === 'friends' }"
-            @click="selectedScope = 'friends'"
+            :class="{ active: selectedScope === 'FRIEND' }"
+            @click="selectedScope = 'FRIEND'"
           >
             <div class="option-icon-text">
-              <div class="icon-circle">👥</div>
+              <div class="icon-circle">
+                <i :class="config.visibilityMap.FRIEND.icon"></i>
+              </div>
               <div class="text-group">
                 <div class="option-title">친구 공개</div>
                 <div class="option-desc">
@@ -84,12 +85,23 @@
             </div>
             <div class="radio-icon">
               <i
-                v-if="selectedScope === 'friends'"
+                v-if="selectedScope === 'FRIEND'"
                 class="fa-solid fa-circle-check"
               ></i>
               <div v-else class="radio-empty"></div>
             </div>
           </div>
+        </div>
+
+        <!-- 💡 [추가] 피드 내용 입력 영역 -->
+        <div class="feed-content-area">
+          <textarea
+            v-model="feedContent"
+            placeholder="자랑하고 싶은 내용을 입력해 보세요!"
+            maxlength="20"
+            class="feed-textarea"
+          ></textarea>
+          <div class="char-count">{{ feedContent.length }} / 20</div>
         </div>
 
         <!-- 모달 내부 액션 버튼 -->
@@ -110,12 +122,17 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCardEditorStore } from '@/stores/cardEditorStore';
 import CardCanvasPreview from '@/components/card-editor/CardCanvasPreview.vue';
+import config from '@/config/feed';
+import { useFeedStore } from '@/stores/feed';
+
+const feedStore = useFeedStore();
 
 const router = useRouter();
 const cardStore = useCardEditorStore();
 
 const isModalOpen = ref(false);
-const selectedScope = ref('public'); // 'public' 또는 'friends'
+const selectedScope = ref('PUBLIC'); // 'public' 또는 'friends'
+const feedContent = ref('');
 
 const openModal = () => {
   isModalOpen.value = true;
@@ -139,8 +156,18 @@ const handleAddCard = () => {
 };
 
 // 자랑하기 최종 제출
-const handleShareSubmit = () => {
+const handleShareSubmit = async () => {
   console.log('공개 범위:', selectedScope.value);
+
+  const fromData = feedStore.createRequestDTO({
+    targetId: cardStore.customCardId,
+    feedType: 'CARD',
+    visibility: selectedScope.value,
+    content: feedContent.value,
+  });
+
+  await feedStore.createFeed(fromData);
+
   console.log('공유될 카드 데이터:', {
     name: cardStore.cardName,
     number: cardStore.cardNumber,
@@ -150,19 +177,6 @@ const handleShareSubmit = () => {
   alert('피드에 성공적으로 공유되었습니다!');
   closeModal();
   router.push('/'); // 공유 후 이동할 페이지
-};
-
-const childRef = ref(null);
-
-// 2. 부모 버튼을 눌렀을 때 실행될 함수
-const handleParentClick = async () => {
-  if (childRef.value?.testDownloadCard) {
-    // 자식 안에 있는 캡처 함수 실행!
-    await childRef.value.testDownloadCard();
-    console.log('부모가 자식의 캡처 기능을 성공적으로 호출했습니다.');
-  } else {
-    console.log('자식 컴포넌트가 아직 준비되지 않았거나 함수가 없습니다.');
-  }
 };
 </script>
 
@@ -174,7 +188,7 @@ const handleParentClick = async () => {
   flex-direction: column;
   background-color: #ffffff;
   box-sizing: border-box;
-  padding: 16px;
+  padding: 20px;
   position: relative;
   overflow: hidden;
 }
@@ -192,7 +206,8 @@ const handleParentClick = async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
+  margin-top: -150px;
   gap: 24px;
 }
 
@@ -312,7 +327,7 @@ const handleParentClick = async () => {
 }
 
 .sheet-desc {
-  font-size: 12px;
+  font-size: 13px;
   color: #888;
 }
 
@@ -361,13 +376,13 @@ const handleParentClick = async () => {
 }
 
 .option-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: bold;
   color: #222;
 }
 
 .option-desc {
-  font-size: 11px;
+  font-size: 12px;
   color: #888;
   margin-top: 2px;
 }
@@ -399,7 +414,7 @@ const handleParentClick = async () => {
   background-color: #ffc107;
   border: none;
   color: #111;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: bold;
   cursor: pointer;
 }
@@ -431,5 +446,35 @@ const handleParentClick = async () => {
   to {
     transform: translateY(0);
   }
+}
+
+.feed-content-area {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feed-textarea {
+  width: 100%;
+  height: 80px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  resize: none;
+  font-size: 14px;
+  box-sizing: border-box; /* 패딩 포함하여 너비 계산 */
+  outline: none;
+}
+
+.feed-textarea:focus {
+  border-color: #3b82f6; /* 포커스 시 테두리 색상 */
+}
+
+.char-count {
+  text-align: right;
+  font-size: 12px;
+  color: #9ca3af;
 }
 </style>

@@ -1,8 +1,17 @@
 <template>
   <div class="editor">
+    <!-- 💡 1번: 우측 상단에 뜰 혜택 뱃지 (혜택이 선택되었을 때만 표시) -->
+    <!-- 💡 1번: 혜택이 선택되었을 때 카드 영역 위에 뜰 뱃지 -->
+    <div
+      v-if="selectedBenefit"
+      class="benefit-badge absolute top-4 right-4"
+      :style="{ backgroundColor: selectedBenefit.color || '#3b82f6' }"
+    >
+      {{ selectedBenefit.name }} 적용됨
+    </div>
     <!-- 카드 미리보기 -->
     <section class="editor-preview">
-      <CardCanvas />
+      <CardCanvas ref="childRef" />
     </section>
 
     <!-- 탭 -->
@@ -22,14 +31,14 @@
     <!-- 옵션 영역 -->
     <section class="editor-tools">
       <div class="editor-tools-inner">
-        <slot :tab="currentTab" />
+        <slot :tab="currentTab" @select-benefit="handleBenefitSelected" />
       </div>
     </section>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import CardCanvas from './CardCanvas.vue';
 const props = defineProps({
   tabs: {
@@ -40,6 +49,7 @@ const props = defineProps({
     type: String,
     default: '42px',
   },
+  selectedBenefit: { type: Object, default: null }, // 💡 부모가 주는 데이터
 });
 
 const currentTab = ref('');
@@ -54,6 +64,22 @@ watch(
     immediate: true,
   },
 );
+
+const childRef = ref(null);
+const emit = defineEmits(['select-benefit']);
+// 💡 선택된 혜택 데이터를 저장할 상태 추가
+
+const selectedBenefit = computed(() => props.selectedBenefit);
+const handleBenefitSelected = (benefitPack) => {
+  selectedBenefit.value = benefitPack;
+  emit('select-benefit', benefitPack);
+  console.log('선택된 혜택:', benefitPack);
+};
+
+defineExpose({
+  childRef,
+  selectedBenefit, // 나중에 서버로 보낼 때 필요하면 바깥에서도 쓰도록 expose!
+});
 </script>
 
 <style scoped>
@@ -75,7 +101,7 @@ watch(
 
 /* 카드 미리보기 */
 .editor-preview {
-  height: 170px;
+  height: 190px;
 
   flex-shrink: 0;
 
@@ -87,7 +113,9 @@ watch(
 
   background: #f3f2ef3f;
 
-  border-radius: 16px;
+  border-radius: 8px;
+
+  position: relative;
 }
 
 /* 탭 영역 */
@@ -185,5 +213,31 @@ watch(
   padding-bottom: 24px;
 
   box-sizing: border-box;
+}
+
+/* 뱃지 디자인 스타일 */
+.benefit-badge {
+  color: white;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: popIn 0.3s ease-out;
+  z-index: 10;
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  80% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

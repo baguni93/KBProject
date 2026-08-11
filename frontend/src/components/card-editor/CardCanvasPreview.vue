@@ -54,10 +54,22 @@
     </div>
 
     <!-- 카드 기본 정보 고정 레이어 -->
+    <!-- 카드 기본 정보 고정 레이어 -->
     <div class="card-content">
-      <div class="card-name">{{ currentCardData.cardName }}</div>
-      <div class="card-bottom">
-        <span>{{ currentCardData.cardNumber }}</span>
+      <div class="text-chip-container">
+        <div class="bank-name">KB 국민카드</div>
+        <div class="card-name">{{ currentCardData.cardName }}</div>
+
+        <!-- 💡 화살표가 칩 왼쪽에 오도록 순서 변경 -->
+        <div v-if="currentCardData.cardChip" class="chip-wrapper">
+          <span class="chip-arrow" aria-hidden="true">&lt;</span>
+          <img
+            :src="currentCardData.cardChip"
+            class="card-chip-img"
+            alt="card chip"
+            draggable="false"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -66,10 +78,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useCardEditorStore } from '@/stores/cardEditorStore';
-import html2canvas from 'html2canvas'; // 캡처 라이브러리 임포트
 
 const cardStore = useCardEditorStore();
-const cardRef = ref(null); // 캡처할 DOM 참조
 
 // 💡 Pinia의 history가 단일 객체이므로 배열 방식 대신 단일 객체 기준으로 변경
 const currentCardData = computed(() => {
@@ -86,6 +96,7 @@ const currentCardData = computed(() => {
     pattern: cardStore.pattern,
     texts: cardStore.texts,
     emojis: cardStore.emojis,
+    cardChip: cardStore.cardChip,
     savedDrawingImage: cardStore.savedDrawingImage,
   };
 });
@@ -97,88 +108,12 @@ const cardBackground = computed(() => {
   if (data.gradient) return data.gradient;
   return data.color || '#1e40af';
 });
-
-// 💡 [핵심] 카드를 캡처해서 백엔드로 전송하는 함수
-const uploadCardImage = async (userId) => {
-  const element = cardRef.value;
-  if (!element) return;
-
-  try {
-    // 1. html2canvas로 HTML 요소를 캔버스로 변환
-    // useCORS: true 옵션은 외부 이미지(url 등)가 있을 때 캔버스 오염(Tainted) 방지에 필수적입니다.
-    const canvas = await html2canvas(element, {
-      useCORS: true,
-      scale: 2, // 고해상도로 선명하게 캡처
-    });
-
-    // 2. 캔버스를 이미지 파일(Blob)로 변환
-    canvas.toBlob(async (blob) => {
-      if (!blob) {
-        console.error('이미지 변환 실패');
-        return;
-      }
-
-      // 3. FormData에 담아 백엔드로 전송
-      const formData = new FormData();
-      formData.append('cardImage', blob, 'my_custom_card.png');
-      formData.append('userId', userId);
-      formData.append('cardName', currentCardData.value.cardName);
-
-      console.log(formData);
-      // 4. API 호출 (Spring Boot 등)
-      // const response = await customCardApi.uploadCard(formData);
-      //console.log('백엔드 저장 성공:', response);
-    }, 'image/png');
-  } catch (error) {
-    console.error('카드 캡처 및 업로드 중 오류 발생:', error);
-  }
-};
-// 카드 캡처 후 곧바로 다운로드 시켜주는 테스트 함수
-const testDownloadCard = async () => {
-  const element = cardRef.value;
-  if (!element) {
-    alert('카드를 찾을 수 없습니다.');
-    return;
-  }
-
-  try {
-    console.log('캡처 시작...');
-
-    // html2canvas로 DOM을 캔버스로 변환
-    const canvas = await html2canvas(element, {
-      useCORS: true, // 외부 이미지(이모지, 배경 등) 깨짐 방지
-      scale: 2, // 고화질 캡처
-      backgroundColor: null,
-    });
-
-    // 캔버스를 이미지 URL(Base64)로 변환
-    const imageURL = canvas.toDataURL('image/png');
-
-    // 가상의 a 태그를 만들어 강제로 다운로드 유도
-    const link = document.createElement('a');
-    link.href = imageURL;
-    link.download = 'card_test_image.png'; // 저장될 파일명
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    console.log('캡처 및 다운로드 완료!');
-  } catch (error) {
-    console.error('캡처 실패:', error);
-    alert('이미지 캡처 중 에러가 발생했습니다.');
-  }
-};
-
-defineExpose({
-  testDownloadCard,
-  uploadCardImage,
-});
 </script>
 <style scoped>
 .card {
   width: 280px;
   height: 175px;
-  border-radius: 17px;
+  border-radius: 10px;
   padding: 15px;
   box-sizing: border-box;
   color: white;
@@ -261,6 +196,10 @@ defineExpose({
   height: 100%;
 }
 
+.bank-name {
+  font-size: 12px;
+  font-weight: 700;
+}
 .card-name {
   font-size: 10px;
   font-weight: 700;
@@ -270,5 +209,77 @@ defineExpose({
   display: flex;
   justify-content: space-between;
   font-size: 8px;
+}
+/* 💡 텍스트와 칩을 묶는 컨테이너 스타일 (신규) */
+.card-content {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px; /* 양쪽 여백 균일하게 */
+  bottom: 20px;
+  z-index: 15;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* 위쪽(이름)과 아래쪽(칩) 분리 */
+}
+
+/* 텍스트와 칩을 묶어주는 컨테이너 */
+.text-chip-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px; /* 💡 카드 이름과 IC칩 사이의 간격 */
+}
+
+/* 은행명 스타일 (필요시 추가) */
+.bank-name {
+  font-size: 11px;
+  font-weight: 500;
+  margin-bottom: -12px; /* 은행명과 카드 이름 사이를 더 가깝게 붙임 */
+  margin-top: -10px;
+  margin-left: -5px;
+}
+
+/* 카드 이름 텍스트 */
+.card-name {
+  opacity: 0.9;
+  font-size: 10px;
+  font-weight: 700;
+  margin: 0;
+  margin-left: -5px;
+}
+
+/* IC칩 이미지 위치 및 크기 */
+.card-chip-img {
+  width: 40px; /* 실제 카드 칩 표준 크기 */
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+  margin-top: 4px; /* 이름과의 미세 간격 조정 */
+}
+
+/* 💡 칩과 화살표를 감싸는 래퍼 */
+.chip-wrapper {
+  display: flex;
+  align-items: center; /* 세로 정렬 중앙 */
+  gap: 3px; /* 화살표와 칩 사이의 간격 */
+
+  /* 🛠️ 전체 위치 미세 조정 (가로, 세로) */
+  transform: translate(-5px, 0px);
+  opacity: 0.8;
+}
+
+/* 화살표 기호 스타일 */
+.chip-arrow {
+  font-size: 11px;
+  font-weight: 900;
+  color: white;
+  opacity: 0.85;
+  transform: scaleY(1.4);
+  pointer-events: none;
+
+  /* 🛠️ 화살표만 따로 위치를 칩에 더 붙이거나 띄우고 싶을 때 사용 */
+  /* margin-right: -2px; */
 }
 </style>

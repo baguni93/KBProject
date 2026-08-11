@@ -35,8 +35,8 @@ export default {
   },
 
   // 4. 계좌 상태 및 KB ON MY WAY 발급 이력 확인
-  async save(customCardSaveDTO) {
-    const { data } = await api.post(`${BASE_URL}/save`, customCardSaveDTO);
+  async apply(customCardSaveDTO) {
+    const { data } = await api.post(`${BASE_URL}/apply`, customCardSaveDTO);
     return data;
   },
 };

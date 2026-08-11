@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import feedApi from '@/api/feedApi';
+import { useAuthStore } from './auth';
 
 export const useFeedStore = defineStore('feed', () => {
+  const authStore = useAuthStore();
+
   // 공개 피드
   const publicFeeds = ref([]);
   // 친구 피드
@@ -13,6 +16,29 @@ export const useFeedStore = defineStore('feed', () => {
   const memberFeeds = ref([]);
 
   const feed = ref({});
+
+  const createRequestDTO = ({ feedType, visibility, content, targetId }) => {
+    {
+      const formData = new FormData();
+
+      formData.append('userId', authStore.userId);
+      formData.append('targetId', targetId);
+      formData.append('feedType', feedType);
+      formData.append('content', content);
+      formData.append('visibility', visibility);
+
+      return formData;
+    }
+  };
+
+  const createFeed = async (formData) => {
+    try {
+      const data = await feedApi.createFeed(formData);
+      console.log(data);
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
   // 공개 피드 조회
   const getFeed = async (feedId) => {
@@ -108,7 +134,8 @@ export const useFeedStore = defineStore('feed', () => {
     friendFeeds,
     myFeeds,
     memberFeeds,
-
+    createRequestDTO,
+    createFeed,
     deleteFeed,
     getFeed,
     getList,

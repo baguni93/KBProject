@@ -1,6 +1,10 @@
 <template>
   <div class="main-page">
-    <PageHeader title="나만의 카드" />
+    <PageHeader
+      title="나만의 카드"
+      :custom-back="true"
+      @back="router.push('/')"
+    />
 
     <main class="content-area">
       <!-- 1. 히어로 섹션: 카드 컨셉 강조 (레이아웃 오버랩 및 패딩 수정) -->

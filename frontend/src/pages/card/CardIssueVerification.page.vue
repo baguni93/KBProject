@@ -98,9 +98,6 @@ const confirmAndConnect = async () => {
   const userId = authStore.userId;
   const verificationId = customCardStore.id;
 
-  console.log(userId);
-  console.log(verificationId);
-
   if (!userId || !verificationId) {
     console.error('user ID or verification ID null');
     return;
@@ -118,9 +115,11 @@ const confirmAndConnect = async () => {
     // 성공 시 부모에게 다음 단계로 넘어가라는 신호 발송
     emit('next');
   } catch (error) {
+    console.log(error);
     await modalStore.showAlert(
       error.error || '알 수 없는 오류가 발생했습니다.',
     );
+
     await focusInput();
   } finally {
     loading.value = false;

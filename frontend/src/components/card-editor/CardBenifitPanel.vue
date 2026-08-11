@@ -38,6 +38,8 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useCardEditorStore } from '@/stores/cardEditorStore';
+const cardStore = useCardEditorStore();
 
 // 부모(CardEditor)의 슬롯에서 :tab="currentTab"으로 전달받는 값
 const props = defineProps({
@@ -53,16 +55,19 @@ const selectedBenefitId = ref(null);
 
 const selectBenefit = (benefitPack) => {
   selectedBenefitId.value = benefitPack.id;
-  emit('select-benefit', benefitPack);
-  emit('update:isValid', true);
+  cardStore.setCardChip(benefitPack.url);
+  emit('select-benefit', benefitPack); // 부모로 선택된 팩 데이터 전송
+  emit('update:isValid', true); // 다음 버튼 활성화용 유효성 전달
 };
 
-// 더미 혜택 패키지 데이터
+// 💡 혜택 패키지 데이터 (뱃지 컬러 속성 추가 완료)
 const benefitList = ref([
   {
     id: 1,
     type: 'lifestyle',
     name: '디지털 플렉스 팩',
+    color: '#8b5cf6', // 퍼플
+    url: '/images/card_edit_chip/cardchip_digital.png',
     items: [
       { text: '넷플릭스·유튜브프리미엄 구독', highlight: '50% 할인' },
       { text: '스타벅스 및 투썸플레이스', highlight: '20% 할인' },
@@ -73,6 +78,8 @@ const benefitList = ref([
     id: 2,
     type: 'shopping',
     name: '트렌디 쇼퍼 팩',
+    color: '#ec4899', // 핑크
+    url: '/images/card_edit_chip/cardchip_trendy.png',
     items: [
       { text: '올리브영 및 무신사 스토어', highlight: '15% 할인' },
       { text: '에이블리·지그재그 패션 플랫폼', highlight: '10% 할인' },
@@ -83,6 +90,8 @@ const benefitList = ref([
     id: 3,
     type: 'daily',
     name: '데일리 라이프 팩',
+    color: '#10b981', // 그린
+    url: '/images/card_edit_chip/cardchip_daily.png',
     items: [
       { text: '대중교통(버스/지하철) 및 택시', highlight: '10% 할인' },
       { text: 'CU·GS25 편의점 결제', highlight: '10% 할인' },
@@ -93,6 +102,8 @@ const benefitList = ref([
     id: 4,
     type: 'lifestyle',
     name: '글로벌 트래블 팩',
+    color: '#3b82f6', // 블루
+    url: '/images/card_edit_chip/cardchip_global.png',
     items: [
       { text: '해외 온/오프라인 가맹점 수수료', highlight: '전액 면제' },
       { text: '공항 라운지 무료 이용', highlight: '연 1회' },

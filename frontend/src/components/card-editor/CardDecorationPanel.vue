@@ -22,7 +22,7 @@
             type="text"
             placeholder="카드에 넣을 문구 입력..."
             class="text-input"
-            maxlength="10"
+            maxlength="8"
             @keyup.enter="handleAddText"
           />
 

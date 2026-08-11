@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import axios from 'axios';
+import customCardApi from '@/api/customCard.Api';
+import customcard from '@/router/customcard';
 
 export const useCardEditorStore = defineStore('cardEditor', () => {
   /* =========================================================
@@ -10,6 +12,8 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
   const color = ref('#1e40af');
   const gradient = ref('');
   const image = ref('');
+  // 💡 [추가] 카드 칩 상태 (이미지 URL 또는 CSS 클래스명 등을 저장)
+  const cardChip = ref('');
 
   // 꾸미기 상태
   const pattern = ref('');
@@ -22,7 +26,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
   const emojis = ref([]);
   const selectedEmojiId = ref(null);
 
-  // 💡 [변경] 단일 캔버스 그리기 상태 (스티커 배열 대신 전체 이미지 데이터 관리)
+  // 단일 캔버스 그리기 상태
   const savedDrawingImage = ref(null); // 캔버스 전체 데이터 URL
   const isDrawingCleared = ref(0); // 전체 지우기 감지용 카운터 트리거
 
@@ -41,8 +45,9 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
   const cardNumber = ref('');
   const cardName = ref('');
   const cardEnglishName = ref('');
-  //카드 번호 만들기
+  const customCardId = ref(0);
 
+  // 카드 번호 만들기
   const createCardNumber = () => {
     cardNumber.value = Array.from({ length: 4 }, () =>
       Math.floor(Math.random() * 10000)
@@ -57,7 +62,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
   };
 
   /* =========================================================
-   * 2. 배경 및 패턴 관련 액션 (Actions)
+   * 2. 배경, 패턴 및 칩 관련 액션 (Actions)
    * ========================================================= */
   const setColor = (value) => {
     color.value = value;
@@ -80,6 +85,13 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     color.value = '';
     gradient.value = '';
     console.log('이미지 저장');
+    saveSnapshot();
+  };
+
+  // 💡 [추가] 카드 칩 설정 액션
+  const setCardChip = (chipUrl) => {
+    cardChip.value = chipUrl;
+    console.log('카드 칩 저장:', chipUrl);
     saveSnapshot();
   };
 
@@ -225,7 +237,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
    * 4. 리셋 및 히스토리/스냅샷 액션 (Actions)
    * ========================================================= */
   const saveStep = () => {
-    // 💡 push 대신 하나의 최신 데이터 객체로 저장
+    // 💡 [변경] history에 cardChip 상태 추가
     history.value = {
       cardNumber: cardNumber.value,
       cardName: cardName.value,
@@ -233,6 +245,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
       color: color.value,
       gradient: gradient.value,
       image: image.value,
+      cardChip: cardChip.value, // 👈 추가
       pattern: pattern.value,
       emojis: JSON.parse(JSON.stringify(emojis.value)),
       texts: JSON.parse(JSON.stringify(texts.value)),
@@ -246,32 +259,20 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
   // blob URL을 실제 서버에 업로드하고, 서버가 반환한 파일 URL을 리턴하는 함수
   const uploadBackgroundImage = async (blobUrl) => {
     if (!blobUrl || !blobUrl.startsWith('blob:')) {
-      return blobUrl; // blob이 아니면 그대로 반환 (기존 서버 URL 등)
+      return blobUrl; // blob이 아니면 그대로 반환
     }
 
     try {
-      // 1. blob URL을 fetch해서 바이너리 데이터(Blob)로 가져오기
-      // 사용자가 화면에서 이미지를 선택하면, 브라우저는 그 이미지를 컴퓨터나 서버에 바로 올리는 게 아니라 내 컴퓨터 메모리에 임시로 담아둡니다. 그때 생기는 주소가 바로 blob:http://localhost:5173/... 같은 가상 주소(Blob URL)입니다.
-      // 하지만 백엔드 서버(Spring 등)에 파일을 보내려면 가상 주소 페이크 문자열만 보내서는 안 되고, 진짜 파일의 알갱이(바이낸리 데이터)를 서버로 넘겨야 하죠.
-      // 그래서 이 코드가 하는 일은 다음과 같습니다:
-      // fetch(blobUrl)를 통해 브라우저 메모리에 있는 blob: 주소로 가짜 요청을 보냅니다. (서버로 가는 게 아니라 내 브라우저 안에서 일어나는 일입니다!)
-      // 그럼 브라우저는 그 주소에 들어있던 진짜 이미지 데이터 알갱이(Raw Data)를 response에 담아서 줍니다.
-      // 그 다음 줄인 await response.blob();을 통해 그 알갱이를 꺼내서 File 객체로 만들 수 있는 상태로 바꿔주는 것입니다.
       const response = await fetch(blobUrl);
       const blob = await response.blob();
-
-      // 2. Blob 객체를 백엔드가 받을 수 있는 File 객체로 변환
       const file = new File([blob], 'background_image.jpg', {
         type: blob.type,
       });
-
-      // 3. FormData 생성 및 파일 담기
       const formData = new FormData();
-      formData.append('file', file); // ⚠️ 백엔드 @RequestParam("file") 또는 파라미터 이름과 일치해야 함!
+      formData.append('file', file);
 
-      // 4. 파일 업로드 전용 API 호출
       const uploadResponse = await axios.post(
-        '/api/customcard/uploadImage',
+        '/api/customcard/upload/attachment',
         formData,
         {
           headers: {
@@ -279,17 +280,14 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
           },
         },
       );
-
-      // 5. 서버가 응답으로 준 파일 접근 경로(URL) 반환
-      // 예: "http://localhost:8080/images/abc-123.jpg" 혹은 "/images/abc-123.jpg"
       return uploadResponse.data;
     } catch (error) {
       console.error('배경 이미지 업로드 실패:', error);
-      throw error; // 에러를 던져서 저장 프로세스를 멈춤
+      throw error;
     }
   };
 
-  const createCardPayload = async (userId) => {
+  const createCardPayload = async (userId, cardImageFormData) => {
     let finalImageUrl = history.value.image;
 
     let bgType = 'COLOR';
@@ -297,28 +295,39 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
 
     if (finalImageUrl && finalImageUrl !== '') {
       bgType = 'IMAGE';
-      bgValue = finalImageUrl; // 👈 이미지일 때는 이미지 URL (업로드된 URL 또는 기존 URL)
+      bgValue = finalImageUrl;
     } else if (history.value.gradient && history.value.gradient !== '') {
       bgType = 'GRADIENT';
-      bgValue = history.value.gradient; // 👈 그라데이션일 때는 그라데이션 값
+      bgValue = history.value.gradient;
     }
 
     // 1. blob: 이미지인 경우 서버에 먼저 업로드하고 실제 서버 URL로 교체
     if (finalImageUrl && finalImageUrl.startsWith('blob:')) {
       console.log('새로 첨부한 이미지 발견! 서버에 업로드 중...');
-      finalImageUrl = await uploadBackgroundImage(finalImageUrl); // 파일 업로드 함수 호출
+      finalImageUrl = await uploadBackgroundImage(finalImageUrl);
 
       bgType = 'ATTACHMENT';
       bgValue = finalImageUrl;
     }
 
-    // 2. 배경 타입 및 배경 값 판별 (정확한 변수 매칭)
+    const uploadResponse = await axios.post(
+      '/api/customcard/upload/cardImage',
+      cardImageFormData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      },
+    );
 
-    return {
+    // 💡 [변경] 페이로드에 cardChip 추가 (백엔드 DTO와 이름 맞춰야 함)
+    const customCardSaveRequestDTO = {
+      cardImageName: uploadResponse.data,
+
       userId: userId,
       cardName: history.value.cardName,
-      cardNumber: history.value.cardNumber,
       backgroundValue: bgValue,
+      cardChip: history.value.cardChip, // 👈 추가
       pattern: history.value.pattern,
       backgroundType: bgType,
       savedDrawingImage: history.value.savedDrawingImage,
@@ -349,6 +358,10 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
         };
       }),
     };
+
+    const response = await customCardApi.apply(customCardSaveRequestDTO);
+    customCardId.value = response;
+    return response;
   };
 
   const reset = () => {
@@ -357,6 +370,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     color.value = '#1e40af';
     gradient.value = '';
     image.value = '';
+    cardChip.value = ''; // 👈 리셋에 추가
     pattern.value = '';
     texts.value = [];
     emojis.value = [];
@@ -367,15 +381,18 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     isDrawingCleared.value++;
     activeEditorTab.value = '';
   };
+
   const saveSnapshot = () => {
+    // 💡 [변경] backup에 cardChip 추가
     backup.value = {
-      cardNumber: cardNumber.value, // 💡 .value 추가
-      cardName: cardName.value, // 💡 .value 추가
+      cardNumber: cardNumber.value,
+      cardName: cardName.value,
       color: color.value,
       gradient: gradient.value,
       image: image.value,
+      cardChip: cardChip.value, // 👈 추가
       pattern: pattern.value,
-      emojis: JSON.parse(JSON.stringify(emojis.value)), // 💡 이모지도 깊은 복사 적용!
+      emojis: JSON.parse(JSON.stringify(emojis.value)),
       texts: JSON.parse(JSON.stringify(texts.value)),
       savedDrawingImage: savedDrawingImage.value,
     };
@@ -388,6 +405,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     color.value = backup.value.color;
     gradient.value = backup.value.gradient;
     image.value = backup.value.image;
+    cardChip.value = backup.value.cardChip; // 👈 복원에 추가
     pattern.value = backup.value.pattern;
     emojis.value = backup.value.emojis
       ? JSON.parse(JSON.stringify(backup.value.emojis))
@@ -404,13 +422,14 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
    * 5. Return (외부 노출)
    * ========================================================= */
   return {
+    // state
     cardNumber,
     cardName,
     cardEnglishName,
-    // state
     color,
     gradient,
     image,
+    cardChip, // 👈 추가
     pattern,
     texts,
     selectedTextId,
@@ -422,10 +441,12 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     backup,
     history,
     activeEditorTab,
+    customCardId,
     // methods
     setColor,
     setGradient,
     setImage,
+    setCardChip, // 👈 추가
     setPattern,
     resetBackground,
     reset,

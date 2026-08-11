@@ -6,7 +6,13 @@
       :custom-back="true"
     />
 
-    <CardEditor class="card-editor" :tabs="editorTabs" :tab-height="tapHeight">
+    <CardEditor
+      class="card-editor"
+      :tabs="editorTabs"
+      :tab-height="tapHeight"
+      ref="editorRef"
+      :selected-benefit="selectedBenefitData"
+    >
       <template #default="{ tab }">
         <!-- 단계를 오갈 때 입력 상태가 유지되도록 KeepAlive 추가 -->
         <KeepAlive>
@@ -19,10 +25,12 @@
                 // 단계별로 유효성 변수를 다르게 분기 처리
                 if (currentIndex === 5) isRegisterValid = valid;
                 else if (currentIndex === 3) isAccountValid = valid;
+                else if (currentIndex === 0) isBenefitValid = valid;
               }
             "
             @update:loading="(val) => (isAccountLoading = val)"
             @next="handleStepNext"
+            @select-benefit="handleBenefitSelected"
           />
         </KeepAlive>
       </template>
@@ -66,6 +74,16 @@ cardStore.createCardNumber();
 
 const router = useRouter();
 
+// 💡 1. 최종 선택된 혜택 데이터를 담을 상태 추가
+const selectedBenefitData = ref(null); // 선택된 혜택 데이터
+const isBenefitValid = ref(false); // 0단계 유효성 상태
+
+// 💡 2. 자식/에디터에서 혜택이 선택되었을 때 호출될 함수 추가
+const handleBenefitSelected = (benefitPack) => {
+  selectedBenefitData.value = benefitPack; // 이 값이 바뀌면 에디터 뱃지가 뜸
+  console.log('최종 선택된 혜택:', benefitPack);
+};
+
 // 인덱스 초기값
 const stepIndex = ref(0);
 
@@ -82,6 +100,7 @@ const isRegisterValid = ref(false);
 const isAccountValid = ref(false); // 3단계 유효성 상태
 const isAccountLoading = ref(false); // 3단계 로딩 상태
 const actionTrigger = ref(0); // 자식에게 실행 신호를 주는 트리거
+const editorRef = ref(null);
 
 const steps = [
   {
@@ -157,6 +176,8 @@ const isNextButtonDisabled = computed(() => {
   // 3단계(계좌 확인)일 때: 자식이 알려준 유효성값과 로딩 상태 반영
   if (currentIndex.value === 3) {
     return !isAccountValid.value || isAccountLoading.value;
+  } else if (currentIndex.value === 0) {
+    return !isBenefitValid.value; // 혜택이 선택 안 되었으면 비활성화!
   }
 
   return false;
@@ -190,12 +211,14 @@ const handleStepNext = () => {
 //카드 데이터 저장
 const handleSave = async () => {
   // 1. 서버에 보낼 데이터 준비
-  const customCardSaveRequestDTO = await cardStore.createCardPayload(userId);
-
-  console.log(customCardSaveRequestDTO);
   try {
     // 2. API 호출
-    const response = await customCardApi.save(customCardSaveRequestDTO);
+    console.log(editorRef.value.childRef);
+    const cardImageFormData = await editorRef.value.childRef.uploadCardImage();
+    const response = await cardStore.createCardPayload(
+      userId,
+      cardImageFormData,
+    );
     console.log('저장 성공:', response.data);
   } catch (error) {
     console.error('저장 실패:', error);
@@ -203,8 +226,6 @@ const handleSave = async () => {
 };
 
 //가상 실물 카드 테이블에 추가
-
-//신청이력 저장
 
 // 버튼 클릭 핸들러
 const handleButtonClick = async () => {
@@ -239,6 +260,14 @@ const handleButtonClick = async () => {
   if (stepIndex.value < steps.length - 1) {
     stepIndex.value++;
     cardStore.saveStep();
+  }
+};
+
+const handleOuterClick = async () => {
+  // editorRef.value.childRef를 통해 손자(CardCanvas)의 함수 바로 호출!
+  if (editorRef.value?.childRef?.testDownloadCard) {
+    await editorRef.value.childRef.testDownloadCard();
+    console.log('부모가 손자의 캡처 기능을 직접 실행했습니다!');
   }
 };
 </script>

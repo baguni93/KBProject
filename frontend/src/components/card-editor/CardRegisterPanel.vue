@@ -7,6 +7,7 @@
       <input
         v-model="cardNickname"
         type="text"
+        maxlength="8"
         placeholder="카드 별명을 입력해주세요"
         class="text-input"
       />
