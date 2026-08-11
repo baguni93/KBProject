@@ -2,9 +2,7 @@
   <div class="event-list-container">
     <div class="list-content-wrapper">
       <header class="list-header">
-        <button class="back-btn" @click="$router.back()">
-          ← 이벤트 리스트
-        </button>
+        <button class="back-btn" @click="goToEventPage">← 이벤트 리스트</button>
       </header>
 
       <!-- 이벤트 리스트 탭 (진행 중 / 참여 완료) -->
@@ -43,7 +41,7 @@
         </div>
       </div>
 
-      <!-- 진행 중 / 참여내역 -->
+      <!-- 진행 중 / 참여 완료 -->
       <main class="list-content">
         <template
           v-for="eventItem in eventList"
@@ -64,11 +62,10 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { storeToRefs } from 'pinia';
+import { useEventStore } from '@/stores/event';
 import eventApi from '@/api/eventApi';
 import EventItem from '@/components/event/EventItem.vue';
 import EventHistoryItem from '@/components/event/EventHistoryItem.vue';
-import { useUserStore } from '@/stores/user';
 
 // 유저 아이디
 import { useAuthStore } from '@/stores/auth';
@@ -81,6 +78,10 @@ const route = useRoute();
 const currentTab = ref('active');
 const eventList = ref([]);
 const isLoading = ref(false);
+
+const goToEventPage = () => {
+  router.push('/event');
+};
 
 // 날짜 관련 헬퍼 함수
 const formatDisplayYearMonth = (yearMonthStr) => {
@@ -135,7 +136,7 @@ const switchTab = (tab) => {
     router.push({ path: '/event/list' });
   } else {
     router.push({
-      path: '/event/eventList/joined',
+      path: '/event/list/joined',
       query: { yearMonth: selectedYearMonth.value },
     });
   }
@@ -152,7 +153,7 @@ const changeMonth = (direction) => {
 
   if (currentTab.value === 'joined') {
     router.push({
-      path: '/event/eventList/joined',
+      path: '/event/list/joined',
       query: { yearMonth: newYearMonth },
     });
   } else {

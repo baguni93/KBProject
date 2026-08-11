@@ -6,7 +6,7 @@
       </header>
 
       <!-- 1. 사용자 포인트 조회 -->
-      <PointView :point="userPoint" />
+      <PointView :userPoint="userPoint" @reload="fetchMainData" />
 
       <!-- 2. 커스텀 카드 발급 바로가기 -->
       <EventMainCardBanner />
@@ -44,10 +44,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { storeToRefs } from 'pinia';
 import eventApi from '@/api/eventApi';
+import pointwallet from '@/api/pointwallet';
 import PointView from '@/components/finance/PointView.vue';
 import EventMainCardBanner from '@/components/event/EventMainCardBanner.vue';
 import EventMainChallenge from '@/components/event/EventMainChallenge.vue';
@@ -69,15 +69,13 @@ const fetchMainData = async () => {
   if (!userId) return;
 
   try {
-    //const dataOrigin = await eventApi.getEventMain(userId);
-
+    const pointData = await eventApi.getEventMain(userId);
     const data = await eventApi.getEventList(userId);
 
-    //console.log(' Origin : ', dataOrigin);
+    userPoint.value = pointData.currentPoint || 0;
+
     console.log('참여 가능한 이벤트 리스트 조회 : ', data);
     activeEvents.value = data;
-
-    userPoint.value = data.currentPoint || 0;
 
     challengeData.value = data.userChallenge || {
       // 이벤트 챌린지 default
@@ -85,24 +83,6 @@ const fetchMainData = async () => {
       userChallengeExe: 0,
       userChallengeMaxExe: 1000,
     };
-
-    const rawEvents = data.eventLists || [];
-
-    console.log(rawEvents);
-
-    // if (Array.isArray(rawEvents)) {
-    //   activeEvents.value = rawEvents.filter((item) => {
-    //     if (!item) return false;
-    //     const eventStatus = item.buttonStatus;
-
-    //     return (
-    //       !eventStatus ||
-    //       (eventStatus !== 'COMPLETE' && eventStatus !== 'ATTENDANCE')
-    //     );
-    //   });
-    // } else {
-    //   activeEvents.value = [];
-    // }
   } catch (err) {
     console.error('데이터 로드 실패', err);
   }
@@ -111,6 +91,15 @@ const fetchMainData = async () => {
 onMounted(() => {
   fetchMainData();
 });
+
+watch(
+  () => authStore.userId,
+  (userId) => {
+    if (userId) {
+      fetchMainData();
+    }
+  },
+);
 
 // 이벤트 참여/보상 수령 처리
 const onEventAction = async ({
@@ -203,9 +192,7 @@ const onEventAction = async ({
     }
 
     // 메인 데이터 갱신
-    if (typeof fetchMainData === 'function') {
-      await fetchMainData();
-    }
+    await fetchMainData();
   } catch (error) {
     console.error('이벤트 처리 실패:', error);
     const errorMsg =
