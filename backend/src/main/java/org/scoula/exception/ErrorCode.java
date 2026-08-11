@@ -78,8 +78,14 @@ public enum ErrorCode {
     INVALID_CARD_RECOMMENDATION_OPTION(HttpStatus.BAD_REQUEST, "CR006", "카드 유형 또는 연회비 적용 옵션이 올바르지 않습니다."),
 
     //Custom Card
-    ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "CC001", "계좌가 존재하지않습니다.");
+    ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "CC001", "계좌가 존재하지않습니다."),
 
+
+    //VERIFICATION Account
+    VERIFICATION_ACCOUNT_CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "VA001", "계좌 인증번호 식별값이 필요합니다."),
+    VERIFICATION_ACCOUNT_CODE_EMPTY(HttpStatus.NOT_FOUND, "VA002", "인증번호는 숫자 4자리로 입력해주세요."),
+    VERIFICATION_ACCOUNT_CODE_NOT_REQUEST(HttpStatus.NOT_FOUND, "VA003", "계좌 인증 요청을 찾을 수 없습니다."),
+    VERIFICATION_ACCOUNT_CODE_NOT_INCORRECT(HttpStatus.NOT_FOUND, "VA004", "계좌 인증번호가 일치하지 않습니다.");
     private final HttpStatus status;
     private final String code;
     private final String message;
