@@ -65,16 +65,18 @@
     <select id="getEmojis" resultType="org.scoula.customcard.domain.EmojiVO">
         select * from custom_card_emojis_tbl where  custom_card_id = #{customCardId};
     </select>
+    <select id="getCustomCardImage" resultType="org.scoula.customcard.domain.CardImageVO">
+        select custom_card_image_name from custom_card_image_tbl where custom_card_id = #{customCardId};
+    </select>
 
     <insert id="insertCard" useGeneratedKeys="true" keyProperty="customCardId">
         INSERT INTO custom_card_tbl (
-            user_id, card_name, card_number,
-            background_type, background_value,
-            pattern_path, drawing_image_url
+            user_id,  background_type, background_value,
+            pattern_path, drawing_image_url , card_chip
         ) VALUES (
-                     #{userId}, #{cardName}, #{cardNumber},
+                     #{userId},
                      #{backgroundType}, #{backgroundValue},
-                     #{patternPath}, #{drawingImageUrl}
+                     #{patternPath}, #{drawingImageUrl} , #{cardChip}
                  )
     </insert>
 
@@ -107,6 +109,10 @@
         insert into card_application_history_tbl (custom_card_id)
         value (#{customCardId})
 
+    </insert>
+    <insert id="createCustomCardImage" useGeneratedKeys="true" keyProperty="customCardImageId">
+        INSERT INTO custom_card_image_tbl (custom_card_id, custom_card_image_name)
+        VALUES (#{customCardId} , #{customCardImageName} )
     </insert>
 
 </mapper>

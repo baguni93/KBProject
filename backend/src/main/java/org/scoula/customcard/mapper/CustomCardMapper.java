@@ -28,4 +28,8 @@ public interface CustomCardMapper {
     List<EmojiVO> getEmojis(int customCardId);
 
     void insertHistory(int customCardId);
+
+    void createCustomCardImage(CardImageVO cardImageVO);
+
+    CardImageVO getCustomCardImage(int customCardId);
 }

@@ -5,6 +5,8 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.ibatis.annotations.Param;
 import org.scoula.common.util.UploadFiles;
 import org.scoula.common.util.UploadPathName;
+import org.scoula.customcard.domain.CardImageVO;
+import org.scoula.customcard.dto.CardImageDTO;
 import org.scoula.customcard.dto.CustomCardAgreementDTO;
 import org.scoula.customcard.dto.CheckCanIssueDTO;
 import org.scoula.customcard.dto.CustomCardSaveRequestDTO;
@@ -57,9 +59,9 @@ public class CustomCardController {
     }
 
     @PostMapping("/apply")
-    public ResponseEntity<HttpStatus> apply(@RequestBody CustomCardSaveRequestDTO request){
-       customCardService.applyCard(request);
-        return ResponseEntity.ok(HttpStatus.OK);
+    public ResponseEntity<Integer> apply(@RequestBody CustomCardSaveRequestDTO request){
+
+        return ResponseEntity.ok( customCardService.applyCard(request));
     }
     @GetMapping("/load/{customCardId}")
     public ResponseEntity<CustomCardSaveRequestDTO> save(@RequestParam int userId ,@PathVariable int customCardId){
@@ -67,10 +69,15 @@ public class CustomCardController {
         return ResponseEntity.ok(customCardService.loadCard(userId , customCardId));
     }
 
-    @PostMapping("/uploadImage")
-    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) throws IOException {
-        String fileName = UploadFiles.uploadAndGetFileName(UploadPathName.getCustomCardPath(), file);
+    @PostMapping("/upload/attachment")
+    public ResponseEntity<String> uploadAttachment(@RequestParam("file") MultipartFile file) throws IOException {
+        String fileName = UploadFiles.uploadAndGetFileName(UploadPathName.getCustomCardAttachmentPath(), file);
         return ResponseEntity.ok(fileName);
     }
 
+    @PostMapping("/upload/cardImage")
+    public ResponseEntity<String> uploadCardImage(@RequestParam("file") MultipartFile file) throws IOException {
+        String fileName = UploadFiles.uploadAndGetFileName(UploadPathName.getCustomCardPath(), file);
+        return ResponseEntity.ok(fileName);
+    }
 }

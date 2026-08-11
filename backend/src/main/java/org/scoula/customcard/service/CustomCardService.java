@@ -1,9 +1,6 @@
 package org.scoula.customcard.service;
 
-import org.scoula.customcard.dto.CheckCanIssueDTO;
-import org.scoula.customcard.dto.CustomCardAgreementDTO;
-import org.scoula.customcard.dto.CustomCardRequestDTO;
-import org.scoula.customcard.dto.CustomCardSaveRequestDTO;
+import org.scoula.customcard.dto.*;
 
 import java.util.List;
 
@@ -16,7 +13,8 @@ public interface CustomCardService {
 
     CheckCanIssueDTO checkCanIssue(CheckCanIssueDTO checkCanIssueDTO);
 
-    void applyCard(CustomCardSaveRequestDTO dto);
+    int applyCard(CustomCardSaveRequestDTO dto);
 
     CustomCardSaveRequestDTO loadCard(int userId , int customId);
+
 }

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.scoula.customcard.domain.CustomCardVO;
 import org.scoula.customcard.domain.EmojiVO;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class CustomCardSaveRequestDTO {
 
     private int customCardId;
     private int userId;
+    private String cardName;
     private String pattern;
     private String savedDrawingImage;
 
@@ -26,12 +28,16 @@ public class CustomCardSaveRequestDTO {
     private List<EmojiDTO> emojis;
     private List<TextDTO> texts;
 
+    private String cardImageName;
+    private String cardChip;
 
     public static CustomCardSaveRequestDTO of(CustomCardVO customCardVo) {
         return customCardVo == null ? null : CustomCardSaveRequestDTO.builder()
                 .customCardId(customCardVo.getCustomCardId())
                 .userId(customCardVo.getUserId())
                 .pattern(customCardVo.getPatternPath())
+                .cardName(customCardVo.getCardName())
+                .cardChip(customCardVo.getCardChip())
                 .savedDrawingImage(customCardVo.getDrawingImageUrl())
                 .backgroundType(customCardVo.getBackgroundType())
                 .backgroundValue(customCardVo.getBackgroundValue())

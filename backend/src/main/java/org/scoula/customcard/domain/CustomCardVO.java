@@ -18,10 +18,12 @@ public class CustomCardVO {
 
     private int customCardId; // INSERT 후 auto_increment 값 반환용
     private int userId;
+    private String cardName;
     private String backgroundType;
     private String backgroundValue;
     private String patternPath;
     private String drawingImageUrl;
+    private String cardChip;
     private Date createdAt;
 
 }

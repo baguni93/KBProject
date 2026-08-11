@@ -4,14 +4,19 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.account.domain.AccountVerificationVO;
 import org.scoula.account.mapper.AccountMapper;
+import org.scoula.common.util.UploadFiles;
+import org.scoula.common.util.UploadPathName;
 import org.scoula.customcard.domain.*;
 import org.scoula.customcard.dto.*;
 import org.scoula.customcard.mapper.CustomCardMapper;
 import org.scoula.exception.CustomException;
 import org.scoula.exception.ErrorCode;
+import org.scoula.feed.domain.FeedImageVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -71,18 +76,17 @@ public class CustomCardServiceImpl implements CustomCardService {
         accountMapper.insertVerification(verification);
 
         return CheckCanIssueDTO.of(vo , verification.getVerificationId() , verificationCode);
-
     }
 
     @Override
-    public void applyCard(CustomCardSaveRequestDTO dto) {
-
+    public int applyCard(CustomCardSaveRequestDTO dto) {
 
         CustomCardVO cardVo = CustomCardVO.builder()
                 .userId(dto.getUserId())
                 .backgroundType(dto.getBackgroundType())
                 .backgroundValue(dto.getBackgroundValue())
                 .patternPath(dto.getPattern())
+                .cardChip(dto.getCardChip())
                 .drawingImageUrl(dto.getSavedDrawingImage())
                 .build();
 
@@ -134,8 +138,23 @@ public class CustomCardServiceImpl implements CustomCardService {
         customCardMapper.insertHistory(customCardId);
 
         //카드 발급 승인
-       
 
+
+        CardImageVO cardImageVO = CardImageVO.of(dto.getCardImageName(),  customCardId);
+        customCardMapper.createCustomCardImage(cardImageVO);
+
+        return customCardId;
+    }
+
+    private void upload(int customCardId, MultipartFile part) {
+
+        try {
+            String fileName =  UploadFiles.uploadAndGetFileName(UploadPathName.getCustomCardPath(), part);
+                CardImageVO cardImageVO = CardImageVO.of(fileName, customCardId);
+            customCardMapper.createCustomCardImage(cardImageVO);
+        } catch (IOException e) {
+            throw new RuntimeException(e); // @Transactional에서 감지, 자동 rollback
+        }
     }
 
     @Override
@@ -182,7 +201,9 @@ public class CustomCardServiceImpl implements CustomCardService {
 
         }
 
+       CardImageVO vo = customCardMapper.getCustomCardImage(customCardId);
 
+        response.setCardName(vo.getCustomCardImageName());
 
         return response;
     }
