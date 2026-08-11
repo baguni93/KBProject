@@ -23,7 +23,7 @@
     </div>
 
     <!-- 영문 이름 (수정 가능, 영어 및 공백만 허용) -->
-    <div class="section">
+    <!-- <div class="section">
       <label class="section-title">영문 이름 (영어 대/소문자)</label>
       <input
         :value="cardEnglishName"
@@ -32,7 +32,7 @@
         placeholder="HONG GILDONG"
         class="text-input"
       />
-    </div>
+    </div> -->
   </div>
 </template>
 

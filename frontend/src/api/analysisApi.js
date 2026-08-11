@@ -17,6 +17,11 @@ export default {
     return data;
   },
 
+  async getAllTransactions() {
+    const { data } = await api.get(`${SPENDING_ANALYSIS_URL}/transactions/all`);
+    return data;
+  },
+
   async getTransaction(transactionId) {
     const { data } = await api.get(
       `${SPENDING_ANALYSIS_URL}/transactions/${transactionId}`,

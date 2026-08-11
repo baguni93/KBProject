@@ -14,5 +14,6 @@ public class CardProductCalculationResult {
     private CardProductVO product;
     private Integer recommendationRank;
     private Integer expectedBenefitAmount;
+    private String aiRecommendationSummary;
     private List<CardBenefitCalculationResult> benefitResults;
 }

@@ -24,6 +24,11 @@ public interface AnalysisMapper {
             @Param("endAt") LocalDateTime endAt
     );
 
+    // 기간과 무관한 현재 사용자의 전체 정상 결제 거래 목록 조회
+    List<AnalysisTransactionVO> selectAllPaymentTransactions(
+            @Param("userId") Integer userId
+    );
+
     // 현재 사용자의 정상 결제 거래 단건 조회
     AnalysisTransactionVO selectAnalysisTransactionById(
             @Param("userId") Integer userId,

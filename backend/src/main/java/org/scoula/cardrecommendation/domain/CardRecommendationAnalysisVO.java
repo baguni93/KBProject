@@ -13,5 +13,4 @@ public class CardRecommendationAnalysisVO {
     private Integer userId;
     private Integer analysisPeriod;
     private LocalDateTime createdAt;
-    private String aiCardRecommendationSummary;
 }

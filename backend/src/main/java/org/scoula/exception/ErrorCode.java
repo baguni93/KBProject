@@ -36,7 +36,7 @@ public enum ErrorCode {
 
     //Comment
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "C001", "댓글이 존재하지않습니다."),
-    
+
     // Wallet
     INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "W001", "잔액이 부족합니다."),
 
@@ -59,15 +59,15 @@ public enum ErrorCode {
     //Notification
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "N001", "알림을 찾을 수 없습니다."),
     // Analysis
-    INVALID_ANALYSIS_PERIOD(HttpStatus.BAD_REQUEST,"AN001","분석 기간은 1개월, 3개월, 12개월 중 하나여야 합니다."),
-    SPENDING_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND,"AN002","존재하지 않는 소비 카테고리입니다."),
+    INVALID_ANALYSIS_PERIOD(HttpStatus.BAD_REQUEST, "AN001", "분석 기간은 1개월, 3개월, 12개월 중 하나여야 합니다."),
+    SPENDING_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "AN002", "존재하지 않는 소비 카테고리입니다."),
     CLASSIFICATION_TRANSACTION_NOT_FOUND(HttpStatus.NOT_FOUND, "AN003", "분류할 수 있는 결제 거래를 찾을 수 없습니다."),
-    ANALYSIS_TRANSACTION_COUNT_NOT_ENOUGH(HttpStatus.BAD_REQUEST,"AN004","소비 분석을 위해 분류 완료된 결제 거래가 10건 이상 필요합니다."),
-    ANALYSIS_TOTAL_AMOUNT_ZERO(HttpStatus.BAD_REQUEST,"AN005","분석할 수 있는 소비 금액이 없습니다."),
-    ANALYSIS_RESULT_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR,"AN006","소비 분석 결과 저장에 실패했습니다."),
-    ANALYSIS_RESULT_NOT_FOUND(HttpStatus.NOT_FOUND,"AN007","소비 분석 결과를 찾을 수 없습니다."),
-    ANALYSIS_AGREEMENT_NOT_CONFIGURED(HttpStatus.INTERNAL_SERVER_ERROR,"AN008","소비 분석 약관이 설정되어 있지 않습니다."),
-    ANALYSIS_REQUIRED_AGREEMENT_MISSING(HttpStatus.BAD_REQUEST,"AN009","필수 소비 분석 약관에 동의해야 합니다."),
+    ANALYSIS_TRANSACTION_COUNT_NOT_ENOUGH(HttpStatus.BAD_REQUEST, "AN004", "소비 분석을 위해 분류 완료된 결제 거래가 10건 이상 필요합니다."),
+    ANALYSIS_TOTAL_AMOUNT_ZERO(HttpStatus.BAD_REQUEST, "AN005", "분석할 수 있는 소비 금액이 없습니다."),
+    ANALYSIS_RESULT_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AN006", "소비 분석 결과 저장에 실패했습니다."),
+    ANALYSIS_RESULT_NOT_FOUND(HttpStatus.NOT_FOUND, "AN007", "소비 분석 결과를 찾을 수 없습니다."),
+    ANALYSIS_AGREEMENT_NOT_CONFIGURED(HttpStatus.INTERNAL_SERVER_ERROR, "AN008", "소비 분석 약관이 설정되어 있지 않습니다."),
+    ANALYSIS_REQUIRED_AGREEMENT_MISSING(HttpStatus.BAD_REQUEST, "AN009", "필수 소비 분석 약관에 동의해야 합니다."),
 
     // Card Recommendation
     CARD_RECOMMENDATION_REQUIRES_12_MONTH_ANALYSIS(HttpStatus.BAD_REQUEST, "CR001", "카드 추천을 이용하려면 12개월 소비분석이 필요합니다."),
@@ -75,7 +75,13 @@ public enum ErrorCode {
     CARD_RECOMMENDATION_PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "CR003", "추천할 수 있는 KB 카드 상품이 없습니다."),
     CARD_RECOMMENDATION_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CR004", "카드 추천 결과 저장에 실패했습니다."),
     CARD_RECOMMENDATION_NOT_FOUND(HttpStatus.NOT_FOUND, "CR005", "카드 추천 결과를 찾을 수 없습니다."),
-    INVALID_CARD_RECOMMENDATION_OPTION(HttpStatus.BAD_REQUEST, "CR006", "카드 유형 또는 연회비 적용 옵션이 올바르지 않습니다.");
+    INVALID_CARD_RECOMMENDATION_OPTION(HttpStatus.BAD_REQUEST, "CR006", "카드 유형 또는 연회비 적용 옵션이 올바르지 않습니다."),
+
+    // Insurance Recommendation
+    INSURANCE_RECOMMENDATION_REQUIRES_12_MONTH_ANALYSIS(HttpStatus.BAD_REQUEST, "IR001", "보험 추천을 이용하려면 12개월 소비분석이 필요합니다."),
+    INSURANCE_RECOMMENDATION_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "IR002", "보험 추천 결과 저장에 실패했습니다."),
+    INSURANCE_RECOMMENDATION_NOT_FOUND(HttpStatus.NOT_FOUND, "IR003", "보험 추천 결과를 찾을 수 없습니다."),
+    INSURANCE_PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "IR004", "보험 상품을 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;

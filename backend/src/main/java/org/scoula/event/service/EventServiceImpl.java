@@ -2,10 +2,7 @@ package org.scoula.event.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.scoula.event.domain.EventAttendanceVO;
-import org.scoula.event.domain.EventNormalVO;
-import org.scoula.event.domain.EventParticipationVO;
-import org.scoula.event.domain.EventRewardReceiveVO;
+import org.scoula.event.domain.*;
 import org.scoula.event.dto.*;
 import org.scoula.event.mapper.EventMapper;
 import org.scoula.pointwallet.dto.PointWalletDTO;
@@ -16,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 @Log4j2
 @Service
@@ -26,32 +24,44 @@ public class EventServiceImpl implements EventService{
 
     // 1. 이벤트 메인화면 데이터 조회
     @Override
-    public EventMainDTO getEventMainPageData(Integer userId) {
+    public EventMainDTO getEventMainPageData(int userId) {
         // 1-1. 포인트 조회
         PointWalletDTO wallet = pointWalletService.getWallet(userId);
 
         int currentPoint = (wallet != null) ? wallet.getPointBalance() : 0;
 
         // 1-2 이벤트 챌린지 조회
-        UserChallengeDTO challenge = eventMapper.getUserChallengeStatus(userId);
+        UserChallengeDTO challengeVO = eventMapper.getEventChallengeUser(userId);
 
-        // 데이터 없을 경우를 위한 기본값 세팅
-        if (challenge == null || challenge.getUserChallengeLevel() == null) {
+        // DTO 변환 및 NPE 방지
+        UserChallengeDTO challenge;
+        if (challengeVO == null) {
             challenge = UserChallengeDTO.builder()
-                    .userChallengeLevel(1) // 현재 이벤트 챌린지 레벨
-                    .userChallengeExe(0) // 현재 이벤트 챌린지 경험치
-                    .userChallengeMaxExe(1000) // 현재 이벤트 챌린지 목표 경험치
+                    .userChallengeLevel(1)
+                    .userChallengeExe(0)
+                    .userChallengeMaxExe(1000)
                     .status("PROCESS")
+                    .challengeStartAt("-")
+                    .challengeEndAt("-")
                     .challengeDDay("상시")
                     .build();
         } else {
-
+            challenge = UserChallengeDTO.builder()
+                    .userChallengeLevel(challengeVO.getUserChallengeLevel())
+                    .userChallengeExe(challengeVO.getUserChallengeExe())
+                    .userChallengeMaxExe(challengeVO.getUserChallengeMaxExe())
+                    .status(challengeVO.getStatus())
+                    .challengeStartAt("-")
+                    .challengeEndAt("-")
+                    .challengeDDay("상시")
+                    .build();
         }
 
         // 1-3. 참여 가능 이벤트 목록 프리뷰
-        List<EventResponseDTO> allActive = this.getActiveEventsProgress(userId);
+        List<EventGetResponseDTO> eventLists = this.getEventList(userId);
 
-        return EventMainDTO.builder()
+        EventMainDTO result = EventMainDTO.builder()
+        //return EventMainDTO.builder()
                 .userId(userId)
                 .currentPoint(currentPoint)
                 .userChallenge(challenge)
@@ -60,9 +70,12 @@ public class EventServiceImpl implements EventService{
                 .userChallengeMaxExe(challenge.getUserChallengeMaxExe())
                 .challengeStartAt(challenge.getChallengeStartAt())
                 .challengeEndAt(challenge.getChallengeEndAt())
-                .activeEvents(allActive)
+                .challengeDDay(challenge.getChallengeDDay())
+                .eventLists(eventLists)
                 .build();
 
+        log.info("result : ", result);
+        return result;
     }
 
     // 2. 이벤트 리스트 조회 관련
@@ -117,113 +130,113 @@ public class EventServiceImpl implements EventService{
     }
 
     // 4. 이벤트 참여 처리
-    @Transactional
-    @Override
-    public boolean participateEvent(Integer userId, Integer eventId) {
-        EventResponseDTO eventRewardInfo = eventMapper.getEventRewardInfoByEventId(eventId);
-        if (eventRewardInfo == null) {
-            return false;
-        }
-
-        // event_target 참여가능 횟수 체크
-        int totalPartCount = eventMapper.getParticipationCount(eventId, userId);
-
-        if (eventRewardInfo.getEventTarget() != null && totalPartCount >= eventRewardInfo.getEventTarget()) {
-            log.warn("최종 목표를 달성한 이벤트입니다. userId: {}, eventId: {}", userId, eventId);
-            return false;
-        }
-
-        // event_daily_limit_count 당일 참여가능 횟수 체크
-        int todayPartCount = eventMapper.getTodayParticipationCount(eventId, userId, eventRewardInfo.getEventType());
-
-        if (eventRewardInfo.getEventDailyLimitCount() != null && eventRewardInfo.getEventDailyLimitCount() > 0 && todayPartCount >= eventRewardInfo.getEventDailyLimitCount()) {
-            log.warn("일일 참여 제한 횟수를 초과했습니다. userId: {}, eventId: {}", userId, eventId);
-            return false;
-        }
-
-        // event_type(ATTENDANCE / etc...) 이벤트 유형에 따라 참여내역 생성
-        int result = 0;
-        if ("ATTENDANCE".equals(eventRewardInfo.getEventType())) {
-            result = eventMapper.createAttendanceParticipation(eventId, userId);
-        } else {
-            EventParticipationVO vo = EventParticipationVO.builder()
-                    .userId(userId)
-                    .eventId(eventId)
-                    .build();
-            result = eventMapper.createParticipation(vo);
-        }
-
-        if (result < 1) {
-            log.error("이벤트 참여이력 생성 실패. eventId: {}, userId: {}", eventId, userId);
-            return false;
-        }
-
-        // 리워드 지급 체크(누적 참여 횟수가 req_count와 일치할 때 지급)
-        if (eventRewardInfo.getRewardId() != null) {
-
-            int currentPartCount = totalPartCount + 1;
-
-            if (currentPartCount == eventRewardInfo.getReqCount()) {
-                boolean isAlreadyReceived = eventMapper.checkRewardAlreadyReceived(eventId, userId, eventRewardInfo.getRewardId());
-
-                if (!isAlreadyReceived) {
-                    EventRewardReceiveVO rewardReceive = EventRewardReceiveVO.builder()
-                            .userId(userId)
-                            .eventId(eventId)
-                            .rewardId(eventRewardInfo.getRewardId())
-                            .build();
-                    eventMapper.createEventRewardReceive(rewardReceive);
-
-                    if (eventRewardInfo.getRewardPoint() != null && eventRewardInfo.getRewardPoint() > 0) {
-                        eventMapper.updateUserPoint(userId, eventRewardInfo.getRewardPoint());
-                        log.info("이벤트 보상 지급 완료 - 사용자: {}, 포인트: {}", userId, eventRewardInfo.getRewardPoint());
-                    }
-                }
-            }
-        }
-
-        // 챌린지 경험치 자동 누적 처리
-        UserChallengeDTO currentChallenge = eventMapper.getUserChallengeStatus(userId);
-        if (currentChallenge != null) {
-            log.info("챌린지 경험치 지급 처리 완료");
-        }
-
-        return true;
-    }
+//    @Transactional
+//    @Override
+//    public boolean participateEvent(Integer userId, Integer eventId) {
+//        EventResponseDTO eventRewardInfo = eventMapper.getEventRewardInfoByEventId(eventId);
+//        if (eventRewardInfo == null) {
+//            return false;
+//        }
+//
+//        // event_target 참여가능 횟수 체크
+//        int totalPartCount = eventMapper.getParticipationCount(eventId, userId);
+//
+//        if (eventRewardInfo.getEventTarget() != null && totalPartCount >= eventRewardInfo.getEventTarget()) {
+//            log.warn("최종 목표를 달성한 이벤트입니다. userId: {}, eventId: {}", userId, eventId);
+//            return false;
+//        }
+//
+//        // event_daily_limit_count 당일 참여가능 횟수 체크
+//        int todayPartCount = eventMapper.getTodayParticipationCount(eventId, userId, eventRewardInfo.getEventType());
+//
+//        if (eventRewardInfo.getEventDailyLimitCount() != null && eventRewardInfo.getEventDailyLimitCount() > 0 && todayPartCount >= eventRewardInfo.getEventDailyLimitCount()) {
+//            log.warn("일일 참여 제한 횟수를 초과했습니다. userId: {}, eventId: {}", userId, eventId);
+//            return false;
+//        }
+//
+//        // event_type(ATTENDANCE / etc...) 이벤트 유형에 따라 참여내역 생성
+//        int result = 0;
+//        if ("ATTENDANCE".equals(eventRewardInfo.getEventType())) {
+//            result = eventMapper.createAttendanceParticipation(eventId, userId);
+//        } else {
+//            EventParticipationVO vo = EventParticipationVO.builder()
+//                    .userId(userId)
+//                    .eventId(eventId)
+//                    .build();
+//            result = eventMapper.createParticipation(vo);
+//        }
+//
+//        if (result < 1) {
+//            log.error("이벤트 참여이력 생성 실패. eventId: {}, userId: {}", eventId, userId);
+//            return false;
+//        }
+//
+//        // 리워드 지급 체크(누적 참여 횟수가 req_count와 일치할 때 지급)
+//        if (eventRewardInfo.getRewardId() != null) {
+//
+//            int currentPartCount = totalPartCount + 1;
+//
+//            if (currentPartCount == eventRewardInfo.getReqCount()) {
+//                boolean isAlreadyReceived = eventMapper.checkRewardAlreadyReceived(eventId, userId, eventRewardInfo.getRewardId());
+//
+//                if (!isAlreadyReceived) {
+//                    EventRewardReceiveVO rewardReceive = EventRewardReceiveVO.builder()
+//                            .userId(userId)
+//                            .eventId(eventId)
+//                            .rewardId(eventRewardInfo.getRewardId())
+//                            .build();
+//                    eventMapper.createEventRewardReceive(rewardReceive);
+//
+//                    if (eventRewardInfo.getRewardPoint() != null && eventRewardInfo.getRewardPoint() > 0) {
+//                        eventMapper.updateUserPoint(userId, eventRewardInfo.getRewardPoint());
+//                        log.info("이벤트 보상 지급 완료 - 사용자: {}, 포인트: {}", userId, eventRewardInfo.getRewardPoint());
+//                    }
+//                }
+//            }
+//        }
+//
+//        // 챌린지 경험치 자동 누적 처리
+//        UserChallengeDTO currentChallenge = eventMapper.getUserChallengeStatus(userId);
+//        if (currentChallenge != null) {
+//            log.info("챌린지 경험치 지급 처리 완료");
+//        }
+//
+//        return true;
+//    }
 
     // 5. 이벤트 리워드 수령 처리
-    @Transactional
-    @Override
-    public boolean receiveEventReward(Integer userId, Integer eventId) {
-        EventResponseDTO eventRewardInfo = eventMapper.getEventRewardInfoByEventId(eventId);
-
-        if (eventRewardInfo == null) {
-            throw new IllegalArgumentException("해당 이벤트의 리워드 단계 정보가 존재하지 않습니다.");
-        }
-
-        EventRewardReceiveVO rewardReceive = EventRewardReceiveVO.builder()
-                .userId(userId)
-                .eventId(eventId)
-                .rewardId(eventRewardInfo.getRewardId())
-                .build();
-
-        int receiveResult = eventMapper.createEventRewardReceive(rewardReceive);
-        if (receiveResult < 1) {
-            log.error("이벤트 리워드 수령이력 생성 실패");
-            return false;
-        }
-
-        // 포인트 지급 처리
-        Integer rewardPoint = eventRewardInfo.getRewardPoint();
-        if (rewardPoint != null && rewardPoint > 0) {
-            int pointResult = eventMapper.updateUserPoint(userId, rewardPoint);
-            if (pointResult < 1) {
-                throw new IllegalStateException("포인트 수령 처리 중 오류가 발생하였습니다.");
-            }
-        }
-
-        return true;
-    }
+//    @Transactional
+//    @Override
+//    public boolean receiveEventReward(Integer userId, Integer eventId) {
+//        EventResponseDTO eventRewardInfo = eventMapper.getEventRewardInfoByEventId(eventId);
+//
+//        if (eventRewardInfo == null) {
+//            throw new IllegalArgumentException("해당 이벤트의 리워드 단계 정보가 존재하지 않습니다.");
+//        }
+//
+//        EventRewardReceiveVO rewardReceive = EventRewardReceiveVO.builder()
+//                .userId(userId)
+//                .eventId(eventId)
+//                .rewardId(eventRewardInfo.getRewardId())
+//                .build();
+//
+//        int receiveResult = eventMapper.createEventRewardReceive(rewardReceive);
+//        if (receiveResult < 1) {
+//            log.error("이벤트 리워드 수령이력 생성 실패");
+//            return false;
+//        }
+//
+//        // 포인트 지급 처리
+//        Integer rewardPoint = eventRewardInfo.getRewardPoint();
+//        if (rewardPoint != null && rewardPoint > 0) {
+//            int pointResult = eventMapper.updateUserPoint(userId, rewardPoint);
+//            if (pointResult < 1) {
+//                throw new IllegalStateException("포인트 수령 처리 중 오류가 발생하였습니다.");
+//            }
+//        }
+//
+//        return true;
+//    }
 
     // 6. 챌린지 참여 처리 및 리워드 수령 처리
     @Transactional
@@ -249,9 +262,14 @@ public class EventServiceImpl implements EventService{
         //이벤트 완료 구분
         //이벤트 보상 수령 구분
         //등록 순 정렬 완료
-        eventNormalVOList.removeIf(event ->
-                now.before(event.getStartAt()) || now.after(event.getEndAt())
-        );
+        eventNormalVOList.removeIf(event ->{
+            if (event == null) return true;
+
+            boolean isBeforeStart = event.getStartAt() != null && now.before(event.getStartAt());
+            boolean isAfterEnd = event.getEndAt() != null && now.after(event.getEndAt());
+
+            return isBeforeStart || isAfterEnd;
+        });
 
         log.info("출석 제외 이벤트 상태:" + eventNormalVOList);
 
@@ -272,9 +290,14 @@ public class EventServiceImpl implements EventService{
         //이벤트 보상 수령 구분
         //오늘 출석 여부 구분
         //등록 순 정렬 완료
-        eventAttendanceVOList.removeIf(event ->
-                now.before(event.getStartAt()) || now.after(event.getEndAt())
-        );
+        eventAttendanceVOList.removeIf(event -> {
+            if (event == null) return true;
+
+            boolean isBeforeStart = event.getStartAt() != null && now.before(event.getStartAt());
+            boolean isAfterEnd = event.getEndAt() != null && now.after(event.getEndAt());
+
+            return isBeforeStart || isAfterEnd;
+        });
 
         log.info("출석 이벤트 상태:" + eventAttendanceVOList);
 
@@ -308,6 +331,69 @@ public class EventServiceImpl implements EventService{
         return getAttendanceEventList(userId);
     }
 
+    @Override
+    @Transactional
+    public List<EventGetResponseDTO> receiveEventReward(int eventId, int userId, int rewardId) {
+        List<EventNormalVO> eventList = eventMapper.getEvent(userId);
 
+        // 검색 참조. 나중에 보완
+        int rewardPoint = eventList.stream()
+                .filter(event -> Objects.equals(event.getEventId(), eventId)
+                        && Objects.equals(event.getRewardId(), rewardId))
+                .map(EventNormalVO::getRewardPoint)
+                .findFirst()
+                .orElse(0);
 
+        // 이벤트 참여 이력 생성
+        EventParticipationVO participationVO = EventParticipationVO.builder()
+                .eventId(eventId)
+                .userId(userId)
+                .build();
+        eventMapper.createParticipation(participationVO);
+
+        // 보상 수령 이력 생성
+        EventRewardReceiveVO rewardReceiveVO = EventRewardReceiveVO.builder()
+                .eventId(eventId)
+                .rewardId(rewardId)
+                .userId(userId)
+                .build();
+        eventMapper.createEventRewardReceive(rewardReceiveVO);
+
+        // 포인트 업데이트
+        eventMapper.updateUserPoint(userId, rewardPoint);
+
+        return getEventList(userId);
+    }
+
+    @Override
+    @Transactional
+    public List<EventGetAttendanceResponseDTO> receiveAttendanceEventReward(int eventId, int userId, int rewardId) {
+        List<EventAttendanceVO> attendanceEventList = eventMapper.getAttendanceEvent(userId);
+
+        int rewardPoint = attendanceEventList.stream()
+                .filter(event -> event.getRewardId() == rewardId)
+                .map(EventAttendanceVO::getRewardPoint)
+                .findFirst()
+                .orElse(0);
+
+        // 이벤트 참여 이력 생성
+        EventParticipationVO participationVO = EventParticipationVO.builder()
+                .eventId(eventId)
+                .userId(userId)
+                .build();
+        eventMapper.createParticipation(participationVO);
+
+        // 보상 수령 이력 생성
+        EventRewardReceiveVO rewardReceiveVO = EventRewardReceiveVO.builder()
+                .eventId(eventId)
+                .rewardId(rewardId)
+                .userId(userId)
+                .build();
+        eventMapper.createEventRewardReceive(rewardReceiveVO);
+
+        // 포인트 업데이트
+        eventMapper.updateUserPoint(userId, rewardPoint);
+
+        return getAttendanceEventList(userId);
+    }
 }

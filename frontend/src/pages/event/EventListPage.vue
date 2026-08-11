@@ -2,7 +2,9 @@
   <div class="event-list-container">
     <div class="list-content-wrapper">
       <header class="list-header">
-        <button class="back-btn" @click="$router.back()"><- 전체 이벤트</button>
+        <button class="back-btn" @click="$router.back()">
+          ← 이벤트 리스트
+        </button>
       </header>
 
       <!-- 이벤트 리스트 탭 (진행 중 / 참여 완료) -->
@@ -60,55 +62,63 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import eventApi from '@/api/eventApi';
 import EventItem from '@/components/event/EventItem.vue';
 import EventHistoryItem from '@/components/event/EventHistoryItem.vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user';
+
+// 1. 유저 정보
+const userStore = useUserStore();
+const { userId } = storeToRefs(userStore);
 
 const router = useRouter();
 const route = useRoute();
 
-const currentTab = ref('active'); // 진행 중 이벤트 탭 디폴트
+const currentTab = ref('active');
 const eventList = ref([]);
-const currentUserId = ref(1);
 const isLoading = ref(false);
 
+// 날짜 관련 헬퍼 함수
 const formatDisplayYearMonth = (yearMonthStr) => {
   if (!yearMonthStr) return '';
   return yearMonthStr.replace('-', '.');
 };
-// 현재 년월 초기값 설정
+
 const getTodayYearMonth = () => {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   return `${year}-${month}`;
 };
+
 const selectedYearMonth = ref(getTodayYearMonth());
 
-// 1. 진행 중 이벤트 가져오기 (EVT-002)
-const loadActiveEvents = async () => {
+// 2. 이벤트 리스트 조회 (진행 중)
+const loadEventList = async () => {
+  if (!userId.value) return;
+
   isLoading.value = true;
   try {
-    const data = await eventApi.getActiveEventList();
+    const data = await eventApi.getEventList(userId.value);
     eventList.value = data;
   } catch (error) {
-    console.error('진행 중 이벤트 데이터 조회 실패:', error);
+    console.error('이벤트 리스트 조회 실패:', error);
   } finally {
     isLoading.value = false;
   }
 };
 
-// 2. 참여 내역 가져오기 (EVT-003)
-const loadJoinedEvents = async (targetMonth) => {
+// 3. 참여완료 내역 조회
+const loadJoinedEventList = async (targetMonth) => {
+  if (!userId.value) return;
+
   isLoading.value = true;
   const monthToFetch = targetMonth || selectedYearMonth.value;
   try {
-    const data = await eventApi.getJoinedEventList(
-      currentUserId.value,
-      monthToFetch,
-    );
+    const data = await eventApi.getJoinedEventList(userId.value, monthToFetch);
     eventList.value = data;
   } catch (error) {
     console.error('참여 내역 데이터 조회 실패:', error);
@@ -121,10 +131,10 @@ const loadJoinedEvents = async (targetMonth) => {
 const switchTab = (tab) => {
   currentTab.value = tab;
   if (tab === 'active') {
-    router.push({ path: '/event/list' });
+    router.push({ path: '/event/eventList' });
   } else {
     router.push({
-      path: '/event/list/joined',
+      path: '/event/eventList/joined',
       query: { yearMonth: selectedYearMonth.value },
     });
   }
@@ -133,17 +143,15 @@ const switchTab = (tab) => {
 // 월 변경
 const changeMonth = (direction) => {
   const [year, month] = selectedYearMonth.value.split('-').map(Number);
-
   const targetDate = new Date(year, month - 1 + direction, 1);
 
   const nextYear = targetDate.getFullYear();
   const nextMonth = String(targetDate.getMonth() + 1).padStart(2, '0');
   const newYearMonth = `${nextYear}-${nextMonth}`;
 
-  // 참여완료 탭에서만
   if (currentTab.value === 'joined') {
     router.push({
-      path: '/event/list/joined',
+      path: '/event/eventList/joined',
       query: { yearMonth: newYearMonth },
     });
   } else {
@@ -152,48 +160,94 @@ const changeMonth = (direction) => {
 };
 
 watch(
-  () => [route.path, route.query.yearMonth],
-  ([path, queryMonth]) => {
+  () => [route.path, route.query.yearMonth, userId.value],
+  ([path, queryMonth, currentUserId]) => {
+    if (!currentUserId) return;
+
     currentTab.value = path.includes('/joined') ? 'joined' : 'active';
     if (queryMonth) selectedYearMonth.value = queryMonth;
 
-    currentTab.value === 'joined' ? loadJoinedEvents() : loadActiveEvents();
+    currentTab.value === 'joined' ? loadJoinedEventList() : loadEventList();
   },
   { immediate: true },
 );
 
-// 이벤트 참여 처리
-
-const onEventAction = async ({ eventId, eventName, buttonStatus }) => {
+// 4. 이벤트 참여/보상수령 액션 처리
+const onEventAction = async ({
+  eventId,
+  eventName,
+  rewardId,
+  buttonStatus,
+}) => {
   if (!eventId) return;
 
-  if (!currentUserId.value) {
+  if (!userId.value) {
     alert('올바른 사용자 정보가 아닙니다.');
     return;
   }
 
-  const apiMap = {
-    ATTENDANCE_READY: () => eventApi.joinEvent(eventId, currentUserId.value),
-    READY: () => eventApi.joinEvent(eventId, currentUserId.value),
-    PROGRESS: () => eventApi.joinEvent(eventId, currentUserId.value),
-    REWARD_CLAIM: () =>
-      eventApi.receiveEventReward(eventId, currentUserId.value),
+  const isAttendance = eventName?.includes('출석');
+
+  const actionMap = {
+    READY: {
+      action: () =>
+        isAttendance
+          ? eventApi.joinAttendanceEvent(eventId, userId.value)
+          : eventApi.joinEvent(eventId, userId.value),
+      msg: `[${eventName}] 이벤트 참여를 시작합니다.`,
+    },
+    ATTENDANCE: {
+      action: () => eventApi.joinAttendanceEvent(eventId, userId.value),
+      msg: `[${eventName}] 출석체크가 완료되었습니다.`,
+    },
+    ATTENDANCE_READY: {
+      action: () => eventApi.joinAttendanceEvent(eventId, userId.value),
+      msg: `[${eventName}] 출석체크가 완료되었습니다.`,
+    },
+    PROGRESS: {
+      action: () => eventApi.joinEvent(eventId, userId.value),
+      msg: `[${eventName}] 이벤트 참여가 완료되었습니다.`,
+    },
+    DAILY_LIMIT: {
+      action: async () => {
+        alert('이미 참여한 이벤트입니다.');
+      },
+      msg: null,
+    },
+    REWARD_CLAIM: {
+      action: () =>
+        isAttendance
+          ? eventApi.receiveAttendanceEventReward(
+              eventId,
+              userId.value,
+              rewardId,
+            )
+          : eventApi.receiveEventReward(eventId, userId.value, rewardId),
+      msg: `[${eventName}] 보상 수령이 완료되었습니다!`,
+    },
   };
 
-  if (!apiMap[buttonStatus]) {
+  const targetAction = actionMap[buttonStatus];
+
+  if (!targetAction) {
     console.warn(`정의되지 않은 버튼 상태입니다: ${buttonStatus}`);
     return;
   }
 
   try {
-    // API 호출 실행
-    await apiMap[buttonStatus]();
+    await targetAction.action();
 
-    alert(`[${eventName}] 이벤트 참여 완료되었습니다.`);
+    const successMsg =
+      targetAction.msg || `[${eventName}] 참여 처리가 완료되었습니다.`;
+    if (targetAction.msg) alert(successMsg);
 
-    // 리스트 새로고침
-    if (typeof loadActiveEvents === 'function') {
-      await loadActiveEvents();
+    if (
+      currentTab?.value === 'joined' &&
+      typeof loadJoinedEventList === 'function'
+    ) {
+      await loadJoinedEventList();
+    } else if (typeof loadEventList === 'function') {
+      await loadEventList();
     }
   } catch (error) {
     console.error('이벤트 처리 실패:', error);
@@ -202,8 +256,6 @@ const onEventAction = async ({ eventId, eventName, buttonStatus }) => {
     alert(errorMsg);
   }
 };
-
-// onMounted(() => {});
 </script>
 
 <style scoped>
@@ -247,6 +299,9 @@ const onEventAction = async ({ eventId, eventName, buttonStatus }) => {
   font-size: 20px;
   cursor: pointer;
   margin-right: 12px;
+  font-size: 18px;
+  color: #222222;
+  font-weight: 600;
 }
 .list-header h2 {
   font-size: 18px;

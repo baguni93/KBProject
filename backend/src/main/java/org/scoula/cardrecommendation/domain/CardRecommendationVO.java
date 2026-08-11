@@ -16,5 +16,6 @@ public class CardRecommendationVO {
     private Integer cardProductId;
     private Integer recommendationRank;
     private Integer expectedBenefitAmount;
+    private String aiRecommendationSummary;
     private LocalDateTime createdAt;
 }

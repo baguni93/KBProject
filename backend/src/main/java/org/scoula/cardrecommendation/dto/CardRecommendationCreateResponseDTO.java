@@ -13,6 +13,5 @@ public class CardRecommendationCreateResponseDTO {
     private Integer spendingAnalysisId;
     private boolean created;
     private Integer recommendationCount;
-    private String aiCardRecommendationSummary;
     private String message;
 }

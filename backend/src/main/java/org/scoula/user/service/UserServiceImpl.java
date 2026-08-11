@@ -6,6 +6,7 @@ import org.scoula.login.domain.PhoneAuthVO;
 import org.scoula.login.mapper.LoginMapper;
 import org.scoula.notifsetting.domain.NotificationSettingVO;
 import org.scoula.notifsetting.mapper.NotificationSettingMapper;
+import org.scoula.pointwallet.service.PointWalletService;
 import org.scoula.user.domain.UserVO;
 import org.scoula.user.dto.*;
 import org.scoula.user.mapper.UserMapper;
@@ -26,6 +27,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final LoginMapper loginMapper;
     private final NotificationSettingMapper notificationSettingMapper;
+    private final PointWalletService pointWalletService;
     private final PasswordEncoder passwordEncoder;
 
     // private static final long REJOIN_WAIT_HOURS = 24L;
@@ -97,6 +99,9 @@ public class UserServiceImpl implements UserService {
         if (notificationSettingResult != 1) {
             throw new IllegalStateException("알림 설정 저장 중 오류가 발생했습니다.");
         }
+
+        // 회원가입 시 포인트 지갑 자동 생성
+        pointWalletService.createWallet(user.getUserId().intValue());
 
         log.info("회원가입 완료: userId={}", user.getUserId());
 

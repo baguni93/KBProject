@@ -13,6 +13,7 @@ public class CardRecommendationListItemVO {
     private Integer cardProductId;
     private Integer recommendationRank;
     private Integer expectedBenefitAmount;
+    private String aiRecommendationSummary;
     private String cardName;
     private String cardType;
     private String cardDescription;

@@ -37,12 +37,6 @@ public interface CardRecommendationMapper {
             @Param("details") List<CardRecommendationDetailVO> details
     );
 
-    int updateCardRecommendationSummary(
-            @Param("userId") Integer userId,
-            @Param("spendingAnalysisId") Integer spendingAnalysisId,
-            @Param("summary") String summary
-    );
-
     List<CardRecommendationListItemVO> selectRecommendationList(
             @Param("userId") Integer userId,
             @Param("spendingAnalysisId") Integer spendingAnalysisId,

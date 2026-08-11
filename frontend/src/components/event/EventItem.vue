@@ -2,43 +2,49 @@
   <div
     :class="[
       'event-item',
-      { 'border-yellow': event.buttonStatus === 'REWARD_CLAIM' },
+      { 'border-yellow': currentEvent.buttonStatus === 'REWARD_CLAIM' },
     ]"
-    v-if="event"
+    v-if="currentEvent"
   >
     <div class="event-img">
-      <span class="img-icon">{{ getEventImg(event.eventName) }}</span>
+      <span class="img-icon">{{ getEventImg(currentEvent.eventName) }}</span>
     </div>
 
     <!-- 이벤트 요약정보 -->
     <div class="event-info">
       <div class="title-row">
-        <h4 class="event-title">{{ event.eventName }}</h4>
-        <span v-if="event.dDay" class="status-tag">{{ event.dDay }}</span>
+        <h4 class="event-title">{{ currentEvent.eventName }}</h4>
+        <span v-if="currentEvent.dDay" class="status-tag">{{
+          currentEvent.dDay
+        }}</span>
       </div>
-      <p class="event-desc">{{ event.eventDesc }}</p>
+      <p class="event-desc">{{ currentEvent.eventDesc }}</p>
 
       <!-- 진행도 바 -->
       <div class="progress-container">
         <div class="progress-bar-group">
           <div
-            v-for="index in event.eventTarget"
+            v-for="index in currentEvent.eventTarget || 1"
             :key="index"
-            :class="['progress-segment', { active: index <= event.partCount }]"
+            :class="[
+              'progress-segment',
+              { active: index <= (currentEvent.currentTargetCount || 0) },
+            ]"
           ></div>
         </div>
-        <span class="event-level">Lv.{{ event.currentLevel || 1 }}</span>
+        <span class="event-level">Lv.{{ currentEvent.eventLevel || 1 }}</span>
       </div>
     </div>
 
     <!-- 배지 버튼 -->
     <div class="event-action">
-      <span class="reward-points">+{{ event.rewardPoint }}P</span>
+      <span class="reward-points">+{{ currentEvent.rewardPoint }}P</span>
       <button
-        :class="['status-btn', getStatusClass(event.buttonStatus)]"
+        :class="['action-btn', getStatusClass(currentEvent)]"
+        :disabled="getEventStatus(currentEvent).disabled"
         @click="handleButtonClick"
       >
-        {{ getStatusText(event.buttonStatus) }}
+        {{ getStatusText(currentEvent) }}
       </button>
     </div>
   </div>
@@ -46,125 +52,152 @@
 
 <script setup>
 import { defineProps, defineEmits, computed } from 'vue';
-import eventApi from '@/api/eventApi';
 
 const emit = defineEmits(['clickAction']);
 
+// props 관련 수정함, 보완 필요
 const props = defineProps({
   event: {
     type: Object,
-    required: true,
-    default: () => ({
-      eventId: 0,
-      eventName: '',
-      tag: '',
-      eventDesc: '',
-      currentLevel: 0,
-      rewardPoint: 0,
-      buttonStatus: '',
-      partCount: 0,
-      reqCount: 0,
-    }),
+    default: null,
   },
+  eventId: [Number, String],
+  eventName: String,
+  eventDesc: String,
+  eventType: String,
+  eventStatus: String,
+  eventImgName: String,
+  eventTarget: Number,
+  currentTargetCount: Number,
+  eventLevel: Number,
+  eventDailyLimitCount: Number,
+  isDailyLimitReached: [Boolean, String, Number],
+  startAt: String,
+  endAt: String,
+  rewardId: [Number, String],
+  rewardPoint: Number,
+  rewardExe: Number,
+  completed: [Boolean, String],
+  joined: [Boolean, String],
+  rewardReceived: [Boolean, String],
+  dDay: String,
 });
 
-const handleButtonClick = () => {
-  emit('clickAction', {
-    eventId: props.event.eventId,
-    eventName: props.event.eventName || props.event.title,
-    buttonStatus: props.event.buttonStatus,
-  });
-};
+const currentEvent = computed(() => {
+  if (props.event) return props.event;
+  return props;
+});
 
 // 이벤트 배너 이미지 아이콘 처리
 const getEventImg = (eventName) => {
-  if (!event) return '📢';
-  if (eventName.includes('출석')) return '☀️';
-  if (eventName.includes('피드')) return '📄';
-  if (eventName.includes('카드')) return '🎨';
-  if (eventName.includes('결제') || eventName.includes('지갑')) return '💳';
-  if (eventName.includes('정산')) return '📜';
-  if (eventName.includes('박스') || eventName.includes('랜덤')) return '🎁';
-  if (eventName.includes('분석')) return '📊';
+  const name = eventName || '';
+
+  if (name.includes('출석')) return '☀️';
+  if (name.includes('피드')) return '📄';
+  if (name.includes('카드')) return '🎨';
+  if (name.includes('결제') || name.includes('지갑')) return '💳';
+  if (name.includes('정산')) return '📜';
+  if (name.includes('박스') || name.includes('랜덤')) return '🎁';
+  if (name.includes('분석')) return '📊';
+
   return '💡';
 };
 
-// 버튼 텍스트 변환 처리
-const getStatusText = (status) => {
-  switch (status) {
-    case 'ATTENDANCE_READY':
-      return '출석';
-    case 'ATTENDANCE_COMPLETE':
-      return '출석완료';
-    case 'REWARD_CLAIM':
-      return '보상받기';
-    case 'PROGRESS':
-      return '참여';
-    case 'COMPLETE':
-      return '참여완료';
-    case 'READY':
-      return '참여';
-    default:
-      return '참여';
+// 배지 버튼 상태 판단
+const getEventStatus = (item) => {
+  if (!item)
+    return {
+      text: '참여',
+      styleClass: 'bg-yellow',
+      status: 'READY',
+      disabled: false,
+    };
+
+  const isRewardReceived =
+    item.rewardReceived === true || item.rewardReceived === 'true';
+  const isCompleted = item.completed === true || item.completed === 'true';
+  const isJoined = item.joined === true || item.joined === 'true';
+  const isDailyLimitReached =
+    item.isDailyLimitReached === true ||
+    item.isDailyLimitReached === 'true' ||
+    item.isDailyLimitReached === 1;
+
+  // 1. 보상 수령 완료
+  if (isRewardReceived) {
+    return {
+      text: '수령완료',
+      styleClass: 'bg-gray',
+      status: 'COMPLETED',
+      disabled: true,
+    };
   }
+
+  // 2. 조건 달성 (보상 미수령)
+  if (isCompleted) {
+    return {
+      text: '보상받기',
+      styleClass: 'bg-yellow',
+      status: 'REWARD_CLAIM',
+      disabled: false,
+    };
+  }
+
+  // 3. 일일 제한 달성
+  if (isDailyLimitReached) {
+    return {
+      text: '참여완료',
+      styleClass: 'bg-gray',
+      status: 'DAILY_LIMIT',
+      disabled: true,
+    };
+  }
+
+  // 4. 참여하기
+  if (isJoined) {
+    return {
+      text: '참여',
+      styleClass: 'bg-yellow',
+      status: 'PROGRESS',
+      disabled: false,
+    };
+  }
+
+  // 5. 기본 참여 가능
+  return {
+    text: '시작하기',
+    styleClass: 'bg-yellow',
+    status: 'READY',
+    disabled: false,
+  };
 };
 
-// 버튼 상태 디자인 처리
-const getStatusClass = (status) => {
-  if (
-    status === 'ATTENDANCE_READY' ||
-    status === 'REWARD_CLAIM' ||
-    status === 'READY' ||
-    status === 'PROGRESS'
-  ) {
-    return 'bg-yellow';
-  }
-  if (status === 'ATTENDANCE_COMPLETE' || status === 'COMPLETE') {
-    return 'bg-gray';
-  }
-  return 'bg-yellow';
+const getStatusText = (item) => getEventStatus(item).text;
+const getStatusClass = (item) => getEventStatus(item).styleClass;
+
+const handleButtonClick = () => {
+  const statusInfo = getEventStatus(currentEvent.value);
+
+  if (statusInfo.disabled) return;
+
+  emit('clickAction', {
+    eventId: currentEvent.value.eventId,
+    eventName: currentEvent.value.eventName,
+    rewardId: currentEvent.value.rewardId,
+    buttonStatus: statusInfo.status,
+  });
 };
-
-const getActiveSegmentsCount = computed(() => {
-  if (!props.event) return 0;
-
-  const current = props.event.partCount || 0;
-  const target = props.event.reqCount || 1; // 기본 목표값
-
-  if (current >= target) {
-    return 3;
-  }
-
-  if (current === 0) {
-    return 0;
-  }
-
-  // 비율 계산 후 3개 칸으로 치환
-  const ratio = current / target;
-
-  if (ratio >= 0.66) {
-    return 2;
-  }
-
-  if (ratio > 0) {
-    return 1;
-  }
-
-  return 0;
-});
 </script>
 
 <style scoped>
-/* 기존 스타일 명세 유지 */
 .event-item {
-  background-color: #f8f9fa;
+  background-color: #ffffff;
   border-radius: 20px;
   padding: 16px;
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.01);
-  border: 1px solid #f1f3f5;
+  margin-bottom: 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
   box-sizing: border-box;
 }
 
@@ -248,10 +281,6 @@ const getActiveSegmentsCount = computed(() => {
   background-color: #00b050;
 }
 
-.border-yellow .progress-segment.active {
-  background-color: #00b050;
-}
-
 .event-level {
   font-size: 10px;
   color: #adb5bd;
@@ -273,7 +302,7 @@ const getActiveSegmentsCount = computed(() => {
   color: #ffbc00;
 }
 
-.status-btn {
+.action-btn {
   border: none;
   padding: 6px 14px;
   border-radius: 12px;
@@ -286,12 +315,12 @@ const getActiveSegmentsCount = computed(() => {
   white-space: nowrap;
 }
 
-.status-btn.bg-yellow {
+.action-btn.bg-yellow {
   background-color: #ffbc00;
   color: #222222;
 }
 
-.status-btn.bg-gray {
+.action-btn.bg-gray {
   background-color: #f5f5f5;
   color: #222222;
 }
