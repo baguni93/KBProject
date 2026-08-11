@@ -12,9 +12,6 @@ DROP TABLE IF EXISTS `event_reward_tbl`;
 DROP TABLE IF EXISTS `event_tbl`;
 DROP TABLE IF EXISTS `event_user_tbl`;
 DROP TABLE IF EXISTS `card_application_history_tbl`;
-DROP TABLE IF EXISTS `custom_image_tbl`;
-DROP TABLE IF EXISTS `file_image_tbl`;
-DROP TABLE IF EXISTS `card_asset_tbl`;
 DROP TABLE IF EXISTS `feed_comment_tbl`;
 DROP TABLE IF EXISTS `feed_like_tbl`;
 DROP TABLE IF EXISTS `feed_image_tbl`;
@@ -60,6 +57,10 @@ DROP TABLE IF EXISTS `linked_account_tbl`;
 DROP TABLE IF EXISTS `bank_tbl`;
 DROP TABLE IF EXISTS `user_tbl`;
 DROP TABLE IF EXISTS `merchant_category_mapping_tbl`;
+DROP TABLE IF EXISTS `custom_card_texts_tbl`;
+DROP TABLE IF EXISTS `custom_card_emojis_tbl`;
+DROP TABLE IF EXISTS `custom_card_tbl`;
+DROP TABLE IF EXISTS `custom_card_image_tbl`;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -1309,7 +1310,7 @@ DROP TABLE IF EXISTS card_tbl;
 
 CREATE TABLE card_tbl
 (
-    card_code          VARCHAR(20) PRIMARY KEY COMMENT '카드코드',
+    card_code          INT AUTO_INCREMENT PRIMARY KEY COMMENT '카드 code(Id)',
 
     account_id         INT          NOT NULL UNIQUE COMMENT '계좌 ID',
 
@@ -1321,6 +1322,7 @@ CREATE TABLE card_tbl
 
     cvv                VARCHAR(255) NOT NULL COMMENT 'cvv',
 
+	card_type          VARCHAR(20)  NULL DEFAULT 'NORMAL' CHECK (card_type IN ('NORMAL', 'KBONMYWAY')),
     CONSTRAINT fk_card_account
         FOREIGN KEY (account_id)
             REFERENCES account_dummy_tbl (account_id)
@@ -1561,100 +1563,61 @@ CREATE TABLE feed_comment_tbl
 );
 
 
--- 43.커스텀 도구 에셋 테이블
-DROP TABLE IF EXISTS card_asset_tbl;
+-- 42-1. 카드 메인 테이블
+CREATE TABLE custom_card_tbl (
+    custom_card_id Int AUTO_INCREMENT PRIMARY KEY,
+    user_id Int NOT NULL, -- 사용자 테이블이 있다고 가정
+    -- 배경 정보를 타입과 값으로 분리하여 저장
+    background_type VARCHAR(20), -- 'IMAGE', 'GRADIENT', 'COLOR'
+    background_value TEXT,       -- 실제 경로, CSS string 등
+    pattern_path VARCHAR(255),
+    drawing_image_url MEDIUMTEXT, -- Base64 문자열이 길 수 있음
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE card_asset_tbl
+CREATE TABLE custom_card_image_tbl
 (
-    asset_id         INT AUTO_INCREMENT PRIMARY KEY COMMENT '에셋ID',
+    custom_card_image_id        INT AUTO_INCREMENT PRIMARY KEY COMMENT '신청ID',
 
-    asset_type       VARCHAR(30)  NULL COMMENT '유형코드',
+    custom_card_id INT  NOT NULL COMMENT '커스텀 카드 id',
 
-    asset_name       VARCHAR(255) NULL COMMENT '에셋명칭',
+    custom_card_image_name    INT  NULL COMMENT '카드 이미지 ',
 
-    src_url          VARCHAR(255) NULL COMMENT '에셋파일경로',
+    created_at      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
 
-    background_color VARCHAR(255) NULL COMMENT '배경색상코드',
-
-    font_type        VARCHAR(30)  NULL COMMENT '폰트종류',
-
-    use_yn           CHAR(1)      NOT NULL DEFAULT 'Y' COMMENT '사용여부',
-
-    CONSTRAINT chk_card_asset_type
-        CHECK (
-            asset_type IN (
-                           'BACKGROUND_SOLID',
-                           'BACKGROUND_GRADIENT',
-                           'BACKGROUND_SPECIAL',
-                           'EMOJI',
-                           'STICKER',
-                           'PATTERN'
-                )
-            ),
-
-    CONSTRAINT chk_card_asset_use_yn
-        CHECK (
-            use_yn IN ('Y', 'N')
-            )
+	CONSTRAINT fk_custom_card_image_tbl_custom_card_id
+	FOREIGN KEY (custom_card_id)
+		REFERENCES custom_card_tbl (custom_card_id)
 );
 
 
--- 44.이미지 첨부파일 테이블
+-- 42-2. 텍스트 아이템 테이블
+CREATE TABLE custom_card_texts_tbl (
+    text_id Int AUTO_INCREMENT PRIMARY KEY,
+    custom_card_id Int NOT NULL,
+    content VARCHAR(500),
+    x_pos FLOAT,
+    y_pos FLOAT,
+    rotation FLOAT,
+    font_family VARCHAR(100),
+    font_color VARCHAR(50),
+    font_size VARCHAR(20),
+    is_bold BOOLEAN ,
+    FOREIGN KEY (custom_card_id) REFERENCES custom_card_tbl(custom_card_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-DROP TABLE IF EXISTS file_image_tbl;
+--  42-3.  이모지 아이템 테이블
+CREATE TABLE custom_card_emojis_tbl (
+    emoji_id Int AUTO_INCREMENT PRIMARY KEY, -- JSON의 id를 그대로 사용하거나 auto_increment 사용
+    custom_card_id Int NOT NULL,
+    emoji_url VARCHAR(255),
+    x_pos FLOAT,
+    y_pos FLOAT,
+    rotation FLOAT,
+    emoji_type VARCHAR(50), -- 'SVG' : 'ICON'  등 분류
+    FOREIGN KEY (custom_card_id) REFERENCES custom_card_tbl(custom_card_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE file_image_tbl
-(
-    file_id    INT AUTO_INCREMENT PRIMARY KEY COMMENT '첨부파일ID',
-
-    user_id    INT          NOT NULL COMMENT '사용자ID',
-
-    file_name  VARCHAR(255) NOT NULL COMMENT '파일명',
-
-    file_size  BIGINT       NOT NULL COMMENT '파일크기',
-
-    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
-
-    CONSTRAINT fk_file_image_user
-        FOREIGN KEY (user_id)
-            REFERENCES user_tbl (user_id)
-);
-
-
--- 45.커스텀 이미지 테이블
-
-DROP TABLE IF EXISTS custom_image_tbl;
-
-CREATE TABLE custom_image_tbl
-(
-    custom_image_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '커스텀이미지 첨부파일ID',
-
-    user_id           INT          NOT NULL COMMENT '사용자ID',
-
-    asset_id          INT          NOT NULL COMMENT '에셋ID',
-
-    file_id           INT          NOT NULL COMMENT '첨부파일ID',
-
-    custom_image_path VARCHAR(255) NOT NULL COMMENT '커스텀이미지 경로명',
-
-    custom_image_name VARCHAR(255) NOT NULL COMMENT '커스텀이미지 파일명',
-
-    custom_image_size BIGINT       NOT NULL COMMENT '커스텀이미지 파일크기',
-
-    created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
-
-    CONSTRAINT fk_custom_image_user
-        FOREIGN KEY (user_id)
-            REFERENCES user_tbl (user_id),
-
-    CONSTRAINT fk_custom_image_asset
-        FOREIGN KEY (asset_id)
-            REFERENCES card_asset_tbl (asset_id),
-
-    CONSTRAINT fk_custom_image_file
-        FOREIGN KEY (file_id)
-            REFERENCES file_image_tbl (file_id)
-);
 
 -- 46.커스텀카드 신청이력 테이블
 
@@ -1664,37 +1627,21 @@ CREATE TABLE card_application_history_tbl
 (
     apply_id        INT AUTO_INCREMENT PRIMARY KEY COMMENT '신청ID',
 
-    user_id         INT         NOT NULL COMMENT '사용자ID',
+    custom_card_id INT  NOT NULL COMMENT '커스텀 카드 id',
 
-    custom_image_id INT         NOT NULL COMMENT '커스텀이미지 첨부파일ID',
+    card_code       INT NULL COMMENT '카드코드',
 
-    card_code       VARCHAR(20) NULL COMMENT '카드코드',
-
-    card_name       VARCHAR(50) NULL COMMENT '카드명',
-
-    card_status     VARCHAR(20) NULL COMMENT '카드신청상태',
+    apply_status VARCHAR(20) NOT NULL DEFAULT 'REQUEST' COMMENT '발급 상태',
 
     created_at      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
 
-    updated_at      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-
-    CONSTRAINT fk_card_application_history_user
-        FOREIGN KEY (user_id)
-            REFERENCES user_tbl (user_id),
-
-    CONSTRAINT fk_card_application_history_image
-        FOREIGN KEY (custom_image_id)
-            REFERENCES custom_image_tbl (custom_image_id),
-
-    CONSTRAINT chk_card_application_history_status
-        CHECK (
-            card_status IN (
-                            'REQUEST',
-                            'ISSUED',
-                            'CANCELLED'
-                )
-            )
+			CONSTRAINT fk_card_application_history_custom_card_id
+	FOREIGN KEY (custom_card_id)
+		REFERENCES custom_card_tbl (custom_card_id),
+            
+			  CONSTRAINT fk_card_application_history_card_code
+        FOREIGN KEY (card_code)
+            REFERENCES card_tbl (card_code)
 );
 
 
@@ -1994,10 +1941,11 @@ DROP TABLE IF EXISTS linked_card_tbl;
 CREATE TABLE linked_card_tbl
 (
     linked_card_id    BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '연결카드번호',
+    
     user_id           INT          NOT NULL COMMENT '회원번호',
-
+    
     card_id           INT          NOT NULL UNIQUE COMMENT '등록카드번호',
-
+    
     card_company_code VARCHAR(10)  NOT NULL COMMENT '카드사코드',
 
     card_name         VARCHAR(100) NOT NULL COMMENT '카드명',
@@ -2144,6 +2092,9 @@ CREATE TABLE kb_insurance_category_match_tbl
 
 
 
+
+
+
 USE kbproject;
 
 START TRANSACTION;
@@ -2247,7 +2198,69 @@ VALUES (1,
         '금융상품 추천 정보 활용 동의',
         '1. 활용하는 정보 항목\n회사는 맞춤형 금융상품 추천 서비스를 제공하기 위해 다음 정보를 활용합니다.\n- 소비 카테고리별 지출 내역\n- 기간별 소비금액\n- 소비 패턴 분석 결과\n- 보유하거나 연결한 계좌 및 카드 정보\n- 금융상품 이용 및 관심 정보\n\n2. 정보 활용 목적\n수집 및 분석된 정보는 다음 목적으로 활용됩니다.\n- 회원의 소비 성향 분석\n- 카드 및 금융상품 추천\n- 회원별 맞춤형 금융 혜택 안내\n- 금융상품 추천 서비스 개선\n\n3. 정보 보유 및 이용 기간\n회사는 맞춤형 금융상품 추천 서비스 이용 기간 동안 해당 정보를 활용하며, 회원 탈퇴 또는 동의 철회 시 지체 없이 활용을 중단하고 관련 정보를 삭제합니다. 다만, 관계 법령에 따라 보관이 필요한 경우에는 해당 기간 동안 별도로 보관합니다.\n\n4. 동의 거부 및 철회\n회원은 맞춤형 금융상품 추천을 위한 정보 활용에 동의하지 않을 권리가 있으며, 동의 후에도 언제든지 설정 화면에서 철회할 수 있습니다. 동의하지 않더라도 소비 분석을 포함한 기본 서비스는 정상적으로 이용할 수 있습니다.',
         'N',
-        'Y');
+        'Y'),
+(
+    7,
+    'CHECK_CARD', 
+    '개인정보 수집·이용 동의', 
+    '1. 수집·이용 목적: 체크카드 발급 적격 심사, 회원 가입 및 회원 관리, 본인 식별, 실물 카드 배송, 고객 상담 및 민원 처리, 부정이용 방지
+    
+2. 수집 항목: [필수] 성명, 생년월일, 휴대전화번호, 이메일, 주소, 직장 정보
+
+3. 보유 및 이용 기간: 회원 탈퇴 및 카드 유효기간 만료 후 5년까지 보유 (단, 관계 법령에 의하여 보존할 필요가 있는 경우 해당 기간 동안 보존)', 
+    'Y', 
+    'Y'
+),
+(
+    8,
+    'CHECK_CARD', 
+    '고유식별정보 처리 동의', 
+    '1. 수집·이용 목적: 여신전문금융업법 및 관련 법령에 따른 본인 확인, 실명 확인 및 체크카드 발급 심사
+    
+2. 수집 항목: [주민등록번호/외국인등록번호/여권번호] 등 고유식별정보
+
+3. 보유 및 이용 기간: 동의일로부터 회원 탈퇴 및 카드 발급 계약 종료 후 관계 법령이 정하는 기간까지', 
+    'Y', 
+    'Y'
+),
+(
+    9,
+    'CHECK_CARD', 
+    '개인정보 제3자 제공 동의', 
+    '1. 제공받는 자: 주식회사 OO택배, 코리아결제네트워크(VAN사), 신용카드사, 제휴 브랜드사(VISA/Mastercard 등)
+    
+2. 제공받는 자의 이용 목적: 체크카드 실물 배송, 결제 승인 및 매입 처리, 제휴 서비스 제공
+
+3. 제공하는 항목: 성명, 휴대전화번호, 배송지 주소, 카드 승인 정보
+
+4. 보유 및 이용 기간: 개인정보 이용 목적 달성 시까지 (단, 관계 법령에 따라 법정 의무 보유 기간 동안 보관)', 
+    'Y', 
+    'Y'
+),
+(
+    10,
+    'CHECK_CARD', 
+    '직불/체크카드 회원 표준약관', 
+    '제1조(목적) 이 약관은 직불/체크카드 회원이 카드를 이용함에 있어 회사와 회원 사이의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.
+    
+제2조(이용 한도 및 이용 시간) 1. 체크카드는 회원의 지정 계좌 잔액 범위 내에서 이용할 수 있습니다. 2. 1일/월간 이용 한도는 카드 발급 시 설정한 한도 내에서 적용되며, 회원의 요청에 따라 변경할 수 있습니다.
+
+제3조(분실·도난 신고 및 책임) 회원이 카드의 분실 또는 도난 등의 사유로 회사에 신고한 경우, 회사는 신고 접수 시점 이후 발생한 부정사용 금액에 대하여 책임을 부담합니다.', 
+    'Y', 
+    'Y'
+),
+(
+    11,
+    'CHECK_CARD', 
+    '출금계좌 이용약관 (금융거래 기본약관)', 
+    '제1조(목적) 본 약관은 체크카드 이용 시 결제 대금을 회원의 지정 계좌에서 실시간으로 인출(출금)하는 자동이체 거래에 관하여 정함을 목적으로 합니다.
+    
+제2조(출금 처리) 체크카드 사용 승인이 이루어지는 즉시 회원의 지정 계좌에서 해당 결제 금액이 출금되며, 계좌 잔액 부족 시 거래가 거절될 수 있습니다.
+
+제3조(계좌 변경 및 해지) 지정 계좌의 변경 또는 해지는 회사의 앱 또는 고객센터를 통해 처리할 수 있으며, 정상적인 계좌가 등록되어 있지 않은 경우 체크카드 이용이 제한될 수 있습니다.', 
+    'Y', 
+    'Y'
+);
 
 -- ---------------------------------------------------------------------
 -- 5. user_agreement_tbl (6건)
@@ -2946,7 +2959,9 @@ VALUES (1, 1, '004', '111-001-000001', '테스트회원1', 510000, '$2y$10$du1EX
         '2026-07-03 11:20:00'),
        (6, 3, '004', '333-003-000002', '테스트회원3', 205000, '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
         '2026-07-03 11:30:00');
-
+        -- 커스텀 카드 진행 시 필요한 국민 은행 계좌
+ --        (7, 4, '004', '94650301429776', '테스트회원3', 100000, '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
+--         '2026-07-03 11:30:00');
 -- ---------------------------------------------------------------------
 -- 33. account_transaction_tbl (6건)
 -- ---------------------------------------------------------------------
@@ -2984,15 +2999,15 @@ VALUES (1, 1, 1, 'CREDIT', 1, 90000, 100000),
 -- ---------------------------------------------------------------------
 -- 35. card_tbl (3건)
 -- ---------------------------------------------------------------------
-INSERT INTO card_tbl (card_code,
+INSERT INTO card_tbl (
                       account_id,
                       card_img_file_name,
                       card_num,
                       expiry_date,
                       cvv)
-VALUES ('KB-CARD-001', 1, 'card_001.png', 'ENC-CARD-1111', '12/30', 'ENC-111'),
-       ('KB-CARD-002', 3, 'card_002.png', 'ENC-CARD-2222', '11/30', 'ENC-222'),
-       ('KB-CARD-003', 5, 'card_003.png', 'ENC-CARD-3333', '10/30', 'ENC-333');
+VALUES ( 1, 'card_001.png', 'ENC-CARD-1111', '12/30', 'ENC-111'),
+       ( 3, 'card_002.png', 'ENC-CARD-2222', '11/30', 'ENC-222'),
+       ( 5, 'card_003.png', 'ENC-CARD-3333', '10/30', 'ENC-333');
 
 -- ---------------------------------------------------------------------
 -- 36. registered_card_tbl (6건)
@@ -3112,70 +3127,21 @@ VALUES (1, 1, 2, '충전 축하해요', '2026-07-20 09:15:00', '2026-07-20 09:15
        (5, 5, 1, '즐거운 여행!', '2026-07-22 11:15:00', '2026-07-22 11:15:00'),
        (6, 6, 2, '교통비 절약!', '2026-07-23 08:15:00', '2026-07-23 08:15:00');
 
--- ---------------------------------------------------------------------
--- 43. card_asset_tbl (3건)
--- ---------------------------------------------------------------------
-INSERT INTO card_asset_tbl (asset_id,
-                            asset_type,
-                            asset_name,
-                            src_url,
-                            background_color,
-                            font_type,
-                            use_yn)
-VALUES (1, 'BACKGROUND_SOLID', 'KB 옐로우', '/assets/yellow.png', '#FFCC00', 'PRETENDARD', 'Y'),
-       (2, 'BACKGROUND_GRADIENT', '선셋 그라데이션', '/assets/sunset.png', '#FF9966', 'PRETENDARD', 'Y'),
-       (3, 'STICKER', '별 스티커', '/assets/star.png', NULL, NULL, 'Y');
 
--- ---------------------------------------------------------------------
--- 44. file_image_tbl (6건)
--- ---------------------------------------------------------------------
-INSERT INTO file_image_tbl (file_id,
-                            user_id,
-                            file_name,
-                            file_size,
-                            created_at)
-VALUES (1, 1, 'upload_user1_1.png', 120000, '2026-07-20 14:00:00'),
-       (2, 1, 'upload_user1_2.png', 130000, '2026-07-20 14:10:00'),
-       (3, 2, 'upload_user2_1.png', 140000, '2026-07-21 14:00:00'),
-       (4, 2, 'upload_user2_2.png', 150000, '2026-07-21 14:10:00'),
-       (5, 3, 'upload_user3_1.png', 160000, '2026-07-22 14:00:00'),
-       (6, 3, 'upload_user3_2.png', 170000, '2026-07-22 14:10:00');
-
--- ---------------------------------------------------------------------
--- 45. custom_image_tbl (6건)
--- ---------------------------------------------------------------------
-INSERT INTO custom_image_tbl (custom_image_id,
-                              user_id,
-                              asset_id,
-                              file_id,
-                              custom_image_path,
-                              custom_image_name,
-                              custom_image_size,
-                              created_at)
-VALUES (1, 1, 1, 1, '/custom/user1/', 'custom_1.png', 220000, '2026-07-20 15:00:00'),
-       (2, 1, 2, 2, '/custom/user1/', 'custom_2.png', 230000, '2026-07-20 15:10:00'),
-       (3, 2, 2, 3, '/custom/user2/', 'custom_3.png', 240000, '2026-07-21 15:00:00'),
-       (4, 2, 3, 4, '/custom/user2/', 'custom_4.png', 250000, '2026-07-21 15:10:00'),
-       (5, 3, 1, 5, '/custom/user3/', 'custom_5.png', 260000, '2026-07-22 15:00:00'),
-       (6, 3, 3, 6, '/custom/user3/', 'custom_6.png', 270000, '2026-07-22 15:10:00');
 
 -- ---------------------------------------------------------------------
 -- 46. card_application_history_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO card_application_history_tbl (apply_id,
-                                          user_id,
-                                          custom_image_id,
-                                          card_code,
-                                          card_name,
-                                          card_status,
-                                          created_at,
-                                          updated_at)
-VALUES (1, 1, 1, 'KB-CARD-001', '나만의 옐로우카드', 'REQUEST', '2026-07-20 16:00:00', '2026-07-20 16:00:00'),
-       (2, 1, 2, 'KB-CARD-001', '선셋 카드', 'ISSUED', '2026-07-20 16:10:00', '2026-07-22 10:00:00'),
-       (3, 2, 3, 'KB-CARD-002', '노을 카드', 'REQUEST', '2026-07-21 16:00:00', '2026-07-21 16:00:00'),
-       (4, 2, 4, 'KB-CARD-002', '별빛 카드', 'CANCELLED', '2026-07-21 16:10:00', '2026-07-22 11:00:00'),
-       (5, 3, 5, 'KB-CARD-003', '노랑 여행카드', 'ISSUED', '2026-07-22 16:00:00', '2026-07-24 09:00:00'),
-       (6, 3, 6, 'KB-CARD-003', '별 여행카드', 'REQUEST', '2026-07-22 16:10:00', '2026-07-22 16:10:00');
+-- INSERT INTO card_application_history_tbl (apply_id,
+--                                           user_id,
+--                                           custom_image_name,
+--                                           custom_card_id,
+--                                           card_code,
+--                                           card_name,
+--                                           created_at)
+-- VALUES (1, 1, 1, 1, '나만의 옐로우카드', 'REQUEST', '2026-07-20 16:00:00'),
+--        (2, 1, 2, 2, '선셋 카드', 'ISSUED', '2026-07-20 16:10:00' ),
+--        (3, 2, 3, 3, '노을 카드', 'REQUEST', '2026-07-21 16:00:00');
 
 -- ---------------------------------------------------------------------
 -- 47. event_tbl (20건)
