@@ -1,6 +1,7 @@
 package org.scoula.user.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.scoula.account.dto.AccountDTO;
 import org.scoula.user.dto.*;
 import org.scoula.user.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -142,5 +143,11 @@ public class UserController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/account/{bankCode}")
+    public ResponseEntity<AccountByBankCodeDTO> getAccountByBankCode(@RequestParam int userId, @PathVariable String bankCode){
+
+        return ResponseEntity.ok(userService.getAccountByBankCode(userId , bankCode));
     }
 }
