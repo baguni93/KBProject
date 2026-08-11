@@ -112,10 +112,6 @@ DROP TABLE IF EXISTS `user_tbl`;
 
 DROP TABLE IF EXISTS `merchant_category_mapping_tbl`;
 
-DROP TABLE IF EXISTS `registered_card_tbl`;
-
-DROP TABLE IF EXISTS `payment_token_tbl`;
-
 -- 1. 회원 테이블
 DROP TABLE IF EXISTS user_tbl;
 
@@ -2716,56 +2712,12 @@ VALUES (1, 1, 1, 'CREDIT', 1, 90000, 100000),
 -- ---------------------------------------------------------------------
 -- 35. card_tbl (3건)
 -- ---------------------------------------------------------------------
-INSERT INTO card_tbl (card_code,
-                      account_id,
-                      card_img_file_name,
-                      card_num,
-                      expiry_date,
-                      cvv)
-VALUES ('KB-CARD-001', 1, 'card_001.png', 'ENC-CARD-1111', '12/30', 'ENC-111'),
-       ('KB-CARD-002', 3, 'card_002.png', 'ENC-CARD-2222', '11/30', 'ENC-222'),
-       ('KB-CARD-003', 5, 'card_003.png', 'ENC-CARD-3333', '10/30', 'ENC-333');
+INSERT INTO card_tbl (account_id, card_num, expiry_date, cvv, card_password, card_img_file_name, card_name)
+VALUES 
+(1, 'ENC-CARD-1111', '12/30', 'ENC-111', '1111', 'card_001.png', 'KB국민나비카드'),
+(3, 'ENC-CARD-2222', '11/30', 'ENC-222', '2222', 'card_002.png', 'KB톡톡카드'),
+(5, 'ENC-CARD-3333', '10/30', 'ENC-333', '3333', 'card_003.png', '가온누리카드');
 
--- ---------------------------------------------------------------------
--- 36. registered_card_tbl (6건)
--- ---------------------------------------------------------------------
-INSERT INTO registered_card_tbl (card_id,
-                                 account_id,
-                                 user_id,
-                                 card_num,
-                                 expiry_date,
-                                 cvv,
-                                 card_password,
-                                 represent_yn,
-                                 created_at,
-                                 delete_yn)
-VALUES (1, 1, 1, 'ENC-REG-1111', '12/30', 'ENC-111', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'Y', '2026-07-01 09:40:00', 'N'),
-       (2, 2, 1, 'ENC-REG-1112', '09/30', 'ENC-112', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'N', '2026-07-01 09:50:00', 'N'),
-       (3, 3, 2, 'ENC-REG-2221', '11/30', 'ENC-221', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'Y', '2026-07-02 10:40:00', 'N'),
-       (4, 4, 2, 'ENC-REG-2222', '08/30', 'ENC-222', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'N', '2026-07-02 10:50:00', 'N'),
-       (5, 5, 3, 'ENC-REG-3331', '10/30', 'ENC-331', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'Y', '2026-07-03 11:40:00', 'N'),
-       (6, 6, 3, 'ENC-REG-3332', '07/30', 'ENC-332', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'N', '2026-07-03 11:50:00', 'N');
-
--- ---------------------------------------------------------------------
--- 37. payment_token_tbl (6건)
--- ---------------------------------------------------------------------
-INSERT INTO payment_token_tbl (token_value,
-                               user_id,
-                               card_id,
-                               expired_at,
-                               used_yn)
-VALUES ('pay-token-001', 1, 1, '2026-07-24 10:10:00', 'Y'),
-       ('pay-token-002', 1, 2, '2026-07-24 11:10:00', 'N'),
-       ('pay-token-003', 2, 3, '2026-07-24 12:10:00', 'Y'),
-       ('pay-token-004', 2, 4, '2026-07-24 13:10:00', 'N'),
-       ('pay-token-005', 3, 5, '2026-07-24 14:10:00', 'Y'),
-       ('pay-token-006', 3, 6, '2026-07-24 15:10:00', 'N');
 
 -- ---------------------------------------------------------------------
 -- 38. receipt_memo_tbl (6건)
@@ -3064,21 +3016,13 @@ VALUES ('KB', 'KB국민카드'),
        ('HN', '하나카드');
 
 -- ---------------------------------------------------------------------
--- 55. linked_card_tbl (6건)
+-- 55. linked_card_tbl (3건)
 -- ---------------------------------------------------------------------
-INSERT INTO linked_card_tbl (linked_card_id,
-                             user_id,
-                             card_id,
-                             card_company_code,
-                             card_name,
-                             card_image_name,
-                             represent_yn)
-VALUES (1, 1, 1, 'KB', 'KB 대표카드', 'linked_kb_1.png', 'Y'),
-       (2, 1, 2, 'SH', '신한 생활카드', 'linked_sh_1.png', 'N'),
-       (3, 2, 3, 'SH', '신한 대표카드', 'linked_sh_2.png', 'Y'),
-       (4, 2, 4, 'HN', '하나 교통카드', 'linked_hn_2.png', 'N'),
-       (5, 3, 5, 'HN', '하나 대표카드', 'linked_hn_3.png', 'Y'),
-       (6, 3, 6, 'KB', 'KB 여행카드', 'linked_kb_3.png', 'N');
+INSERT INTO linked_card_tbl (user_id, card_code, card_company_code, represent_yn, delete_yn)
+VALUES 
+(1, 1, 'KB', 'Y', 'N'), -- 1번 유저가 1번 실물 카드를 대표 카드로 연동
+(1, 2, 'KB', 'N', 'N'), -- 1번 유저가 2번 실물 카드를 일반 연동
+(2, 3, 'KB', 'Y', 'N'); -- 2번 유저가 3번 실물 카드를 대표 카드로 연동
 
 -- ---------------------------------------------------------------------
 -- 57. merchant_category_mapping_tbl (21건)
