@@ -367,13 +367,12 @@
     </select>
 
     <select id="getCard" resultType="org.scoula.feed.domain.CardVO">
-        SELECT
-            a.apply_id,
-            b.custom_image_name as cardImageName
-        FROM card_application_history_tbl a
-                 join custom_image_tbl b
-                      on a.custom_image_id = b.custom_image_id
-        WHERE a.apply_id = #{targetId}
+#         custom_card_Id 로 이미지 테이블 조회로 수정 예정
+#         SELECT
+#             a.apply_id,
+#             a.custom_image_name as cardImageName
+#         FROM card_application_history_tbl a
+#         WHERE a.apply_id = #{targetId}
     </select>
     <select id="getAnalysis" resultType="org.scoula.feed.domain.AnalysisVO">
         SELECT
