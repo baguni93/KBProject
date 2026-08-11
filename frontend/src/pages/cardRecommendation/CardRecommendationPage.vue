@@ -47,7 +47,11 @@
           <h2 class="text-15-bold">카드 유형</h2>
           <span class="text-13">{{ recommendationData.analysisPeriod }}개월 분석</span>
         </div>
-        <div class="segmented-control card-type-control" role="tablist" aria-label="카드 유형">
+        <div
+          class="segmented-control card-type-control"
+          role="tablist"
+          aria-label="카드 유형"
+        >
           <button
               v-for="option in cardTypeOptions"
               :key="option.value"
@@ -100,9 +104,9 @@
 
             <div class="card-visual">
               <img
-                  v-if="getCardImagePath(card.cardImage)"
-                  :src="getCardImagePath(card.cardImage)"
-                  :alt="`${card.cardName} 카드 이미지`"
+                v-if="getCardImagePath(card.cardImage)"
+                :src="getCardImagePath(card.cardImage)"
+                :alt="`${card.cardName} 카드 이미지`"
               />
               <div v-else class="card-placeholder" aria-hidden="true">
                 <span>KB</span>
@@ -152,8 +156,6 @@
           <p class="text-13">카드 상품과 혜택 데이터를 확인해 주세요.</p>
         </div>
       </section>
-
-
     </template>
 
     <div v-else-if="!loading" class="kb-card kb-empty-state error-state">
@@ -196,15 +198,15 @@ const recommendationCache = ref({});
 const annualFeeIncludedByCard = ref({});
 const creationResult = ref(null);
 const loading = ref(false);
-const message = ref('');
-const messageType = ref('info');
+const message = ref("");
+const messageType = ref("info");
 
 const recommendations = computed(
-    () => recommendationData.value?.recommendations ?? [],
+  () => recommendationData.value?.recommendations ?? [],
 );
 
-const selectedCardTypeLabel = computed(
-    () => getCardTypeLabel(selectedCardType.value),
+const selectedCardTypeLabel = computed(() =>
+  getCardTypeLabel(selectedCardType.value),
 );
 
 const topRecommendation = computed(() =>
@@ -218,17 +220,17 @@ const topRecommendationSummary = computed(
 );
 
 const creationStatusLabel = computed(() => {
-  if (!creationResult.value) return '확인 전';
-  return creationResult.value.created ? '새 추천 생성' : '기존 추천 재사용';
+  if (!creationResult.value) return "확인 전";
+  return creationResult.value.created ? "새 추천 생성" : "기존 추천 재사용";
 });
 
 const isValidAnalysisId = () =>
-    Number.isInteger(spendingAnalysisId) && spendingAnalysisId > 0;
+  Number.isInteger(spendingAnalysisId) && spendingAnalysisId > 0;
 
 const updateQuery = () => {
   router.replace({
-    name: 'card-recommendation',
-    params: {spendingAnalysisId},
+    name: "card-recommendation",
+    params: { spendingAnalysisId },
     query: {
       cardType: selectedCardType.value,
     },
@@ -282,10 +284,10 @@ const completeRecommendationLoading = async (status) => {
         status?.message || '카드 추천 결과를 불러왔습니다.';
   } catch (error) {
     recommendationData.value = null;
-    messageType.value = 'error';
+    messageType.value = "error";
     message.value = getCardRecommendationErrorMessage(
-        error,
-        '카드 추천 목록을 불러오지 못했습니다.',
+      error,
+      "카드 추천 목록을 불러오지 못했습니다.",
     );
   } finally {
     loading.value = false;
@@ -293,43 +295,39 @@ const completeRecommendationLoading = async (status) => {
 };
 
 const applyTaskStatus = async (status) => {
-  const currentStatus = status?.status ?? 'IDLE';
+  const currentStatus = status?.status ?? "IDLE";
 
-  if (currentStatus === 'COMPLETED') {
+  if (currentStatus === "COMPLETED") {
     await completeRecommendationLoading(status);
     return;
   }
 
-  if (currentStatus === 'FAILED') {
+  if (currentStatus === "FAILED") {
     stopStatusPolling();
     loading.value = false;
     recommendationData.value = null;
-    messageType.value = 'error';
-    message.value =
-        status?.message || '카드 추천 생성에 실패했습니다.';
+    messageType.value = "error";
+    message.value = status?.message || "카드 추천 생성에 실패했습니다.";
     return;
   }
 
   loading.value = true;
-  messageType.value = 'info';
-  message.value =
-      status?.message || '카드 혜택을 계산하고 있습니다.';
+  messageType.value = "info";
+  message.value = status?.message || "카드 혜택을 계산하고 있습니다.";
 };
 
 const checkRecommendationStatus = async () => {
   try {
-    const status = await cardRecommendationApi.getStatus(
-        spendingAnalysisId,
-    );
+    const status = await cardRecommendationApi.getStatus(spendingAnalysisId);
     await applyTaskStatus(status);
   } catch (error) {
     stopStatusPolling();
     loading.value = false;
     recommendationData.value = null;
-    messageType.value = 'error';
+    messageType.value = "error";
     message.value = getCardRecommendationErrorMessage(
-        error,
-        '카드 추천 진행 상태를 확인하지 못했습니다.',
+      error,
+      "카드 추천 진행 상태를 확인하지 못했습니다.",
     );
   }
 };
@@ -337,16 +335,16 @@ const checkRecommendationStatus = async () => {
 const startStatusPolling = () => {
   stopStatusPolling();
   statusTimer = window.setInterval(
-      checkRecommendationStatus,
-      STATUS_POLL_INTERVAL,
+    checkRecommendationStatus,
+    STATUS_POLL_INTERVAL,
   );
 };
 
 const reloadRecommendations = async () => {
   if (!isValidAnalysisId()) {
     recommendationData.value = null;
-    messageType.value = 'error';
-    message.value = '올바른 소비분석 ID가 필요합니다.';
+    messageType.value = "error";
+    message.value = "올바른 소비분석 ID가 필요합니다.";
     return;
   }
 
@@ -358,38 +356,36 @@ const reloadRecommendations = async () => {
   message.value = '';
 
   try {
-    const currentStatus = await cardRecommendationApi.getStatus(
-        spendingAnalysisId,
-    );
+    const currentStatus =
+      await cardRecommendationApi.getStatus(spendingAnalysisId);
 
-    if (currentStatus?.status === 'COMPLETED') {
+    if (currentStatus?.status === "COMPLETED") {
       await completeRecommendationLoading(currentStatus);
       return;
     }
 
-    if (currentStatus?.status === 'PROCESSING') {
+    if (currentStatus?.status === "PROCESSING") {
       await applyTaskStatus(currentStatus);
       startStatusPolling();
       return;
     }
 
-    const startedStatus = await cardRecommendationApi.startAsync(
-        spendingAnalysisId,
-    );
+    const startedStatus =
+      await cardRecommendationApi.startAsync(spendingAnalysisId);
 
     await applyTaskStatus(startedStatus);
 
-    if (startedStatus?.status === 'PROCESSING') {
+    if (startedStatus?.status === "PROCESSING") {
       startStatusPolling();
     }
   } catch (error) {
     stopStatusPolling();
     loading.value = false;
     recommendationData.value = null;
-    messageType.value = 'error';
+    messageType.value = "error";
     message.value = getCardRecommendationErrorMessage(
-        error,
-        '카드 추천 작업을 시작하지 못했습니다.',
+      error,
+      "카드 추천 작업을 시작하지 못했습니다.",
     );
   }
 };
@@ -439,18 +435,18 @@ const openDetail = (cardRecommendationId) =>
     });
 
 const goBack = () =>
-    router.push({
-      name: 'analysis-result',
-      params: {spendingAnalysisId},
-    });
+  router.push({
+    name: "analysis-result",
+    params: { spendingAnalysisId },
+  });
 
 
-const getCardInitial = (cardName = '') => {
+const getCardInitial = (cardName = "") => {
   const normalized = String(cardName)
-      .replace(/KB국민/g, '')
-      .replace(/카드/g, '')
-      .trim();
-  return normalized.slice(0, 12) || 'CARD';
+    .replace(/KB국민/g, "")
+    .replace(/카드/g, "")
+    .trim();
+  return normalized.slice(0, 12) || "CARD";
 };
 
 onMounted(reloadRecommendations);

@@ -1,40 +1,42 @@
 <template>
-  <div class="transaction-root font-sans">
-
+  <div class="transaction-root">
     <!-- 공통 페이지 헤더 -->
-    <PageHeader
-      title="거래 내역"
-      :show-back="true"
-      :show-refresh="false"
-    />
+    <PageHeader title="거래 내역" :show-back="true" :show-refresh="false" />
 
     <div class="tx-body">
-
       <!-- ══════════════════════════════════════════
            [1] 월 선택 피커 & 소비 인사이트 요약 카드
       ══════════════════════════════════════════ -->
       <div class="month-selector-card">
         <div class="month-picker-row">
           <button class="month-nav-btn" @click="changeMonth(-1)">
-            <i class="bi bi-chevron-left"></i>
+            <i class="fa-solid fa-chevron-left"></i>
           </button>
-          <div class="current-month-text">
+          <div class="current-month-text text-20-bold">
             {{ selectedYear }}년 {{ selectedMonth }}월
           </div>
-          <button class="month-nav-btn" :disabled="isCurrentMonth" @click="changeMonth(1)">
-            <i class="bi bi-chevron-right"></i>
+          <button
+            class="month-nav-btn"
+            :disabled="isCurrentMonth"
+            @click="changeMonth(1)"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
           </button>
         </div>
 
         <div class="insight-summary-grid">
           <div class="summary-box expense">
-            <span class="summary-label">총 지출</span>
-            <span class="summary-amount text-dark">-{{ formatCurrency(summaryExpense) }}</span>
+            <span class="summary-label text-13">총 지출</span>
+            <span class="summary-amount text-18-bold text-dark"
+              >-{{ formatCurrency(summaryExpense) }}</span
+            >
           </div>
           <div class="summary-divider"></div>
           <div class="summary-box income">
-            <span class="summary-label">총 수입 / 충전</span>
-            <span class="summary-amount text-kb-yellow">+{{ formatCurrency(summaryIncome) }}</span>
+            <span class="summary-label text-13">총 수입 / 충전</span>
+            <span class="summary-amount text-18-bold text-kb-yellow"
+              >+{{ formatCurrency(summaryIncome) }}</span
+            >
           </div>
         </div>
       </div>
@@ -48,7 +50,7 @@
           <button
             v-for="p in periodOptions"
             :key="p.value"
-            class="period-chip"
+            class="period-chip text-13-bold"
             :class="{ active: selectedPeriod === p.value }"
             @click="setPeriodFilter(p.value)"
           >
@@ -61,7 +63,7 @@
           <button
             v-for="tab in typeTabs"
             :key="tab.value"
-            class="type-tab-btn"
+            class="type-tab-btn text-13-bold"
             :class="{ active: selectedType === tab.value }"
             @click="changeTypeTab(tab.value)"
           >
@@ -73,17 +75,22 @@
       <!-- ══════════════════════════════════════════
            [3] 로딩 스피너
       ══════════════════════════════════════════ -->
-      <div v-if="loading" class="loading-wrap">
-        <div class="spinner-border text-warning" role="status"></div>
-        <p class="loading-text">거래 내역을 불러오는 중...</p>
+      <div v-if="loading" class="loading-wrap text-13">
+        <div class="spinner"></div>
+        <p class="loading-text text-13">거래 내역을 불러오는 중...</p>
       </div>
 
       <!-- ══════════════════════════════════════════
            [4] 거래 내역 없음
       ══════════════════════════════════════════ -->
-      <div v-else-if="filteredGroupedTransactions.length === 0" class="empty-wrap">
+      <div
+        v-else-if="filteredGroupedTransactions.length === 0"
+        class="empty-wrap"
+      >
         <EmptyList desc="해당 조건에 맞는 거래 내역이 없습니다." />
-        <p class="empty-sub">기간 및 거래 유형 필터를 변경하거나 새로운 결제/충전을 진행해 보세요.</p>
+        <p class="empty-sub text-13">
+          기간 및 거래 유형 필터를 변경하거나 새로운 결제/충전을 진행해 보세요.
+        </p>
       </div>
 
       <!-- ══════════════════════════════════════════
@@ -97,8 +104,10 @@
         >
           <!-- 날짜 헤더 -->
           <div class="date-header-row">
-            <span class="date-title">{{ group.dateDisplay }}</span>
-            <span class="date-daily-total">합계 {{ formatCurrency(group.dailySum) }}</span>
+            <span class="date-title text-13-bold">{{ group.dateDisplay }}</span>
+            <span class="date-daily-total text-13"
+              >합계 {{ formatCurrency(group.dailySum) }}</span
+            >
           </div>
 
           <!-- 내역 아이템 리스트 -->
@@ -110,60 +119,64 @@
               :class="{ expanded: expandedTxId === item.transactionId }"
             >
               <!-- 거래 내역 행 (클릭 시 영수증 모달 오픈) -->
-              <div
-                class="tx-item-row"
-                @click="openReceiptModal(item)"
-              >
+              <div class="tx-item-row" @click="openReceiptModal(item)">
                 <div class="tx-item-left">
-                  <div class="icon-circle" :class="getTypeIconClass(item.transactionType)">
+                  <div
+                    class="icon-circle text-15-bold"
+                    :class="getTypeIconClass(item.transactionType)"
+                  >
                     <i :class="getTypeIcon(item)"></i>
                   </div>
                   <div class="tx-info-text">
-                    <div class="tx-item-title">
+                    <div class="tx-item-title text-15-bold">
                       {{ getItemTitle(item) }}
                     </div>
-                    <div class="tx-item-sub">
+                    <div class="tx-item-sub text-13">
                       {{ formatTime(item.createdAt) }}
-                      <span v-if="item.memo" class="memo-badge">"{{ item.memo }}"</span>
+                      <span v-if="item.memo" class="memo-badge text-13"
+                        >"{{ item.memo }}"</span
+                      >
                     </div>
                   </div>
                 </div>
 
                 <div class="tx-item-right">
-                  <div class="tx-amount" :class="getAmountClass(item.transactionType)">
-                    {{ getAmountPrefix(item.transactionType) }}{{ formatCurrency(item.amount) }}
+                  <div
+                    class="tx-amount text-15-bold"
+                    :class="getAmountClass(item.transactionType)"
+                  >
+                    {{ getAmountPrefix(item.transactionType)
+                    }}{{ formatCurrency(item.amount) }}
                   </div>
-                  <div class="expand-indicator">
-                    <i class="bi bi-receipt"></i>
+                  <div class="expand-indicator text-13">
+                    <i class="fa-solid fa-receipt"></i>
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
+        </div>
       </div>
-    </div>
 
-    <!-- 영수증 상세 모달 -->
-    <ReceiptDetailModal
-      :show="showReceiptModal"
-      :transactionId="selectedTransactionId"
-      @close="showReceiptModal = false"
-      @updated="fetchTransactions"
-    />
-
+      <!-- 영수증 상세 모달 -->
+      <ReceiptDetailModal
+        :show="showReceiptModal"
+        :transactionId="selectedTransactionId"
+        @close="showReceiptModal = false"
+        @updated="fetchTransactions"
+      />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import PageHeader from '@/components/common/PageHeader.vue';
-import transactionApi from '@/api/transactionApi';
-import EmptyList from '@/components/common/EmptyList.vue';
-import ReceiptDetailModal from '@/components/transaction/ReceiptDetailModal.vue';
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import PageHeader from "@/components/common/PageHeader.vue";
+import transactionApi from "@/api/transactionApi";
+import EmptyList from "@/components/common/EmptyList.vue";
+import ReceiptDetailModal from "@/components/transaction/ReceiptDetailModal.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -180,27 +193,30 @@ const now = new Date();
 const selectedYear = ref(now.getFullYear());
 const selectedMonth = ref(now.getMonth() + 1);
 
-const selectedPeriod = ref('ALL'); // ALL, CURRENT, 1M, 3M
-const selectedType = ref(''); // '', CHARGE, TRANSFER, PAYMENT
+const selectedPeriod = ref("ALL"); // ALL, CURRENT, 1M, 3M
+const selectedType = ref(""); // '', CHARGE, TRANSFER, PAYMENT
 
 const expandedTxId = ref(null);
 
 const typeTabs = [
-  { label: '전체', value: '' },
-  { label: '충전', value: 'CHARGE' },
-  { label: '송금', value: 'TRANSFER' },
-  { label: '결제', value: 'PAYMENT' },
+  { label: "전체", value: "" },
+  { label: "충전", value: "CHARGE" },
+  { label: "송금", value: "TRANSFER" },
+  { label: "결제", value: "PAYMENT" },
 ];
 
 const periodOptions = [
-  { label: '전체', value: 'ALL' },
-  { label: '당월', value: 'CURRENT' },
-  { label: '1개월', value: '1M' },
-  { label: '3개월', value: '3M' },
+  { label: "전체", value: "ALL" },
+  { label: "당월", value: "CURRENT" },
+  { label: "1개월", value: "1M" },
+  { label: "3개월", value: "3M" },
 ];
 
 const isCurrentMonth = computed(() => {
-  return selectedYear.value === now.getFullYear() && selectedMonth.value === now.getMonth() + 1;
+  return (
+    selectedYear.value === now.getFullYear() &&
+    selectedMonth.value === now.getMonth() + 1
+  );
 });
 
 const changeMonth = (delta) => {
@@ -233,25 +249,35 @@ const openReceiptModal = (item) => {
   }
 };
 
+const defaultFallbackTransactions = [];
+
 const fetchTransactions = async () => {
   loading.value = true;
   try {
-    const list = await transactionApi.getTransactions(userId.value, selectedType.value);
-    const apiList = (list && list.length > 0) ? list : defaultFallbackTransactions;
-    const savedCharges = JSON.parse(localStorage.getItem('user_charges') || '[]');
-    
+    const list = await transactionApi.getTransactions(
+      userId.value,
+      selectedType.value,
+    );
+    const apiList =
+      list && list.length > 0 ? list : defaultFallbackTransactions;
+    const savedCharges = JSON.parse(
+      localStorage.getItem("user_charges") || "[]",
+    );
+
     const merged = [...savedCharges, ...apiList];
     const seen = new Set();
-    rawTransactions.value = merged.filter(t => {
+    rawTransactions.value = merged.filter((t) => {
       if (seen.has(t.transactionId)) return false;
       seen.add(t.transactionId);
       return true;
     });
   } catch (err) {
-    const savedCharges = JSON.parse(localStorage.getItem('user_charges') || '[]');
+    const savedCharges = JSON.parse(
+      localStorage.getItem("user_charges") || "[]",
+    );
     const merged = [...savedCharges, ...defaultFallbackTransactions];
     const seen = new Set();
-    rawTransactions.value = merged.filter(t => {
+    rawTransactions.value = merged.filter((t) => {
       if (seen.has(t.transactionId)) return false;
       seen.add(t.transactionId);
       return true;
@@ -272,13 +298,13 @@ const filteredTransactions = computed(() => {
 
 const summaryExpense = computed(() => {
   return filteredTransactions.value
-    .filter(t => t.transactionType !== 'CHARGE')
+    .filter((t) => t.transactionType !== "CHARGE")
     .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 });
 
 const summaryIncome = computed(() => {
   return filteredTransactions.value
-    .filter(t => t.transactionType === 'CHARGE')
+    .filter((t) => t.transactionType === "CHARGE")
     .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 });
 
@@ -287,8 +313,8 @@ const filteredGroupedTransactions = computed(() => {
 
   filteredTransactions.value.forEach((item) => {
     const d = new Date(item.createdAt);
-    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const days = ["일", "월", "화", "수", "목", "금", "토"];
     const dateDisplay = `${d.getMonth() + 1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
 
     if (!groups[dateKey]) {
@@ -296,97 +322,120 @@ const filteredGroupedTransactions = computed(() => {
         dateKey,
         dateDisplay,
         items: [],
-        dailySum: 0
+        dailySum: 0,
       };
     }
     groups[dateKey].items.push(item);
     groups[dateKey].dailySum += Number(item.amount || 0);
   });
 
-  return Object.values(groups).sort((a, b) => b.dateKey.localeCompare(a.dateKey));
+  return Object.values(groups).sort((a, b) =>
+    b.dateKey.localeCompare(a.dateKey),
+  );
 });
 
 const formatCurrency = (val) => {
-  if (val === undefined || val === null) return '0 원';
-  return Number(val).toLocaleString('ko-KR') + ' 원';
+  if (val === undefined || val === null) return "0원";
+  return Number(val).toLocaleString("ko-KR") + "원";
 };
 
 const formatTime = (dateStr) => {
-  if (!dateStr) return '';
+  if (!dateStr) return "";
   const d = new Date(dateStr);
-  return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
 };
 
 const getItemTitle = (item) => {
   if (item.merchantName) return item.merchantName;
   if (item.merchant_name) return item.merchant_name;
-  if (item.memo && item.memo !== '가맹점 현장 결제' && !item.memo.includes('충전') && !item.memo.includes('송금')) return item.memo;
-  
-  const amt = Math.abs(Number(item.amount || 0));
-  if (amt === 18000) return '교보문고';
-  if (amt === 27600) return '오늘의집';
-  if (amt === 12500) return '한솥도시락';
-  if (amt === 4900) return '메가MGC커피';
-  if (amt === 65000) return '스마일치과';
-  if (amt === 14500) return '카카오T';
-  if (amt === 42900) return '쿠팡';
-  if (amt === 9800) return 'CU 계명대점';
-  if (amt === 5500) return '투썸플레이스';
-  if (amt === 6200) return '스타벅스 대구점';
-  if (amt === 24000) return '동성로 한식당';
-  if (amt === 18500) return '배달의민족';
-  if (amt === 78500) return '무신사';
-  if (amt === 68400) return '이마트 월배점';
-  if (amt === 32900) return '올리브영 동성로점';
-  if (amt === 55000) return 'SKT 통신요금';
-  if (amt === 72000) return 'S-OIL 대구주유소';
-  if (amt === 119000) return '네이버쇼핑';
-  if (amt === 43800) return '코레일 동대구역';
-  if (amt === 5000) return '스타벅스 동성로점';
+  if (
+    item.memo &&
+    item.memo !== "가맹점 현장 결제" &&
+    !item.memo.includes("충전") &&
+    !item.memo.includes("송금")
+  )
+    return item.memo;
 
-  if (item.transactionType === 'CHARGE') return item.memo || 'KB Pay 머니 충전';
-  if (item.transactionType === 'TRANSFER') return item.receiverName ? `송금 (${item.receiverName})` : (item.memo || '송금 완료');
+  if (item.transactionType === "CHARGE") return item.memo || "KB Pay 머니 충전";
+  if (item.transactionType === "TRANSFER")
+    return item.receiverName
+      ? `송금 (${item.receiverName})`
+      : item.memo || "송금 완료";
 
-  return '가맹점 현장 결제';
+  return "가맹점 현장 결제";
 };
 
 const getTypeIcon = (item) => {
-  const type = typeof item === 'object' ? item.transactionType : item;
-  const title = typeof item === 'object' ? getItemTitle(item) : '';
+  const type = typeof item === "object" ? item.transactionType : item;
+  const title = typeof item === "object" ? getItemTitle(item) : "";
 
-  if (title.includes('스타벅스') || title.includes('커피') || title.includes('투썸') || title.includes('메가')) return 'bi bi-cup-hot-fill';
-  if (title.includes('교보문고') || title.includes('책')) return 'bi bi-book-fill';
-  if (title.includes('치과') || title.includes('병원')) return 'bi bi-hospital-fill';
-  if (title.includes('카카오') || title.includes('택시')) return 'bi bi-car-front-fill';
-  if (title.includes('도시락') || title.includes('한식') || title.includes('배달')) return 'bi bi-egg-fried';
-  if (title.includes('쿠팡') || title.includes('오늘의집') || title.includes('쇼핑') || title.includes('무신사')) return 'bi bi-bag-fill';
-  if (title.includes('CU') || title.includes('편의점') || title.includes('이마트') || title.includes('올리브영')) return 'bi bi-shop';
+  if (
+    title.includes("스타벅스") ||
+    title.includes("커피") ||
+    title.includes("투썸") ||
+    title.includes("메가")
+  )
+    return "fa-solid fa-mug-hot";
+  if (title.includes("교보문고") || title.includes("책"))
+    return "fa-solid fa-book";
+  if (title.includes("치과") || title.includes("병원"))
+    return "fa-solid fa-hospital";
+  if (title.includes("카카오") || title.includes("택시"))
+    return "fa-solid fa-taxi";
+  if (
+    title.includes("도시락") ||
+    title.includes("한식") ||
+    title.includes("배달")
+  )
+    return "fa-solid fa-utensils";
+  if (
+    title.includes("쿠팡") ||
+    title.includes("오늘의집") ||
+    title.includes("쇼핑") ||
+    title.includes("무신사")
+  )
+    return "fa-solid fa-bag-shopping";
+  if (
+    title.includes("CU") ||
+    title.includes("편의점") ||
+    title.includes("이마트") ||
+    title.includes("올리브영")
+  )
+    return "fa-solid fa-store";
 
   switch (type) {
-    case 'CHARGE': return 'bi bi-plus-circle-fill';
-    case 'TRANSFER': return 'bi bi-send-fill';
-    case 'PAYMENT': return 'bi bi-bag-check-fill';
-    default: return 'bi bi-arrow-left-right';
+    case "CHARGE":
+      return "fa-solid fa-plus";
+    case "TRANSFER":
+      return "fa-solid fa-paper-plane";
+    case "PAYMENT":
+      return "fa-solid fa-bag-shopping";
+    default:
+      return "fa-solid fa-arrow-left-right";
   }
 };
 
 const getTypeIconClass = (type) => {
   switch (type) {
-    case 'CHARGE': return 'icon-charge';
-    case 'TRANSFER': return 'icon-transfer';
-    case 'PAYMENT': return 'icon-payment';
-    default: return 'icon-default';
+    case "CHARGE":
+      return "icon-charge";
+    case "TRANSFER":
+      return "icon-transfer";
+    case "PAYMENT":
+      return "icon-payment";
+    default:
+      return "icon-default";
   }
 };
 
 const getAmountClass = (type) => {
-  if (type === 'CHARGE') return 'amount-plus';
-  return 'amount-minus';
+  if (type === "CHARGE") return "amount-plus";
+  return "amount-minus";
 };
 
 const getAmountPrefix = (type) => {
-  if (type === 'CHARGE') return '+';
-  return '-';
+  if (type === "CHARGE") return "+";
+  return "-";
 };
 
 onMounted(() => {
@@ -395,58 +444,22 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ==========================================================================
+   디자인 시스템 명세서(common.css) 100% 반영 스타일링
+   ========================================================================== */
+
 .transaction-root {
   min-height: 100vh;
-  background-color: #f4f5f8;
-  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-  color: #222;
+  background-color: var(--color-bg-page, #ffffff);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  color: var(--color-text-main, #111111);
   padding-bottom: 50px;
 }
 
-.transaction-root button,
-.transaction-root input,
-.transaction-root textarea,
-.transaction-root select,
-.transaction-root label,
-.transaction-root p,
-.transaction-root span,
-.transaction-root h1, .transaction-root h2, .transaction-root h3,
-.transaction-root h4, .transaction-root h5, .transaction-root h6 {
-  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-}
-
-.tx-header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: #ffffff;
-  border-bottom: 1px solid #ebebeb;
-}
-
-.tx-header-inner {
-  max-width: 500px;
-  margin: 0 auto;
-  height: 56px;
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.back-btn {
-  font-size: 20px;
-  color: #222;
-  text-decoration: none;
-}
-
-.header-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
-}
-
-.header-right-placeholder {
-  width: 24px;
+.transaction-root * {
+  box-sizing: border-box;
 }
 
 .tx-body {
@@ -455,11 +468,13 @@ onMounted(() => {
   padding: 16px;
 }
 
+/* 월 선택 및 인사이트 카드 */
 .month-selector-card {
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+  background-color: var(--color-bg-page, #ffffff);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
   margin-bottom: 16px;
 }
 
@@ -468,27 +483,26 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   gap: 20px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .month-nav-btn {
   background: transparent;
   border: none;
-  font-size: 18px;
-  color: #444;
+  font-size: 16px;
+  color: var(--color-text-sub, #777777);
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 8px;
+  border-radius: 6px;
 }
+
 .month-nav-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }
 
 .current-month-text {
-  font-size: 19px;
-  font-weight: 800;
-  color: #111;
+  color: var(--color-text-main, #111111);
   letter-spacing: -0.5px;
 }
 
@@ -496,9 +510,10 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-around;
-  background: #f8fafc;
-  border-radius: 14px;
-  padding: 14px;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 10px;
+  padding: 12px;
 }
 
 .summary-box {
@@ -508,62 +523,61 @@ onMounted(() => {
 }
 
 .summary-label {
-  font-size: 12px;
-  color: #777;
-  font-weight: 600;
+  color: var(--color-text-sub, #777777);
   margin-bottom: 2px;
 }
 
 .summary-amount {
-  font-size: 16px;
-  font-weight: 800;
+  color: var(--color-text-main, #111111);
 }
 
 .summary-divider {
   width: 1px;
   height: 28px;
-  background-color: #e2e8f0;
+  background-color: var(--color-divider, #ededed);
 }
 
 .text-kb-yellow {
-  color: #e5a700;
+  color: var(--color-primary-border, #cc9200);
 }
 
+.text-dark {
+  color: var(--color-text-main, #111111);
+}
+
+/* 필터 섹션 */
 .filter-section {
   margin-bottom: 16px;
 }
 
 .period-chips {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 10px;
   overflow-x: auto;
 }
 
 .period-chip {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background-color: var(--color-bg-page, #ffffff);
+  border: 1px solid var(--color-border-main, #dddddd);
   padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #666;
+  border-radius: 9999px;
+  color: var(--color-text-sub, #777777);
   cursor: pointer;
   white-space: nowrap;
 }
 
 .period-chip.active {
-  background: #222222;
+  background-color: var(--color-text-main, #111111);
   color: #ffffff;
-  border-color: #222222;
+  border-color: var(--color-text-main, #111111);
 }
 
 .type-segment-tabs {
   display: flex;
-  background: #ffffff;
-  border-radius: 14px;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border-radius: 10px;
   padding: 4px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
 }
 
 .type-tab-btn {
@@ -571,71 +585,86 @@ onMounted(() => {
   border: none;
   background: transparent;
   padding: 8px 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: #777;
-  border-radius: 10px;
+  color: var(--color-text-sub, #777777);
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .type-tab-btn.active {
-  background: #ffbc00;
-  color: #111111;
-  box-shadow: 0 2px 6px rgba(255, 188, 0, 0.3);
+  background-color: var(--color-primary, #ffbc2e);
+  color: var(--color-text-main, #111111);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.loading-wrap, .empty-wrap {
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 40px 20px;
+/* 로딩 및 빈 상태 */
+.loading-wrap,
+.empty-wrap {
+  background-color: var(--color-bg-page, #ffffff);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 14px;
+  padding: 36px 16px;
   text-align: center;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--color-border-main, #dddddd);
+  border-top-color: var(--color-primary, #ffbc2e);
+  border-radius: 50%;
+  margin: 0 auto 10px auto;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-text {
-  margin-top: 10px;
-  font-size: 14px;
-  color: #666;
+  color: var(--color-text-sub, #777777);
+  margin: 0;
 }
 
 .empty-sub {
-  font-size: 12px;
-  color: #888;
-  margin-top: 8px;
+  color: var(--color-text-muted, #888888);
+  margin-top: 6px;
 }
 
+/* 일자별 카드 */
 .date-group-card {
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 18px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
-  margin-bottom: 14px;
+  background-color: var(--color-bg-page, #ffffff);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+  text-align: left;
 }
 
 .date-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #f1f5f9;
-  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-divider, #ededed);
+  margin-bottom: 8px;
 }
 
 .date-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #444;
+  color: var(--color-text-main, #111111);
 }
 
 .date-daily-total {
-  font-size: 12px;
-  color: #888;
+  color: var(--color-text-sub, #777777);
 }
 
 .tx-item-wrapper {
-  border-bottom: 1px solid #f8fafc;
+  border-bottom: 1px solid var(--color-divider, #ededed);
 }
+
 .tx-item-wrapper:last-child {
   border-bottom: none;
 }
@@ -644,50 +673,68 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 4px;
+  padding: 10px 4px;
   cursor: pointer;
-  border-radius: 10px;
+  border-radius: 8px;
   transition: background-color 0.15s ease;
 }
+
 .tx-item-row:hover {
-  background-color: #fafafa;
+  background-color: var(--color-bg-screen, #f5f6f8);
 }
 
 .tx-item-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .icon-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
   flex-shrink: 0;
 }
-.icon-charge { background: #fff8e1; color: #f59e0b; }
-.icon-transfer { background: #eff6ff; color: #3b82f6; }
-.icon-payment { background: #f3f4f6; color: #1f2937; }
-.icon-default { background: #f3f4f6; color: #6b7280; }
+
+.icon-charge {
+  background-color: #fffbe6;
+  color: var(--color-primary-border, #cc9200);
+}
+
+.icon-transfer {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.icon-payment {
+  background-color: var(--color-bg-screen, #f5f6f8);
+  color: var(--color-text-main, #111111);
+}
+
+.icon-default {
+  background-color: var(--color-bg-screen, #f5f6f8);
+  color: var(--color-text-sub, #777777);
+}
+
+.tx-info-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
 
 .tx-item-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: #111;
+  color: var(--color-text-main, #111111);
 }
 
 .tx-item-sub {
-  font-size: 12px;
-  color: #888;
+  color: var(--color-text-sub, #777777);
 }
 
 .memo-badge {
-  color: #2563eb;
-  font-weight: 600;
+  color: var(--color-primary-border, #cc9200);
   margin-left: 4px;
 }
 
@@ -697,15 +744,15 @@ onMounted(() => {
   gap: 8px;
 }
 
-.tx-amount {
-  font-size: 15px;
-  font-weight: 800;
+.tx-amount.amount-plus {
+  color: var(--color-success, #1fa64b);
 }
-.amount-plus { color: #10b981; }
-.amount-minus { color: #111827; }
+
+.tx-amount.amount-minus {
+  color: var(--color-text-main, #111111);
+}
 
 .expand-indicator {
-  font-size: 14px;
-  color: #94a3b8;
+  color: var(--color-text-muted, #888888);
 }
 </style>
