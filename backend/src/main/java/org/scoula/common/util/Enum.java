@@ -67,4 +67,11 @@ public class Enum {
         RECEIVED,
         FRIEND
     }
+
+
+    public enum CheckCanIssueStatus{
+        KB_ALREADY_HAS_CUSTOM,
+        KB_AVAILABLE_FOR_CUSTOM,
+        NOT_KB_BANK
+    }
 }

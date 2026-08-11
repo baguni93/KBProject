@@ -75,7 +75,10 @@ public enum ErrorCode {
     CARD_RECOMMENDATION_PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "CR003", "추천할 수 있는 KB 카드 상품이 없습니다."),
     CARD_RECOMMENDATION_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CR004", "카드 추천 결과 저장에 실패했습니다."),
     CARD_RECOMMENDATION_NOT_FOUND(HttpStatus.NOT_FOUND, "CR005", "카드 추천 결과를 찾을 수 없습니다."),
-    INVALID_CARD_RECOMMENDATION_OPTION(HttpStatus.BAD_REQUEST, "CR006", "카드 유형 또는 연회비 적용 옵션이 올바르지 않습니다.");
+    INVALID_CARD_RECOMMENDATION_OPTION(HttpStatus.BAD_REQUEST, "CR006", "카드 유형 또는 연회비 적용 옵션이 올바르지 않습니다."),
+
+    //Custom Card
+    ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "CC001", "계좌가 존재하지않습니다.");
 
     private final HttpStatus status;
     private final String code;
