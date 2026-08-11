@@ -15,30 +15,33 @@
       <section class="verification-section">
         <div class="verification-boxes" @click="focusInput">
           <div
-              v-for="index in 4"
-              :key="index"
-              :class="{
+            v-for="index in 4"
+            :key="index"
+            :class="{
               filled: verificationCode.length >= index,
               active: verificationCode.length === index - 1 && !errorMessage,
               error: !!errorMessage,
             }"
-              class="verification-box"
+            class="verification-box"
           >
             {{ verificationCode[index - 1] || '' }}
           </div>
 
           <input
-              ref="verificationInput"
-              :value="verificationCode"
-              class="hidden-input"
-              inputmode="numeric"
-              maxlength="4"
-              type="text"
-              @input="changeVerificationCode"
+            ref="verificationInput"
+            :value="verificationCode"
+            class="hidden-input"
+            inputmode="numeric"
+            maxlength="4"
+            type="text"
+            @input="changeVerificationCode"
           />
         </div>
 
-        <p v-if="accountStore.accountForm.developmentCode" class="development-code">
+        <p
+          v-if="accountStore.accountForm.developmentCode"
+          class="development-code"
+        >
           개발용 인증번호: {{ accountStore.accountForm.developmentCode }}
         </p>
 
@@ -48,10 +51,10 @@
       </section>
 
       <button
-          class="confirm-button"
-          :disabled="verificationCode.length !== 4 || loading"
-          type="button"
-          @click="confirmAndConnect"
+        class="confirm-button"
+        :disabled="verificationCode.length !== 4 || loading"
+        type="button"
+        @click="confirmAndConnect"
       >
         {{ loading ? '계좌 연결 중...' : '확인' }}
       </button>
@@ -116,7 +119,8 @@ const confirmAndConnect = async () => {
     console.error(error);
     verificationCode.value = '';
     accountStore.setVerificationCode('');
-    errorMessage.value = error.response?.data?.message || '인증번호가 일치하지 않습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '인증번호가 일치하지 않습니다.';
 
     await focusInput();
   } finally {
@@ -217,9 +221,9 @@ onMounted(() => {
   font-size: 24px;
   font-weight: 700;
   transition:
-      border-color 0.2s,
-      background 0.2s,
-      box-shadow 0.2s;
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
 }
 
 .verification-box.active {

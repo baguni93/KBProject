@@ -17,18 +17,20 @@
 
         <div v-else class="bank-grid">
           <button
-              v-for="bank in accountStore.banks"
-              :key="bank.bankCode"
-              :class="{ selected: accountStore.accountForm.bankCode === bank.bankCode }"
-              class="bank-item"
-              type="button"
-              @click="selectBank(bank)"
+            v-for="bank in accountStore.banks"
+            :key="bank.bankCode"
+            :class="{
+              selected: accountStore.accountForm.bankCode === bank.bankCode,
+            }"
+            class="bank-item"
+            type="button"
+            @click="selectBank(bank)"
           >
             <img
-                v-if="bank.bankLogoUrl"
-                :alt="bank.bankName"
-                :src="bank.bankLogoUrl"
-                class="bank-logo"
+              v-if="bank.bankLogoUrl"
+              :alt="bank.bankName"
+              :src="bank.bankLogoUrl"
+              class="bank-logo"
             />
 
             <div v-else class="bank-logo fallback-logo">
@@ -41,10 +43,10 @@
       </section>
 
       <button
-          class="next-button"
-          :disabled="!accountStore.accountForm.bankCode"
-          type="button"
-          @click="next"
+        class="next-button"
+        :disabled="!accountStore.accountForm.bankCode"
+        type="button"
+        @click="next"
       >
         다음
       </button>
@@ -74,7 +76,8 @@ const loadBanks = async () => {
     accountStore.setBanks(banks);
   } catch (error) {
     console.error(error);
-    errorMessage.value = error.response?.data?.message || '은행 목록을 불러오지 못했습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '은행 목록을 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
