@@ -1210,6 +1210,9 @@ CREATE TABLE financial_transaction_tbl
         CHECK (
             amount >= 0
             )
+
+    -- 송금/정산은 사용자가 소비 카테고리를 반드시 선택한다.
+    -- PAYMENT는 AI 자동분류 실패 시 미분류(NULL)를 허용한다.
 );
 
 -- 32.은행 계좌 더미 테이블

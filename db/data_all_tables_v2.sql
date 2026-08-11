@@ -1171,6 +1171,9 @@ CREATE TABLE financial_transaction_tbl
         CHECK (
             amount >= 0
             )
+
+    -- 송금/정산은 사용자가 소비 카테고리를 반드시 선택한다.
+    -- PAYMENT는 AI 자동분류 실패 시 미분류(NULL)를 허용한다.
 );
 
 -- 32.은행 계좌 더미 테이블
@@ -2867,10 +2870,10 @@ INSERT INTO financial_transaction_tbl (transaction_id,
                                        spending_category_id,
                                        created_at)
 VALUES (1, NULL, 1, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 10000, NULL, NULL, '2026-07-20 09:00:00'),
-       (2, NULL, 1, 2, 'TRANSFER', 'WALLET', 'ACCOUNT', 'SUCCESS', 8000, NULL, NULL, '2026-07-20 10:00:00'),
+       (2, NULL, 1, 2, 'TRANSFER', 'WALLET', 'ACCOUNT', 'SUCCESS', 8000, NULL, 1, '2026-07-20 10:00:00'),
        (3, NULL, 2, NULL, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', 12000, NULL, NULL, '2026-07-21 09:00:00'),
        (4, NULL, 2, 1, 'SETTLEMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 15000, NULL, 1, '2026-07-21 18:00:00'),
-       (5, NULL, 3, 1, 'TRANSFER', 'ACCOUNT', 'WALLET', 'SUCCESS', 20000, NULL, NULL, '2026-07-22 11:00:00'),
+       (5, NULL, 3, 1, 'TRANSFER', 'ACCOUNT', 'WALLET', 'SUCCESS', 20000, NULL, 10, '2026-07-22 11:00:00'),
        (6, NULL, 3, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS', 5000, '스타벅스 동성로점', 6, '2026-07-23 08:00:00'),
        (7, NULL, 1, NULL, 'PAYMENT', 'WALLET', 'ACCOUNT', 'SUCCESS',
         18500, '배달의민족', 1, '2026-08-01 08:10:00'),

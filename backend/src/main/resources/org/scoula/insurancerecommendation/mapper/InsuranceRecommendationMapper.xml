@@ -85,7 +85,7 @@
                         transaction_tbl.spending_category_id
 
               WHERE transaction_tbl.user_id = #{userId}
-                AND transaction_tbl.transaction_type = 'PAYMENT'
+                AND transaction_tbl.transaction_type IN ('PAYMENT', 'TRANSFER', 'SETTLEMENT')
                 AND transaction_tbl.transaction_status = 'SUCCESS'
                 AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
                 AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}
@@ -332,7 +332,7 @@
                   transaction_category.parent_category_id
 
         WHERE transaction_tbl.user_id = #{userId}
-          AND transaction_tbl.transaction_type = 'PAYMENT'
+          AND transaction_tbl.transaction_type IN ('PAYMENT', 'TRANSFER', 'SETTLEMENT')
           AND transaction_tbl.transaction_status = 'SUCCESS'
           AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
           AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}
@@ -387,7 +387,7 @@
         LEFT JOIN financial_transaction_tbl transaction_tbl
                ON transaction_tbl.spending_category_id = transaction_category.spending_category_id
               AND transaction_tbl.user_id = #{userId}
-              AND transaction_tbl.transaction_type = 'PAYMENT'
+              AND transaction_tbl.transaction_type IN ('PAYMENT', 'TRANSFER', 'SETTLEMENT')
               AND transaction_tbl.transaction_status = 'SUCCESS'
               AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
               AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}
