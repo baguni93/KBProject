@@ -23,9 +23,15 @@ public class CardDTO {
 
     public static CardDTO of(LinkedCardVO card) {
 
-        String cardImageUrl = card.getCardImageName() == null || card.getCardImageName().trim().isEmpty()
-                ? null
-                : "/api/banks/logo/" + card.getCardImageName();
+        String imageName = card.getCardImageName();
+        String cardImageUrl = null;
+        if (imageName != null && !imageName.trim().isEmpty()) {
+            if (imageName.startsWith("http") || imageName.startsWith("/")) {
+                cardImageUrl = imageName;
+            } else {
+                cardImageUrl = "/api/feeds/cardImage/" + imageName;
+            }
+        }
 
         return CardDTO.builder()
                 .linkedCardId(card.getLinkedCardId())

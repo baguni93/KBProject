@@ -55,6 +55,7 @@ import org.springframework.web.servlet.config.annotation.*;
 
         "org.scoula.event.controller",
         "org.scoula.cardpayment.controller",
+        "org.scoula.cardpayment.util",
         "org.scoula.profileTest.controller",
         "org.scoula.event.controller",
         "org.scoula.insurancerecommendation.controller",

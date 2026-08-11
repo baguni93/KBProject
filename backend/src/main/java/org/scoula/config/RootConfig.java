@@ -83,6 +83,7 @@ import javax.sql.DataSource;
         "org.scoula.profileTest.service",
         "org.scoula.event.service",
         "org.scoula.cardpayment.service",
+        "org.scoula.cardpayment.util",
         "org.scoula.insurancerecommendation.service",
         "org.scoula.search.service",
 

@@ -52,7 +52,6 @@
             application,
             annual_fee AS annualFee
         FROM kb_card_product_tbl
-        ORDER BY card_type, card_product_id
     </select>
 
     <select id="selectCardBenefits"

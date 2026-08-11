@@ -3,12 +3,17 @@ package org.scoula.cardpayment.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.cardpayment.dto.CardAgreementDTO;
+import org.scoula.cardpayment.dto.CardBinResponseDTO;
 import org.scoula.cardpayment.dto.CardRegisterDTO;
 import org.scoula.cardpayment.dto.CardStatusResponseDTO;
 import org.scoula.cardpayment.dto.PrimaryCardResponseDTO;
 import org.scoula.cardpayment.mapper.CardPaymentMapper;
+import org.scoula.cardpayment.util.KbCardCatalogRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Log4j2
 @Service
@@ -16,6 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class CardPaymentServiceImpl implements CardPaymentService {
 
     private final CardPaymentMapper cardPaymentMapper;
+    private final KbCardCatalogRepository catalogRepository;
+
+    private final Map<String, CardBinResponseDTO> binMemoryCache = new ConcurrentHashMap<>();
 
     @Override
     public PrimaryCardResponseDTO getPrimaryCard(Integer userId) {
@@ -115,9 +123,13 @@ public class CardPaymentServiceImpl implements CardPaymentService {
             cardRegisterDTO.setRepresentYn("N");
         }
 
+        if (cardRegisterDTO.getCardImageName() == null || cardRegisterDTO.getCardImageName().trim().isEmpty()) {
+            String foundImg = catalogRepository.getImageUrlByCardName(cardRegisterDTO.getCardName());
+            cardRegisterDTO.setCardImageName(foundImg);
+        }
+
         cardPaymentMapper.insertCard(cardRegisterDTO);
 
-        // 지갑 및 결제 화면(linked_card_tbl) 연동을 위한 카러셀 카드 동기화 등록
         try {
             cardPaymentMapper.insertLinkedCard(cardRegisterDTO);
         } catch (Exception e) {
@@ -149,5 +161,35 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         cardPaymentMapper.resetPrimaryCardByUserId(userId);
         int rows = cardPaymentMapper.setPrimaryCard(cardId, userId);
         return rows > 0;
+    }
+
+    @Override
+    public CardBinResponseDTO getAutoFetchedCardInfo(String binNumber) {
+        log.info("자동 수집 카탈로그 기반 BIN 조회 - BIN: {}", binNumber);
+
+        if (binMemoryCache.containsKey(binNumber)) {
+            return binMemoryCache.get(binNumber);
+        }
+
+        String cleanBin = binNumber.replaceAll("\\D", "");
+        org.scoula.card.controller.CardController.CardInfo info = null;
+        if (cleanBin.length() >= 8) {
+            info = org.scoula.card.controller.CardController.BIN_MAPPING_MAP.get(cleanBin.substring(0, 8));
+        }
+        if (info == null && cleanBin.length() >= 6) {
+            info = org.scoula.card.controller.CardController.BIN_MAPPING_MAP.get(cleanBin.substring(0, 6));
+        }
+
+        String cardName = (info != null) ? info.getCardName() : "KB국민 신용/체크카드";
+        String imageName = (info != null) ? info.getImageUrl() : "09297_img.png";
+
+        CardBinResponseDTO responseDTO = CardBinResponseDTO.builder()
+                .binNumber(binNumber)
+                .cardName(cardName)
+                .imageUrl(imageName)
+                .build();
+
+        binMemoryCache.put(binNumber, responseDTO);
+        return responseDTO;
     }
 }

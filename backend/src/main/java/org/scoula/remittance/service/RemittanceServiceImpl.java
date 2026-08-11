@@ -183,4 +183,53 @@ public class RemittanceServiceImpl implements RemittanceService {
         log.info("정산 환불 처리 성공 - 방장 ID: {}, 수신자 ID: {}, 금액: {}원", requesterUserId, memberUserId, amount);
         return true;
     }
+
+    @Override
+    @Transactional
+    public java.util.Map<String, Object> saveReceiptFeed(Integer userId, Integer targetId, String feedTypeStr, String content, String visibilityStr, List<org.springframework.web.multipart.MultipartFile> files) {
+        Enum.VisibilityType visibility = Enum.VisibilityType.PUBLIC;
+        if ("FRIENDS".equalsIgnoreCase(visibilityStr) || "FRIEND".equalsIgnoreCase(visibilityStr)) {
+            visibility = Enum.VisibilityType.FRIEND;
+        } else if ("PRIVATE".equalsIgnoreCase(visibilityStr)) {
+            visibility = Enum.VisibilityType.PRIVATE;
+        }
+
+        Enum.FeedType fType = Enum.FeedType.PAYMENT;
+        if (feedTypeStr != null) {
+            try {
+                fType = Enum.FeedType.valueOf(feedTypeStr.toUpperCase());
+            } catch (Exception e) {
+                fType = Enum.FeedType.PAYMENT;
+            }
+        }
+
+        FeedCreateRequestDTO feedRequest = FeedCreateRequestDTO.builder()
+                .userId(userId != null ? userId : 1)
+                .targetId(targetId)
+                .feedType(fType)
+                .content(content)
+                .visibility(visibility)
+                .build();
+
+        org.scoula.feed.dto.FeedResponseDTO feedRes = feedService.create(feedRequest);
+
+        if (feedRes != null && files != null && !files.isEmpty()) {
+            for (org.springframework.web.multipart.MultipartFile part : files) {
+                if (part != null && !part.isEmpty()) {
+                    try {
+                        String uploadPath = org.scoula.common.util.UploadFiles.upload(org.scoula.common.util.UploadPathName.getFeedPath(), part);
+                        String savedFileName = new java.io.File(uploadPath).getName();
+                        remittanceMapper.insertFeedImage(feedRes.getFeedId(), savedFileName);
+                    } catch (Exception imgE) {
+                        log.error("결제 내역 피드 이미지 저장 예외: ", imgE);
+                    }
+                }
+            }
+        }
+
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("success", true);
+        result.put("feedId", feedRes != null ? feedRes.getFeedId() : null);
+        return result;
+    }
 }
