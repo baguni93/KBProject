@@ -26,7 +26,7 @@
           <div class="edit-info">
             <span class="text-13">카테고리를 수정할 거래</span>
             <strong class="text-15-bold">
-              {{ transaction.merchantName || '가맹점 정보 없음' }}
+              {{ transaction.transactionLabel || transaction.merchantName || '거래 정보 없음' }}
             </strong>
             <small class="text-13">
               {{ formatAnalysisDateTime(transaction.createdAt) }}

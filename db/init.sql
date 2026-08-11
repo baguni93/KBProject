@@ -1107,6 +1107,9 @@ CREATE TABLE financial_transaction_tbl
     parent_transaction_id INT          NULL
         COMMENT '상위 거래번호',
 
+    settlement_id         INT          NULL
+        COMMENT '정산 ID',
+
     user_id               INT          NOT NULL
         COMMENT '거래 요청자 회원번호',
 
@@ -1142,6 +1145,12 @@ CREATE TABLE financial_transaction_tbl
     CONSTRAINT fk_financial_transaction_parent
         FOREIGN KEY (parent_transaction_id)
             REFERENCES financial_transaction_tbl (transaction_id),
+
+
+    -- 정산 관계
+    CONSTRAINT fk_financial_transaction_settlement
+        FOREIGN KEY (settlement_id)
+            REFERENCES settlement_tbl (settlement_id),
 
 
     -- 요청자 회원

@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class AnalysisTransactionDTO {
     private Integer transactionId;
     private String merchantName;
+    private String transactionLabel;
     private Integer amount;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

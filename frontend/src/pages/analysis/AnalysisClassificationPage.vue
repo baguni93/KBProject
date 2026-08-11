@@ -20,7 +20,7 @@
           <div class="target-info">
             <span class="text-13">어떤 카테고리에 해당할까요?</span>
             <strong class="text-15-bold">
-              {{ currentTransaction.merchantName || '가맹점 정보 없음' }}
+              {{ currentTransaction.transactionLabel || currentTransaction.merchantName || '거래 정보 없음' }}
             </strong>
             <small class="text-13">
               {{ formatAnalysisDateTime(currentTransaction.createdAt) }}
