@@ -9,6 +9,8 @@ import org.scoula.account.dto.AccountDTO;
 import org.scoula.account.dto.AccountVerificationConfirmDTO;
 import org.scoula.account.dto.AccountVerificationRequestDTO;
 import org.scoula.account.mapper.AccountMapper;
+import org.scoula.exception.CustomException;
+import org.scoula.exception.ErrorCode;
 import org.scoula.user.domain.UserVO;
 import org.scoula.user.mapper.UserMapper;
 import org.springframework.stereotype.Service;
@@ -109,12 +111,15 @@ public class AccountServiceImpl implements AccountService {
     ) {
 
         if (confirmDTO.getVerificationId() == null) {
-            throw new IllegalArgumentException("계좌 인증번호 식별값이 필요합니다.");
+//            throw new IllegalArgumentException("계좌 인증번호 식별값이 필요합니다.");
+            throw new CustomException(ErrorCode.VERIFICATION_ACCOUNT_CODE_NOT_FOUND);
         }
 
         if (confirmDTO.getVerificationCode() == null
                 || !confirmDTO.getVerificationCode().matches("\\d{4}")) {
-            throw new IllegalArgumentException("인증번호는 숫자 4자리로 입력해주세요.");
+//            throw new IllegalArgumentException("인증번호는 숫자 4자리로 입력해주세요.");
+
+            throw new CustomException(ErrorCode.VERIFICATION_ACCOUNT_CODE_EMPTY);
         }
 
         AccountVerificationVO verification = accountMapper.findVerificationById(
@@ -123,13 +128,15 @@ public class AccountServiceImpl implements AccountService {
         );
 
         if (verification == null) {
-            throw new IllegalArgumentException("계좌 인증 요청을 찾을 수 없습니다.");
+//            throw new IllegalArgumentException("계좌 인증 요청을 찾을 수 없습니다.");
+            throw new CustomException(ErrorCode.VERIFICATION_ACCOUNT_CODE_NOT_REQUEST);
         }
 
         if ("Y".equals(verification.getVerifiedYn())) return true;
 
         if (!verification.getVerificationCode().equals(confirmDTO.getVerificationCode())) {
-            throw new IllegalArgumentException("계좌 인증번호가 일치하지 않습니다.");
+//            throw new IllegalArgumentException("계좌 인증번호가 일치하지 않습니다.");
+            throw new CustomException(ErrorCode.VERIFICATION_ACCOUNT_CODE_NOT_INCORRECT);
         }
 
         return accountMapper.verifyAccount(confirmDTO.getVerificationId(), userId) > 0;
