@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scoula.customcard.mapper.CustomCardMapper">
+
+
+    <insert id="setAgreementAgree">
+        INSERT INTO user_agreement_tbl (user_id, agreement_id, agreed_at, agreed_yn)
+        SELECT
+            #{userId},
+            a.agreement_id,
+            NOW(),
+            'Y'
+        FROM agreement_tbl a
+        WHERE a.agreement_type = 'CHECK_CARD'
+          AND a.use_yn = 'Y'
+    </insert>
+
+    <select id="getAgreements" resultType="org.scoula.customcard.domain.CustomCardAgreementVO">
+        select agreement_id, agreement_name , agreement_content
+        from agreement_tbl where agreement_type = 'CHECK_CARD'
+    </select>
+    <select id="checkAgreementAgree" resultType="java.lang.Boolean">
+        SELECT
+            CASE
+                WHEN COUNT(a.agreement_id) = SUM(CASE WHEN b.agreement_id IS NOT NULL THEN 1 ELSE 0 END)
+                    THEN 1
+                ELSE 0
+                END AS is_all_agreed
+        FROM agreement_tbl a
+                 LEFT JOIN user_agreement_tbl b
+                           ON a.agreement_id = b.agreement_id
+                               AND b.user_id = #{userId}
+        WHERE a.agreement_type = 'CHECK_CARD'
+          AND a.required_yn = 'Y'
+          AND a.use_yn = 'Y';
+    </select>
+    <select id="checkBank" resultType="org.scoula.customcard.domain.CheckCanIssueVO">
+        SELECT
+            a.user_id,
+            a.bank_code,
+            d.user_name,
+            CASE
+                -- 1. 국민은행('004')이면서, KBONMYWAY 카드가 이미 발급되어 있는 경우
+                WHEN a.bank_code = '004' AND c.card_type = 'KBONMYWAY' THEN 'KB_ALREADY_HAS_CUSTOM'
+
+                -- 2. 국민은행('004')이지만, KBONMYWAY 카드는 아직 없는 경우 (일반 국민 계좌 혹은 다른 카드 존재)
+                WHEN a.bank_code = '004' THEN 'KB_AVAILABLE_FOR_CUSTOM'
+
+                -- 3. 국민은행이 아닌 다른 은행 계좌인 경우
+                ELSE 'NOT_KB_BANK'
+                END AS checkCanIssueStatus
+        FROM account_dummy_tbl a
+                 LEFT JOIN card_tbl c ON a.account_id = c.account_id
+                    LEFT JOIN user_tbl d on d.user_id = a.user_id
+        WHERE a.account_number = #{accountNumber} and a.user_id = #{userId}
+    </select>
+    <select id="getCard" resultType="org.scoula.customcard.domain.CustomCardVO">
+        select * from custom_card_tbl where user_id = #{userId} and custom_card_id = #{customCardId};
+    </select>
+    <select id="getTexts" resultType="org.scoula.customcard.domain.TextVO">
+        select * from custom_card_texts_tbl where  custom_card_id = #{customCardId};
+    </select>
+    <select id="getEmojis" resultType="org.scoula.customcard.domain.EmojiVO">
+        select * from custom_card_emojis_tbl where  custom_card_id = #{customCardId};
+    </select>
+
+    <insert id="insertCard" useGeneratedKeys="true" keyProperty="customCardId">
+        INSERT INTO custom_card_tbl (
+            user_id, card_name, card_number,
+            background_type, background_value,
+            pattern_path, drawing_image_url
+        ) VALUES (
+                     #{userId}, #{cardName}, #{cardNumber},
+                     #{backgroundType}, #{backgroundValue},
+                     #{patternPath}, #{drawingImageUrl}
+                 )
+    </insert>
+
+    <insert id="insertTexts">
+        INSERT INTO custom_card_texts_tbl (
+        custom_card_id, content, x_pos, y_pos,
+        rotation, font_family, font_color, font_size, is_bold
+        ) VALUES
+        <foreach collection="textList" item="t" separator=",">
+            (
+            #{t.customCardId}, #{t.content}, #{t.xPos}, #{t.yPos},
+            #{t.rotation}, #{t.fontFamily}, #{t.fontColor}, #{t.fontSize}, #{t.isBold}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="insertEmojis">
+        INSERT INTO custom_card_emojis_tbl (
+        emoji_id, custom_card_id, emoji_url,
+        x_pos, y_pos, rotation, emoji_type
+        ) VALUES
+        <foreach collection="emojiList" item="e" separator=",">
+            (
+            #{e.emojiId}, #{e.customCardId}, #{e.emojiUrl},
+            #{e.xPos}, #{e.yPos}, #{e.rotation}, #{e.emojiType}
+            )
+        </foreach>
+    </insert>
+    <insert id="insertHistory">
+        insert into card_application_history_tbl (custom_card_id)
+        value (#{customCardId})
+
+    </insert>
+
+</mapper>
