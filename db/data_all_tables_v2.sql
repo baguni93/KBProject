@@ -3,66 +3,114 @@ USE kbproject;
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS `linked_card_tbl`;
+
 DROP TABLE IF EXISTS `card_company_tbl`;
+
 DROP TABLE IF EXISTS `event_challenge_user_tbl`;
+
 DROP TABLE IF EXISTS `event_challenge_tbl`;
+
 DROP TABLE IF EXISTS `event_reward_receive_tbl`;
+
 DROP TABLE IF EXISTS `event_participation_tbl`;
+
 DROP TABLE IF EXISTS `event_reward_tbl`;
+
 DROP TABLE IF EXISTS `event_tbl`;
-DROP TABLE IF EXISTS `event_user_tbl`;
+
+DROP TABLE IF EXISTS `event_user_tb`;
+
 DROP TABLE IF EXISTS `card_application_history_tbl`;
+
 DROP TABLE IF EXISTS `custom_image_tbl`;
+
 DROP TABLE IF EXISTS `file_image_tbl`;
+
 DROP TABLE IF EXISTS `card_asset_tbl`;
+
 DROP TABLE IF EXISTS `feed_comment_tbl`;
+
 DROP TABLE IF EXISTS `feed_like_tbl`;
+
 DROP TABLE IF EXISTS `feed_image_tbl`;
+
 DROP TABLE IF EXISTS `feed_tbl`;
+
 DROP TABLE IF EXISTS `receipt_memo_tbl`;
-DROP TABLE IF EXISTS `payment_token_tbl`;
-DROP TABLE IF EXISTS `registered_card_tbl`;
+
 DROP TABLE IF EXISTS `card_tbl`;
+
 DROP TABLE IF EXISTS `wallet_transaction_tbl`;
+
 DROP TABLE IF EXISTS `account_transaction_tbl`;
+
 DROP TABLE IF EXISTS `account_dummy_tbl`;
+
 DROP TABLE IF EXISTS `financial_transaction_tbl`;
+
 DROP TABLE IF EXISTS `notification_tbl`;
+
 DROP TABLE IF EXISTS `settlement_member_tbl`;
+
 DROP TABLE IF EXISTS `settlement_tbl`;
+
 DROP TABLE IF EXISTS `friend_tbl`;
+
 DROP TABLE IF EXISTS `friend_request_tbl`;
+
 DROP TABLE IF EXISTS `kb_insurance_recommendation_tbl`;
-DROP TABLE IF EXISTS `kb_insurance_category_match_tbl`;
+
 DROP TABLE IF EXISTS `kb_insurance_coverage_tbl`;
+
 DROP TABLE IF EXISTS `kb_insurance_product_tbl`;
+
 DROP TABLE IF EXISTS `card_recommendation_detail_tbl`;
+
 DROP TABLE IF EXISTS `card_recommendation_tbl`;
+
 DROP TABLE IF EXISTS `card_benefit_tbl`;
+
 DROP TABLE IF EXISTS `kb_card_product_tbl`;
+
 DROP TABLE IF EXISTS `spending_analysis_category_tbl`;
+
 DROP TABLE IF EXISTS `spending_analysis_tbl`;
+
 DROP TABLE IF EXISTS `point_conversion_history_tbl`;
+
 DROP TABLE IF EXISTS `attendance_tbl`;
+
 DROP TABLE IF EXISTS `user_random_box_tbl`;
+
 DROP TABLE IF EXISTS `point_transaction_tbl`;
+
 DROP TABLE IF EXISTS `point_wallet_tbl`;
+
 DROP TABLE IF EXISTS `spending_category_tbl`;
+
 DROP TABLE IF EXISTS `refresh_token_tbl`;
+
 DROP TABLE IF EXISTS `notification_setting_tbl`;
+
 DROP TABLE IF EXISTS `profile_tbl`;
+
 DROP TABLE IF EXISTS `verification_tbl`;
+
 DROP TABLE IF EXISTS `wallet_tbl`;
+
 DROP TABLE IF EXISTS `user_agreement_tbl`;
+
 DROP TABLE IF EXISTS `agreement_tbl`;
+
 DROP TABLE IF EXISTS `account_verification_tbl`;
+
 DROP TABLE IF EXISTS `linked_account_tbl`;
+
 DROP TABLE IF EXISTS `bank_tbl`;
+
 DROP TABLE IF EXISTS `user_tbl`;
+
 DROP TABLE IF EXISTS `merchant_category_mapping_tbl`;
-
-SET FOREIGN_KEY_CHECKS = 1;
-
 
 -- 1. 회원 테이블
 DROP TABLE IF EXISTS user_tbl;
@@ -102,7 +150,6 @@ CREATE TABLE bank_tbl
     CONSTRAINT chk_bank_use_yn
         CHECK (use_yn IN ('Y', 'N'))
 );
-
 
 -- 3. 사용자계좌 테이블
 DROP TABLE IF EXISTS linked_account_tbl;
@@ -170,7 +217,6 @@ CREATE TABLE user_agreement_tbl
     CONSTRAINT chk_user_agreement_agreed_yn
         CHECK (agreed_yn IN ('Y', 'N'))
 );
-
 
 -- 6. 전자지갑 테이블
 DROP TABLE IF EXISTS wallet_tbl;
@@ -246,7 +292,6 @@ CREATE TABLE verification_tbl
         CHECK (fail_count >= 0)
 ) COMMENT = '휴대폰인증';
 
-
 -- 8. 프로필 테이블
 DROP TABLE IF EXISTS profile_tbl;
 
@@ -310,7 +355,6 @@ CREATE TABLE refresh_token_tbl
             REFERENCES user_tbl (user_id)
 );
 
-
 -- 11. 소비 카테고리 테이블
 DROP TABLE IF EXISTS spending_category_tbl;
 
@@ -323,22 +367,9 @@ CREATE TABLE spending_category_tbl
     CONSTRAINT fk_spending_category_parent
         FOREIGN KEY (parent_category_id)
             REFERENCES spending_category_tbl (spending_category_id)
-
---  spending_category_id가 AUTO_INCREMENT 컬럼이라 CHECK에서 사용할 수 없습니다. 코드에서 확인
---     CONSTRAINT chk_spending_category_parent
---         CHECK (
---             parent_category_id IS NULL
---             OR parent_category_id <> spending_category_id
---         )
 );
 
-
 -- 12.포인트 테이블 
--- UNIQUE(point_wallet_id, user_id)는 불필요합니다.
--- point_wallet_id가 PRIMARY KEY이므로 이미 유일합니다.
--- 따라서 (point_wallet_id, user_id) 복합 UNIQUE는 의미가 없습니다.
--- 정의서는 그대로 두더라도 DDL에서는 생략해도 동일한 효과입니다.
-
 DROP TABLE IF EXISTS point_wallet_tbl;
 
 CREATE TABLE point_wallet_tbl
@@ -356,7 +387,6 @@ CREATE TABLE point_wallet_tbl
     CONSTRAINT chk_point_balance
         CHECK (point_balance >= 0)
 );
-
 
 -- 13.포인트거래내역 테이블
 DROP TABLE IF EXISTS point_transaction_tbl;
@@ -377,7 +407,6 @@ CREATE TABLE point_transaction_tbl
     CONSTRAINT chk_point_transaction_type
         CHECK (transaction_type IN ('EARN', 'USE', 'EXPIRE', 'CANCEL')),
 
-    -- 0원 이상으로 하되, 상태값으로 증감처리.
     CONSTRAINT chk_point_transaction_amount
         CHECK (point_amount > 0),
 
@@ -420,7 +449,6 @@ CREATE TABLE user_random_box_tbl
     opened_at          DATETIME    NULL
         COMMENT '랜덤박스 개봉 일시',
 
-
     CONSTRAINT fk_user_random_box_user
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id),
@@ -428,8 +456,6 @@ CREATE TABLE user_random_box_tbl
     CONSTRAINT fk_random_box_target_wallet
         FOREIGN KEY (target_account_id)
             REFERENCES wallet_tbl (wallet_id),
-
-    -- 출석, 피드공유하기, 송금, 이벤트
 
     CONSTRAINT chk_user_random_box_issue_reason
         CHECK (
@@ -470,10 +496,6 @@ CREATE TABLE user_random_box_tbl
                 )
             ),
 
-    /*
-     * 출석·피드·송금 거래·이벤트 참여 이력 하나당
-     * 랜덤박스 중복 지급 방지
-     */
     CONSTRAINT uq_random_box_issue_source
         UNIQUE (
                 user_id,
@@ -481,10 +503,6 @@ CREATE TABLE user_random_box_tbl
                 source_id
         ),
 
-    /*
-     * 동일 사용자가 동일 수취 계좌로 반복 송금해도
-     * 송금 랜덤박스는 한 번만 지급
-     */
     CONSTRAINT uq_random_box_transfer_account
         UNIQUE (
                 user_id,
@@ -492,9 +510,6 @@ CREATE TABLE user_random_box_tbl
                 target_account_id
         ),
 
-    /*
-     * TRANSFER일 때만 target_account_id가 존재해야 한다.
-     */
     CONSTRAINT chk_random_box_target_account
         CHECK (
             (
@@ -507,10 +522,7 @@ CREATE TABLE user_random_box_tbl
                     AND target_account_id IS NULL
                 )
             )
-
-
 );
-
 
 -- 15. 출석 내역 테이블
 DROP TABLE IF EXISTS attendance_tbl;
@@ -529,10 +541,7 @@ CREATE TABLE attendance_tbl
             REFERENCES user_tbl (user_id)
 );
 
-
--- 16. 포인트 전환 내역 테이블 정의서
-
--- 포인트 전환 내역 테이블
+-- 16. 포인트 전환 내역 테이블
 DROP TABLE IF EXISTS point_conversion_history_tbl;
 
 CREATE TABLE point_conversion_history_tbl
@@ -584,7 +593,6 @@ CREATE TABLE spending_analysis_tbl
     CONSTRAINT chk_spending_analysis_period
         CHECK (analysis_period IN (1, 3, 12))
 );
-
 
 -- 18. 분석결과저장 테이블
 DROP TABLE IF EXISTS spending_analysis_category_tbl;
@@ -641,7 +649,7 @@ CREATE TABLE kb_card_product_tbl
         CHECK (annual_fee >= 0)
 );
 
---  20. 카드 혜택 테이블
+-- 20. 카드 혜택 테이블
 DROP TABLE IF EXISTS card_benefit_tbl;
 
 CREATE TABLE card_benefit_tbl
@@ -683,7 +691,6 @@ CREATE TABLE card_benefit_tbl
                 OR benefit_rate IS NOT NULL
             )
 );
-
 
 -- 21. 카드 추천 테이블
 DROP TABLE IF EXISTS card_recommendation_tbl;
@@ -772,8 +779,7 @@ CREATE TABLE card_recommendation_detail_tbl
         CHECK (expected_benefit_amount >= 0)
 );
 
-
--- 23.KB 보험 상품 테이블
+-- 23. KB 보험 상품 테이블
 DROP TABLE IF EXISTS kb_insurance_product_tbl;
 
 CREATE TABLE kb_insurance_product_tbl
@@ -794,7 +800,7 @@ CREATE TABLE kb_insurance_product_tbl
             )
 );
 
--- 24.KB 보험 보장 항목 테이블
+-- 24. KB 보험 보장 항목 테이블
 DROP TABLE IF EXISTS kb_insurance_coverage_tbl;
 
 CREATE TABLE kb_insurance_coverage_tbl
@@ -817,7 +823,6 @@ CREATE TABLE kb_insurance_coverage_tbl
                 OR coverage_amount >= 0
             )
 );
-
 
 -- 25. KB 보험 추천 결과 테이블
 DROP TABLE IF EXISTS kb_insurance_recommendation_tbl;
@@ -843,22 +848,16 @@ CREATE TABLE kb_insurance_recommendation_tbl
             REFERENCES kb_insurance_product_tbl (insurance_product_id)
 );
 
-
 -- 26. 친구 요청 테이블
 DROP TABLE IF EXISTS friend_request_tbl;
 
 CREATE TABLE friend_request_tbl
 (
     request_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '친구 요청 ID',
-
     requester_id INT         NOT NULL COMMENT '요청자 회원번호',
-
     receiver_id  INT         NOT NULL COMMENT '대상 회원번호',
-
     status       VARCHAR(20) NOT NULL DEFAULT 'REQUEST' COMMENT '친구요청상태',
-
     created_at   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-
     updated_at   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
 
@@ -880,17 +879,14 @@ CREATE TABLE friend_request_tbl
         CHECK (requester_id <> receiver_id)
 );
 
--- 27.친구 테이블
+-- 27. 친구 테이블
 DROP TABLE IF EXISTS friend_tbl;
 
 CREATE TABLE friend_tbl
 (
     friend_id      INT AUTO_INCREMENT PRIMARY KEY COMMENT '팔로우 ID',
-
     user_id        INT      NOT NULL COMMENT '요청자 회원번호',
-
     friend_user_id INT      NOT NULL COMMENT '친구 회원번호',
-
     created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '친구 생성일시',
 
     CONSTRAINT uq_friend_user
@@ -911,25 +907,15 @@ DROP TABLE IF EXISTS settlement_tbl;
 CREATE TABLE settlement_tbl
 (
     settlement_id        INT AUTO_INCREMENT PRIMARY KEY COMMENT '정산 ID',
-
     requester_id         INT         NOT NULL COMMENT '요청자 ID',
-
     title                VARCHAR(20) NULL COMMENT '정산 제목',
-
     content              VARCHAR(20) NULL COMMENT '피드 내용',
-
     total_amount         INT         NULL COMMENT '총 정산 금액',
-
     status               VARCHAR(20) NULL     DEFAULT 'REQUEST' COMMENT '정산 상태',
-
     created_at           DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-
     settlement_type      VARCHAR(10) NOT NULL COMMENT '정산 방식',
-
     spending_category_id INT         NULL COMMENT '소비 카테고리 ID',
-
     last_reminder_date   DATETIME    NULL     DEFAULT CURRENT_TIMESTAMP COMMENT '마지막으로 리마인드한 날짜',
-
     completed_at         DATETIME    NULL COMMENT '완료일시',
 
     CONSTRAINT fk_settlement_requester
@@ -963,18 +949,11 @@ DROP TABLE IF EXISTS settlement_member_tbl;
 CREATE TABLE settlement_member_tbl
 (
     settlement_member_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '정산 참여자 ID',
-
     settlement_id        INT         NOT NULL COMMENT '정산 ID',
-
     user_id              INT         NOT NULL COMMENT '사용자 ID',
-
     amount               INT         NULL COMMENT '정산 금액',
-
     status               VARCHAR(20) NULL DEFAULT 'REQUEST' COMMENT '정산 상태',
-
     created_at           DATETIME    NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-
-
     completed_at         DATETIME    NULL COMMENT '완료일시',
 
     CONSTRAINT uq_settlement_member
@@ -1000,24 +979,17 @@ CREATE TABLE settlement_member_tbl
             )
 );
 
--- 30.알림 테이블
+-- 30. 알림 테이블
 DROP TABLE IF EXISTS notification_tbl;
 
-CREATE TABLE notification_tbl
-(
-    notification_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림번호',
-
-    receiver_id       INT         NOT NULL COMMENT '수신자번호',
-
-    sender_id         INT         NOT NULL COMMENT '발신자번호',
-
+CREATE TABLE notification_tbl (
+    notification_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림번호',
+    receiver_id INT NOT NULL COMMENT '수신자번호',
+    sender_id INT NOT NULL COMMENT '발신자번호',
     notification_type VARCHAR(30) NULL COMMENT '알림유형',
-
-    target_id         INT         NULL COMMENT '대상번호',
-
-    status            VARCHAR(10) NOT NULL DEFAULT 'UNREAD' COMMENT '읽음상태',
-
-    created_at        DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    target_id INT NULL COMMENT '대상번호',
+    status VARCHAR(10) NOT NULL DEFAULT 'UNREAD' COMMENT '읽음상태',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
     CONSTRAINT fk_notification_receiver
         FOREIGN KEY (receiver_id)
@@ -1030,41 +1002,35 @@ CREATE TABLE notification_tbl
     CONSTRAINT chk_notification_type
         CHECK (
             notification_type IN (
-                                  'LIKE',
-                                  'COMMENT',
-                                  'FRIEND_REQUEST',
-                                  'FRIEND_ACCEPT',
-                                  'FRIEND_REJECT',
-                                  'SETTLEMENT_REQUEST',
-                                  'SETTLEMENT_PAYMENT',
-                                  'SETTLEMENT_CANCEL',
-                                  'SETTLEMENT_COMPLETE',
-                                  'SETTLEMENT_REMIND'
-                )
-            ),
+                'LIKE',
+                'COMMENT',
+                'FRIEND_REQUEST',
+                'FRIEND_ACCEPT',
+                'FRIEND_REJECT',
+                'SETTLEMENT_REQUEST',
+                'SETTLEMENT_PAYMENT',
+                'SETTLEMENT_CANCEL',
+                'SETTLEMENT_COMPLETE',
+                'SETTLEMENT_REMIND'
+            )
+        ),
 
     CONSTRAINT chk_notification_status
         CHECK (
             status IN (
-                       'READ',
-                       'UNREAD'
-                )
+                'READ',
+                'UNREAD'
             )
+        )
 );
--- ============================================
-
 
 -- 31. 통합 거래 원장 테이블
--- ============================================
-
 DROP TABLE IF EXISTS financial_transaction_tbl;
 
 CREATE TABLE financial_transaction_tbl
 (
-
     transaction_id        INT AUTO_INCREMENT PRIMARY KEY
         COMMENT '거래번호',
-
     parent_transaction_id INT          NULL
         COMMENT '상위 거래번호',
 
@@ -1073,36 +1039,25 @@ CREATE TABLE financial_transaction_tbl
 
     user_id               INT          NOT NULL
         COMMENT '거래 요청자 회원번호',
-
     receive_id            INT          NULL
         COMMENT '거래 요청을 받는 회원번호',
-
     transaction_type      VARCHAR(30)  NOT NULL
         COMMENT '거래유형',
-
     source_type           VARCHAR(20)  NOT NULL
         COMMENT '거래 출처 유형',
-
     target_type           VARCHAR(20)  NOT NULL
         COMMENT '거래 대상 유형',
-
     transaction_status    VARCHAR(20)  NOT NULL
         COMMENT '거래상태',
-
     amount                INT          NOT NULL
         COMMENT '거래금액',
-
     merchant_name         VARCHAR(100) NULL
         COMMENT '결제 가맹점명',
-
     spending_category_id  INT          NULL
         COMMENT '소비 카테고리 ID',
-
     created_at            DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
         COMMENT '생성일시',
 
-
-    -- 상위 거래 관계
     CONSTRAINT fk_financial_transaction_parent
         FOREIGN KEY (parent_transaction_id)
             REFERENCES financial_transaction_tbl (transaction_id),
@@ -1119,20 +1074,14 @@ CREATE TABLE financial_transaction_tbl
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id),
 
-
-    -- 수신자 회원
     CONSTRAINT fk_financial_transaction_receiver
         FOREIGN KEY (receive_id)
             REFERENCES user_tbl (user_id),
 
-
-    -- 소비 카테고리
     CONSTRAINT fk_financial_transaction_category
         FOREIGN KEY (spending_category_id)
             REFERENCES spending_category_tbl (spending_category_id),
 
-
-    -- 거래 유형
     CONSTRAINT chk_financial_transaction_type
         CHECK (
             transaction_type IN (
@@ -1143,8 +1092,6 @@ CREATE TABLE financial_transaction_tbl
                 )
             ),
 
-
-    -- 출처 유형
     CONSTRAINT chk_financial_source_type
         CHECK (
             source_type IN (
@@ -1153,8 +1100,6 @@ CREATE TABLE financial_transaction_tbl
                 )
             ),
 
-
-    -- 대상 유형
     CONSTRAINT chk_financial_target_type
         CHECK (
             target_type IN (
@@ -1163,8 +1108,6 @@ CREATE TABLE financial_transaction_tbl
                 )
             ),
 
-
-    -- 거래 상태
     CONSTRAINT chk_financial_transaction_status
         CHECK (
             transaction_status IN (
@@ -1174,8 +1117,6 @@ CREATE TABLE financial_transaction_tbl
                 )
             ),
 
-
-    -- 금액 검증
     CONSTRAINT chk_financial_transaction_amount
         CHECK (
             amount >= 0
@@ -1185,25 +1126,18 @@ CREATE TABLE financial_transaction_tbl
     -- PAYMENT는 AI 자동분류 실패 시 미분류(NULL)를 허용한다.
 );
 
--- 32.은행 계좌 더미 테이블
+-- 32. 은행 계좌 더미 테이블
 DROP TABLE IF EXISTS account_dummy_tbl;
 
 CREATE TABLE account_dummy_tbl
 (
     account_id       INT AUTO_INCREMENT PRIMARY KEY COMMENT '계좌 ID',
-
     user_id          INT          NOT NULL COMMENT '회원번호',
-
     bank_code        VARCHAR(3)   NOT NULL COMMENT '은행코드',
-
     account_number   VARCHAR(30)  NULL UNIQUE COMMENT '계좌번호',
-
     owner_name       VARCHAR(50)  NOT NULL COMMENT '예금주명',
-
     balance          INT          NOT NULL COMMENT '보유잔액',
-
     account_password VARCHAR(255) NOT NULL COMMENT '계좌비밀번호',
-
     created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '개설일시',
 
     CONSTRAINT fk_account_dummy_user
@@ -1220,24 +1154,17 @@ CREATE TABLE account_dummy_tbl
             )
 );
 
-
--- 33.계좌 거래 상세 테이블
+-- 33. 계좌 거래 상세 테이블
 DROP TABLE IF EXISTS account_transaction_tbl;
 
 CREATE TABLE account_transaction_tbl
 (
     account_transaction_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '계좌 거래 ID',
-
     transaction_id         INT         NOT NULL COMMENT '거래번호',
-
     user_id                INT         NOT NULL COMMENT '회원번호',
-
     direction              VARCHAR(10) NOT NULL COMMENT '입출금 구분',
-
     account_id             INT         NOT NULL COMMENT '계좌 ID',
-
     balance_before         INT         NOT NULL COMMENT '거래 전 잔액',
-
     balance_after          INT         NOT NULL COMMENT '거래 후 잔액',
 
     CONSTRAINT fk_account_transaction_transaction
@@ -1274,17 +1201,11 @@ DROP TABLE IF EXISTS wallet_transaction_tbl;
 CREATE TABLE wallet_transaction_tbl
 (
     wallet_transaction_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '지갑 거래 ID',
-
     transaction_id        INT         NOT NULL COMMENT '거래번호',
-
     user_id               INT         NOT NULL COMMENT '회원번호',
-
     direction             VARCHAR(10) NOT NULL COMMENT '입출금 구분',
-
     wallet_id             INT         NOT NULL COMMENT '지갑 ID',
-
     balance_before        INT         NOT NULL COMMENT '거래 전 잔액',
-
     balance_after         INT         NOT NULL COMMENT '거래 후 잔액',
 
     CONSTRAINT fk_wallet_transaction_transaction
@@ -1315,127 +1236,34 @@ CREATE TABLE wallet_transaction_tbl
             )
 );
 
-
 -- 35. 카드 더미 테이블
 DROP TABLE IF EXISTS card_tbl;
 
 CREATE TABLE card_tbl
 (
-    card_code          VARCHAR(20) PRIMARY KEY COMMENT '카드코드',
-
-    account_id         INT          NOT NULL UNIQUE COMMENT '계좌 ID',
-
-    card_img_file_name VARCHAR(255) NULL COMMENT '카드이미지파일명',
-
+    card_code          INT         AUTO_INCREMENT PRIMARY KEY COMMENT '카드 코드 (PK)',
+    account_id         INT         NOT NULL COMMENT '계좌 ID',
     card_num           VARCHAR(255) NOT NULL COMMENT '카드번호',
-
-    expiry_date        CHAR(5)      NOT NULL COMMENT '유효기간',
-
+    expiry_date        CHAR(5)     NOT NULL COMMENT '유효기간',
     cvv                VARCHAR(255) NOT NULL COMMENT 'cvv',
+    card_password      VARCHAR(255) NOT NULL COMMENT '카드 비밀번호 4자리',
+    card_img_file_name VARCHAR(255) NULL COMMENT '카드 이미지 파일명',
+    card_name          VARCHAR(255) NULL COMMENT '카드 이름',
 
     CONSTRAINT fk_card_account
         FOREIGN KEY (account_id)
             REFERENCES account_dummy_tbl (account_id)
-);
+) COMMENT = '실물 카드 원장';
 
--- 36.등록실물카드 테이블
-DROP TABLE IF EXISTS registered_card_tbl;
-
-CREATE TABLE registered_card_tbl
-(
-    card_id       INT AUTO_INCREMENT PRIMARY KEY COMMENT '카드id',
-
-    account_id    INT          NULL COMMENT '계좌 ID',
-
-    user_id       INT          NOT NULL COMMENT '회원번호',
-
-    card_num      VARCHAR(255) NOT NULL COMMENT '카드번호',
-
-    expiry_date   CHAR(5)      NOT NULL COMMENT '유효기간',
-
-    cvv           VARCHAR(255) NOT NULL COMMENT 'cvv',
-
-    card_password VARCHAR(255) NOT NULL COMMENT '카드 비밀번호 4자리',
-
-    represent_yn  CHAR(1)      NOT NULL DEFAULT 'N' COMMENT '대표카드여부',
-
-    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
-
-    delete_yn     CHAR(1)      NOT NULL DEFAULT 'N' COMMENT '삭제여부',
-
-    CONSTRAINT uq_registered_card_user
-        UNIQUE (card_id, user_id),
-
-    CONSTRAINT fk_registered_card_account
-        FOREIGN KEY (account_id)
-            REFERENCES account_dummy_tbl (account_id),
-
-    CONSTRAINT fk_registered_card_user
-        FOREIGN KEY (user_id)
-            REFERENCES user_tbl (user_id),
-
-    CONSTRAINT chk_registered_card_represent_yn
-        CHECK (
-            represent_yn IN ('Y', 'N')
-            ),
-
-    CONSTRAINT chk_registered_card_delete_yn
-        CHECK (
-            delete_yn IN ('Y', 'N')
-            )
-);
-
--- 37.결제일회성토큰 테이블
--- card_id 복합 FK 설정 오류 가능성이 있습니다.
-
--- 정의서:
-
--- FOREIGN KEY (card_id, user_id)
--- REFERENCES registered_card_tbl(card_id, user_id)
--- 그런데 registered_card_tbl에서는 UNIQUE(card_id, user_id)가 설정되어 있어 현재 구조로는 참조 가능합니다.
--- 따라서 그대로 반영했습니다.
-
-DROP TABLE IF EXISTS payment_token_tbl;
-
-CREATE TABLE payment_token_tbl
-(
-    token_value VARCHAR(255) PRIMARY KEY COMMENT '토큰값',
-
-    user_id     INT      NOT NULL COMMENT '회원번호',
-
-    card_id     INT      NULL COMMENT '매핑카드id',
-
-    expired_at  DATETIME NOT NULL COMMENT '만료일시',
-
-    used_yn     CHAR(1)  NOT NULL DEFAULT 'N' COMMENT '사용여부',
-
-    CONSTRAINT fk_payment_token_user
-        FOREIGN KEY (user_id)
-            REFERENCES user_tbl (user_id),
-
-    CONSTRAINT fk_payment_token_card
-        FOREIGN KEY (card_id, user_id)
-            REFERENCES registered_card_tbl (card_id, user_id),
-
-    CONSTRAINT chk_payment_token_used_yn
-        CHECK (
-            used_yn IN ('Y', 'N')
-            )
-);
-
--- 38.영수증메모 테이블
+-- 38. 영수증메모 테이블
 DROP TABLE IF EXISTS receipt_memo_tbl;
 
 CREATE TABLE receipt_memo_tbl
 (
     memo_id        INT AUTO_INCREMENT PRIMARY KEY COMMENT '메모id',
-
     transaction_id INT          NOT NULL UNIQUE COMMENT '거래id',
-
     memo_content   VARCHAR(300) NOT NULL COMMENT '메모내용',
-
     created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
-
     updated_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
 
@@ -1444,29 +1272,19 @@ CREATE TABLE receipt_memo_tbl
             REFERENCES financial_transaction_tbl (transaction_id)
 );
 
--- 39.피드 테이블
--- transaction_id 컬럼의 UK 설정이 정의서상 Y입니다.
--- 비고: 거래당 1개의 피드 생성 UNIQUE(transaction_id)
--- 따라서 UNIQUE(transaction_id) 적용했습니다.
--- feed_id가 PK이면서 AUTO_INCREMENT인 구조는 정상입니다.
+-- 39. 피드 테이블
+DROP TABLE IF EXISTS feed_tbl;
+
 CREATE TABLE feed_tbl
 (
     feed_id     INT AUTO_INCREMENT PRIMARY KEY COMMENT '피드번호',
-
     user_id     INT         NOT NULL COMMENT '회원번호',
-
     target_id   INT         NULL COMMENT '피드 유형에 따른 대상 ID',
-
     feed_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '피드상태',
-
     feed_type   VARCHAR(20) NOT NULL COMMENT '피드유형',
-
     content     VARCHAR(20) NULL COMMENT '피드내용',
-
     visibility  VARCHAR(20) NOT NULL COMMENT '공개범위',
-
     created_at  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-
     updated_at  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
 
@@ -1504,15 +1322,13 @@ CREATE TABLE feed_tbl
             )
 );
 
--- 40.피드 이미지 테이블
+-- 40. 피드 이미지 테이블
 DROP TABLE IF EXISTS feed_image_tbl;
 
 CREATE TABLE feed_image_tbl
 (
     image_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '이미지번호',
-
     feed_id    INT          NOT NULL COMMENT '피드번호',
-
     image_name VARCHAR(500) NOT NULL COMMENT '이미지이름',
 
     CONSTRAINT fk_feed_image_feed
@@ -1520,17 +1336,14 @@ CREATE TABLE feed_image_tbl
             REFERENCES feed_tbl (feed_id)
 );
 
--- 41.좋아요 테이블
+-- 41. 좋아요 테이블
 DROP TABLE IF EXISTS feed_like_tbl;
 
 CREATE TABLE feed_like_tbl
 (
     like_id    INT AUTO_INCREMENT PRIMARY KEY COMMENT '좋아요 ID',
-
     feed_id    INT      NOT NULL COMMENT '피드 ID',
-
     user_id    INT      NOT NULL COMMENT '사용자 ID',
-
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
 
     CONSTRAINT uq_feed_like
@@ -1545,21 +1358,16 @@ CREATE TABLE feed_like_tbl
             REFERENCES user_tbl (user_id)
 );
 
--- 42.댓글 테이블
+-- 42. 댓글 테이블
 DROP TABLE IF EXISTS feed_comment_tbl;
 
 CREATE TABLE feed_comment_tbl
 (
     comment_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '댓글 ID',
-
     feed_id    INT         NOT NULL COMMENT '피드 ID',
-
     user_id    INT         NOT NULL COMMENT '사용자 ID',
-
     content    VARCHAR(20) NULL COMMENT '댓글 내용',
-
     created_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-
     updated_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
 
@@ -1572,24 +1380,17 @@ CREATE TABLE feed_comment_tbl
             REFERENCES user_tbl (user_id)
 );
 
-
--- 43.커스텀 도구 에셋 테이블
+-- 43. 커스텀 도구 에셋 테이블
 DROP TABLE IF EXISTS card_asset_tbl;
 
 CREATE TABLE card_asset_tbl
 (
     asset_id         INT AUTO_INCREMENT PRIMARY KEY COMMENT '에셋ID',
-
     asset_type       VARCHAR(30)  NULL COMMENT '유형코드',
-
     asset_name       VARCHAR(255) NULL COMMENT '에셋명칭',
-
     src_url          VARCHAR(255) NULL COMMENT '에셋파일경로',
-
     background_color VARCHAR(255) NULL COMMENT '배경색상코드',
-
     font_type        VARCHAR(30)  NULL COMMENT '폰트종류',
-
     use_yn           CHAR(1)      NOT NULL DEFAULT 'Y' COMMENT '사용여부',
 
     CONSTRAINT chk_card_asset_type
@@ -1610,21 +1411,15 @@ CREATE TABLE card_asset_tbl
             )
 );
 
-
--- 44.이미지 첨부파일 테이블
-
+-- 44. 이미지 첨부파일 테이블
 DROP TABLE IF EXISTS file_image_tbl;
 
 CREATE TABLE file_image_tbl
 (
     file_id    INT AUTO_INCREMENT PRIMARY KEY COMMENT '첨부파일ID',
-
     user_id    INT          NOT NULL COMMENT '사용자ID',
-
     file_name  VARCHAR(255) NOT NULL COMMENT '파일명',
-
     file_size  BIGINT       NOT NULL COMMENT '파일크기',
-
     created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
 
     CONSTRAINT fk_file_image_user
@@ -1632,27 +1427,18 @@ CREATE TABLE file_image_tbl
             REFERENCES user_tbl (user_id)
 );
 
-
--- 45.커스텀 이미지 테이블
-
+-- 45. 커스텀 이미지 테이블
 DROP TABLE IF EXISTS custom_image_tbl;
 
 CREATE TABLE custom_image_tbl
 (
     custom_image_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '커스텀이미지 첨부파일ID',
-
     user_id           INT          NOT NULL COMMENT '사용자ID',
-
     asset_id          INT          NOT NULL COMMENT '에셋ID',
-
     file_id           INT          NOT NULL COMMENT '첨부파일ID',
-
     custom_image_path VARCHAR(255) NOT NULL COMMENT '커스텀이미지 경로명',
-
     custom_image_name VARCHAR(255) NOT NULL COMMENT '커스텀이미지 파일명',
-
     custom_image_size BIGINT       NOT NULL COMMENT '커스텀이미지 파일크기',
-
     created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
 
     CONSTRAINT fk_custom_image_user
@@ -1668,26 +1454,18 @@ CREATE TABLE custom_image_tbl
             REFERENCES file_image_tbl (file_id)
 );
 
--- 46.커스텀카드 신청이력 테이블
-
+-- 46. 커스텀카드 신청이력 테이블
 DROP TABLE IF EXISTS card_application_history_tbl;
 
 CREATE TABLE card_application_history_tbl
 (
     apply_id        INT AUTO_INCREMENT PRIMARY KEY COMMENT '신청ID',
-
     user_id         INT         NOT NULL COMMENT '사용자ID',
-
     custom_image_id INT         NOT NULL COMMENT '커스텀이미지 첨부파일ID',
-
     card_code       VARCHAR(20) NULL COMMENT '카드코드',
-
     card_name       VARCHAR(50) NULL COMMENT '카드명',
-
     card_status     VARCHAR(20) NULL COMMENT '카드신청상태',
-
     created_at      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
-
     updated_at      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
 
@@ -1709,39 +1487,27 @@ CREATE TABLE card_application_history_tbl
             )
 );
 
-
--- 47.이벤트 테이블
+-- 47. 이벤트 테이블
 DROP TABLE IF EXISTS event_tbl;
 
 CREATE TABLE event_tbl
 (
-    event_id                INT AUTO_INCREMENT PRIMARY KEY COMMENT '이벤트ID',
-
-    event_name              VARCHAR(100) NULL COMMENT '이벤트명',
-
-    event_desc              TEXT         NULL COMMENT '이벤트상세설명',
-
-    event_type              VARCHAR(20)  NULL COMMENT '이벤트유형',
-
-    event_status            VARCHAR(10)  NOT NULL DEFAULT 'OPEN' COMMENT '이벤트 진행 토글',
-
-    event_img_name          VARCHAR(255) NULL COMMENT '이벤트 이미지 이름',
-
-    event_target            INT          NOT NULL COMMENT '이벤트 최종 목표',
-
-    event_level             INT          NOT NULL DEFAULT 1 COMMENT '이벤트 최종 난이도',
-
-    event_daily_limit_count INT          NOT NULL DEFAULT 0 COMMENT '이벤트 일일 참여 가능 횟수',
-
-    start_at                DATETIME     NULL COMMENT '시작일시',
-
-    end_at                  DATETIME     NULL COMMENT '종료일시',
-
-    created_at              DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
+    event_id       INT AUTO_INCREMENT PRIMARY KEY COMMENT '이벤트ID',
+    event_name     VARCHAR(100) NULL COMMENT '이벤트명',
+    event_desc     TEXT         NULL COMMENT '이벤트상세설명',
+    event_type     VARCHAR(20)  NULL COMMENT '이벤트유형',
+    event_status   VARCHAR(10)  NOT NULL DEFAULT 'OPEN' COMMENT '이벤트 진행 토글',
+    event_img_name VARCHAR(255) NULL COMMENT '이벤트 이미지 이름',
+    event_target   INT          NOT NULL COMMENT '이벤트 최종 목표',
+    event_level    INT          NOT NULL DEFAULT 1 COMMENT '이벤트 최종 난이도',
+    event_daily_limit_count INT NOT NULL DEFAULT 0 COMMENT '이벤트 일일 참여 가능 횟수',
+    start_at       DATETIME     NULL COMMENT '시작일시',
+    end_at         DATETIME     NULL COMMENT '종료일시',
+    created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
 
     CONSTRAINT chk_event_type
         CHECK (
-            event_type IN ('ATTENDANCE', 'PERMANENT', 'LIMITED', 'SEASON', 'PROMOTION', 'LUCKYDRAW')
+            event_type IN ('ATTENDANCE', 'PERMANENT', 'LIMITED', 'SEASON', 'PROMOTION', 'LUCKYDRAW' )
             ),
 
     CONSTRAINT chk_event_status
@@ -1749,25 +1515,21 @@ CREATE TABLE event_tbl
             event_status IN ('OPEN', 'CLOSE')
             ),
 
-    CONSTRAINT chk_event_daily_limit_count
+    CONSTRAINT chk_event_daily_limit_count 
         CHECK (
             event_daily_limit_count >= 0
-            )
+           )
 );
 
--- 48.이벤트 리워드 테이블
-
+-- 48. 이벤트 리워드 테이블
 DROP TABLE IF EXISTS event_reward_tbl;
 
 CREATE TABLE event_reward_tbl
 (
     reward_id    INT AUTO_INCREMENT PRIMARY KEY COMMENT '리워드ID',
-
-    event_id     INT NOT NULL COMMENT '이벤트ID',
-
-    reward_point INT NULL DEFAULT 0 COMMENT '리워드포인트',
-
-    reward_exe   INT NULL COMMENT '리워드경험치',
+    event_id     INT     NOT NULL COMMENT '이벤트ID',
+    reward_point INT     NULL     DEFAULT 0 COMMENT '리워드포인트',
+    reward_exe   INT     NULL COMMENT '리워드경험치',
 
     CONSTRAINT fk_event_reward_event
         FOREIGN KEY (event_id)
@@ -1782,20 +1544,16 @@ CREATE TABLE event_reward_tbl
         CHECK (
             reward_exe >= 0
             )
-
 );
--- 49.이벤트 참여이력 테이블
 
+-- 49. 이벤트 참여이력 테이블
 DROP TABLE IF EXISTS event_participation_tbl;
 
 CREATE TABLE event_participation_tbl
 (
     participation_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '참여ID',
-
     event_id         INT      NOT NULL COMMENT '이벤트ID',
-
     user_id          INT      NOT NULL COMMENT '사용자ID',
-
     participated_at  DATETIME NULL COMMENT '참여일시',
 
     CONSTRAINT fk_event_participation_event
@@ -1815,165 +1573,109 @@ DROP TABLE IF EXISTS event_user_tbl;
 
 CREATE TABLE event_user_tbl
 (
-    -- 이벤트 참여 관리 PK
     event_user_id INT AUTO_INCREMENT PRIMARY KEY,
+    event_id INT NOT NULL,
+    user_id INT NOT NULL,
+    joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    -- 참여한 이벤트 ID
-    event_id      INT NOT NULL,
-
-    -- 참여한 사용자 ID
-    user_id       INT NOT NULL,
-
-    -- 이벤트 참여 시작 시간
-    joined_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    -- 이벤트 테이블과 연결
     CONSTRAINT fk_event_user_event
         FOREIGN KEY (event_id)
-            REFERENCES event_tbl (event_id),
+        REFERENCES event_tbl(event_id),
 
-    -- 사용자 테이블과 연결
     CONSTRAINT fk_event_user_member
         FOREIGN KEY (user_id)
-            REFERENCES user_tbl (user_id),
+        REFERENCES user_tbl(user_id),
 
-
-    -- 한 사용자는 같은 이벤트에 중복 참여 불가
-    -- ex) user_id = 1, event_id = 10 한번만 저장 가능
     UNIQUE KEY uk_event_user (event_id, user_id)
 );
 
 -- 50. 이벤트 - 출석체크 참여이력 테이블
 DROP TABLE IF EXISTS event_attendance_tbl;
 
-CREATE TABLE event_attendance_tbl
-(
+CREATE TABLE event_attendance_tbl (
     participation_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '참여ID',
-
-    event_id         INT      NOT NULL COMMENT '이벤트ID',
-
-    user_id          INT      NOT NULL COMMENT '사용자ID',
-
-    participated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '참여일시',
+    event_id INT NOT NULL COMMENT '이벤트ID',
+    user_id INT NOT NULL COMMENT '사용자ID',
+    participated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '참여일시',
 
     CONSTRAINT fk_event_attendance_event
         FOREIGN KEY (event_id)
-            REFERENCES event_tbl (event_id),
+        REFERENCES event_tbl(event_id),
 
     CONSTRAINT fk_event_attendance_user
         FOREIGN KEY (user_id)
-            REFERENCES user_tbl (user_id),
-
+        REFERENCES user_tbl(user_id),
+        
     CONSTRAINT uk_event_attendance_date
         UNIQUE (event_id, user_id, participated_at)
-) COMMENT ='이벤트 - 출석체크 참여이력 테이블';
+) COMMENT='이벤트 - 출석체크 참여이력 테이블';
 
+-- 51. 이벤트 리워드 수령이력 테이블
+DROP TABLE IF EXISTS event_reward_receive_tbl;
 
--- 51. 이벤트 리워드 수령이력 테이블 정의서
--- UNIQUE(event_id, user_id)
-
--- 유지하면 의미는:
-
--- 한 사용자는 하나의 이벤트에서 리워드를 1번만 받을 수 있다
-
--- 라는 정책입니다.
-
--- 예:
-
--- event_id	user_id	reward_id	결과
--- 1	100	1	가능
--- 1	100	2	불가능 (이미 해당 이벤트 보상 수령)
 CREATE TABLE event_reward_receive_tbl
 (
-
     recv_id     INT AUTO_INCREMENT PRIMARY KEY COMMENT '리워드수령ID',
-
     event_id    INT      NOT NULL COMMENT '이벤트ID',
-
     reward_id   INT      NOT NULL COMMENT '리워드ID',
-
     user_id     INT      NOT NULL COMMENT '사용자ID',
-
     received_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '수령일시',
-
 
     CONSTRAINT uk_event_reward_receive
         UNIQUE (event_id, user_id),
-
 
     CONSTRAINT fk_event_reward_receive_event
         FOREIGN KEY (event_id)
             REFERENCES event_tbl (event_id),
 
-
     CONSTRAINT fk_event_reward_receive_reward
         FOREIGN KEY (reward_id)
             REFERENCES event_reward_tbl (reward_id),
 
-
     CONSTRAINT fk_event_reward_receive_user
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id)
-
 ) COMMENT ='이벤트 리워드 수령이력';
 
--- 52. 이벤트 챌린지 테이블 정의서
+-- 52. 이벤트 챌린지 테이블
+DROP TABLE IF EXISTS event_challenge_tbl;
 
 CREATE TABLE event_challenge_tbl
 (
-
     challenge_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '챌린지ID',
-
     challenge_name VARCHAR(100) NULL COMMENT '챌린지명칭',
-
     reward_point   INT          NOT NULL DEFAULT 0 COMMENT '달성 시 지급 포인트',
-
     max_level      INT          NOT NULL COMMENT '챌린지 목표 난이도',
-
     max_target     INT          NOT NULL COMMENT '챌린지 목표 수치',
-
     start_date     DATETIME     NOT NULL COMMENT '챌린지 시작일',
-
     end_date       DATETIME     NOT NULL COMMENT '챌린지 종료일',
-
     created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시'
-
-
 ) COMMENT ='이벤트 챌린지';
 
--- 53. 이벤트 챌린지 참여이력 테이블 정의서
+-- 53. 이벤트 챌린지 참여이력 테이블
+DROP TABLE IF EXISTS event_challenge_user_tbl;
+
 CREATE TABLE event_challenge_user_tbl
 (
-
     user_challenge_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '챌린지참여ID',
-
     user_id           INT         NOT NULL COMMENT '사용자ID',
-
     challenge_id      INT         NOT NULL COMMENT '챌린지ID',
-
     current_level     INT         NOT NULL COMMENT '현재 달성 레벨',
-
     current_target    INT         NOT NULL COMMENT '현재 누적 수치',
-
     status            VARCHAR(20) NOT NULL DEFAULT 'PROCESS' COMMENT '현재 상태',
-
     updated_at        DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '마지막 갱신시간',
 
-
     CONSTRAINT uk_event_challenge_user
         UNIQUE (user_id, challenge_id),
-
 
     CONSTRAINT fk_event_challenge_user
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id),
 
-
     CONSTRAINT fk_event_challenge
         FOREIGN KEY (challenge_id)
             REFERENCES event_challenge_tbl (challenge_id),
-
 
     CONSTRAINT chk_event_challenge_status
         CHECK (
@@ -1983,80 +1685,64 @@ CREATE TABLE event_challenge_user_tbl
                        'REWARDED'
                 )
             )
-
 ) COMMENT ='이벤트 챌린지 참여이력';
 
--- 54. 카드사 테이블 정의서
+-- 54. 카드사 테이블
 DROP TABLE IF EXISTS card_company_tbl;
 
 CREATE TABLE card_company_tbl
 (
     card_company_code VARCHAR(10) PRIMARY KEY COMMENT '카드사코드',
-
     card_company_name VARCHAR(50) NOT NULL UNIQUE COMMENT '카드사명',
 
     CONSTRAINT chk_card_company_name
         CHECK (CHAR_LENGTH(TRIM(card_company_name)) > 0)
 ) COMMENT = '카드사';
 
-
--- 55. 연결카드 테이블 정의서
+-- 55. 연결카드 테이블
 DROP TABLE IF EXISTS linked_card_tbl;
 
 CREATE TABLE linked_card_tbl
 (
-    linked_card_id    BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '연결카드번호',
-    user_id           INT          NOT NULL COMMENT '회원번호',
-
-    card_id           INT          NOT NULL UNIQUE COMMENT '등록카드번호',
-
-    card_company_code VARCHAR(10)  NOT NULL COMMENT '카드사코드',
-
-    card_name         VARCHAR(100) NOT NULL COMMENT '카드명',
-
-    card_image_name   VARCHAR(255) NULL COMMENT '카드이미지파일명',
-
-    represent_yn      CHAR(1)      NOT NULL DEFAULT 'N' COMMENT '대표카드여부',
+    linked_card_id      INT         AUTO_INCREMENT PRIMARY KEY COMMENT '연결카드번호',
+    user_id             INT         NOT NULL COMMENT '회원번호',
+    card_code           INT         NOT NULL COMMENT '카드 ID',
+    card_company_code   VARCHAR(10) NOT NULL COMMENT '카드사코드',
+    represent_yn        CHAR(1)     NOT NULL DEFAULT 'N' COMMENT '대표카드여부',
+    delete_yn           CHAR(1)     NOT NULL DEFAULT 'N' COMMENT '삭제여부',
+    created_at          DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
 
     CONSTRAINT fk_linked_card_user
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id),
 
-    CONSTRAINT fk_linked_card_registered_card
-        FOREIGN KEY (card_id)
-            REFERENCES registered_card_tbl (card_id),
-
     CONSTRAINT fk_linked_card_company
         FOREIGN KEY (card_company_code)
             REFERENCES card_company_tbl (card_company_code),
 
-    CONSTRAINT chk_linked_card_name_length
-        CHECK (CHAR_LENGTH(card_name) BETWEEN 1 AND 100),
+    CONSTRAINT fk_linked_card_card
+        FOREIGN KEY (card_code)
+            REFERENCES card_tbl (card_code),
 
     CONSTRAINT chk_linked_card_represent_yn
-        CHECK (represent_yn IN ('Y', 'N'))
-) COMMENT = '연결카드';
+        CHECK (represent_yn IN ('Y', 'N')),
 
--- 56. 계좌인증 테이블 정의서
+    CONSTRAINT chk_linked_card_delete_yn
+        CHECK (delete_yn IN ('Y', 'N'))
+) COMMENT = '사용자 연결 카드';
+
+-- 56. 계좌인증 테이블
 DROP TABLE IF EXISTS account_verification_tbl;
 
 CREATE TABLE account_verification_tbl
 (
-
     verification_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '계좌인증번호',
-
     user_id           INT          NOT NULL COMMENT '회원번호',
-
     bank_code         VARCHAR(10)  NOT NULL COMMENT '은행코드',
-
     account_number    VARCHAR(255) NOT NULL COMMENT '계좌번호',
-
     account_holder    VARCHAR(50)  NOT NULL COMMENT '예금주',
-
     verification_code CHAR(4)      NOT NULL COMMENT '입금자명4자리',
-
     verified_yn       CHAR(1)      NOT NULL DEFAULT 'N' COMMENT '인증여부',
-
     requested_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
 
     CONSTRAINT fk_account_verification_user
@@ -2069,26 +1755,23 @@ CREATE TABLE account_verification_tbl
 
     CONSTRAINT chk_account_verification_verified_yn
         CHECK (verified_yn IN ('Y', 'N'))
-
 ) COMMENT = '계좌인증';
+
 -- 57. 카테고리 분류 저장 테이블
+DROP TABLE IF EXISTS merchant_category_mapping_tbl;
+
 CREATE TABLE merchant_category_mapping_tbl
 (
     merchant_category_mapping_id INT AUTO_INCREMENT
         COMMENT '가맹점 카테고리 매핑 ID',
-
     merchant_name                VARCHAR(100) NOT NULL
         COMMENT '매핑 조회용 가맹점명',
-
     spending_category_id         INT          NOT NULL
         COMMENT '매핑된 소비 카테고리 ID',
-
     correction_count             INT          NOT NULL DEFAULT 0
         COMMENT '사용자의 카테고리 수정 요청 건수',
-
     created_at                   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
         COMMENT '매핑 생성일시',
-
     updated_at                   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP
         COMMENT '매핑 수정일시',
@@ -2116,26 +1799,22 @@ CREATE TABLE merchant_category_mapping_tbl
 );
 
 -- 58. 소비카테고리 <-> 보험 종류 매칭 정책 테이블
+DROP TABLE IF EXISTS kb_insurance_category_match_tbl;
+
 CREATE TABLE kb_insurance_category_match_tbl
 (
     insurance_category_match_id INT AUTO_INCREMENT PRIMARY KEY
         COMMENT '보험 추천 카테고리 매핑 ID',
-
     insurance_product_id        INT          NOT NULL
         COMMENT '보험 상품 ID',
-
     spending_category_id        INT          NOT NULL
         COMMENT '소비 카테고리 ID',
-
     recommendation_reason       VARCHAR(255) NULL
         COMMENT '추천 사유 기본 문구',
-
     priority                    INT          NOT NULL DEFAULT 1
         COMMENT '같은 카테고리 내 표시 순서',
-
     active_yn                   CHAR(1)      NOT NULL DEFAULT 'Y'
         COMMENT '추천 관계 사용 여부',
-
     created_at                  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
         COMMENT '생성 일시',
 
@@ -3098,56 +2777,12 @@ VALUES (1, 1, 1, 'CREDIT', 1, 90000, 100000),
 -- ---------------------------------------------------------------------
 -- 35. card_tbl (3건)
 -- ---------------------------------------------------------------------
-INSERT INTO card_tbl (card_code,
-                      account_id,
-                      card_img_file_name,
-                      card_num,
-                      expiry_date,
-                      cvv)
-VALUES ('KB-CARD-001', 1, 'card_001.png', 'ENC-CARD-1111', '12/30', 'ENC-111'),
-       ('KB-CARD-002', 3, 'card_002.png', 'ENC-CARD-2222', '11/30', 'ENC-222'),
-       ('KB-CARD-003', 5, 'card_003.png', 'ENC-CARD-3333', '10/30', 'ENC-333');
+INSERT INTO card_tbl (account_id, card_num, expiry_date, cvv, card_password, card_img_file_name, card_name)
+VALUES 
+(1, 'ENC-CARD-1111', '12/30', 'ENC-111', '1111', 'card_001.png', 'KB국민나비카드'),
+(3, 'ENC-CARD-2222', '11/30', 'ENC-222', '2222', 'card_002.png', 'KB톡톡카드'),
+(5, 'ENC-CARD-3333', '10/30', 'ENC-333', '3333', 'card_003.png', '가온누리카드');
 
--- ---------------------------------------------------------------------
--- 36. registered_card_tbl (6건)
--- ---------------------------------------------------------------------
-INSERT INTO registered_card_tbl (card_id,
-                                 account_id,
-                                 user_id,
-                                 card_num,
-                                 expiry_date,
-                                 cvv,
-                                 card_password,
-                                 represent_yn,
-                                 created_at,
-                                 delete_yn)
-VALUES (1, 1, 1, 'ENC-REG-1111', '12/30', 'ENC-111', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'Y', '2026-07-01 09:40:00', 'N'),
-       (2, 2, 1, 'ENC-REG-1112', '09/30', 'ENC-112', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'N', '2026-07-01 09:50:00', 'N'),
-       (3, 3, 2, 'ENC-REG-2221', '11/30', 'ENC-221', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'Y', '2026-07-02 10:40:00', 'N'),
-       (4, 4, 2, 'ENC-REG-2222', '08/30', 'ENC-222', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'N', '2026-07-02 10:50:00', 'N'),
-       (5, 5, 3, 'ENC-REG-3331', '10/30', 'ENC-331', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'Y', '2026-07-03 11:40:00', 'N'),
-       (6, 6, 3, 'ENC-REG-3332', '07/30', 'ENC-332', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'N', '2026-07-03 11:50:00', 'N');
-
--- ---------------------------------------------------------------------
--- 37. payment_token_tbl (6건)
--- ---------------------------------------------------------------------
-INSERT INTO payment_token_tbl (token_value,
-                               user_id,
-                               card_id,
-                               expired_at,
-                               used_yn)
-VALUES ('pay-token-001', 1, 1, '2026-07-24 10:10:00', 'Y'),
-       ('pay-token-002', 1, 2, '2026-07-24 11:10:00', 'N'),
-       ('pay-token-003', 2, 3, '2026-07-24 12:10:00', 'Y'),
-       ('pay-token-004', 2, 4, '2026-07-24 13:10:00', 'N'),
-       ('pay-token-005', 3, 5, '2026-07-24 14:10:00', 'Y'),
-       ('pay-token-006', 3, 6, '2026-07-24 15:10:00', 'N');
 
 -- ---------------------------------------------------------------------
 -- 38. receipt_memo_tbl (6건)
@@ -3446,21 +3081,13 @@ VALUES ('KB', 'KB국민카드'),
        ('HN', '하나카드');
 
 -- ---------------------------------------------------------------------
--- 55. linked_card_tbl (6건)
+-- 55. linked_card_tbl (3건)
 -- ---------------------------------------------------------------------
-INSERT INTO linked_card_tbl (linked_card_id,
-                             user_id,
-                             card_id,
-                             card_company_code,
-                             card_name,
-                             card_image_name,
-                             represent_yn)
-VALUES (1, 1, 1, 'KB', 'KB 대표카드', 'linked_kb_1.png', 'Y'),
-       (2, 1, 2, 'SH', '신한 생활카드', 'linked_sh_1.png', 'N'),
-       (3, 2, 3, 'SH', '신한 대표카드', 'linked_sh_2.png', 'Y'),
-       (4, 2, 4, 'HN', '하나 교통카드', 'linked_hn_2.png', 'N'),
-       (5, 3, 5, 'HN', '하나 대표카드', 'linked_hn_3.png', 'Y'),
-       (6, 3, 6, 'KB', 'KB 여행카드', 'linked_kb_3.png', 'N');
+INSERT INTO linked_card_tbl (user_id, card_code, card_company_code, represent_yn, delete_yn)
+VALUES 
+(1, 1, 'KB', 'Y', 'N'), -- 1번 유저가 1번 실물 카드를 대표 카드로 연동
+(1, 2, 'KB', 'N', 'N'), -- 1번 유저가 2번 실물 카드를 일반 연동
+(2, 3, 'KB', 'Y', 'N'); -- 2번 유저가 3번 실물 카드를 대표 카드로 연동
 
 -- ---------------------------------------------------------------------
 -- 57. merchant_category_mapping_tbl (21건)
