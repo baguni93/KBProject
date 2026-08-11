@@ -41,7 +41,7 @@
 
     <!--    사용자 포인트 조회 -->
     <select id="getUserPoint" resultType="int">
-       SELECT IFNULL(pw.point_balance, 0) AS currentPoint
+       SELECT IFNULL(pw.point_balance, 0) AS pointBalance
          FROM user_tbl AS user LEFT OUTER JOIN point_wallet_tbl AS pw ON user.user_id = pw.user_id
         WHERE user.user_id = #{userId}
           AND user.user_status = 'ACTIVE'
@@ -99,23 +99,29 @@
 
     <!-- 포인트(리워드) 수령 내역 생성-->
     <update id="createUserPointTransaction">
-        INSERT INTO point_transaction_tbl (point_wallet_id,
-                                           transaction_type,
-                                           point_amount,
-                                           reason_type,
-                                           created_at)
-        VALUES ( #{pointWalletId},
-                 #{transactionType},
-                 #{pointAmount},
-                 #{reasonType},
-                 CURRENT_TIMESTAMP)
+        INSERT INTO point_transaction_tbl (
+            point_wallet_id,
+            transaction_type,
+            point_amount,
+            reason_type,
+            created_at
+        )
+        SELECT
+            w.point_wallet_id,
+            'EARN',
+            r.reward_point,
+            'EVENT',
+            CURRENT_TIMESTAMP
+         FROM point_wallet_tbl AS w, event_reward_tbl AS r
+        WHERE w.user_id = #{userId}
+          AND r.reward_id = #{rewardId}
     </update>
 
     <!-- 포인트 수령 반영 처리 -->
     <update id="updateUserPoint">
-        UPDATE point_wallet_tbl
-        SET point_balance = point_balance + #{pointAmount}
-        WHERE point_wallet_id = #{pointWalletId}
+        UPDATE point_wallet_tbl AS w INNER JOIN event_reward_tbl AS r ON r.reward_id = #{rewardId}
+        SET w.point_balance = w.point_balance + r.reward_point
+        WHERE w.user_id = #{userId}
     </update>
 
 <!--    사용자 이벤트 챌린지 -->
@@ -167,7 +173,7 @@
         insert event_attendance_tbl set user_id = #{userId} , event_id = #{eventId};
     </insert>
 
-<!-- 출석체크 이외 이벤트 조회-->
+    <!-- 출석체크 이외 이벤트 조회-->
     <select id="getEvent" resultType="org.scoula.event.domain.EventNormalVO">
 
         select a.event_id,

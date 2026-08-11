@@ -60,21 +60,6 @@ public class EventController {
         return ResponseEntity.ok(joinedEvents);
     }
 
-    // 4. 이벤트 참여 처리 (우측 배지 버튼 클릭 시 처리할)
-//    @ApiOperation("이벤트 참여 처리")
-//    @PostMapping("/join/{eventId}")
-//    public ResponseEntity<Void> joinEvent(
-//            @PathVariable("eventId") Integer eventId,
-//            @RequestBody Map<String, Integer> body) {
-//
-//        Integer userId = body.get("userId");
-//
-//        eventService.participateEvent(userId, eventId);
-//        return ResponseEntity.status(HttpStatus.CREATED).build();
-//    }
-//
-//
-
     // 6. 챌린지 리워드 수령 처리 (이벤트 상단 챌린지 바 관련 영역)
     @ApiOperation("챌린지 리워드 수령 처리 (상단 챌린지 게이지 바 리워드 수령)")
     @PostMapping("/challenges/{challengeId}/reward")
@@ -124,7 +109,7 @@ public class EventController {
         return ResponseEntity.ok(eventService.createParticipation(userId, eventId));
     }
 
-    // 이벤트 보상수령 처리
+    // 이벤트 리워드 수령 처리
     @PostMapping("/receiveEventReward/{eventId}/rewards/{rewardId}")
     public ResponseEntity<List<EventGetResponseDTO>> receiveEventReward(
             @RequestParam(value = "userId") int userId,
@@ -135,7 +120,7 @@ public class EventController {
         return ResponseEntity.ok(updatedList);
     }
 
-    // 출석체크 보상수령 처리
+    // 출석체크 리워드 수령 처리
     @PostMapping("/receiveAttendanceEventReward/{eventId}/rewards/{rewardId}")
     public ResponseEntity<List<EventGetAttendanceResponseDTO>> receiveAttendanceReward(
             @RequestParam(value = "userId") int userId,

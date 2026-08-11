@@ -74,7 +74,7 @@ public class EventServiceImpl implements EventService{
                 .eventLists(eventLists)
                 .build();
 
-        log.info("result : ", result);
+        log.info("result : " + result);
         return result;
     }
 
@@ -330,9 +330,6 @@ public class EventServiceImpl implements EventService{
         //일반 이벤트 get return  EventGetResponseDTO
         //출석 이벤트 get return  EventGetAttendanceResponseDTO
 
-        // 이벤트 참여 이력 생성
-        eventMapper.createAttendanceParticipation(userId, eventId);
-
         return getAttendanceEventList(userId);
     }
 
@@ -341,21 +338,14 @@ public class EventServiceImpl implements EventService{
     public List<EventGetResponseDTO> receiveEventReward(int eventId, int userId, int rewardId) {
         List<EventNormalVO> eventList = eventMapper.getEvent(userId);
 
-        // 검색 참조. 나중에 보완
-        int rewardPoint = eventList.stream()
-                .filter(event -> Objects.equals(event.getEventId(), eventId)
-                        && Objects.equals(event.getRewardId(), rewardId))
-                .map(EventNormalVO::getRewardPoint)
-                .findFirst()
-                .orElse(0);
-
         // 보상 수령 이력 생성
         eventMapper.createEventRewardReceive(userId, eventId, rewardId);
 
         // 포인트 업데이트
-        // 보완하기
-//        eventMapper.createUserPointTransaction(userId, rewardPoint);
-//        eventMapper.updateUserPoint(userId);
+        eventMapper.updateUserPoint(userId, rewardId);
+
+        // transaction 생성
+        eventMapper.createUserPointTransaction(userId, rewardId);
 
         return getEventList(userId);
     }
@@ -365,19 +355,14 @@ public class EventServiceImpl implements EventService{
     public List<EventGetAttendanceResponseDTO> receiveAttendanceEventReward(int eventId, int userId, int rewardId) {
         List<EventAttendanceVO> attendanceEventList = eventMapper.getAttendanceEvent(userId);
 
-        int rewardPoint = attendanceEventList.stream()
-                .filter(event -> event.getRewardId() == rewardId)
-                .map(EventAttendanceVO::getRewardPoint)
-                .findFirst()
-                .orElse(0);
-
         // 보상 수령 이력 생성
         eventMapper.createEventRewardReceive(userId, eventId, rewardId);
 
         // 포인트 업데이트
-        // 보완하기
-//        eventMapper.createUserPointTransaction(userId, rewardPoint);
-//        eventMapper.updateUserPoint(userId, rewardPoint);
+        eventMapper.updateUserPoint(userId, rewardId);
+
+        // transaction 생성
+        eventMapper.createUserPointTransaction(userId, rewardId);
 
         return getAttendanceEventList(userId);
     }

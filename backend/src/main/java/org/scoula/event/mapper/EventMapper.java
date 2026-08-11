@@ -2,7 +2,6 @@ package org.scoula.event.mapper;
 
 import org.apache.ibatis.annotations.Param;
 import org.scoula.event.domain.*;
-import org.scoula.event.dto.EventGetResponseDTO;
 import org.scoula.event.dto.EventResponseDTO;
 import org.scoula.event.dto.UserChallengeDTO;
 
@@ -26,11 +25,6 @@ public interface EventMapper {
 
     // 7. 챌린지 리워드 수령 내역 생성
     int createChallengeRewardReceive(@Param("userId") Integer userId, @Param("challengeId") Integer challengeId, @Param("rewardPoint") Integer rewardPoint);
-
-    // 포인트 수령 반영 처리
-    int updateUserPoint(@Param("userId") Integer userId);
-    // 포인트(리워드) 수령 내역 생성
-    int createUserPointTransaction(@Param("userId") Integer userId, @Param("point") Integer point);
 
     int updateUserChallengeTarget(@Param("userId") Integer userId);
 
@@ -56,5 +50,11 @@ public interface EventMapper {
     // 이벤트 리워드 수령 내역 생성
     int createEventRewardReceive(@Param("userId") int userId, @Param("eventId") int eventId, @Param("rewardId") int rewardId);
 
+    // 포인트 수령 반영 처리
+    int updateUserPoint(@Param("userId") int userId, @Param("rewardId") int rewardId);
+    // 포인트(리워드) 수령 내역 생성
+    int createUserPointTransaction(@Param("userId") int userId,  @Param("rewardId") int rewardId);
+
+    void createData();
 
 }
