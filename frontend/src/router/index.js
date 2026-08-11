@@ -7,6 +7,7 @@ import signup from './signup';
 import setting from './setting';
 import pagesample from './pagesample';
 import analysis from './analysis';
+import customcard from './customcard';
 
 import WalletPage from '@/pages/wallet/WalletPage.vue';
 import RemittancePage from '@/pages/remittance/RemittancePage.vue';
@@ -22,8 +23,6 @@ import SignupCompletePage from '@/pages/signup/SignupCompletePage.vue';
 import EventPage from '@/pages/event/EventPage.vue';
 import EventListPage from '@/pages/event/EventListPage.vue';
 import FinancePage from '@/pages/finance/FinancePage.vue';
-import CardCreatePage from '@/pages/card/CardCreatePage.vue';
-import CardCompletePage from '@/pages/card/CardCompletePage.vue';
 
 import { isAuthenticated } from '@/util/guards';
 
@@ -90,24 +89,10 @@ const router = createRouter({
     ...setting,
     ...analysis,
     ...pagesample,
+    ...customcard,
 
     //bottom 이 필요없는 페이지
-    {
-      path: '/card/create',
-      name: 'card/create',
-      component: CardCreatePage,
-      meta: {
-        showBottomNav: false,
-      },
-    },
-    {
-      path: '/card/complete',
-      name: 'card/complete',
-      component: CardCompletePage,
-      meta: {
-        showBottomNav: false,
-      },
-    },
+
     {
       path: '/setting',
       name: 'setting',
@@ -193,15 +178,6 @@ const router = createRouter({
       component: EventListPage,
       alias: '/event/list/joined',
     },
-
-    ...feed,
-    ...mypage,
-    ...settlement,
-    ...auth,
-    ...signup,
-    ...setting,
-    ...analysis,
-    ...pagesample,
   ],
 });
 

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import axios from 'axios';
 
 export const useCardEditorStore = defineStore('cardEditor', () => {
   /* =========================================================
@@ -52,6 +53,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
 
   const setCardName = (name) => {
     cardName.value = name;
+    saveSnapshot();
   };
 
   /* =========================================================
@@ -62,6 +64,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     gradient.value = '';
     image.value = '';
     console.log('색깔저장');
+    saveSnapshot();
   };
 
   const setGradient = (value) => {
@@ -69,6 +72,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     color.value = '';
     image.value = '';
     console.log('그라데이션 저장');
+    saveSnapshot();
   };
 
   const setImage = (value) => {
@@ -76,16 +80,19 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     color.value = '';
     gradient.value = '';
     console.log('이미지 저장');
+    saveSnapshot();
   };
 
   const setPattern = (value) => {
     pattern.value = value;
+    saveSnapshot();
   };
 
   const resetBackground = () => {
     color.value = '#1e40af';
     gradient.value = '';
     image.value = '';
+    saveSnapshot();
   };
 
   /* =========================================================
@@ -93,6 +100,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
    * ========================================================= */
   const selectText = (id) => {
     selectedTextId.value = id;
+    saveSnapshot();
   };
 
   const addText = (textObj) => {
@@ -111,6 +119,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     selectedTextId.value = newId;
 
     console.log(texts);
+    saveSnapshot();
   };
 
   const removeText = (idOrIndex) => {
@@ -123,6 +132,8 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     if (selectedTextId.value === idOrIndex) {
       selectedTextId.value = null;
     }
+
+    saveSnapshot();
   };
 
   const updateTextPosition = (id, xPercent, yPercent) => {
@@ -133,6 +144,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     }
 
     console.log(texts);
+    saveSnapshot();
   };
 
   const updateTextRotation = (id, rotation) => {
@@ -142,6 +154,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     }
 
     console.log(texts);
+    saveSnapshot();
   };
 
   /* =========================================================
@@ -149,6 +162,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
    * ========================================================= */
   const selectEmoji = (id) => {
     selectedEmojiId.value = id;
+    saveSnapshot();
   };
 
   const addEmoji = (emojiObj) => {
@@ -160,7 +174,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
       emojiObj,
     });
     selectedEmojiId.value = newId;
-
+    saveSnapshot();
     console.log(emojis);
   };
 
@@ -174,6 +188,8 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     if (selectedEmojiId.value === idOrIndex) {
       selectedEmojiId.value = null;
     }
+
+    saveSnapshot();
   };
 
   const updateEmojiPosition = (id, xPercent, yPercent) => {
@@ -181,12 +197,14 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     if (target) {
       target.x = xPercent;
       target.y = yPercent;
+      saveSnapshot();
     }
   };
 
   const celarEmojis = () => {
     emojis.value = [];
     selectedEmojiId.value = null;
+    saveSnapshot();
   };
 
   /* =========================================================
@@ -194,11 +212,13 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
    * ========================================================= */
   const setDrawingOptions = (options) => {
     drawingOptions.value = { ...drawingOptions.value, ...options };
+    saveSnapshot();
   };
 
   const clearDrawing = () => {
     savedDrawingImage.value = null;
     isDrawingCleared.value++; // 캔버스 초기화를 감지할 수 있도록 트리거 값 증가
+    saveSnapshot();
   };
 
   /* =========================================================
@@ -209,6 +229,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     history.value = {
       cardNumber: cardNumber.value,
       cardName: cardName.value,
+
       color: color.value,
       gradient: gradient.value,
       image: image.value,
@@ -219,6 +240,115 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     };
 
     console.log('저장된 단일 history:', history.value);
+    saveSnapshot();
+  };
+
+  // blob URL을 실제 서버에 업로드하고, 서버가 반환한 파일 URL을 리턴하는 함수
+  const uploadBackgroundImage = async (blobUrl) => {
+    if (!blobUrl || !blobUrl.startsWith('blob:')) {
+      return blobUrl; // blob이 아니면 그대로 반환 (기존 서버 URL 등)
+    }
+
+    try {
+      // 1. blob URL을 fetch해서 바이너리 데이터(Blob)로 가져오기
+      // 사용자가 화면에서 이미지를 선택하면, 브라우저는 그 이미지를 컴퓨터나 서버에 바로 올리는 게 아니라 내 컴퓨터 메모리에 임시로 담아둡니다. 그때 생기는 주소가 바로 blob:http://localhost:5173/... 같은 가상 주소(Blob URL)입니다.
+      // 하지만 백엔드 서버(Spring 등)에 파일을 보내려면 가상 주소 페이크 문자열만 보내서는 안 되고, 진짜 파일의 알갱이(바이낸리 데이터)를 서버로 넘겨야 하죠.
+      // 그래서 이 코드가 하는 일은 다음과 같습니다:
+      // fetch(blobUrl)를 통해 브라우저 메모리에 있는 blob: 주소로 가짜 요청을 보냅니다. (서버로 가는 게 아니라 내 브라우저 안에서 일어나는 일입니다!)
+      // 그럼 브라우저는 그 주소에 들어있던 진짜 이미지 데이터 알갱이(Raw Data)를 response에 담아서 줍니다.
+      // 그 다음 줄인 await response.blob();을 통해 그 알갱이를 꺼내서 File 객체로 만들 수 있는 상태로 바꿔주는 것입니다.
+      const response = await fetch(blobUrl);
+      const blob = await response.blob();
+
+      // 2. Blob 객체를 백엔드가 받을 수 있는 File 객체로 변환
+      const file = new File([blob], 'background_image.jpg', {
+        type: blob.type,
+      });
+
+      // 3. FormData 생성 및 파일 담기
+      const formData = new FormData();
+      formData.append('file', file); // ⚠️ 백엔드 @RequestParam("file") 또는 파라미터 이름과 일치해야 함!
+
+      // 4. 파일 업로드 전용 API 호출
+      const uploadResponse = await axios.post(
+        '/api/customcard/uploadImage',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
+      );
+
+      // 5. 서버가 응답으로 준 파일 접근 경로(URL) 반환
+      // 예: "http://localhost:8080/images/abc-123.jpg" 혹은 "/images/abc-123.jpg"
+      return uploadResponse.data;
+    } catch (error) {
+      console.error('배경 이미지 업로드 실패:', error);
+      throw error; // 에러를 던져서 저장 프로세스를 멈춤
+    }
+  };
+
+  const createCardPayload = async (userId) => {
+    let finalImageUrl = history.value.image;
+
+    let bgType = 'COLOR';
+    let bgValue = history.value.color; // 기본값은 컬러
+
+    if (finalImageUrl && finalImageUrl !== '') {
+      bgType = 'IMAGE';
+      bgValue = finalImageUrl; // 👈 이미지일 때는 이미지 URL (업로드된 URL 또는 기존 URL)
+    } else if (history.value.gradient && history.value.gradient !== '') {
+      bgType = 'GRADIENT';
+      bgValue = history.value.gradient; // 👈 그라데이션일 때는 그라데이션 값
+    }
+
+    // 1. blob: 이미지인 경우 서버에 먼저 업로드하고 실제 서버 URL로 교체
+    if (finalImageUrl && finalImageUrl.startsWith('blob:')) {
+      console.log('새로 첨부한 이미지 발견! 서버에 업로드 중...');
+      finalImageUrl = await uploadBackgroundImage(finalImageUrl); // 파일 업로드 함수 호출
+
+      bgType = 'ATTACHMENT';
+      bgValue = finalImageUrl;
+    }
+
+    // 2. 배경 타입 및 배경 값 판별 (정확한 변수 매칭)
+
+    return {
+      userId: userId,
+      cardName: history.value.cardName,
+      cardNumber: history.value.cardNumber,
+      backgroundValue: bgValue,
+      pattern: history.value.pattern,
+      backgroundType: bgType,
+      savedDrawingImage: history.value.savedDrawingImage,
+
+      texts: (history.value.texts || []).map((t) => ({
+        text: t.text,
+        x: t.x,
+        y: t.y,
+        rotation: t.rotation,
+        font: t.font,
+        color: t.color,
+        size: t.size,
+        isBold: t.isBold,
+      })),
+
+      emojis: (history.value.emojis || []).map((e) => {
+        const url = e.emojiObj?.emoji || '';
+        const emojiType = url.endsWith('.svg') ? 'SVG' : 'ICON';
+
+        return {
+          x: e.x,
+          y: e.y,
+          rotation: e.rotation || 0,
+          emojiType: emojiType,
+          emojiObj: {
+            emoji: e.emojiObj.emoji,
+          },
+        };
+      }),
+    };
   };
 
   const reset = () => {
@@ -259,7 +389,9 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     gradient.value = backup.value.gradient;
     image.value = backup.value.image;
     pattern.value = backup.value.pattern;
-
+    emojis.value = backup.value.emojis
+      ? JSON.parse(JSON.stringify(backup.value.emojis))
+      : [];
     texts.value = backup.value.texts
       ? JSON.parse(JSON.stringify(backup.value.texts))
       : [];
@@ -314,8 +446,9 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     updateEmojiPosition,
     updateTextPosition,
     updateTextRotation,
-
     createCardNumber,
     setCardName,
+
+    createCardPayload,
   };
 });

@@ -1,8 +1,5 @@
 <template>
   <div class="complete-page">
-    <!-- 상단 타이틀 -->
-    <div class="page-header">카드 발급 완료</div>
-
     <!-- 메인 컨텐츠 영역 (폭죽 파티클 및 안내문구) -->
     <div class="content-body">
       <div class="confetti-area">
@@ -15,7 +12,7 @@
 
       <!-- 발급된 카드 미리보기 (정중앙 정렬) -->
       <div class="card-preview-box">
-        <CardCanvasPreview />
+        <CardCanvasPreview ref="childRef" />
       </div>
     </div>
 
@@ -23,6 +20,13 @@
     <div class="button-area">
       <button class="share-btn" @click="openModal">
         <i class="fa-solid fa-share-nodes"></i> 카드 자랑하기
+      </button>
+      <button class="share-btn" @click="handleAddCard">
+        간편 결제 연동하기
+      </button>
+      <!-- 부모 화면에 있는 버튼에서 자식 함수를 호출 -->
+      <button @click="handleParentClick">
+        부모가 자식에게 캡처 명령 내리기
       </button>
       <button class="confirm-btn" @click="handleConfirm">확인</button>
     </div>
@@ -93,6 +97,7 @@
           <button class="action-share-btn" @click="handleShareSubmit">
             자랑하기
           </button>
+
           <button class="action-cancel-btn" @click="closeModal">취소</button>
         </div>
       </div>
@@ -127,6 +132,12 @@ const handleConfirm = () => {
   router.push('/'); // 이동할 메인 페이지 경로로 수정하세요
 };
 
+const handleAddCard = () => {
+  cardStore.reset();
+  cardStore.history = [];
+  router.push('/wallet/card/add'); // 이동할 메인 페이지 경로로 수정하세요
+};
+
 // 자랑하기 최종 제출
 const handleShareSubmit = () => {
   console.log('공개 범위:', selectedScope.value);
@@ -139,6 +150,19 @@ const handleShareSubmit = () => {
   alert('피드에 성공적으로 공유되었습니다!');
   closeModal();
   router.push('/'); // 공유 후 이동할 페이지
+};
+
+const childRef = ref(null);
+
+// 2. 부모 버튼을 눌렀을 때 실행될 함수
+const handleParentClick = async () => {
+  if (childRef.value?.testDownloadCard) {
+    // 자식 안에 있는 캡처 함수 실행!
+    await childRef.value.testDownloadCard();
+    console.log('부모가 자식의 캡처 기능을 성공적으로 호출했습니다.');
+  } else {
+    console.log('자식 컴포넌트가 아직 준비되지 않았거나 함수가 없습니다.');
+  }
 };
 </script>
 

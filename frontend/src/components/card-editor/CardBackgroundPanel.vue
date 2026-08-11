@@ -159,9 +159,6 @@ const selectPhoto = (event) => {
     return;
   }
 
-  //현재 카드 상태를 임시 저장(백업)하는 용도
-  cardStore.saveSnapshot();
-
   // 미리보기 생성
   const imageUrl = URL.createObjectURL(file);
 
@@ -180,9 +177,9 @@ const toggleApply = () => {
   applyImage.value = !applyImage.value;
 
   if (applyImage.value) {
-    cardStore.image = previewImage.value;
+    cardStore.setImage(previewImage.value);
   } else {
-    cardStore.restoreSnapshot();
+    cardStore.setImage('');
   }
 };
 

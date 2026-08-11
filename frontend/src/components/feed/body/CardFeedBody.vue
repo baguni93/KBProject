@@ -35,7 +35,7 @@ defineProps({
 
 const issueCard = () => {
   console.log('커스텀 카드 발급 버튼 클릭');
-  router.push('/card/create');
+  router.push('/card/create/intro');
   // 카드 발급 API 호출 예정
 };
 </script>

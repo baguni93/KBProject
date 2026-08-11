@@ -1,5 +1,5 @@
 <template>
-  <div class="card" :style="{ background: cardBackground }">
+  <div ref="cardRef" class="card" :style="{ background: cardBackground }">
     <!-- 패턴 레이어 -->
     <div
       v-if="currentCardData.pattern"
@@ -64,10 +64,12 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useCardEditorStore } from '@/stores/cardEditorStore';
+import html2canvas from 'html2canvas'; // 캡처 라이브러리 임포트
 
 const cardStore = useCardEditorStore();
+const cardRef = ref(null); // 캡처할 DOM 참조
 
 // 💡 Pinia의 history가 단일 객체이므로 배열 방식 대신 단일 객체 기준으로 변경
 const currentCardData = computed(() => {
@@ -94,6 +96,82 @@ const cardBackground = computed(() => {
   if (data.image) return `url(${data.image}) center / cover no-repeat`;
   if (data.gradient) return data.gradient;
   return data.color || '#1e40af';
+});
+
+// 💡 [핵심] 카드를 캡처해서 백엔드로 전송하는 함수
+const uploadCardImage = async (userId) => {
+  const element = cardRef.value;
+  if (!element) return;
+
+  try {
+    // 1. html2canvas로 HTML 요소를 캔버스로 변환
+    // useCORS: true 옵션은 외부 이미지(url 등)가 있을 때 캔버스 오염(Tainted) 방지에 필수적입니다.
+    const canvas = await html2canvas(element, {
+      useCORS: true,
+      scale: 2, // 고해상도로 선명하게 캡처
+    });
+
+    // 2. 캔버스를 이미지 파일(Blob)로 변환
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        console.error('이미지 변환 실패');
+        return;
+      }
+
+      // 3. FormData에 담아 백엔드로 전송
+      const formData = new FormData();
+      formData.append('cardImage', blob, 'my_custom_card.png');
+      formData.append('userId', userId);
+      formData.append('cardName', currentCardData.value.cardName);
+
+      console.log(formData);
+      // 4. API 호출 (Spring Boot 등)
+      // const response = await customCardApi.uploadCard(formData);
+      //console.log('백엔드 저장 성공:', response);
+    }, 'image/png');
+  } catch (error) {
+    console.error('카드 캡처 및 업로드 중 오류 발생:', error);
+  }
+};
+// 카드 캡처 후 곧바로 다운로드 시켜주는 테스트 함수
+const testDownloadCard = async () => {
+  const element = cardRef.value;
+  if (!element) {
+    alert('카드를 찾을 수 없습니다.');
+    return;
+  }
+
+  try {
+    console.log('캡처 시작...');
+
+    // html2canvas로 DOM을 캔버스로 변환
+    const canvas = await html2canvas(element, {
+      useCORS: true, // 외부 이미지(이모지, 배경 등) 깨짐 방지
+      scale: 2, // 고화질 캡처
+      backgroundColor: null,
+    });
+
+    // 캔버스를 이미지 URL(Base64)로 변환
+    const imageURL = canvas.toDataURL('image/png');
+
+    // 가상의 a 태그를 만들어 강제로 다운로드 유도
+    const link = document.createElement('a');
+    link.href = imageURL;
+    link.download = 'card_test_image.png'; // 저장될 파일명
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    console.log('캡처 및 다운로드 완료!');
+  } catch (error) {
+    console.error('캡처 실패:', error);
+    alert('이미지 캡처 중 에러가 발생했습니다.');
+  }
+};
+
+defineExpose({
+  testDownloadCard,
+  uploadCardImage,
 });
 </script>
 <style scoped>
@@ -155,7 +233,7 @@ const cardBackground = computed(() => {
   display: block;
 }
 
-.custom-emoji-item.is-text-sticker {
+/* .custom-emoji-item.is-text-sticker {
   width: 90px;
   height: 50px;
 }
@@ -163,7 +241,7 @@ const cardBackground = computed(() => {
 .custom-emoji-item.is-text-sticker img {
   width: 100%;
   height: 100%;
-}
+} */
 
 .custom-text-item {
   position: absolute;

@@ -126,7 +126,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useCardEditorStore } from '@/stores/cardEditorStore';
-
+import { useModalStore } from '@/stores/userModalStore';
+const modalStore = useModalStore();
 const cardStore = useCardEditorStore();
 
 // --- 단일 캔버스 그리기 로직 (브러시 & 지우개 자유 사용) ---
@@ -134,7 +135,22 @@ const liveCanvasRef = ref(null);
 let liveCtx = null;
 let isLiveDrawing = false;
 
-onMounted(() => {
+onMounted(async () => {
+  if (cardStore.backup) {
+    console.log(cardStore.backup);
+
+    const isConfirmed = await modalStore.showConfirm(
+      '임시 저장된 카드가 있습니다. 카드를 불러오시겠습니까?, ',
+      '카드 신청',
+    );
+
+    console.log(isConfirmed);
+    if (!isConfirmed) return;
+
+    cardStore.restoreSnapshot();
+  }
+
+  cardStore.restoreSnapshot();
   const canvas = liveCanvasRef.value;
   if (!canvas) return;
   canvas.width = canvas.offsetWidth || 205;
@@ -518,20 +534,6 @@ const startRotate = (event, item) => {
   object-fit: contain;
   display: block;
   pointer-events: none;
-}
-
-/* 🚀 [핵심] 스티커 탭의 문구 스티커일 때는 '박스 자체'도 큼직하게 확장! */
-.custom-emoji-item.is-text-sticker {
-  width: 90px !important; /* 문구 스티커 선택 박스의 가로 크기 */
-  height: 50px !important; /* 문구 스티커 선택 박스의 세로 크기 (비율에 맞게 조절 가능) */
-}
-
-/* 🚀 [핵심] 문구 스티커 내부의 이미지도 박스에 딱 맞춰 크게 출력 */
-.custom-emoji-item.is-text-sticker img {
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
 }
 
 /* 문구 스티커가 커졌으니 X(삭제) 버튼 위치도 우측 상단 모서리에 예쁘게 재배치 */

@@ -309,8 +309,8 @@ const handleAddText = () => {
     size: selectedSize.value,
     isBold: isBold.value,
   };
-
   cardStore.addText(newTextItem);
+
   inputText.value = '';
 };
 
