@@ -1561,8 +1561,8 @@ CREATE TABLE feed_comment_tbl
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id)
 );
-
-
+select * from custom_card_tbl;
+DROP TABLE IF EXISTS custom_card_tbl;
 -- 42-1. 카드 메인 테이블
 CREATE TABLE custom_card_tbl (
     custom_card_id Int AUTO_INCREMENT PRIMARY KEY,
@@ -1572,25 +1572,29 @@ CREATE TABLE custom_card_tbl (
     background_value TEXT,       -- 실제 경로, CSS string 등
     pattern_path VARCHAR(255),
     drawing_image_url MEDIUMTEXT, -- Base64 문자열이 길 수 있음
+    card_chip VARCHAR(255),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+
+DROP TABLE IF EXISTS custom_card_image_tbl;
+
 CREATE TABLE custom_card_image_tbl
 (
-    custom_card_image_id        INT AUTO_INCREMENT PRIMARY KEY COMMENT '신청ID',
+    custom_card_image_id  INT AUTO_INCREMENT PRIMARY KEY COMMENT '신청ID',
 
     custom_card_id INT  NOT NULL COMMENT '커스텀 카드 id',
 
-    custom_card_image_name    INT  NULL COMMENT '카드 이미지 ',
+    custom_card_image_name VARCHAR(255)  NULL COMMENT '카드 이미지 ',
 
-    created_at      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
 
 	CONSTRAINT fk_custom_card_image_tbl_custom_card_id
 	FOREIGN KEY (custom_card_id)
 		REFERENCES custom_card_tbl (custom_card_id)
 );
 
-
+DROP TABLE IF EXISTS custom_card_texts_tbl;
 -- 42-2. 텍스트 아이템 테이블
 CREATE TABLE custom_card_texts_tbl (
     text_id Int AUTO_INCREMENT PRIMARY KEY,
@@ -1606,6 +1610,7 @@ CREATE TABLE custom_card_texts_tbl (
     FOREIGN KEY (custom_card_id) REFERENCES custom_card_tbl(custom_card_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+DROP TABLE IF EXISTS custom_card_emojis_tbl;
 --  42-3.  이모지 아이템 테이블
 CREATE TABLE custom_card_emojis_tbl (
     emoji_id Int AUTO_INCREMENT PRIMARY KEY, -- JSON의 id를 그대로 사용하거나 auto_increment 사용
