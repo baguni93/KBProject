@@ -149,6 +149,8 @@ const submitAgreement = async () => {
 
   router.push('/card/create');
 };
+
+customCardStore.load(userId);
 </script>
 
 <style scoped>

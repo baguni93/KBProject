@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCardEditorStore } from '@/stores/cardEditorStore';
 const cardStore = useCardEditorStore();
@@ -118,6 +118,23 @@ const filteredBenefits = computed(() => {
     return benefitList.value;
   }
   return benefitList.value.filter((item) => item.type === props.tab);
+});
+
+// 💡 페이지 로드 시 실행될 로직
+onMounted(() => {
+  // 1. 현재 스토어에 저장된 카드 칩 URL과 일치하는 패키지를 찾음
+  const savedUrl = cardStore.cardChip;
+
+  if (savedUrl) {
+    const matchedBenefit = benefitList.value.find(
+      (benefit) => benefit.url === savedUrl,
+    );
+
+    // 2. 일치하는 항목이 있으면 selectBenefit 로직을 수행
+    if (matchedBenefit) {
+      selectBenefit(matchedBenefit);
+    }
+  }
 });
 </script>
 

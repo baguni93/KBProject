@@ -16,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -63,8 +65,9 @@ public class CustomCardController {
 
         return ResponseEntity.ok( customCardService.applyCard(request));
     }
+
     @GetMapping("/load/{customCardId}")
-    public ResponseEntity<CustomCardSaveRequestDTO> save(@RequestParam int userId ,@PathVariable int customCardId){
+    public ResponseEntity<CustomCardSaveRequestDTO> load(@RequestParam int userId ,@PathVariable int customCardId){
 
         return ResponseEntity.ok(customCardService.loadCard(userId , customCardId));
     }
@@ -79,5 +82,11 @@ public class CustomCardController {
     public ResponseEntity<String> uploadCardImage(@RequestParam("file") MultipartFile file) throws IOException {
         String fileName = UploadFiles.uploadAndGetFileName(UploadPathName.getCustomCardPath(), file);
         return ResponseEntity.ok(fileName);
+    }
+
+    @GetMapping("/cardImage/{imageName}")
+    public void viewCardImage(@PathVariable String imageName, HttpServletResponse response) {
+        File file = new File(UploadPathName.getCustomCardAttachmentPath()+imageName);
+        UploadFiles.downloadImage(response, file);
     }
 }

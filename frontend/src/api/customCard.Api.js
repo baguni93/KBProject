@@ -34,9 +34,16 @@ export default {
     return data;
   },
 
-  // 4. 계좌 상태 및 KB ON MY WAY 발급 이력 확인
   async apply(customCardSaveDTO) {
     const { data } = await api.post(`${BASE_URL}/apply`, customCardSaveDTO);
+    return data;
+  },
+
+  // 4. 계좌 상태 및 KB ON MY WAY 발급 이력 확인
+  async load(userId, targetId) {
+    const { data } = await api.get(`${BASE_URL}/load/${targetId}`, {
+      params: { userId }, // <-- 이렇게 객체로 감싸주어야 합니다!
+    });
     return data;
   },
 };

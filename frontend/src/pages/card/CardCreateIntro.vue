@@ -93,10 +93,12 @@ import { useRouter } from 'vue-router';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useCustomCardStore } from '@/stores/customcard';
 import { useAuthStore } from '@/stores/auth.js';
+import { useCardEditorStore } from '@/stores/cardEditorStore';
+const cardStore = useCardEditorStore();
 
 const authStore = useAuthStore();
 const userId = authStore.userId ?? 1;
-
+cardStore.isFeedLoad = false;
 const customCardStore = useCustomCardStore();
 const router = useRouter();
 

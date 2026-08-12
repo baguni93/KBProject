@@ -40,7 +40,7 @@ public class UploadPathName {
         return getUploadPath() + "/bank/";
     }
 
-    public  static  String getCustomCardAttachmentPath() {return getUploadPath() + "/customCard/attachment";}
+    public  static  String getCustomCardAttachmentPath() {return getUploadPath() + "/customCard/attachment/";}
     public  static  String getCustomCardPath() {return getUploadPath() + "/customCard/";}
 
 }

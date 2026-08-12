@@ -30,6 +30,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
   const savedDrawingImage = ref(null); // 캔버스 전체 데이터 URL
   const isDrawingCleared = ref(0); // 전체 지우기 감지용 카운터 트리거
 
+  const isFeedLoad = ref(false);
   // 브러시 설정 상태
   const drawingOptions = ref({
     mode: 'brush', // 'brush' 또는 'eraser'
@@ -418,6 +419,106 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     isDrawingCleared.value++;
   };
 
+  const getCustomCard = async (userId, targetId) => {
+    const data = await customCardApi.load(userId, targetId);
+    isFeedLoad.value = true;
+    console.log(data);
+    loadCardData(data);
+  };
+
+  /* =========================================================
+   * 서버 데이터 로드 및 적용 액션 (Actions)
+   * ========================================================= */
+  const loadCardData = (data) => {
+    if (!data) return;
+
+    // 1. 기본 정보 설정
+    cardName.value = data.cardName || '';
+    cardNumber.value = data.cardNumber || '';
+    customCardId.value = data.customCardId || 0;
+
+    // 2. 배경 설정 (backgroundType에 따른 분기)
+    if (data.backgroundType === 'COLOR') {
+      color.value = data.backgroundValue || '#1e40af';
+      gradient.value = '';
+      image.value = '';
+    } else if (data.backgroundType === 'GRADIENT') {
+      gradient.value = data.backgroundValue || '';
+      color.value = '';
+      image.value = '';
+    } else if (data.backgroundType === 'IMAGE') {
+      // 일반 외부 URL 이미지인 경우
+      image.value = data.backgroundValue || '';
+      color.value = '';
+      gradient.value = '';
+    } else if (data.backgroundType === 'ATTACHMENT') {
+      // 💡 [추가] ATTACHMENT 타입인 경우 파일 이름과 서버 경로를 조합
+      // 서버에서 이미 전체 경로를 주는지, 파일명만 주는가에 따라 아래 경로를 프로젝트에 맞게 수정하세요.
+      const serverAttachmentPath = '/api/customcard/cardImage/';
+
+      if (data.backgroundValue) {
+        // 이미 경로가 포함되어 있지 않다면 경로를 붙여줍니다.
+        image.value =
+          data.backgroundValue.startsWith('http') ||
+          data.backgroundValue.startsWith('/')
+            ? data.backgroundValue
+            : serverAttachmentPath + data.backgroundValue;
+      } else {
+        image.value = '';
+      }
+
+      color.value = '';
+      gradient.value = '';
+    }
+
+    // 3. 카드 칩 및 패턴 설정
+    cardChip.value = data.cardChip || '';
+    pattern.value = data.pattern || '';
+
+    // 4. 드로잉(캔버스) 이미지 복원
+    savedDrawingImage.value = data.savedDrawingImage || null;
+    isDrawingCleared.value++;
+
+    // 5. 텍스트 목록 복원
+    texts.value = data.texts
+      ? data.texts.map((t, index) => ({
+          id: t.id || Date.now() + index,
+          text: t.text,
+          x: t.x,
+          y: t.y,
+          rotation: t.rotation || 0,
+          font: t.font || 'sans-serif',
+          color: t.color || '#ffffff',
+          size: t.size || '20px',
+          isBold: t.isBold || false,
+        }))
+      : [];
+    selectedTextId.value = null;
+
+    // 6. 이모지 목록 복원
+    emojis.value = data.emojis
+      ? data.emojis.map((e, index) => ({
+          id: e.id || Date.now() + index,
+          x: e.x,
+          y: e.y,
+          rotation: e.rotation || 0,
+          emojiType: e.emojiType,
+          emojiObj: {
+            emoji: e.emojiObj?.emoji || '',
+          },
+        }))
+      : [];
+    selectedEmojiId.value = null;
+
+    // 7. 스냅샷 동기화
+    saveSnapshot();
+    console.log(
+      '카드 데이터를 성공적으로 에디터에 적용했습니다 (ATTACHMENT 포함).',
+    );
+
+    console.log(image.value);
+  };
+
   /* =========================================================
    * 5. Return (외부 노출)
    * ========================================================= */
@@ -442,6 +543,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     history,
     activeEditorTab,
     customCardId,
+    isFeedLoad,
     // methods
     setColor,
     setGradient,
@@ -471,5 +573,6 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     setCardName,
 
     createCardPayload,
+    getCustomCard,
   };
 });

@@ -25,17 +25,23 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
+import { useCardEditorStore } from '@/stores/cardEditorStore';
+const cardEditorStore = useCardEditorStore();
 const router = useRouter();
-defineProps({
+const props = defineProps({
   feed: {
     type: Object,
     required: true,
   },
 });
 
-const issueCard = () => {
+const issueCard = async () => {
   console.log('커스텀 카드 발급 버튼 클릭');
-  router.push('/card/create/intro');
+  console.log('해당 피드 ID :', props.feed.feedId);
+  console.log('해당 피드 TargetID:', props.feed.targetId);
+  await cardEditorStore.getCustomCard(props.feed.userId, props.feed.targetId);
+
+  router.push('/card/create/agreement');
   // 카드 발급 API 호출 예정
 };
 </script>

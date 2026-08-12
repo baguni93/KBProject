@@ -122,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import CardColorPick from './CardColorPick.vue';
 import CardGradientPick from './CardGradientPick.vue';
 import CardSpecialBackgroundPick from './CardSpecialBackgroundPick.vue';
@@ -139,11 +139,56 @@ const props = defineProps({
 
 const fileInput = ref(null);
 
-//토글 기능을 위한 전 이미지
+// 토글 기능을 위한 전 이미지
 const previewImage = ref('');
 
-//이미지 적용 여부
+// 이미지 적용 여부
 const applyImage = ref(false);
+
+// 💡 스토어에 이미지가 있고, 그것이 '내 사진(첨부파일 또는 blob)'일 때만 초기 세팅
+const initPhotoFromStore = () => {
+  const img = cardStore.image;
+  console.log('스토어 이미지 확인:', img);
+
+  if (
+    img &&
+    !cardStore.color &&
+    !cardStore.gradient &&
+    (img.includes('/api') || img.startsWith('blob:'))
+  ) {
+    previewImage.value = img;
+    applyImage.value = true;
+  }
+};
+
+// 컴포넌트가 마운트될 때 실행
+onMounted(() => {
+  initPhotoFromStore();
+});
+
+// 💡 스토어의 image 값이 변경될 때 실시간 동기화 (내 사진일 때만 반영)
+// 💡 스토어의 image 값이 변경될 때 동기화 (단, 사용자가 토글로 끈 경우는 제외)
+watch(
+  () => cardStore.image,
+  (newImage) => {
+    // 1. 내 사진(첨부파일 또는 blob)인 경우에만 미리보기 동기화
+    if (
+      newImage &&
+      !cardStore.color &&
+      !cardStore.gradient &&
+      (newImage.includes('/api') || newImage.startsWith('blob:'))
+    ) {
+      previewImage.value = newImage;
+      applyImage.value = true;
+    }
+    // 2. 만약 스토어의 image가 아예 비워졌고, 사용자가 토글을 켠 상태가 아니라면(외부에서 초기화된 경우) 프리뷰 비우기
+    else if (!newImage && !cardStore.color && !cardStore.gradient) {
+      // previewImage는 유지한 채 applyImage만 꺼서 사용자가 다시 토글을 켤 수 있게 하거나,
+      // 완전히 초기화하려면 아래와 같이 처리합니다.
+      // (단, 토글을 껐을 때 토글 함수 내부에서 이미 처리를 하므로 watch에서는 외부 초기화만 감지)
+    }
+  },
+);
 
 // 파일 선택창 열기
 const openFile = () => {
@@ -163,7 +208,6 @@ const selectPhoto = (event) => {
   const imageUrl = URL.createObjectURL(file);
 
   previewImage.value = imageUrl;
-
   applyImage.value = true;
 
   console.log('[selectPhoto] imageUrl:', imageUrl);

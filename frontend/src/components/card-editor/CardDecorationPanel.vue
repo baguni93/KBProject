@@ -193,6 +193,13 @@
             ></span>
           </div>
         </div>
+        <div class="drawing-warning-box">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span
+            >욕설 및 부적절한 내용이 포함된 그리기 결과물은 실물 카드 발급 및
+            승인 과정에서 제외될 수 있습니다.</span
+          >
+        </div>
       </div>
     </template>
   </div>
@@ -203,6 +210,9 @@ import { ref, watch } from 'vue';
 import CardPatternCanvas from './CardPatternCanvas.vue';
 import CardEmojiPick from './CardEmojiPick.vue';
 import { useCardEditorStore } from '@/stores/cardEditorStore';
+
+import { useModalStore } from '@/stores/userModalStore';
+const modalStore = useModalStore();
 
 const cardStore = useCardEditorStore();
 
@@ -298,17 +308,30 @@ const sizes = [
   { label: '대', value: '22px' },
 ];
 
-const handleAddText = () => {
-  if (!inputText.value.trim()) return;
+import { useWordFilterStore } from '@/stores/wordFilterStore';
+const wordFilterStore = useWordFilterStore();
+
+const handleAddText = async () => {
+  const trimmedText = inputText.value.trim();
+  if (!trimmedText) return;
+
+  // 💡 공통 필터 스토어의 검증 함수 사용
+  const validation = wordFilterStore.validateText(trimmedText);
+
+  if (!validation.isValid) {
+    await modalStore.showAlert(validation.message);
+    return; // 추가 중단
+  }
 
   const newTextItem = {
     id: Date.now(),
-    text: inputText.value,
+    text: validation.text,
     font: selectedFont.value,
     color: selectedColor.value,
     size: selectedSize.value,
     isBold: isBold.value,
   };
+
   cardStore.addText(newTextItem);
 
   inputText.value = '';
@@ -625,5 +648,27 @@ const handleRemoveText = (id) => {
   transition:
     width 0.1s,
     height 0.1s;
+}
+.drawing-warning-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 330px;
+  margin-top: 16px;
+  padding: 10px 12px;
+  background: #fff8f8;
+  border: 1px solid #ffdede;
+  border-radius: 10px;
+  box-sizing: border-box;
+  color: #d9534f;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.drawing-warning-box i {
+  font-size: 12px;
+  margin-top: 1px;
+  flex-shrink: 0;
 }
 </style>
