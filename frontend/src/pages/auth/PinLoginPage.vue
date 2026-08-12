@@ -1,98 +1,140 @@
 <template>
-  <div class="login-page animate-fade-in-up">
-    <!-- 1. 상단 영역 (Header + 뒤로가기 버튼) -->
-    <header class="signup-header">
-      <button class="back-button" type="button" @click="goBack">&lt;</button>
-    </header>
+  <div class="page-layout login-page">
+    <!-- 공통 상단 헤더 -->
+    <PageHeader
+        custom-back
+        @back="goBack"
+    />
 
-    <header class="login-header">
-      <div class="login-icon pulse-glow">
-        <span class="font-outfit">KB</span>
+    <!-- 콘텐츠 -->
+    <main class="page-content login-content">
+      <!-- 메인 비주얼 -->
+      <div class="login-visual">
+        <div class="visual-glow"></div>
+
+        <div class="visual-icon">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+
+        <span class="visual-dot dot-one"></span>
+        <span class="visual-dot dot-two"></span>
+        <span class="visual-dot dot-three"></span>
       </div>
 
-      <h2 class="fw-extrabold text-dark font-outfit">KB Pay 간편 로그인</h2>
-      <p class="text-secondary small font-outfit">
-        등록하신 6자리 간편비밀번호를 입력해주세요.
-      </p>
-    </header>
+      <!-- 제목 -->
+      <header class="login-header">
+        <h1 class="text-30-bold">
+          간편비밀번호 로그인
+        </h1>
 
-    <!-- 2. 중앙 내용 영역 -->
-    <main class="content-area">
+        <p class="text-15">
+          등록한 PIN 6자리를 입력해 주세요.
+        </p>
+      </header>
+
+      <!-- PIN 입력 -->
       <section class="pin-section">
         <div
-          :class="{ error: !!errorMessage }"
-          class="pin-boxes"
-          role="button"
-          tabindex="0"
-          @click="focusPinInput"
-          @keydown.enter="focusPinInput"
+            :class="{ error: !!errorMessage }"
+            class="pin-boxes"
+            role="button"
+            tabindex="0"
+            @click="focusPinInput"
+            @keydown.enter="focusPinInput"
         >
           <div
-            v-for="index in 6"
-            :key="index"
-            :class="{
-              filled: pinPassword.length >= index,
-              active: pinPassword.length === index - 1 && !errorMessage,
-            }"
-            class="pin-box shadow-sm"
+              v-for="index in 6"
+              :key="index"
+              :class="{
+                filled: pinPassword.length >= index,
+                active: pinPassword.length === index - 1 && !errorMessage,
+              }"
+              class="pin-box"
           >
-            <span v-if="pinPassword.length >= index" class="pin-dot"></span>
+            <span
+                v-if="pinPassword.length >= index"
+                class="pin-dot"
+            ></span>
           </div>
 
           <input
-            ref="pinInput"
-            :value="pinPassword"
-            class="hidden-pin-input"
-            inputmode="numeric"
-            maxlength="6"
-            pattern="[0-9]*"
-            type="password"
-            autocomplete="off"
-            @input="changePin"
+              ref="pinInput"
+              :value="pinPassword"
+              :disabled="pinLocked"
+              class="hidden-pin-input"
+              inputmode="numeric"
+              maxlength="6"
+              pattern="[0-9]*"
+              type="password"
+              autocomplete="off"
+              @input="changePin"
           />
         </div>
 
+        <p
+            v-if="errorMessage"
+            class="error-message text-13"
+        >
+          {{ errorMessage }}
+        </p>
+
         <button
-          class="forgot-button font-outfit"
-          type="button"
-          @click="goPinReset"
+            v-if="!pinLocked"
+            class="forgot-button text-13-bold"
+            type="button"
+            @click="goPinReset"
         >
           간편비밀번호를 잊으셨나요?
         </button>
-
-        <p v-if="errorMessage" class="error-message fw-bold">
-          {{ errorMessage }}
-        </p>
       </section>
 
-      <section class="security-area border-0 shadow-sm">
+      <!-- 보안 안내 -->
+      <section class="security-card">
         <div class="security-icon">
-          <i class="bi bi-shield-lock-fill"></i>
+          <i class="fa-solid fa-shield-halved"></i>
         </div>
 
-        <div>
-          <strong class="font-outfit">금융종단간 암호화 세션 보호</strong>
-          <p>입력하시는 비밀번호는 이중 보안 처리되어 안전합니다.</p>
+        <div class="security-text">
+          <strong class="text-15-bold">
+            안전하게 보호하고 있어요
+          </strong>
+
+          <p class="text-13">
+            입력한 간편비밀번호는 안전하게 보호돼요.
+          </p>
         </div>
       </section>
     </main>
 
-    <!-- 3. 하단 버튼 영역 -->
-    <div class="button-area">
+    <!-- 하단 버튼 -->
+    <div class="bottom-btn-area single">
       <button
-        class="login-button font-outfit shadow-md"
-        :disabled="pinPassword.length !== 6 || loading"
-        type="button"
-        @click="login"
+          v-if="pinLocked"
+          class="bottom-btn"
+          type="button"
+          @click="goPinReset"
       >
-        {{ loading ? '보안 인증 확인 중...' : '로그인' }}
+        본인인증 후 재설정
+      </button>
+
+      <button
+          v-else
+          class="bottom-btn"
+          :disabled="pinPassword.length !== 6 || loading"
+          type="button"
+          @click="login"
+      >
+        {{ loading ? '로그인 중' : '로그인' }}
       </button>
     </div>
 
-    <!-- 로딩 오버레이 -->
+    <!-- 로딩 -->
     <div v-if="loading" class="loading-overlay">
       <div class="loading-spinner"></div>
-      <span class="fw-bold font-outfit">안전하게 로그인하고 있습니다...</span>
+
+      <span class="text-15-bold">
+        안전하게 로그인하고 있어요.
+      </span>
     </div>
   </div>
 </template>
@@ -103,6 +145,7 @@ import { useRouter } from 'vue-router';
 import { getUserInfo } from '@/api/userApi';
 import { useSignupStore } from '@/stores/signup';
 import { useAuthStore } from '@/stores/auth';
+import PageHeader from '@/components/common/PageHeader.vue';
 
 const router = useRouter();
 const signupStore = useSignupStore();
@@ -112,10 +155,11 @@ const pinInput = ref(null);
 const pinPassword = ref('');
 const errorMessage = ref('');
 const loading = ref(false);
+const pinLocked = ref(false);
 
 // PIN 입력창 포커스
 const focusPinInput = async () => {
-  if (loading.value) return;
+  if (loading.value || pinLocked.value) return;
 
   await nextTick();
   pinInput.value?.focus();
@@ -168,20 +212,19 @@ const login = async () => {
 
     pinPassword.value = '';
 
-    const status = error.response?.status;
-
     if (!error.response) {
-      errorMessage.value =
-        '서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.';
-    } else if (status >= 500) {
-      errorMessage.value = '간편비밀번호가 일치하지 않습니다.';
+      errorMessage.value = '서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.';
     } else {
-      errorMessage.value =
-        error.response?.data?.message ||
-        '로그인에 실패했습니다. 다시 시도해주세요.';
+      const responseData = error.response.data;
+
+      errorMessage.value = typeof responseData === 'string'
+          ? responseData
+          : responseData?.message || '로그인에 실패했습니다. 다시 시도해주세요.';
     }
 
-    await focusPinInput();
+    if (errorMessage.value.includes('입력 가능 횟수를 초과')) pinLocked.value = true;
+
+    if (!pinLocked.value) await focusPinInput();
   } finally {
     loading.value = false;
   }
@@ -202,139 +245,172 @@ onMounted(() => {
   focusPinInput();
 });
 
-// PIN 6자리 입력 시 로그인
+// PIN 6자리 입력 시 자동 로그인
 watch(pinPassword, (value) => {
-  if (value.length !== 6 || loading.value) return;
+  if (value.length !== 6 || loading.value || pinLocked.value) return;
 
   login();
 });
 </script>
 
 <style scoped>
-/* 1. 상단 헤더 영역 */
-.signup-header {
-  flex-shrink: 0;
-}
+@import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
 
 .login-page {
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  box-sizing: border-box;
+  position: relative;
   overflow: hidden;
-  padding: 36px 24px 70px;
-  background: #ffffff;
+  background: linear-gradient(
+      180deg,
+      #fffdf8 0%,
+      var(--color-bg-page) 42%,
+      var(--color-bg-page) 100%
+  );
 }
 
-/* 1. 상단 헤더 영역 (참고 코드와 완전 일치) */
+.login-content {
+  padding-top: 32px;
+}
+
+/* 메인 비주얼 */
+.login-visual {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  margin: 0 auto 28px;
+}
+
+.visual-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255, 188, 46, 0.11);
+}
+
+.visual-icon {
+  position: absolute;
+  inset: 14px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 26px;
+  background: linear-gradient(
+      135deg,
+      #ffca52 0%,
+      var(--color-primary) 65%,
+      #f3a711 100%
+  );
+  box-shadow: 0 12px 26px rgba(255, 188, 46, 0.22);
+  color: #ffffff;
+}
+
+.visual-icon i {
+  font-size: 27px;
+}
+
+/* 작은 장식 */
+.visual-dot {
+  position: absolute;
+  z-index: 3;
+  border-radius: 50%;
+}
+
+.dot-one {
+  top: 5px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  background: #8f81f5;
+}
+
+.dot-two {
+  bottom: 8px;
+  left: 4px;
+  width: 7px;
+  height: 7px;
+  background: #6fd0bd;
+}
+
+.dot-three {
+  right: 3px;
+  bottom: 18px;
+  width: 6px;
+  height: 6px;
+  background: #ff9aa7;
+}
+
+/* 제목 */
 .login-header {
-  flex-shrink: 0;
   text-align: center;
 }
 
-.back-button {
-  align-self: flex-start;
-  margin-bottom: 16px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #555555;
-  font-size: 26px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.login-icon {
-  display: flex;
-  width: 68px;
-  height: 68px;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 20px;
-  border-radius: 22px;
-  background: linear-gradient(135deg, #ffbc00 0%, #ff9900 100%);
-  box-shadow: 0 14px 28px rgba(255, 188, 0, 0.25);
-  color: #111111;
-  font-size: 26px;
-  font-weight: 800;
-}
-
-.login-header h2 {
-  margin: 0 0 10px;
-  color: #111111;
-  font-size: 26px;
-  font-weight: 800;
+.login-header h1 {
+  margin: 0;
+  color: var(--color-text-main);
   line-height: 1.35;
-  letter-spacing: -0.7px;
+  letter-spacing: -0.6px;
 }
 
 .login-header p {
-  margin: 0;
-  color: #777777;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
+  margin: 14px 0 0;
+  color: var(--color-text-sub);
+  line-height: 1.6;
 }
 
-/* 2. 중앙 내용 영역 */
-.content-area {
-  flex: 1;
-  min-height: 0;
-  margin-top: 24px;
-  overflow-y: auto;
-  box-sizing: border-box;
-  padding-right: 2px;
-}
-
+/* PIN */
 .pin-section {
+  margin-top: 42px;
   text-align: center;
 }
 
 .pin-boxes {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 9px;
   width: 100%;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
   cursor: text;
   outline: none;
 }
 
 .pin-box {
   display: flex;
-  height: 52px;
+  height: 54px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #dddddd;
+  border: 1px solid var(--color-border-main);
   border-radius: 12px;
   background: #fafafa;
-  transition: 0.2s;
+  box-sizing: border-box;
+  transition:
+      border-color 0.2s,
+      background 0.2s,
+      box-shadow 0.2s;
 }
 
 .pin-box.active {
-  border-color: #ffbc2e;
+  border-color: var(--color-primary);
   background: #fffaf0;
   box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
 }
 
 .pin-box.filled {
-  border-color: #ffbc2e;
+  border-color: var(--color-primary);
   background: #fff8e5;
 }
 
 .pin-boxes.error .pin-box {
-  border-color: #e53935;
+  border-color: var(--color-error);
   background: #fff7f7;
+  box-shadow: none;
 }
 
 .pin-dot {
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: #222222;
+  background: var(--color-text-main);
 }
 
 .hidden-pin-input {
@@ -346,118 +422,102 @@ watch(pinPassword, (value) => {
   pointer-events: none;
 }
 
-.forgot-button {
-  margin-top: 20px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #666666;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
+/* 오류 */
 .error-message {
-  min-height: 22px;
+  min-height: 20px;
   margin: 14px 0 0;
-  color: #e53935;
-  font-size: 13px;
+  color: var(--color-error);
   line-height: 1.5;
 }
 
-.security-area {
+/* 비밀번호 찾기 */
+.forgot-button {
+  margin-top: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-sub);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.forgot-button:active {
+  color: var(--color-text-main);
+}
+
+/* 보안 안내 */
+.security-card {
   display: flex;
+  width: 100%;
   align-items: center;
   gap: 14px;
-  margin-top: 32px;
+  margin-top: 40px;
   padding: 16px;
-  border-radius: 14px;
-  background: #fff9e9;
+  border: 1px solid rgba(255, 188, 46, 0.16);
+  border-radius: 16px;
+  background: linear-gradient(
+      110deg,
+      #fff9ec 0%,
+      #fffdf8 75%,
+      #faf8ff 100%
+  );
+  box-sizing: border-box;
+  text-align: left;
 }
 
 .security-icon {
   display: flex;
-  flex: none;
-  width: 38px;
-  height: 38px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #ffbc2e;
-  color: #ffffff;
-  font-size: 18px;
-}
-
-.security-area strong {
-  display: block;
-  color: #222222;
-  font-size: 13.5px;
-  font-weight: 700;
-}
-
-.security-area p {
-  margin: 4px 0 0;
-  color: #888888;
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-/* 3. 하단 버튼 영역 */
-.button-area {
   flex-shrink: 0;
-  display: flex;
-  justify-content: center;
+  width: 44px;
+  height: 44px;
   align-items: center;
-  padding-top: 16px;
-  background: #ffffff;
-}
-
-.login-button {
-  width: 100%;
-  height: 52px;
-  border: none;
+  justify-content: center;
   border-radius: 14px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(255, 188, 46, 0.12);
+  color: var(--color-primary-border);
 }
 
-.login-button:active:not(:disabled) {
-  background: #f3aa0b;
+.security-icon i {
+  font-size: 17px;
 }
 
-.login-button:disabled {
-  border-color: #dddddd;
-  background: #eeeeee;
-  color: #aaaaaa;
-  cursor: not-allowed;
+.security-text {
+  min-width: 0;
 }
 
-/* 로딩 오버레이 */
+.security-text strong {
+  display: block;
+  color: var(--color-text-main);
+}
+
+.security-text p {
+  margin: 5px 0 0;
+  color: var(--color-text-sub);
+  line-height: 1.45;
+}
+
+/* 로딩 */
 .loading-overlay {
   position: absolute;
   inset: 0;
-  z-index: 10;
+  z-index: 100;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: rgba(255, 255, 255, 0.86);
-  color: #333333;
-  font-size: 15px;
-  font-weight: 700;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--color-text-main);
 }
 
 .loading-spinner {
   width: 36px;
   height: 36px;
-  border: 4px solid #eeeeee;
-  border-top-color: #ffbc2e;
+  border: 4px solid var(--color-bg-disabled);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
