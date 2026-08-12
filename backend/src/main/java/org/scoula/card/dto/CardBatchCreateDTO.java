@@ -14,14 +14,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CardBatchCreateDTO {
-    /**
-     * 연결할 계좌 ID (필수)
-     */
+
     private Integer accountId;
 
-    /**
-     * 생성할 카드 개수 (필수, 1 ~ 1000 사이 권장)
-     */
+
     private Integer count;
 
     /**

@@ -137,4 +137,145 @@
         )
     </insert>
 
+    <!-- card_transaction_detail_tbl INSERT (PENDING) -->
+    <insert id="insertCardTransactionDetail" useGeneratedKeys="true" keyProperty="cardTransactionId">
+        INSERT INTO card_transaction_detail_tbl (
+            linked_card_id,
+            status,
+            created_at,
+            transaction_id
+        ) VALUES (
+            #{linkedCardId},
+            'PENDING',
+            NOW(),
+            NULL
+        )
+    </insert>
+
+    <!-- card_transaction_detail_tbl 단건 조회 -->
+    <select id="getCardTransactionDetailById" resultType="org.scoula.cardpayment.domain.CardTransactionDetailVO">
+        SELECT
+            card_transaction_id AS cardTransactionId,
+            linked_card_id      AS linkedCardId,
+            status              AS status,
+            created_at          AS createdAt,
+            transaction_id      AS transactionId
+        FROM card_transaction_detail_tbl
+        WHERE card_transaction_id = #{cardTransactionId}
+    </select>
+
+    <!-- 가장 최근 PENDING 결제건 조회 -->
+    <select id="getLatestPendingTransaction" resultType="org.scoula.cardpayment.domain.CardTransactionDetailVO">
+        SELECT
+            card_transaction_id AS cardTransactionId,
+            linked_card_id      AS linkedCardId,
+            status              AS status,
+            created_at          AS createdAt,
+            transaction_id      AS transactionId
+        FROM card_transaction_detail_tbl
+        WHERE status = 'PENDING'
+        ORDER BY card_transaction_id DESC
+        LIMIT 1
+    </select>
+
+    <!-- 특정 회원 ID(user_id)의 대기 중인(PENDING) 결제건 조회 -->
+    <select id="getPendingTransactionByUserId" resultType="org.scoula.cardpayment.domain.CardTransactionDetailVO">
+        SELECT
+            d.card_transaction_id AS cardTransactionId,
+            d.linked_card_id      AS linkedCardId,
+            d.status              AS status,
+            d.created_at          AS createdAt,
+            d.transaction_id      AS transactionId
+        FROM card_transaction_detail_tbl d
+        INNER JOIN linked_card_tbl lc ON d.linked_card_id = lc.linked_card_id
+        WHERE lc.user_id = #{userId}
+          AND d.status = 'PENDING'
+        ORDER BY d.card_transaction_id DESC
+        LIMIT 1
+    </select>
+
+    <!-- card_transaction_detail_tbl 상태 및 transaction_id UPDATE -->
+    <update id="updateCardTransactionStatus">
+        UPDATE card_transaction_detail_tbl
+        SET status = #{status},
+            transaction_id = #{transactionId}
+        WHERE card_transaction_id = #{cardTransactionId}
+    </update>
+
+    <!-- linked_card_id로 회원 ID 조회 -->
+    <select id="getUserIdByLinkedCardId" resultType="java.lang.Integer">
+        SELECT user_id
+        FROM linked_card_tbl
+        WHERE linked_card_id = #{linkedCardId}
+        LIMIT 1
+    </select>
+
+    <!-- 회원 ID로 대표/첫 번째 더미 계좌 ID 조회 -->
+    <select id="getUserAccountId" resultType="java.lang.Integer">
+        SELECT account_id
+        FROM account_dummy_tbl
+        WHERE user_id = #{userId}
+        ORDER BY account_id ASC
+        LIMIT 1
+    </select>
+
+    <!-- 상점(가맹점) 예금주명으로 더미 계좌 ID 조회 -->
+    <select id="getMerchantAccountIdByName" resultType="java.lang.Integer">
+        SELECT account_id
+        FROM account_dummy_tbl
+        WHERE owner_name LIKE CONCAT('%', #{merchantName}, '%')
+        ORDER BY account_id ASC
+        LIMIT 1
+    </select>
+
+    <!-- 계좌 ID로 user_id 조회 (receive_id 용) -->
+    <select id="getMerchantUserIdByAccountId" resultType="java.lang.Integer">
+        SELECT user_id
+        FROM account_dummy_tbl
+        WHERE account_id = #{accountId}
+        LIMIT 1
+    </select>
+
+    <!-- 계좌 잔액 차감 (잔액 조건 포함) -->
+    <update id="subtractAccountBalance">
+        UPDATE account_dummy_tbl
+        SET balance = balance - #{amount}
+        WHERE account_id = #{accountId}
+          AND balance >= #{amount}
+    </update>
+
+    <!-- 계좌 잔액 증가 -->
+    <update id="addAccountBalanceById">
+        UPDATE account_dummy_tbl
+        SET balance = balance + #{amount}
+        WHERE account_id = #{accountId}
+    </update>
+
+    <!-- 카드 결제 통합 원장(financial_transaction_tbl) 생성 -->
+    <insert id="insertFinancialTransactionForCard" parameterType="org.scoula.cardpayment.dto.CardTransactionApproveDTO" useGeneratedKeys="true" keyProperty="transactionId">
+        INSERT INTO financial_transaction_tbl (
+            user_id,
+            receive_id,
+            spending_category_id,
+            transaction_type,
+            source_type,
+            target_type,
+            transaction_status,
+            amount,
+            merchant_name,
+            created_at
+        ) VALUES (
+            #{userId},
+            #{receiveId},
+            1,
+            'PAYMENT',
+            'ACCOUNT',
+            'ACCOUNT',
+            'SUCCESS',
+            #{amount},
+            #{merchantName},
+            NOW()
+        )
+    </insert>
+
 </mapper>

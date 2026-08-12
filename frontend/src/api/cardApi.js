@@ -64,3 +64,27 @@ export const disconnectCard = async (linkedCardId) => {
 
   return data;
 };
+
+// 카드 결제 1단계: 결제 대기(PENDING) 레코드 생성
+export const requestCardPayment = async (linkedCardId = 1) => {
+  const { data } = await api.post("/api/cards/payments/request", { linkedCardId });
+  return data;
+};
+
+// 카드 결제 2~3단계: 결제 승인 요청 (테스트용)
+export const approveCardPayment = async (approveData) => {
+  const { data } = await api.post("/api/cards/payments/approve", approveData);
+  return data;
+};
+
+// 카드 결제 상태 단건 조회
+export const getCardTransactionStatus = async (cardTransactionId) => {
+  const { data } = await api.get(`/api/cards/payments/transactions/${cardTransactionId}`);
+  return data;
+};
+
+// 카드 결제 취소/만료 (FAILED 처리)
+export const cancelCardPayment = async (cardTransactionId) => {
+  const { data } = await api.post("/api/cards/payments/cancel", { cardTransactionId });
+  return data;
+};

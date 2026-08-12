@@ -481,7 +481,7 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import api from "@/api";
-import { getCards } from "@/api/cardApi";
+import { getCards, requestCardPayment, cancelCardPayment, getCardTransactionStatus } from "@/api/cardApi";
 import walletApi from "@/api/walletApi";
 import { useAuthStore } from "@/stores/auth";
 import PageHeader from "@/components/common/PageHeader.vue";
@@ -628,23 +628,66 @@ const formattedNfcTimer = computed(() => {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 });
 
-const startNfcTimer = () => {
+const currentPendingTxId = ref(null);
+
+const startNfcTimer = async () => {
   stopNfcPayment();
   nfcTimerSeconds.value = 50;
   isNfcActive.value = true;
 
-  nfcTimerInterval = setInterval(() => {
+  // 1단계: DB card_transaction_detail_tbl에 status='PENDING' 레코드 등록
+  try {
+    const selectedCard = registeredCards.value[currentCardIdx.value];
+    const linkedCardId = selectedCard?.cardId || selectedCard?.linkedCardId || 1;
+    const res = await requestCardPayment(linkedCardId);
+    if (res && res.cardTransactionId) {
+      currentPendingTxId.value = res.cardTransactionId;
+      console.log("결제 대기(PENDING) DB 등록 완료. TransactionID:", res.cardTransactionId);
+    }
+  } catch (e) {
+    console.error("결제 대기 DB 등록 예외:", e);
+  }
+
+  nfcTimerInterval = setInterval(async () => {
     if (nfcTimerSeconds.value > 0) {
       nfcTimerSeconds.value--;
+
+      // 2초마다 결제 승인 여부 실시간 폴링 검사
+      if (currentPendingTxId.value && nfcTimerSeconds.value % 2 === 0) {
+        try {
+          const statusRes = await getCardTransactionStatus(currentPendingTxId.value);
+          if (statusRes && statusRes.status === "SUCCESS") {
+            const merchant = statusRes.merchantName || "가맹점";
+            const amt = statusRes.amount ? statusRes.amount.toLocaleString() : "10,000";
+            alert(`${merchant}에서 ${amt}원 결제가 성공적으로 완료되었습니다!`);
+            currentPendingTxId.value = null; // 취소 API 호출 방지
+            stopNfcPayment(); // 결제 대기화면 닫고 PIN 입력 전 카드 화면으로 복귀
+            return;
+          }
+        } catch (pollErr) {
+          console.warn("결제 상태 폴링 경고:", pollErr);
+        }
+      }
     } else {
       stopNfcPayment();
     }
   }, 1000);
 };
 
-const stopNfcPayment = () => {
+const stopNfcPayment = async () => {
   isNfcActive.value = false;
   if (nfcTimerInterval) clearInterval(nfcTimerInterval);
+
+  if (currentPendingTxId.value) {
+    const txIdToCancel = currentPendingTxId.value;
+    currentPendingTxId.value = null;
+    try {
+      await cancelCardPayment(txIdToCancel);
+      console.log("결제 대기 건 취소/만료 FAILED 처리 완료. TxID:", txIdToCancel);
+    } catch (e) {
+      console.error("결제 취소 DB 업데이트 실패:", e);
+    }
+  }
 };
 
 const qrPayloadUrl = ref(
