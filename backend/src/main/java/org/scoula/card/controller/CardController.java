@@ -7,7 +7,9 @@ import org.scoula.card.dto.CardCustomCreateDTO;
 import org.scoula.card.dto.CardDTO;
 import org.scoula.card.dto.CardMasterCreateDTO;
 import org.scoula.card.service.CardService;
+import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -135,20 +137,22 @@ public class CardController {
     }
 
     // CARD-001 연결 카드 목록 조회
-    @GetMapping("/api/users/{userId}/cards")
-    public ResponseEntity<List<CardDTO>> getCards(@PathVariable("userId") Long userId) {
+    @GetMapping("/api/users/cards")
+    public ResponseEntity<List<CardDTO>> getCards(@AuthenticationPrincipal CustomUser customUser) {
+        Long userId = customUser.getUser().getUserId();
         return ResponseEntity.ok(cardService.getCards(userId));
     }
 
     // CARD-002 대표카드 설정
-    @PatchMapping("/api/users/{userId}/cards/{linkedCardId}/represent")
+    @PatchMapping("/api/users/cards/{linkedCardId}/represent")
     public ResponseEntity<Map<String, Object>> setRepresentCard(
-            @PathVariable("userId") Long userId,
+            @AuthenticationPrincipal CustomUser customUser,
             @PathVariable("linkedCardId") Long linkedCardId
     ) {
+        Long userId = customUser.getUser().getUserId();
         boolean result = cardService.setRepresentCard(userId, linkedCardId);
-        Map<String, Object> response = new HashMap<>();
 
+        Map<String, Object> response = new HashMap<>();
         response.put("success", result);
         response.put("message", "대표카드가 변경되었습니다.");
 
@@ -156,14 +160,15 @@ public class CardController {
     }
 
     // CARD-003 카드 연결 해제
-    @DeleteMapping("/api/users/{userId}/cards/{linkedCardId}")
+    @DeleteMapping("/api/users/cards/{linkedCardId}")
     public ResponseEntity<Map<String, Object>> disconnectCard(
-            @PathVariable("userId") Long userId,
+            @AuthenticationPrincipal CustomUser customUser,
             @PathVariable("linkedCardId") Long linkedCardId
     ) {
+        Long userId = customUser.getUser().getUserId();
         boolean result = cardService.disconnectCard(userId, linkedCardId);
-        Map<String, Object> response = new HashMap<>();
 
+        Map<String, Object> response = new HashMap<>();
         response.put("success", result);
         response.put("message", "카드 연결이 해제되었습니다.");
 

@@ -72,7 +72,7 @@
                 <div class="card-title">
                   <strong>{{ card.cardName }}</strong>
 
-                  <span v-if="card.primaryYn === 'Y'" class="primary-badge">
+                  <span v-if="card.representYn === 'Y'" class="primary-badge">
                     대표카드
                   </span>
                 </div>
@@ -82,7 +82,7 @@
                 </p>
 
                 <small>
-                  {{ maskCardNumber(card.cardNumber) }}
+                  {{ card.maskedCardNumber }}
                 </small>
               </div>
 
@@ -101,7 +101,7 @@
                   class="card-menu"
                   @click.stop
               >
-                <button v-if="card.primaryYn !== 'Y'" type="button" @click="changePrimary(card)">
+                <button v-if="card.representYn !== 'Y'" type="button" @click="changePrimary(card)">
                   <span class="menu-icon">☆</span>
                   대표카드 설정
                 </button>
@@ -145,7 +145,7 @@
 
             <div>
               <strong>{{ disconnectTarget.cardName }}</strong>
-              <p>{{ maskCardNumber(disconnectTarget.cardNumber) }}</p>
+              <p>{{ disconnectTarget.maskedCardNumber }}</p>
             </div>
           </article>
 
