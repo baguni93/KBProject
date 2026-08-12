@@ -11,8 +11,7 @@
             spending_analysis_id AS spendingAnalysisId,
             user_id AS userId,
             analysis_period AS analysisPeriod,
-            created_at AS createdAt,
-            ai_card_recommendation_summary AS aiCardRecommendationSummary
+            created_at AS createdAt
         FROM spending_analysis_tbl
         WHERE spending_analysis_id = #{spendingAnalysisId}
           AND user_id = #{userId}
@@ -53,7 +52,6 @@
             application,
             annual_fee AS annualFee
         FROM kb_card_product_tbl
-        ORDER BY card_type, card_product_id
     </select>
 
     <select id="selectCardBenefits"
@@ -84,7 +82,7 @@
         LEFT JOIN spending_category_tbl category
                ON ft.spending_category_id = category.spending_category_id
         WHERE ft.user_id = #{userId}
-          AND ft.transaction_type = 'PAYMENT'
+          AND ft.transaction_type IN ('PAYMENT', 'TRANSFER', 'SETTLEMENT')
           AND ft.transaction_status = 'SUCCESS'
           AND ft.created_at <![CDATA[ >= ]]> #{startAt}
           AND ft.created_at <![CDATA[ < ]]> #{endAt}
@@ -101,14 +99,16 @@
             spending_analysis_id,
             card_product_id,
             recommendation_rank,
-            expected_benefit_amount
+            expected_benefit_amount,
+            ai_recommendation_summary
         )
         VALUES
         (
             #{spendingAnalysisId},
             #{cardProductId},
             #{recommendationRank},
-            #{expectedBenefitAmount}
+            #{expectedBenefitAmount},
+            #{aiRecommendationSummary}
         )
     </insert>
 
@@ -135,13 +135,6 @@
         </foreach>
     </insert>
 
-    <update id="updateCardRecommendationSummary">
-        UPDATE spending_analysis_tbl
-        SET ai_card_recommendation_summary = #{summary}
-        WHERE spending_analysis_id = #{spendingAnalysisId}
-          AND user_id = #{userId}
-    </update>
-
     <select id="selectRecommendationList"
             resultType="org.scoula.cardrecommendation.domain.CardRecommendationListItemVO">
         SELECT
@@ -150,6 +143,7 @@
             recommendation.card_product_id AS cardProductId,
             recommendation.recommendation_rank AS recommendationRank,
             recommendation.expected_benefit_amount AS expectedBenefitAmount,
+            recommendation.ai_recommendation_summary AS aiRecommendationSummary,
             product.card_name AS cardName,
             product.card_type AS cardType,
             product.card_description AS cardDescription,
@@ -177,13 +171,13 @@
             recommendation.card_product_id AS cardProductId,
             recommendation.recommendation_rank AS recommendationRank,
             recommendation.expected_benefit_amount AS expectedBenefitAmount,
+            recommendation.ai_recommendation_summary AS aiRecommendationSummary,
             product.card_name AS cardName,
             product.card_type AS cardType,
             product.card_description AS cardDescription,
             product.card_image AS cardImage,
             product.application,
-            product.annual_fee AS annualFee,
-            analysis.ai_card_recommendation_summary AS aiCardRecommendationSummary
+            product.annual_fee AS annualFee
         FROM card_recommendation_tbl recommendation
         INNER JOIN kb_card_product_tbl product
                 ON recommendation.card_product_id = product.card_product_id

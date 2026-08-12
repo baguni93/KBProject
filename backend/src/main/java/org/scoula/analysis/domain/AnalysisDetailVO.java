@@ -32,12 +32,6 @@ public class AnalysisDetailVO {
     // AI가 생성한 소비분석 요약
     private String aiAnalysisSummary;
 
-    // AI가 생성한 카드 추천 요약
-    private String aiCardRecommendationSummary;
-
-    // AI가 생성한 보험 추천 요약
-    private String aiInsuranceRecommendationSummary;
-
     // 분석 결과가 생성된 일시
     private LocalDateTime createdAt;
 }

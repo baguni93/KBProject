@@ -3,104 +3,74 @@ package org.scoula.cardpayment.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.cardpayment.dto.CardAgreementDTO;
+import org.scoula.cardpayment.dto.CardBinResponseDTO;
 import org.scoula.cardpayment.dto.CardRegisterDTO;
 import org.scoula.cardpayment.dto.CardStatusResponseDTO;
 import org.scoula.cardpayment.dto.PrimaryCardResponseDTO;
 import org.scoula.cardpayment.service.CardPaymentService;
-import org.scoula.security.util.JwtProcessor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.Map;
 
-@RestController
-@RequiredArgsConstructor
 @Log4j2
+@RestController
+@RequestMapping
+@RequiredArgsConstructor
 public class CardPaymentController {
 
     private final CardPaymentService cardPaymentService;
-    private final JwtProcessor jwtProcessor;
 
-    // 사용자 인증 토큰 처리
-    private Integer resolveUserId(HttpServletRequest request, Integer paramUserId) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            try {
-                String token = authHeader.substring(7);
-                Long userId = jwtProcessor.getUserId(token);
-                if (userId != null) {
-                    return userId.intValue();
-                }
-            } catch (Exception e) {
-                log.warn("토큰 추출 실패, 파라미터 사용: {}", e.getMessage());
-            }
-        }
-        return paramUserId != null ? paramUserId : 1;
+    @GetMapping("/api/card-payment/bin/{binNumber}")
+    public ResponseEntity<CardBinResponseDTO> getCardInfoByBin(@PathVariable("binNumber") String binNumber) {
+        log.info("카드 BIN 자동 조회 요청 - BIN: {}", binNumber);
+        CardBinResponseDTO responseDTO = cardPaymentService.getAutoFetchedCardInfo(binNumber);
+        return ResponseEntity.ok(responseDTO);
     }
 
-    // 대표 카드 조회
     @GetMapping("/api/payments/cards/primary")
     public ResponseEntity<PrimaryCardResponseDTO> getPrimaryCard(
             HttpServletRequest request,
-            @RequestParam(value = "userId", required = false) Integer userId) {
-        Integer resolvedUserId = resolveUserId(request, userId);
-        PrimaryCardResponseDTO result = cardPaymentService.getPrimaryCard(resolvedUserId);
-        return ResponseEntity.ok(result);
+            @RequestParam(value = "userId", required = false, defaultValue = "1") Integer userId) {
+        log.info("대표 카드 조회 요청 - UserID: {}", userId);
+        PrimaryCardResponseDTO primaryCard = cardPaymentService.getPrimaryCard(userId);
+        return ResponseEntity.ok(primaryCard);
     }
 
-    // 카드 등록 상태 조회
     @GetMapping("/api/payments/cards/status")
     public ResponseEntity<CardStatusResponseDTO> getCardStatus(
             HttpServletRequest request,
-            @RequestParam(value = "userId", required = false) Integer userId) {
-        Integer resolvedUserId = resolveUserId(request, userId);
-        CardStatusResponseDTO result = cardPaymentService.getCardStatus(resolvedUserId);
-        return ResponseEntity.ok(result);
+            @RequestParam(value = "userId", required = false, defaultValue = "1") Integer userId) {
+        log.info("카드 상태 및 가이드 조회 요청 - UserID: {}", userId);
+        CardStatusResponseDTO status = cardPaymentService.getCardStatus(userId);
+        return ResponseEntity.ok(status);
     }
 
-    // 카드 등록
     @PostMapping("/api/cards")
     public ResponseEntity<PrimaryCardResponseDTO> registerCard(
             HttpServletRequest request,
             @RequestBody CardRegisterDTO cardRegisterDTO) {
-        Integer resolvedUserId = resolveUserId(request, cardRegisterDTO.getUserId());
-        cardRegisterDTO.setUserId(resolvedUserId);
-        PrimaryCardResponseDTO result = cardPaymentService.registerCard(cardRegisterDTO);
+        log.info("카드 등록 요청: {}", cardRegisterDTO);
+        PrimaryCardResponseDTO response = cardPaymentService.registerCard(cardRegisterDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/api/cards/agreements")
+    public ResponseEntity<Boolean> saveAgreements(
+            HttpServletRequest request,
+            @RequestBody CardAgreementDTO cardAgreementDTO) {
+        log.info("카드 약관 동의 저장 요청: {}", cardAgreementDTO);
+        boolean result = cardPaymentService.saveCardAgreements(cardAgreementDTO);
         return ResponseEntity.ok(result);
     }
 
-    // 카드 약관 동의
-    @PostMapping("/api/cards/agreements")
-    public ResponseEntity<Map<String, Object>> saveAgreements(
-            HttpServletRequest request,
-            @RequestBody CardAgreementDTO cardAgreementDTO) {
-        Integer resolvedUserId = resolveUserId(request, cardAgreementDTO.getUserId());
-        cardAgreementDTO.setUserId(resolvedUserId);
-        boolean success = cardPaymentService.saveCardAgreements(cardAgreementDTO);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", success);
-        response.put("message", success ? "약관 동의가 등록되었습니다." : "약관 동의 실패");
-
-        return ResponseEntity.ok(response);
-    }
-
-    // 대표 카드 지정
     @PatchMapping("/api/cards/{cardId}/primary")
-    public ResponseEntity<Map<String, Object>> setPrimaryCard(
+    public ResponseEntity<Boolean> setPrimaryCard(
             HttpServletRequest request,
             @PathVariable("cardId") Integer cardId,
-            @RequestParam(value = "userId", required = false) Integer userId) {
-        Integer resolvedUserId = resolveUserId(request, userId);
-        boolean success = cardPaymentService.setPrimaryCard(cardId, resolvedUserId);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", success);
-        response.put("cardId", cardId);
-        response.put("message", success ? "대표 카드로 지정되었습니다." : "대표 카드 지정 실패");
-
-        return ResponseEntity.ok(response);
+            @RequestParam(value = "userId", required = false, defaultValue = "1") Integer userId) {
+        log.info("대표 카드 변경 요청 - CardID: {}, UserID: {}", cardId, userId);
+        boolean result = cardPaymentService.setPrimaryCard(cardId, userId);
+        return ResponseEntity.ok(result);
     }
 }

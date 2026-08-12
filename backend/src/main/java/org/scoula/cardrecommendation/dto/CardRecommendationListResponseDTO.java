@@ -15,7 +15,6 @@ public class CardRecommendationListResponseDTO {
     private Integer analysisPeriod;
     private String cardType;
     private String feeMode;
-    private String aiCardRecommendationSummary;
     private Integer recommendationCount;
     private List<CardRecommendationItemDTO> recommendations;
 }

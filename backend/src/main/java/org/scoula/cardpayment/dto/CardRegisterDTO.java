@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CardRegisterDTO {
+    private Integer cardCode;
     private Integer cardId;
     private Integer userId;
     private Integer accountId;

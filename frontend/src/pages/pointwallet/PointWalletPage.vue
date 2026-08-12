@@ -2,16 +2,6 @@
   <div class="kb-mobile-page point-wallet-page">
     <PageHeader title="포인트 지갑" :showBack="false" />
 
-    <div
-      v-if="message"
-      :class="[
-        'kb-toast',
-        messageType === 'success' ? 'kb-toast--success' : 'kb-toast--error',
-      ]"
-    >
-      {{ message }}
-    </div>
-
     <section class="balance-card kb-card">
       <div>
         <div class="balance-label text-13-bold">내 포인트</div>
@@ -364,7 +354,7 @@ onMounted(loadPage);
 ========================= */
 
 .balance-card {
-  margin-top: 14px;
+  //margin-top: 14px;
 
   min-height: 126px;
   padding: 22px;

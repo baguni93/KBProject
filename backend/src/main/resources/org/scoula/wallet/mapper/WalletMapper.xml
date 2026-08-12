@@ -107,19 +107,19 @@
     <!-- 등록 카드 목록 -->
     <select id="getUserRegisteredCards" resultType="org.scoula.wallet.dto.RegisteredCardDTO">
         SELECT
-            r.card_id AS cardId,
-            r.account_id AS accountId,
-            r.user_id AS userId,
-            r.card_num AS cardNum,
-            r.expiry_date AS expiryDate,
-            r.represent_yn AS representYn,
-            COALESCE(c.card_num, CONCAT('KB국민 Custom Card (', r.card_id, ')')) AS cardName,
-            COALESCE(u.user_name, '김국민') AS holderName
-        FROM registered_card_tbl r
-        LEFT JOIN user_tbl u ON r.user_id = u.user_id
-        LEFT JOIN card_tbl c ON r.account_id = c.account_id
-        WHERE r.user_id = #{userId} AND r.delete_yn = 'N'
-        ORDER BY r.represent_yn DESC, r.card_id ASC
+            lc.card_code        AS cardId,
+            lc.user_id          AS userId,
+            c.card_num          AS cardNum,
+            c.expiry_date       AS expiryDate,
+            lc.represent_yn     AS representYn,
+            COALESCE(c.card_name, 'KB국민카드') AS cardName,
+            COALESCE(u.user_name, '김국민')     AS holderName
+        FROM linked_card_tbl lc
+        LEFT JOIN user_tbl u ON lc.user_id = u.user_id
+        LEFT JOIN card_tbl c ON lc.card_code = c.card_code
+        WHERE lc.user_id = #{userId}
+          AND lc.delete_yn = 'N'
+        ORDER BY lc.represent_yn DESC, lc.card_code ASC
     </select>
 
 </mapper>

@@ -25,10 +25,10 @@ public class EventMainDTO { // 이벤트 메인화면
 
     private String challengeStartAt; // 챌린지 시작일자
     private String challengeEndAt;   // 챌린지 종료일자
-    private String challengeDDay;           // 챌린지 남은 기간(D-day)
+    private String challengeDDay;    // 챌린지 남은 기간(D-day)
 
-    // 참여 가능 이벤트
-    private List<EventResponseDTO> activeEvents; // 참여 가능 이벤트 리스트
+    // 이벤트 리스트
+    private List<EventGetResponseDTO> eventLists;
     // 사용자 이벤트 챌린지 현황
     private UserChallengeDTO userChallenge;
 

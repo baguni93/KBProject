@@ -25,6 +25,6 @@ public class CardRecommendationDetailResponseDTO {
     private Integer displayBenefitAmount;
     private Integer recommendationRank;
     private String feeMode;
-    private String aiCardRecommendationSummary;
+    private String aiRecommendationSummary;
     private List<CardBenefitDetailDTO> benefits;
 }

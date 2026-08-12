@@ -12,6 +12,40 @@ export const normalizeAnalysisPeriod = (value) => {
 export const formatAnalysisNumber = (value) =>
   Number(value ?? 0).toLocaleString('ko-KR');
 
+const normalizeTransactionText = (value) =>
+  typeof value === 'string' && value.trim() ? value.trim() : '';
+
+export const getAnalysisTransactionLabel = (transaction = {}) => {
+  const transactionLabel = normalizeTransactionText(
+    transaction.transactionLabel,
+  );
+  if (transactionLabel) return transactionLabel;
+
+  const transactionType = normalizeTransactionText(
+    transaction.transactionType,
+  ).toUpperCase();
+  const merchantName = normalizeTransactionText(transaction.merchantName);
+
+  if (transactionType === 'PAYMENT') {
+    return merchantName || '결제';
+  }
+
+  if (transactionType === 'TRANSFER') {
+    const receiverName = normalizeTransactionText(transaction.receiverName);
+    return receiverName ? `${receiverName}에게 송금` : merchantName || '송금';
+  }
+
+  if (transactionType === 'SETTLEMENT') {
+    const settlementTitle = normalizeTransactionText(
+      transaction.settlementTitle,
+    );
+    const memo = normalizeTransactionText(transaction.memo);
+    return settlementTitle || memo || merchantName || '더치페이 정산';
+  }
+
+  return merchantName || '거래';
+};
+
 export const formatAnalysisDateTime = (value) => {
   if (!value) return '-';
   return String(value).replace('T', ' ');

@@ -129,4 +129,19 @@ public class RemittanceController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    // 결제 내역 영수증 피드 및 사진 업로드 (내 담당 파트)
+    @PostMapping("/receipt-feed")
+    public ResponseEntity<Map<String, Object>> saveReceiptFeed(
+            HttpServletRequest request,
+            @RequestParam("userId") Integer userId,
+            @RequestParam("targetId") Integer targetId,
+            @RequestParam(value = "feedType", defaultValue = "PAYMENT") String feedType,
+            @RequestParam(value = "content", defaultValue = "") String content,
+            @RequestParam(value = "visibility", defaultValue = "PUBLIC") String visibility,
+            @RequestParam(value = "files", required = false) java.util.List<MultipartFile> files) {
+        Integer resolvedUserId = resolveUserId(request, userId);
+        Map<String, Object> result = remittanceService.saveReceiptFeed(resolvedUserId, targetId, feedType, content, visibility, files);
+        return ResponseEntity.ok(result);
+    }
 }

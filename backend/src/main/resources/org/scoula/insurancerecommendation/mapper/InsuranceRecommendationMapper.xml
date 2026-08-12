@@ -13,116 +13,394 @@
 
         <result property="insuranceName"
                 column="insurance_name"/>
-
         <result property="insuranceCategory"
                 column="insurance_category"/>
-
         <result property="insuranceDescription"
                 column="insurance_description"/>
-
         <result property="monthlyPremium"
                 column="monthly_premium"/>
-
         <result property="insuranceImage"
                 column="insurance_image"/>
-
         <result property="applicationUrl"
                 column="application_url"/>
 
         <result property="spendingCategoryId"
                 column="spending_category_id"/>
-
         <result property="categoryName"
                 column="category_name"/>
-
         <result property="parentCategoryId"
                 column="parent_category_id"/>
 
         <result property="recommendationReason"
                 column="recommendation_reason"/>
-
         <result property="priority"
                 column="priority"/>
-
     </resultMap>
 
-
     <!--
-        최근 소비 내역 중 보험 추천 매핑과 연결되는 상품 조회
+        12개월 소비분석의 "분석기간" 안에서 실제 결제 거래를 직접 조회한다.
+        Mapper는 12개월이라는 정책 자체를 알지 않고 Service가 계산한 startAt/endAt만 사용한다.
 
-        조건:
-        1. 해당 사용자의 거래
-        2. 성공한 결제(PAYMENT) 거래
-        3. 지정된 분석 기간 안의 거래
-        4. 직접 카테고리 또는 부모 카테고리가 보험 매핑과 일치
-        5. 매핑이 활성화(Y) 상태
-        6. 관련 거래가 1건이라도 존재하면 추천
+        추천 조건:
+        1. 현재 로그인 사용자의 거래
+        2. PAYMENT + SUCCESS 거래
+        3. 지정된 분석기간 내 거래
+        4. 거래의 직접 소비카테고리 또는 부모카테고리가 보험 매핑과 일치
+        5. 활성화(Y)된 보험 매핑
+        6. 관련 거래가 최소 1건 존재하면 추천 후보
     -->
     <select id="selectMatchedCandidates"
             resultMap="insuranceRecommendationCandidateResultMap">
-
         SELECT
-        product.insurance_product_id,
-        product.insurance_name,
-        product.insurance_category,
-        product.insurance_description,
-        product.monthly_premium,
-        product.insurance_image,
-        product.application_url,
+            product.insurance_product_id,
+            product.insurance_name,
+            product.insurance_category,
+            product.insurance_description,
+            product.monthly_premium,
+            product.insurance_image,
+            product.application_url,
 
-        matched_category.spending_category_id,
-        matched_category.category_name,
-        matched_category.parent_category_id,
+            matched_category.spending_category_id,
+            matched_category.category_name,
+            matched_category.parent_category_id,
 
-        match_tbl.recommendation_reason,
-        match_tbl.priority
+            COALESCE(match_tbl.recommendation_reason, '') AS recommendation_reason,
+            match_tbl.priority
 
         FROM kb_insurance_category_match_tbl match_tbl
 
         INNER JOIN kb_insurance_product_tbl product
-        ON product.insurance_product_id =
-        match_tbl.insurance_product_id
+                ON product.insurance_product_id = match_tbl.insurance_product_id
 
         INNER JOIN spending_category_tbl matched_category
-        ON matched_category.spending_category_id =
-        match_tbl.spending_category_id
+                ON matched_category.spending_category_id = match_tbl.spending_category_id
 
         WHERE match_tbl.active_yn = 'Y'
-        -- 최근 3개월 이내에 결과가 1건이라도 있으면 되기 때문
-        AND EXISTS (
-        SELECT 1
+          AND EXISTS (
+              SELECT 1
+              FROM financial_transaction_tbl transaction_tbl
+
+              LEFT JOIN spending_category_tbl transaction_category
+                     ON transaction_category.spending_category_id =
+                        transaction_tbl.spending_category_id
+
+              WHERE transaction_tbl.user_id = #{userId}
+                AND transaction_tbl.transaction_type IN ('PAYMENT', 'TRANSFER', 'SETTLEMENT')
+                AND transaction_tbl.transaction_status = 'SUCCESS'
+                AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
+                AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}
+                AND (
+                    match_tbl.spending_category_id =
+                        transaction_tbl.spending_category_id
+                    OR
+                    match_tbl.spending_category_id =
+                        transaction_category.parent_category_id
+                )
+          )
+
+        ORDER BY
+            match_tbl.priority ASC,
+            product.insurance_product_id ASC,
+            match_tbl.insurance_category_match_id ASC
+    </select>
+
+    <!-- 저장된 추천 결과 수. 새 DB에서는 추천 행 존재 여부로 저장 결과를 판단한다. -->
+    <select id="countRecommendations" resultType="int">
+        SELECT COUNT(*)
+        FROM kb_insurance_recommendation_tbl
+        WHERE spending_analysis_id = #{spendingAnalysisId}
+    </select>
+
+    <!--
+        저장 작업은 별도 @Transactional SaveService 안에서 실행된다.
+        과거 더미데이터/중간 실패 데이터가 남아 있어도 새 결과로 안전하게 교체한다.
+    -->
+    <delete id="deleteRecommendations">
+        DELETE FROM kb_insurance_recommendation_tbl
+        WHERE spending_analysis_id = #{spendingAnalysisId}
+    </delete>
+
+    <insert id="insertRecommendation"
+            parameterType="org.scoula.insurancerecommendation.domain.InsuranceRecommendationVO"
+            useGeneratedKeys="true"
+            keyProperty="insuranceRecommendationId"
+            keyColumn="insurance_recommendation_id">
+        INSERT INTO kb_insurance_recommendation_tbl
+        (
+            spending_analysis_id,
+            insurance_product_id,
+            recommendation_reason,
+            ai_recommendation_summary
+        )
+        VALUES
+        (
+            #{spendingAnalysisId},
+            #{insuranceProductId},
+            #{recommendationReason},
+            #{aiRecommendationSummary}
+        )
+    </insert>
+
+    <!-- 전체 보험 둘러보기: category가 없으면 전체, 있으면 해당 카테고리만 조회 -->
+    <select id="selectInsuranceProducts"
+            resultType="org.scoula.insurancerecommendation.domain.InsuranceProductVO">
+        SELECT
+            insurance_product_id AS insuranceProductId,
+            insurance_name AS insuranceName,
+            insurance_category AS insuranceCategory,
+            insurance_description AS insuranceDescription,
+            monthly_premium AS monthlyPremium,
+            insurance_image AS insuranceImage,
+            application_url AS applicationUrl
+        FROM kb_insurance_product_tbl
+        <where>
+            <if test="category != null and category != ''">
+                insurance_category = #{category}
+            </if>
+        </where>
+        ORDER BY insurance_category ASC,
+                 insurance_product_id ASC
+    </select>
+
+    <!-- 추천 여부와 무관하게 보험 상품 자체의 상세정보 조회 -->
+    <select id="selectInsuranceProduct"
+            resultType="org.scoula.insurancerecommendation.domain.InsuranceProductVO">
+        SELECT
+            insurance_product_id AS insuranceProductId,
+            insurance_name AS insuranceName,
+            insurance_category AS insuranceCategory,
+            insurance_description AS insuranceDescription,
+            monthly_premium AS monthlyPremium,
+            insurance_image AS insuranceImage,
+            application_url AS applicationUrl
+        FROM kb_insurance_product_tbl
+        WHERE insurance_product_id = #{insuranceProductId}
+    </select>
+
+    <!--
+        저장된 추천 결과 목록 조회.
+        현재 DB 데이터는 보험상품 1개당 하나의 소비카테고리 매핑을 사용한다.
+        향후 한 상품에 여러 매핑이 생기더라도 목록에서 한 상품이 중복되지 않도록
+        대표 매핑은 priority가 가장 낮은 활성 매핑 1건을 선택한다.
+    -->
+    <select id="selectRecommendationList"
+            resultType="org.scoula.insurancerecommendation.domain.InsuranceRecommendationListItemVO">
+        SELECT
+            recommendation.insurance_recommendation_id AS insuranceRecommendationId,
+            recommendation.spending_analysis_id AS spendingAnalysisId,
+            recommendation.insurance_product_id AS insuranceProductId,
+
+            product.insurance_name AS insuranceName,
+            product.insurance_category AS insuranceCategory,
+            product.insurance_description AS insuranceDescription,
+            product.monthly_premium AS monthlyPremium,
+            product.insurance_image AS insuranceImage,
+            product.application_url AS applicationUrl,
+
+            (
+                SELECT match_tbl.spending_category_id
+                FROM kb_insurance_category_match_tbl match_tbl
+                WHERE match_tbl.insurance_product_id = recommendation.insurance_product_id
+                  AND match_tbl.active_yn = 'Y'
+                ORDER BY match_tbl.priority ASC,
+                         match_tbl.insurance_category_match_id ASC
+                LIMIT 1
+            ) AS spendingCategoryId,
+
+            (
+                SELECT category.category_name
+                FROM kb_insurance_category_match_tbl match_tbl
+                INNER JOIN spending_category_tbl category
+                        ON category.spending_category_id = match_tbl.spending_category_id
+                WHERE match_tbl.insurance_product_id = recommendation.insurance_product_id
+                  AND match_tbl.active_yn = 'Y'
+                ORDER BY match_tbl.priority ASC,
+                         match_tbl.insurance_category_match_id ASC
+                LIMIT 1
+            ) AS categoryName,
+
+            recommendation.recommendation_reason AS recommendationReason,
+            recommendation.ai_recommendation_summary AS aiRecommendationSummary,
+
+            (
+                SELECT match_tbl.priority
+                FROM kb_insurance_category_match_tbl match_tbl
+                WHERE match_tbl.insurance_product_id = recommendation.insurance_product_id
+                  AND match_tbl.active_yn = 'Y'
+                ORDER BY match_tbl.priority ASC,
+                         match_tbl.insurance_category_match_id ASC
+                LIMIT 1
+            ) AS priority
+
+        FROM kb_insurance_recommendation_tbl recommendation
+        INNER JOIN kb_insurance_product_tbl product
+                ON product.insurance_product_id = recommendation.insurance_product_id
+        INNER JOIN spending_analysis_tbl analysis
+                ON analysis.spending_analysis_id = recommendation.spending_analysis_id
+
+        WHERE recommendation.spending_analysis_id = #{spendingAnalysisId}
+          AND analysis.user_id = #{userId}
+
+        ORDER BY
+            priority ASC,
+            recommendation.insurance_recommendation_id ASC
+    </select>
+
+    <!-- 보험 추천 한 건의 상품/분석/추천근거 기본 정보 조회 -->
+    <select id="selectRecommendationDetailHeader"
+            resultType="org.scoula.insurancerecommendation.domain.InsuranceRecommendationDetailHeaderVO">
+        SELECT
+            recommendation.insurance_recommendation_id AS insuranceRecommendationId,
+            recommendation.spending_analysis_id AS spendingAnalysisId,
+            analysis.analysis_period AS analysisPeriod,
+            analysis.created_at AS analysisCreatedAt,
+
+            recommendation.insurance_product_id AS insuranceProductId,
+            product.insurance_name AS insuranceName,
+            product.insurance_category AS insuranceCategory,
+            product.insurance_description AS insuranceDescription,
+            product.monthly_premium AS monthlyPremium,
+            product.insurance_image AS insuranceImage,
+            product.application_url AS applicationUrl,
+
+            match_tbl.spending_category_id AS spendingCategoryId,
+            category.category_name AS categoryName,
+            recommendation.recommendation_reason AS recommendationReason,
+            recommendation.ai_recommendation_summary AS aiRecommendationSummary
+
+        FROM kb_insurance_recommendation_tbl recommendation
+        INNER JOIN spending_analysis_tbl analysis
+                ON analysis.spending_analysis_id = recommendation.spending_analysis_id
+        INNER JOIN kb_insurance_product_tbl product
+                ON product.insurance_product_id = recommendation.insurance_product_id
+
+        LEFT JOIN kb_insurance_category_match_tbl match_tbl
+               ON match_tbl.insurance_product_id = product.insurance_product_id
+              AND match_tbl.active_yn = 'Y'
+
+        LEFT JOIN spending_category_tbl category
+               ON category.spending_category_id = match_tbl.spending_category_id
+
+        WHERE recommendation.insurance_recommendation_id = #{insuranceRecommendationId}
+          AND analysis.user_id = #{userId}
+
+        ORDER BY match_tbl.priority ASC,
+                 match_tbl.insurance_category_match_id ASC
+        LIMIT 1
+    </select>
+
+    <!-- 보험 상품 상세 화면의 주요 보장내용 -->
+    <select id="selectInsuranceCoverages"
+            resultType="org.scoula.insurancerecommendation.domain.InsuranceCoverageVO">
+        SELECT
+            insurance_coverage_id AS insuranceCoverageId,
+            insurance_product_id AS insuranceProductId,
+            coverage_name AS coverageName,
+            coverage_amount AS coverageAmount,
+            coverage_description AS coverageDescription,
+            coverage_limit AS coverageLimit
+        FROM kb_insurance_coverage_tbl
+        WHERE insurance_product_id = #{insuranceProductId}
+        ORDER BY insurance_coverage_id ASC
+    </select>
+
+    <!--
+        특정 추천 상품의 근거 거래.
+        저장된 추천 결과 자체는 재활용하지만, 상세 화면의 거래는
+        동일한 소비분석 기간을 기준으로 financial_transaction_tbl에서 조회한다.
+    -->
+    <select id="selectRecommendationTransactions"
+            resultType="org.scoula.insurancerecommendation.domain.InsuranceRecommendationTransactionVO">
+        SELECT DISTINCT
+            transaction_tbl.transaction_id AS transactionId,
+            transaction_tbl.merchant_name AS merchantName,
+            transaction_tbl.amount AS amount,
+            transaction_tbl.created_at AS createdAt,
+            transaction_tbl.spending_category_id AS spendingCategoryId,
+            transaction_category.category_name AS categoryName,
+            transaction_category.parent_category_id AS parentCategoryId,
+            parent_category.category_name AS parentCategoryName
 
         FROM financial_transaction_tbl transaction_tbl
 
         LEFT JOIN spending_category_tbl transaction_category
-        ON transaction_category.spending_category_id =
-        transaction_tbl.spending_category_id
+               ON transaction_category.spending_category_id =
+                  transaction_tbl.spending_category_id
+
+        LEFT JOIN spending_category_tbl parent_category
+               ON parent_category.spending_category_id =
+                  transaction_category.parent_category_id
 
         WHERE transaction_tbl.user_id = #{userId}
+          AND transaction_tbl.transaction_type IN ('PAYMENT', 'TRANSFER', 'SETTLEMENT')
+          AND transaction_tbl.transaction_status = 'SUCCESS'
+          AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
+          AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}
+          AND EXISTS (
+              SELECT 1
+              FROM kb_insurance_category_match_tbl match_tbl
+              WHERE match_tbl.insurance_product_id = #{insuranceProductId}
+                AND match_tbl.active_yn = 'Y'
+                AND (
+                    match_tbl.spending_category_id =
+                        transaction_tbl.spending_category_id
+                    OR
+                    match_tbl.spending_category_id =
+                        transaction_category.parent_category_id
+                )
+          )
 
-        AND transaction_tbl.transaction_type = 'PAYMENT'
+        ORDER BY transaction_tbl.created_at DESC,
+                 transaction_tbl.transaction_id DESC
+    </select>
 
-        AND transaction_tbl.transaction_status = 'SUCCESS'
+    <!--
+        추천 근거 상세 화면용 집계.
+        추천된 보험상품들이 사용하는 소비카테고리를 먼저 DISTINCT로 뽑은 뒤,
+        해당 카테고리의 직접 거래와 하위카테고리 거래를 함께 집계한다.
+    -->
+    <select id="selectRecommendationEvidenceCategories"
+            resultType="org.scoula.insurancerecommendation.domain.InsuranceRecommendationEvidenceCategoryVO">
+        SELECT
+            matched.spending_category_id AS spendingCategoryId,
+            matched_category.category_name AS categoryName,
+            COUNT(transaction_tbl.transaction_id) AS transactionCount,
+            COALESCE(SUM(transaction_tbl.amount), 0) AS totalAmount,
+            MAX(transaction_tbl.created_at) AS latestTransactionAt
 
-        AND transaction_tbl.created_at >= #{startAt}
+        FROM (
+            SELECT DISTINCT match_tbl.spending_category_id
+            FROM kb_insurance_recommendation_tbl recommendation
+            INNER JOIN kb_insurance_category_match_tbl match_tbl
+                    ON match_tbl.insurance_product_id = recommendation.insurance_product_id
+                   AND match_tbl.active_yn = 'Y'
+            WHERE recommendation.spending_analysis_id = #{spendingAnalysisId}
+        ) matched
 
-        AND transaction_tbl.created_at &lt; #{endAt}
+        INNER JOIN spending_category_tbl matched_category
+                ON matched_category.spending_category_id = matched.spending_category_id
 
-        AND (
-        match_tbl.spending_category_id =
-        transaction_tbl.spending_category_id
+        LEFT JOIN spending_category_tbl transaction_category
+               ON transaction_category.spending_category_id = matched.spending_category_id
+               OR transaction_category.parent_category_id = matched.spending_category_id
 
-        OR
+        LEFT JOIN financial_transaction_tbl transaction_tbl
+               ON transaction_tbl.spending_category_id = transaction_category.spending_category_id
+              AND transaction_tbl.user_id = #{userId}
+              AND transaction_tbl.transaction_type IN ('PAYMENT', 'TRANSFER', 'SETTLEMENT')
+              AND transaction_tbl.transaction_status = 'SUCCESS'
+              AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
+              AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}
 
-        match_tbl.spending_category_id =
-        transaction_category.parent_category_id
-        )
-        )
+        GROUP BY
+            matched.spending_category_id,
+            matched_category.category_name
+
+        HAVING COUNT(transaction_tbl.transaction_id) > 0
 
         ORDER BY
-        match_tbl.priority ASC,
-        product.insurance_product_id ASC
-
+            latestTransactionAt DESC,
+            matched.spending_category_id ASC
     </select>
 
 </mapper>
