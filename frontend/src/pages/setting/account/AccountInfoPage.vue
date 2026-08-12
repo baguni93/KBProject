@@ -166,10 +166,7 @@ const requestVerification = async () => {
       accountHolder: accountHolder.value,
     };
 
-    const response = await requestAccountVerification(
-        userId,
-        requestData,
-    );
+    const response = await requestAccountVerification(requestData);
 
     accountStore.setAccountInfo(requestData);
     accountStore.setVerification(response);
