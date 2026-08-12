@@ -3,28 +3,6 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.scoula.event.mapper.EventMapper">
-<!--    이벤트 챌린지 -->
-    <resultMap id="eventChallengeMap" type="org.scoula.event.domain.EventChallengeVO">
-        <id property="challengeId" column="challengeId"/>
-        <result property="challengeName" column="challengeName"/>
-        <result property="rewardPoint" column="rewardPoint"/>
-        <result property="maxLevel" column="maxLevel"/>
-        <result property="maxTarget" column="maxTarget"/>
-        <result property="startAt" column="startAt"/>
-        <result property="endAt" column="endAt"/>
-        <result property="createdAt" column="createdAt"/>
-    </resultMap>
-
-<!--    이벤트 챌린지 - 사용자 참여-->
-    <resultMap id="userChallengeMap" type="org.scoula.event.domain.EventChallengeUserVO">
-        <id property="userChallengeId" column="userChallengeId"/>
-        <result property="userId" column="userId"/>
-        <result property="challengeId" column="challengeId"/>
-        <result property="challengeLevel" column="challengeLevel"/>
-        <result property="challengeExe" column="challengeExe"/>
-        <result property="status" column="status"/>
-        <result property="updatedAt" column="updatedAt"/>
-    </resultMap>
 
 <!--    이벤트 -->
     <resultMap id="eventMap" type="org.scoula.event.domain.EventVO">
@@ -48,20 +26,30 @@
         LIMIT 1
     </select>
 <!--    사용자 이벤트 챌린지 현황 조회-->
-    <select id="getEventChallengeUser" resultType="org.scoula.event.dto.UserChallengeDTO">
-        SELECT IFNULL(ecu.current_level, 1) AS challengeLevel
-             , IFNULL(ecu.current_target, 0) AS challengeExe
-             , CASE WHEN ecu.challenge_id IS NULL THEN 1000
-                    ELSE ec.max_target
-            END AS challengeMaxExe
-             , DATE_FORMAT(ec.start_date, '%Y-%m-%d %H:%i:%s') AS challengeStartAt
-             , DATE_FORMAT(ec.end_date, '%Y-%m-%d %H:%i:%s') AS challengeEndAt
-        FROM event_challenge_tbl AS ec LEFT OUTER JOIN event_challenge_user_tbl AS ecu
-                                                       ON ec.challenge_id = ecu.challenge_id
-                                                           AND ecu.user_id = #{userId}
-#          WHERE NOW() BETWEEN ec.start_date AND ec.end_date
+    <select id="getEventChallenge" resultType="org.scoula.event.domain.EventChallengeUserVO">
+        SELECT ec.challenge_id AS challengeId
+             , ecu.user_challenge_id AS userChallengeId
+             , ecu.user_id AS userId
+             , IFNULL(ecu.current_level, 1) AS currentLevel
+             , IFNULL(ecu.current_target, 0) AS currentTarget
+             , IFNULL(ecl.required_exp, 1000) AS requiredExp
+             , IFNULL(ecl.reward_point, 1000) AS rewardPoint
+             , ecl.challenge_level_id AS challengeLevelId
+             , ecl.level AS level
+             , ecu.exp AS exp
+             , ecu.status AS status
+             , ecu.updated_at AS updatedAt
+        FROM event_challenge_tbl AS ec
+                 LEFT OUTER JOIN event_challenge_user_tbl AS ecu
+                                 ON ec.challenge_id = ecu.challenge_id
+                                     AND ecu.user_id = #{userId}
+                 LEFT OUTER JOIN event_challenge_level_tbl AS ecl
+                                 ON ec.challenge_id = ecl.challenge_id
+                                     AND ecl.level = IFNULL(ecu.current_level, 1)
+        WHERE NOW() BETWEEN ec.start_date AND ec.end_date
+          AND ecu.user_challenge_id IS NOT NULL
         ORDER BY ecu.current_level DESC
-        LIMIT 1;
+        LIMIT 1
     </select>
 
 <!--    이벤트 참여이력 데이터 생성 -->
@@ -76,25 +64,10 @@
         VALUES (#{eventId}, #{userId}, NOW())
     </insert>
 
-<!--    챌린지 참여 - 참여이력 데이터 생성 -->
-    <insert id="createEventChallengeParticipation">
-        INSERT INTO event_challenge_user_tbl (challenge_id, user_id, updated_at)
-        VALUES (#{challengeId}, #{userId}, NOW())
-    </insert>
-
 <!--    이벤트 리워드 수령이력 데이터 생성 -->
     <insert id="createEventRewardReceive">
         INSERT INTO event_reward_receive_tbl (event_id, reward_id, user_id, received_at)
         VALUES (#{eventId}, #{rewardId}, #{userId}, NOW())
-    </insert>
-
-<!--    챌린지 리워드 수령이력 데이터 생성 -->
-    <insert id="createChallengeRewardReceive">
-        INSERT INTO event_challenge_user_tbl (user_id, challenge_id, status, updated_at)
-        VALUES (#{userId}, #{challengeId}, 'COMPLETE', NOW())
-        ON DUPLICATE KEY UPDATE
-                             status = 'COMPLETE',
-                             updated_at = NOW()
     </insert>
 
     <!-- 포인트(리워드) 수령 내역 생성-->
@@ -124,12 +97,54 @@
         WHERE w.user_id = #{userId}
     </update>
 
-<!--    사용자 이벤트 챌린지 -->
-    <update id="updateUserChallengeTarget">
+    <!-- 챌린지 참여 - 최초 참여이력 데이터 생성 -->
+    <insert id="createEventChallengeParticipation">
+        INSERT INTO event_challenge_user_tbl (user_id, challenge_id, current_level, current_target, exp, status, updated_at)
+        SELECT #{userId}, ec.challenge_id, 1, 0, 0, 'PROCESS', NOW()
+          FROM event_challenge_tbl AS ec
+         WHERE NOW() BETWEEN ec.start_date AND ec.end_date
+           AND NOT EXISTS (SELECT 1
+                             FROM event_challenge_user_tbl ecu
+                            WHERE ecu.user_id = #{userId}
+                              AND ecu.challenge_id = ec.challenge_id)
+        ORDER BY ec.challenge_id ASC
+        LIMIT 1
+    </insert>
+
+    <!-- 이벤트 챌린지 반영  -->
+    <update id="updateUserChallenge">
+        UPDATE event_challenge_user_tbl AS ecu INNER JOIN event_reward_tbl AS er ON er.reward_id = #{rewardId}
+           SET ecu.exp = ecu.exp + er.reward_exp,
+               ecu.updated_at = NOW()
+         WHERE ecu.user_id = #{userId}
+           AND ecu.status = 'PROCESS'
+    </update>
+
+<!--    이벤트 챌린지 레벨 상승 시 누적 경험치 처리-->
+    <update id="updateUserLevel">
+       UPDATE event_challenge_user_tbl AS ecu INNER JOIN event_challenge_level_tbl AS ecl
+                                                      ON ecu.challenge_id = ecl.challenge_id
+                                                     AND ecu.current_level = ecl.level
+          SET ecu.exp = ecu.exp - ecl.required_exp,
+              ecu.current_level = ecu.current_level + 1,
+              ecu.updated_at = NOW()
+        WHERE ecu.user_id = #{userId}
+          AND ecu.exp >= ecl.required_exp
+          AND ecu.status = 'PROCESS'
+    </update>
+
+    <!-- 챌린지 리워드 수령 처리 -->
+    <update id="claimChallengeReward">
         UPDATE event_challenge_user_tbl
-        SET current_target = current_target + 1,
-            updated_at = NOW()
-        WHERE user_id = #{userId} AND status = 'PROCESS'
+           SET status = 'REWARDED',
+               updated_at = NOW()
+         WHERE user_id = #{userId}
+           AND status = 'COMPLETE'
+           AND challenge_id IN (
+                SELECT ec.challenge_id
+                FROM event_challenge_tbl ec
+                WHERE NOW() BETWEEN ec.start_date AND ec.end_date
+            )
     </update>
 
 
@@ -191,7 +206,7 @@
 
                b.reward_id,
                b.reward_point,
-               b.reward_exe,
+               b.reward_exp,
 
                (
                    SELECT COUNT(*)
@@ -244,7 +259,7 @@
 
                b.reward_id,
                b.reward_point,
-               b.reward_exe,
+               b.reward_exp,
 
                (a.event_daily_limit_count > 0 AND
                    (
@@ -305,7 +320,7 @@
              , err.recv_id AS recvId
              , DATE_FORMAT(err.received_at, '%Y-%m-%d %H:%i:%s') AS receivedAt
              , IFNULL(er.reward_point,0) AS rewardPoint
-             , IFNULL(er.reward_exe,0) AS rewardExe
+             , IFNULL(er.reward_exp,0) AS rewardExp
         FROM event_reward_receive_tbl AS err INNER JOIN event_tbl AS e ON err.event_id = e.event_id
                                              LEFT OUTER JOIN event_reward_tbl AS er ON err.event_id = er.event_id AND err.reward_id = er.reward_id
         WHERE err.user_id = #{userId}

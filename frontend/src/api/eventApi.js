@@ -95,7 +95,7 @@ export default {
   // 챌린지 리워드 수령 처리
   async receiveChallengeReward(challengeId, userId) {
     const { data } = await api.post(
-      `${BASE_URL}/challenges/${challengeId}/reward`,
+      `${BASE_URL}/challenge/claim/${challengeId}`,
       {
         userId: userId,
       },

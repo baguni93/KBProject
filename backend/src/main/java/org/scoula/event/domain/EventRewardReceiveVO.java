@@ -20,6 +20,6 @@ public class EventRewardReceiveVO {
     private Integer rewardId;
     private Integer userId;
     private Integer rewardPoint;
-    private Integer rewardExe;
+    private Integer rewardExp;
     private LocalDateTime receivedAt;
 }

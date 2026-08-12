@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Data
 @NoArgsConstructor
@@ -15,8 +16,13 @@ public class EventChallengeUserVO {
     private Integer userChallengeId;
     private Integer userId;
     private Integer challengeId;
-    private Integer challengeLevel;
-    private Integer challengeExe;
+    private Integer currentLevel;
+    private Integer currentTarget;
+    private Integer exp;
     private String status;
-    private LocalDateTime updatedAt;
+    private Date updatedAt;
+    private Integer challengeLevelId;
+    private Integer level;
+    private Integer requiredExp;
+    private Integer rewardPoint;
 }

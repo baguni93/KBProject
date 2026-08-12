@@ -38,7 +38,13 @@
 
     <!-- 배지 버튼 -->
     <div class="event-action">
-      <span class="reward-points">+{{ currentEvent.rewardPoint }}P</span>
+      <!-- 리워드 포인트P / 챌린지 경험치 -->
+      <div class="reward-info">
+        <span class="reward-points">+{{ currentEvent.rewardPoint }}P</span>
+        <span v-if="currentEvent.rewardExp" class="reward-exp">
+          +{{ currentEvent.rewardExp }}EXP
+        </span>
+      </div>
       <button
         :class="['action-btn', getStatusClass(currentEvent)]"
         :disabled="getEventStatus(currentEvent).disabled"
@@ -76,7 +82,7 @@ const props = defineProps({
   endAt: String,
   rewardId: [Number, String],
   rewardPoint: Number,
-  rewardExe: Number,
+  rewardExp: Number,
   completed: [Boolean, String],
   joined: [Boolean, String],
   rewardReceived: [Boolean, String],
@@ -296,10 +302,24 @@ const handleButtonClick = () => {
   margin-left: 12px;
 }
 
+.reward-info {
+  display: flex;
+  flex-direction: column; /* 세로 정렬,  */
+  align-items: flex-end; /* 우측 정렬 */
+  gap: 2px;
+}
+
 .reward-points {
   font-size: 14px;
   font-weight: bold;
   color: #ffbc00;
+}
+
+.reward-exp {
+  font-size: 13px;
+  color: #bdbebd;
+  font-weight: 500;
+  margin-left: 4px;
 }
 
 .action-btn {

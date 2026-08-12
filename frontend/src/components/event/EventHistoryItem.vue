@@ -21,7 +21,7 @@
       <span class="bottom-label">획득 보상</span>
       <span class="bottom-value">
         +{{ event.rewardPoint }} P
-        <span class="exp-text">| +{{ event.rewardExe }} exp</span>
+        <span class="exp-text">| +{{ event.rewardExp }} exp</span>
       </span>
     </div>
   </div>
@@ -42,7 +42,7 @@ defineProps({
       rewardId: 0,
       recvId: 0,
       rewardPoint: 0,
-      rewardExe: 0,
+      rewardExp: 0,
       receivedAt: '',
     }),
   },

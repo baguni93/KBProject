@@ -12,7 +12,11 @@
       <EventMainCardBanner />
 
       <!-- 3. 이벤트 챌린지 -->
-      <EventMainChallenge v-if="challengeData" :challenge="challengeData" />
+      <EventMainChallenge
+        v-if="challengeData"
+        :challenge="challengeData"
+        @claim-reward="handleClaimReward"
+      />
 
       <!-- 4. 현재 참여 가능 이벤트  -->
       <template v-if="activeEvents && activeEvents.length > 0">
@@ -63,7 +67,6 @@ const router = useRouter();
 const userPoint = ref(0);
 const challengeData = ref(null);
 const activeEvents = ref([]);
-
 // 메인 페이지 데이터 로드
 const fetchMainData = async () => {
   if (!userId) return;
@@ -73,16 +76,22 @@ const fetchMainData = async () => {
     const data = await eventApi.getEventList(userId);
 
     userPoint.value = pointData.currentPoint || 0;
-
-    console.log('참여 가능한 이벤트 리스트 조회 : ', data);
     activeEvents.value = data;
 
-    challengeData.value = data.userChallenge || {
-      // 이벤트 챌린지 default
-      userChallengeLevel: 1,
-      userChallengeExe: 0,
-      userChallengeMaxExe: 1000,
-    };
+    if (pointData.challengeList && pointData.challengeList.length > 0) {
+      challengeData.value = pointData.challengeList[0];
+    } else {
+      // default
+      challengeData.value = {
+        challengeId: 0,
+        userChallengeId: 0,
+        currentLevel: 1,
+        currentTarget: 0,
+        requiredExp: 1000,
+        exp: 0,
+        status: 'PROCESS',
+      };
+    }
   } catch (err) {
     console.error('데이터 로드 실패', err);
   }
@@ -100,6 +109,22 @@ watch(
     }
   },
 );
+
+// 이벤트 챌린지 보상 수령 처리
+const handleClaimReward = async (challengeId) => {
+  try {
+    // API 호출
+    const response = await eventApi.receiveChallengeReward(challengeId, userId);
+
+    if (response) {
+      alert('보상 수령이 완료되었습니다.');
+      await fetchMainData(); // 화면 데이터 갱신
+    }
+  } catch (error) {
+    console.error('보상 수령 오류:', error);
+    alert('보상 수령에 실패했습니다.');
+  }
+};
 
 // 이벤트 참여/보상 수령 처리
 const onEventAction = async ({

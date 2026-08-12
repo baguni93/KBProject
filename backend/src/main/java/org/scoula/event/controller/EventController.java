@@ -60,17 +60,6 @@ public class EventController {
         return ResponseEntity.ok(joinedEvents);
     }
 
-    // 6. 챌린지 리워드 수령 처리 (이벤트 상단 챌린지 바 관련 영역)
-    @ApiOperation("챌린지 리워드 수령 처리 (상단 챌린지 게이지 바 리워드 수령)")
-    @PostMapping("/challenges/{challengeId}/reward")
-    public ResponseEntity<HttpStatus> claimChallengeReward(
-            @PathVariable("challengeId") Integer challengeId,
-            @RequestParam(value = "userId") Integer userId) {
-
-        eventService.claimChallengeReward(userId, challengeId);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
     // 이벤트 조회
     @GetMapping("/eventList")
     public ResponseEntity<List<EventGetResponseDTO>> getEventList(
@@ -130,4 +119,16 @@ public class EventController {
         List<EventGetAttendanceResponseDTO> updatedList = eventService.receiveAttendanceEventReward(userId, eventId, rewardId);
         return ResponseEntity.ok(updatedList);
     }
+
+
+//    @ApiOperation("챌린지 리워드 수령 처리 (상단 챌린지 게이지 바 리워드 수령)")
+//    @PostMapping("/challenge/claim/{challengeId}")
+//    public ResponseEntity<HttpStatus> claimChallengeReward(
+//              @RequestParam(value = "userId") Integer userId),
+//              @PathVariable("challengeId") Integer challengeId))
+//           {
+//
+//        eventService.claimChallengeReward(userId, challengeId);
+//        return ResponseEntity.ok(HttpStatus.OK);
+//    }
 }

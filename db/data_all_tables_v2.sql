@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS `linked_card_tbl`;
 DROP TABLE IF EXISTS `card_company_tbl`;
 DROP TABLE IF EXISTS `event_challenge_user_tbl`;
 DROP TABLE IF EXISTS `event_challenge_tbl`;
+DROP TABLE IF EXISTS `event_challenge_level_tbl`;
 DROP TABLE IF EXISTS `event_reward_receive_tbl`;
 DROP TABLE IF EXISTS `event_participation_tbl`;
 DROP TABLE IF EXISTS `event_reward_tbl`;
@@ -1755,7 +1756,7 @@ CREATE TABLE event_reward_tbl
 
     reward_point INT NULL DEFAULT 0 COMMENT '리워드포인트',
 
-    reward_exe   INT NULL COMMENT '리워드경험치',
+    reward_exp   INT NULL COMMENT '리워드경험치',
 
     CONSTRAINT fk_event_reward_event
         FOREIGN KEY (event_id)
@@ -1766,9 +1767,9 @@ CREATE TABLE event_reward_tbl
             reward_point >= 0
             ),
 
-    CONSTRAINT chk_event_reward_exe
+    CONSTRAINT chk_event_reward_exp
         CHECK (
-            reward_exe >= 0
+            reward_exp >= 0
             )
 
 );
@@ -1871,6 +1872,9 @@ CREATE TABLE event_attendance_tbl
 -- event_id	user_id	reward_id	결과
 -- 1	100	1	가능
 -- 1	100	2	불가능 (이미 해당 이벤트 보상 수령)
+
+DROP TABLE IF EXISTS event_reward_receive_tbl;
+
 CREATE TABLE event_reward_receive_tbl
 (
 
@@ -1906,6 +1910,7 @@ CREATE TABLE event_reward_receive_tbl
 ) COMMENT ='이벤트 리워드 수령이력';
 
 -- 52. 이벤트 챌린지 테이블 정의서
+DROP TABLE IF EXISTS event_challenge_tbl;
 
 CREATE TABLE event_challenge_tbl
 (
@@ -1929,7 +1934,28 @@ CREATE TABLE event_challenge_tbl
 
 ) COMMENT ='이벤트 챌린지';
 
+-- 이벤트 챌린지 레벨 관리 테이블 정의서
+DROP TABLE IF EXISTS event_challenge_level_tbl;
+
+CREATE TABLE event_challenge_level_tbl
+(
+	challenge_level_id   INT 	AUTO_INCREMENT PRIMARY KEY COMMENT '챌린지 레벨 ID',
+    
+	challenge_id   		 INT	NOT NULL COMMENT '챌린지 ID',
+
+    level		 		 INT    NOT NULL COMMENT '챌린지 목표 난이도',
+
+    required_exp     	 INT    NOT NULL COMMENT '챌린지 요구 경험치',
+    
+     CONSTRAINT fk_event_challenge_level_challenge
+		FOREIGN KEY (challenge_id)
+			REFERENCES event_challenge_tbl (challenge_id)
+
+) COMMENT ='이벤트 챌린지 레벨 관리';
+
 -- 53. 이벤트 챌린지 참여이력 테이블 정의서
+DROP TABLE IF EXISTS event_challenge_user_tbl;
+
 CREATE TABLE event_challenge_user_tbl
 (
 
@@ -1942,6 +1968,8 @@ CREATE TABLE event_challenge_user_tbl
     current_level     INT         NOT NULL COMMENT '현재 달성 레벨',
 
     current_target    INT         NOT NULL COMMENT '현재 누적 수치',
+    
+	exp		  		  INT         NOT NULL COMMENT '경험치',
 
     status            VARCHAR(20) NOT NULL DEFAULT 'PROCESS' COMMENT '현재 상태',
 
@@ -3282,7 +3310,7 @@ VALUES
 INSERT INTO event_reward_tbl (reward_id,
                               event_id,
                               reward_point,
-                              reward_exe)
+                              reward_exp)
 VALUES (1, 5, 100, 10),
        (2, 2, 200, 20),
        (3, 3, 300, 30),
@@ -3329,6 +3357,19 @@ INSERT INTO event_challenge_tbl (challenge_id,
 VALUES (1, 'SUMMER SEASON 이벤트 챌린지', 5000, 5, 20, '2026-07-01 00:00:00', '2026-08-31 23:59:59', '2026-07-01 00:00:00');
 
 -- ---------------------------------------------------------------------
+-- event_challenge_level_tbl 
+-- ---------------------------------------------------------------------
+INSERT INTO event_challenge_level_tbl (challenge_level_id,
+									   challenge_id,
+									   level,
+                                       required_exp)
+VALUES	(1, 1, 1, 1000),
+		(2, 1, 2, 2500),
+		(3, 1, 3, 5000),
+		(4, 1, 4, 8000),
+		(5, 1, 5, 12000);
+
+-- ---------------------------------------------------------------------
 -- 53. event_challenge_user_tbl (6건)
 -- ---------------------------------------------------------------------
 INSERT INTO event_challenge_user_tbl (user_challenge_id,
@@ -3336,9 +3377,10 @@ INSERT INTO event_challenge_user_tbl (user_challenge_id,
                                       challenge_id,
                                       current_level,
                                       current_target,
+                                      exp,
                                       status,
                                       updated_at)
-VALUES (1, 1, 1, 2, 12, 'PROCESS', '2026-07-24 08:00:00');
+VALUES (1, 1, 1, 2, 12, 0, 'PROCESS', '2026-07-24 08:00:00');
 
 
 -- ---------------------------------------------------------------------
@@ -3458,4 +3500,3 @@ VALUES
     (11, 12, '최근 반려동물 관련 소비가 있어 고양이 펫보험을 추천합니다.', 2, 'Y');
 
 COMMIT;
-

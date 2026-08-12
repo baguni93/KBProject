@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -30,7 +29,7 @@ public class EventMainDTO { // 이벤트 메인화면
     // 이벤트 리스트
     private List<EventGetResponseDTO> eventLists;
     // 사용자 이벤트 챌린지 현황
-    private UserChallengeDTO userChallenge;
+    private List<EventChallengeResponseDTO> challengeList;
 
 
 }

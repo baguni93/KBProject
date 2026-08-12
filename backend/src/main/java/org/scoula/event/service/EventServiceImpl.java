@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 
 @Log4j2
 @Service
@@ -31,51 +30,29 @@ public class EventServiceImpl implements EventService{
         int currentPoint = (wallet != null) ? wallet.getPointBalance() : 0;
 
         // 1-2 이벤트 챌린지 조회
-        UserChallengeDTO challengeVO = eventMapper.getEventChallengeUser(userId);
-
-        // DTO 변환 및 NPE 방지
-        UserChallengeDTO challenge;
-        if (challengeVO == null) {
-            challenge = UserChallengeDTO.builder()
-                    .userChallengeLevel(1)
-                    .userChallengeExe(0)
-                    .userChallengeMaxExe(1000)
-                    .status("PROCESS")
-                    .challengeStartAt("-")
-                    .challengeEndAt("-")
-                    .challengeDDay("상시")
-                    .build();
-        } else {
-            challenge = UserChallengeDTO.builder()
-                    .userChallengeLevel(challengeVO.getUserChallengeLevel())
-                    .userChallengeExe(challengeVO.getUserChallengeExe())
-                    .userChallengeMaxExe(challengeVO.getUserChallengeMaxExe())
-                    .status(challengeVO.getStatus())
-                    .challengeStartAt("-")
-                    .challengeEndAt("-")
-                    .challengeDDay("상시")
-                    .build();
-        }
+        List<EventChallengeResponseDTO> challengeList = this.getEventChallenge(userId);
 
         // 1-3. 참여 가능 이벤트 목록 프리뷰
         List<EventGetResponseDTO> eventLists = this.getEventList(userId);
 
-        EventMainDTO result = EventMainDTO.builder()
-        //return EventMainDTO.builder()
+        return EventMainDTO.builder()
                 .userId(userId)
                 .currentPoint(currentPoint)
-                .userChallenge(challenge)
-                .userChallengeLevel(challenge.getUserChallengeLevel())
-                .userChallengeExe(challenge.getUserChallengeExe())
-                .userChallengeMaxExe(challenge.getUserChallengeMaxExe())
-                .challengeStartAt(challenge.getChallengeStartAt())
-                .challengeEndAt(challenge.getChallengeEndAt())
-                .challengeDDay(challenge.getChallengeDDay())
+                .challengeList(challengeList)
                 .eventLists(eventLists)
                 .build();
+    }
 
-        log.info("result : " + result);
-        return result;
+    public List<EventChallengeResponseDTO> getEventChallenge(int userId){
+
+        List<EventChallengeUserVO> challengeVOList = eventMapper.getEventChallenge(userId);
+
+        if (challengeVOList.isEmpty()) {
+            eventMapper.createEventChallengeParticipation(userId);
+            challengeVOList = eventMapper.getEventChallenge(userId);
+        }
+
+        return challengeVOList.stream().map(EventChallengeResponseDTO::of).toList();
     }
 
     // 2. 이벤트 리스트 조회 관련
@@ -204,44 +181,26 @@ public class EventServiceImpl implements EventService{
 //        return true;
 //    }
 
-    // 5. 이벤트 리워드 수령 처리
-//    @Transactional
-//    @Override
-//    public boolean receiveEventReward(Integer userId, Integer eventId) {
-//        EventResponseDTO eventRewardInfo = eventMapper.getEventRewardInfoByEventId(eventId);
-//
-//        if (eventRewardInfo == null) {
-//            throw new IllegalArgumentException("해당 이벤트의 리워드 단계 정보가 존재하지 않습니다.");
-//        }
-//
-//        EventRewardReceiveVO rewardReceive = EventRewardReceiveVO.builder()
-//                .userId(userId)
-//                .eventId(eventId)
-//                .rewardId(eventRewardInfo.getRewardId())
-//                .build();
-//
-//        int receiveResult = eventMapper.createEventRewardReceive(rewardReceive);
-//        if (receiveResult < 1) {
-//            log.error("이벤트 리워드 수령이력 생성 실패");
-//            return false;
-//        }
-//
-//        // 포인트 지급 처리
-//        Integer rewardPoint = eventRewardInfo.getRewardPoint();
-//        if (rewardPoint != null && rewardPoint > 0) {
-//            int pointResult = eventMapper.updateUserPoint(userId, rewardPoint);
-//            if (pointResult < 1) {
-//                throw new IllegalStateException("포인트 수령 처리 중 오류가 발생하였습니다.");
-//            }
-//        }
-//
-//        return true;
-//    }
+    // 챌린지 경험치 처리
+    public boolean processChallengeReward(int userId, int rewardId) {
+        // 보상받기 버튼 실행 시 이벤트 챌린지 경험치 누적 자동 처리
+        eventMapper.updateUserChallenge(userId, rewardId);
 
-    // 6. 챌린지 참여 처리 및 리워드 수령 처리
+        return true;
+    }
+
     @Transactional
-    @Override
-    public boolean claimChallengeReward(Integer userId, Integer challengeId) {
+    public boolean claimChallengeReward(int userId, int challengeId) {
+        int updatedRows = eventMapper.updateUserLevel(userId);
+
+        if (updatedRows == 0) {
+            return false; // 레벨 달성 시에만
+        }
+
+        // 2) 해당 레벨업에 따른 포인트/보상 지급 로직 추가
+        // int rewardPoint = eventMapper.getChallengeRewardPoint(userId, challengeId);
+        // pointWalletService.addPoint(userId, rewardPoint);
+
         return true;
     }
 
@@ -341,11 +300,14 @@ public class EventServiceImpl implements EventService{
         // 보상 수령 이력 생성
         eventMapper.createEventRewardReceive(userId, eventId, rewardId);
 
-        // 포인트 업데이트
+        // 사용자 포인트 누적 업데이트
         eventMapper.updateUserPoint(userId, rewardId);
 
-        // transaction 생성
+        // 사용자 포인트 transaction 생성
         eventMapper.createUserPointTransaction(userId, rewardId);
+
+        // 이벤트 챌린지 처리
+        processChallengeReward(userId, rewardId);
 
         return getEventList(userId);
     }
@@ -363,6 +325,9 @@ public class EventServiceImpl implements EventService{
 
         // transaction 생성
         eventMapper.createUserPointTransaction(userId, rewardId);
+
+        // 이벤트 챌린지 처리
+        processChallengeReward(userId, rewardId);
 
         return getAttendanceEventList(userId);
     }
