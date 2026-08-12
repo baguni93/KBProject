@@ -2,7 +2,7 @@ package org.scoula.controller;
 
 import lombok.extern.log4j.Log4j2;
 import org.scoula.security.account.domain.CustomUser;
-import org.scoula.security.account.domain.MemberVO;
+import org.scoula.user.domain.UserVO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,18 +21,18 @@ public class SecurityRestController {
         log.info("do all can access everybody");
         return ResponseEntity.ok("All can access everybody");
     }
+
     @GetMapping("/member")
     public ResponseEntity<String> doMember(Authentication authentication) {
-        UserDetails userDetails = (UserDetails)authentication.getPrincipal();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         log.info("username = " + userDetails.getUsername());
         return ResponseEntity.ok(userDetails.getUsername());
     }
 
     @GetMapping("/admin")
-    public ResponseEntity<MemberVO> doAdmin(@AuthenticationPrincipal CustomUser customUser) {
-        MemberVO member = customUser.getMember();
-        log.info("username = " + member);
-        return ResponseEntity.ok(member);
+    public ResponseEntity<UserVO> doAdmin(@AuthenticationPrincipal CustomUser customUser) {
+        UserVO user = customUser.getUser();
+        log.info("user = " + user);
+        return ResponseEntity.ok(user);
     }
-
 }

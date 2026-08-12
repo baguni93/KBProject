@@ -14,8 +14,7 @@
         <result property="userId"
                 column="user_id"/>
 
-        <!-- card_code를 cardId로 매핑 -->
-        <result property="cardId"
+        <result property="cardCode"
                 column="card_code"/>
 
         <result property="cardCompanyCode"
@@ -27,7 +26,6 @@
         <result property="cardName"
                 column="card_name"/>
 
-        <!-- card_img_file_name을 cardImageName으로 매핑 -->
         <result property="cardImageName"
                 column="card_img_file_name"/>
 
@@ -46,28 +44,28 @@
             resultMap="linkedCardMap">
 
         SELECT
-            lc.linked_card_id,
-            lc.user_id,
-            lc.card_code,
-            lc.card_company_code,
-            cc.card_company_name,
-            COALESCE(c.card_name, 'KB국민카드') AS card_name,
-            COALESCE(c.card_img_file_name, 'card_default.png') AS card_img_file_name,
-            c.card_num,
-            lc.represent_yn
+        lc.linked_card_id,
+        lc.user_id,
+        lc.card_code,
+        lc.card_company_code,
+        cc.card_company_name,
+        COALESCE(c.card_name, 'KB국민카드') AS card_name,
+        COALESCE(c.card_img_file_name, 'card_default.png') AS card_img_file_name,
+        c.card_num,
+        lc.represent_yn
         FROM linked_card_tbl lc
         INNER JOIN card_tbl c
-            ON lc.card_code = c.card_code
+        ON lc.card_code = c.card_code
         LEFT JOIN card_company_tbl cc
-            ON lc.card_company_code = cc.card_company_code
+        ON lc.card_company_code = cc.card_company_code
         INNER JOIN user_tbl u
-            ON lc.user_id = u.user_id
+        ON lc.user_id = u.user_id
         WHERE lc.user_id = #{userId}
-          AND lc.delete_yn = 'N'
-          AND u.user_status = 'ACTIVE'
+        AND lc.delete_yn = 'N'
+        AND u.user_status = 'ACTIVE'
         ORDER BY
-            CASE WHEN lc.represent_yn = 'Y' THEN 0 ELSE 1 END,
-            lc.linked_card_id DESC
+        CASE WHEN lc.represent_yn = 'Y' THEN 0 ELSE 1 END,
+        lc.linked_card_id DESC
 
     </select>
 
@@ -77,26 +75,26 @@
             resultMap="linkedCardMap">
 
         SELECT
-            lc.linked_card_id,
-            lc.user_id,
-            lc.card_code,
-            lc.card_company_code,
-            cc.card_company_name,
-            COALESCE(c.card_name, 'KB국민카드') AS card_name,
-            COALESCE(c.card_img_file_name, 'card_default.png') AS card_img_file_name,
-            c.card_num,
-            lc.represent_yn
+        lc.linked_card_id,
+        lc.user_id,
+        lc.card_code,
+        lc.card_company_code,
+        cc.card_company_name,
+        COALESCE(c.card_name, 'KB국민카드') AS card_name,
+        COALESCE(c.card_img_file_name, 'card_default.png') AS card_img_file_name,
+        c.card_num,
+        lc.represent_yn
         FROM linked_card_tbl lc
         INNER JOIN card_tbl c
-            ON lc.card_code = c.card_code
+        ON lc.card_code = c.card_code
         LEFT JOIN card_company_tbl cc
-            ON lc.card_company_code = cc.card_company_code
+        ON lc.card_company_code = cc.card_company_code
         INNER JOIN user_tbl u
-            ON lc.user_id = u.user_id
+        ON lc.user_id = u.user_id
         WHERE lc.user_id = #{userId}
-          AND lc.linked_card_id = #{linkedCardId}
-          AND lc.delete_yn = 'N'
-          AND u.user_status = 'ACTIVE'
+        AND lc.linked_card_id = #{linkedCardId}
+        AND lc.delete_yn = 'N'
+        AND u.user_status = 'ACTIVE'
 
     </select>
 
@@ -109,7 +107,7 @@
         SELECT COUNT(*)
         FROM linked_card_tbl lc
         WHERE lc.user_id = #{userId}
-          AND lc.delete_yn = 'N'
+        AND lc.delete_yn = 'N'
 
     </select>
 
@@ -121,6 +119,7 @@
         UPDATE linked_card_tbl
         SET represent_yn = 'N'
         WHERE user_id = #{userId}
+        AND delete_yn = 'N'
 
     </update>
 
@@ -131,19 +130,22 @@
         UPDATE linked_card_tbl
         SET represent_yn = 'Y'
         WHERE user_id = #{userId}
-          AND linked_card_id = #{linkedCardId}
+        AND linked_card_id = #{linkedCardId}
+        AND delete_yn = 'N'
 
     </update>
 
 
-    <!-- 연결 카드 삭제 (delete_yn = 'Y' 로 소프트 삭제) -->
-    <delete id="deleteLinkedCard">
+    <!-- 연결 카드 삭제 -->
+    <update id="deleteLinkedCard">
 
-        DELETE FROM linked_card_tbl
+        UPDATE linked_card_tbl
+        SET delete_yn = 'Y'
         WHERE user_id = #{userId}
-          AND linked_card_id = #{linkedCardId}
+        AND linked_card_id = #{linkedCardId}
+        AND delete_yn = 'N'
 
-    </delete>
+    </update>
 
 
     <!-- 다른 연결 카드 한 건 조회 -->
@@ -151,55 +153,66 @@
             resultMap="linkedCardMap">
 
         SELECT
-            lc.linked_card_id,
-            lc.user_id,
-            lc.card_code,
-            lc.card_company_code,
-            COALESCE(c.card_name, 'KB국민카드') AS card_name,
-            COALESCE(c.card_img_file_name, 'card_default.png') AS card_img_file_name,
-            c.card_num,
-            lc.represent_yn
+        lc.linked_card_id,
+        lc.user_id,
+        lc.card_code,
+        lc.card_company_code,
+        cc.card_company_name,
+        COALESCE(c.card_name, 'KB국민카드') AS card_name,
+        COALESCE(c.card_img_file_name, 'card_default.png') AS card_img_file_name,
+        c.card_num,
+        lc.represent_yn
         FROM linked_card_tbl lc
-        INNER JOIN card_tbl c ON lc.card_code = c.card_code
+        INNER JOIN card_tbl c
+        ON lc.card_code = c.card_code
+        LEFT JOIN card_company_tbl cc
+        ON lc.card_company_code = cc.card_company_code
         WHERE lc.user_id = #{userId}
-          AND lc.linked_card_id != #{linkedCardId}
-          AND lc.delete_yn = 'N'
+        AND lc.linked_card_id != #{linkedCardId}
+        AND lc.delete_yn = 'N'
         ORDER BY lc.linked_card_id
         LIMIT 1
 
     </select>
 
 
-    <!-- card_tbl 카드 마스터 삽입 (시연/테스트 사전 등록, 팀원 디자인 카드 등록용) -->
+    <!-- card_tbl 카드 마스터 삽입 -->
     <insert id="insertCard"
             parameterType="org.scoula.card.domain.CardVO"
             useGeneratedKeys="true"
             keyProperty="cardCode">
 
         INSERT INTO card_tbl (
-            card_num,
-            expiry_date,
-            cvv,
-            card_password,
-            card_img_file_name,
-            card_name
+        card_num,
+        expiry_date,
+        cvv,
+        card_password,
+        card_img_file_name,
+        card_name
         ) VALUES (
-            #{cardNum},
-            #{expiryDate},
-            #{cvv},
-            #{cardPassword},
-            #{cardImgFileName},
-            #{cardName}
+        #{cardNum},
+        #{expiryDate},
+        #{cvv},
+        #{cardPassword},
+        #{cardImgFileName},
+        #{cardName}
         )
 
     </insert>
 
-    <!-- BIN prefix(6자리)로 card_tbl 조회 (커스텀 카드 이미지 조회용) -->
-    <select id="findByBinPrefix" parameterType="string" resultType="map">
-        SELECT card_name AS cardName, card_img_file_name AS imageUrl
+
+    <!-- BIN prefix(6자리)로 card_tbl 조회 -->
+    <select id="findByBinPrefix"
+            parameterType="string"
+            resultType="map">
+
+        SELECT
+        card_name AS cardName,
+        card_img_file_name AS imageUrl
         FROM card_tbl
         WHERE card_num LIKE CONCAT(#{bin}, '%')
         LIMIT 1
+
     </select>
 
 </mapper>

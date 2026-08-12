@@ -1,10 +1,9 @@
 package org.scoula.security.account.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.scoula.security.account.domain.MemberVO;
+import org.scoula.user.domain.UserVO;
 
 import java.util.List;
 
@@ -12,17 +11,21 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserInfoDTO {
-    private String username;
-    private String email;
-    List<String> roles;
 
-    public static UserInfoDTO of(MemberVO memberVO){
-        return new UserInfoDTO(memberVO.getUsername(),
-                memberVO.getEmail(),
-                memberVO.getAuthList()
+    private Long userId;
+    private String userName;
+    private String phoneNumber;
+    private List<String> roles;
+
+    public static UserInfoDTO of(UserVO userVO) {
+        return new UserInfoDTO(
+                userVO.getUserId(),
+                userVO.getUserName(),
+                userVO.getPhoneNumber(),
+                userVO.getAuthList()
                         .stream()
-                        .map(a->a.getAuth()
-                        ).toList());
+                        .map(a -> a.getAuth())
+                        .toList()
+        );
     }
-
 }

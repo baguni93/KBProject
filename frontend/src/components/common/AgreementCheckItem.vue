@@ -1,13 +1,16 @@
 <template>
-  <article class="agreement-item">
+  <article
+      class="agreement-item"
+      :class="{ 'agreement-item-last': last }"
+  >
     <div class="agreement-row">
       <label class="agreement-label">
         <input
-          class="agreement-input"
-          type="checkbox"
-          :checked="modelValue"
-          :disabled="disabled"
-          @change="handleChange"
+            class="agreement-input"
+            type="checkbox"
+            :checked="modelValue"
+            :disabled="disabled"
+            @change="handleChange"
         />
 
         <span class="agreement-checkbox" aria-hidden="true"></span>
@@ -20,20 +23,20 @@
       </label>
 
       <button
-        v-if="showDetailButton"
-        type="button"
-        class="agreement-detail-button"
-        :aria-expanded="detailMode === 'expand' ? expanded : undefined"
-        :aria-label="`${title} 상세보기`"
-        @click="openDetail"
+          v-if="showDetailButton"
+          type="button"
+          class="agreement-detail-button"
+          :aria-expanded="detailMode === 'expand' ? expanded : undefined"
+          :aria-label="`${title} 상세보기`"
+          @click="openDetail"
       >
         <span :class="{ expanded: detailMode === 'expand' && expanded }">&gt;</span>
       </button>
     </div>
 
     <div
-      v-if="detailMode === 'expand' && expanded"
-      class="agreement-detail"
+        v-if="detailMode === 'expand' && expanded"
+        class="agreement-detail"
     >
       <slot name="detail">
         <p>{{ detail }}</p>
@@ -81,6 +84,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  last: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits([
@@ -98,6 +105,7 @@ const openDetail = () => {
     emit('open-detail');
     return;
   }
+
   emit('toggle-detail');
 };
 </script>
@@ -105,6 +113,10 @@ const openDetail = () => {
 <style scoped>
 .agreement-item {
   border-bottom: 1px solid #eeeeee;
+}
+
+.agreement-item-last {
+  border-bottom: none;
 }
 
 .agreement-row {

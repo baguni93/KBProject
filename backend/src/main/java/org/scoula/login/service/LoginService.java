@@ -31,4 +31,6 @@ public interface LoginService {
 
     // AUTH-007 토큰 재발급
     TokenDTO refreshToken(RefreshTokenRequestDTO requestDTO);
+
+    TokenDTO reissueTokenAfterPhoneChange(Long userId, String newPhoneNumber);
 }

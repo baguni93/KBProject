@@ -5,7 +5,7 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import {
   deleteProfileImage,
   getProfile,
-  getProfileImageUrl,
+  getProfileImage,
   updateProfile,
   updateProfileImage,
 } from '@/api/profileApi';
@@ -33,8 +33,8 @@ const imageProcessing = computed(() => imageUploading.value || imageDeleting.val
 const canSave = computed(() => profile.nickname.length > 0 && !nicknameError.value);
 
 // 프로필 이미지 URL 갱신
-const refreshProfileImage = () => {
-  profileImage.value = `${getProfileImageUrl()}?t=${Date.now()}`;
+const refreshProfileImage = async () => {
+  profileImage.value = await getProfileImage();
 };
 
 // 이미지 메뉴 열기
@@ -95,8 +95,7 @@ const changeImage = async (event) => {
     errorMessage.value = '';
 
     await updateProfileImage(file);
-
-    refreshProfileImage();
+    await refreshProfileImage();
   } catch (error) {
     console.error(error);
 
@@ -124,8 +123,7 @@ const removeProfileImage = async () => {
     errorMessage.value = '';
 
     await deleteProfileImage();
-
-    refreshProfileImage();
+    await refreshProfileImage();
   } catch (error) {
     console.error(error);
 
@@ -180,7 +178,7 @@ const loadProfile = async () => {
     originalProfile.nickname = profile.nickname;
     originalProfile.introduction = profile.introduction;
 
-    refreshProfileImage();
+    await refreshProfileImage();
   } catch (error) {
     console.error(error);
 
@@ -474,6 +472,7 @@ onBeforeUnmount(() => {
 .title-section {
   margin-top: 38px;
 }
+
 .title-section h2 {
   margin: 0;
   color: #111111;
@@ -1009,18 +1008,18 @@ onBeforeUnmount(() => {
 
 .action-sheet-enter-from .action-sheet,
 .action-sheet-leave-to .action-sheet {
-  transform: translateY(100%);
+  transform: translateY(24px);
 }
 
 .loading-overlay {
   position: absolute;
-  z-index: 200;
+  z-index: 80;
   inset: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  flex-direction: column;
+  gap: 12px;
   background: rgba(255, 255, 255, 0.88);
   color: #444444;
   font-size: 14px;

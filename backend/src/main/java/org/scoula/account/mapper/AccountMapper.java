@@ -29,8 +29,24 @@ public interface AccountMapper {
     // 계좌 인증 정보 조회
     AccountVerificationVO findVerificationById(@Param("verificationId") Long verificationId, @Param("userId") Long userId);
 
+    // 동일 계좌의 최근 인증 요청 조회
+    AccountVerificationVO findLatestVerification(
+            @Param("userId") Long userId,
+            @Param("bankCode") String bankCode,
+            @Param("accountNumber") String accountNumber
+    );
+
     // 계좌 인증 성공 처리
     int verifyAccount(@Param("verificationId") Long verificationId, @Param("userId") Long userId);
+
+    // 계좌 인증 실패 횟수 증가
+    int increaseVerificationFailCount(@Param("verificationId") Long verificationId, @Param("userId") Long userId);
+
+    // 계좌 인증번호 재발급
+    int resendVerificationCode(@Param("verificationId") Long verificationId, @Param("userId") Long userId, @Param("verificationCode") String verificationCode);
+
+    // 계좌 인증 5분 잠금
+    int lockVerification(@Param("verificationId") Long verificationId, @Param("userId") Long userId);
 
     // 계좌 인증 정보 삭제
     int deleteVerification(@Param("verificationId") Long verificationId, @Param("userId") Long userId);

@@ -77,6 +77,19 @@ public class AccountServiceImpl implements AccountService {
             throw new IllegalArgumentException("이미 연결된 계좌입니다.");
         }
 
+        // 동일 계좌의 최근 인증 잠금 상태 확인
+        AccountVerificationVO latestVerification = accountMapper.findLatestVerification(
+                userId,
+                requestDTO.getBankCode(),
+                requestDTO.getAccountNumber().trim()
+        );
+
+        if (latestVerification != null
+                && latestVerification.getLockedUntil() != null
+                && LocalDateTime.now().isBefore(latestVerification.getLockedUntil())) {
+            throw new IllegalArgumentException("계좌 인증 시도 횟수를 초과했습니다. 5분 후 다시 시도해주세요.");
+        }
+
         String verificationCode = String.format("%04d", secureRandom.nextInt(10000));
 
         AccountVerificationVO verification = AccountVerificationVO.builder()
@@ -87,6 +100,9 @@ public class AccountServiceImpl implements AccountService {
                 .verificationCode(verificationCode)
                 .verifiedYn("N")
                 .requestedAt(LocalDateTime.now())
+                .failCount(0)
+                .resendCount(0)
+                .lockedUntil(null)
                 .build();
 
         accountMapper.insertVerification(verification);
@@ -100,13 +116,58 @@ public class AccountServiceImpl implements AccountService {
         return response;
     }
 
-    // 계좌 인증번호 확인
+    // 계좌 인증번호 재발급
     @Override
     @Transactional
-    public boolean confirmVerification(
-            Long userId,
-            AccountVerificationConfirmDTO confirmDTO
-    ) {
+    public Map<String, Object> resendVerification(Long userId, Long verificationId) {
+
+        AccountVerificationVO verification = accountMapper.findVerificationById(verificationId, userId);
+
+        if (verification == null) {
+            throw new IllegalArgumentException("계좌 인증 요청을 찾을 수 없습니다.");
+        }
+
+        if ("Y".equals(verification.getVerifiedYn())) {
+            throw new IllegalArgumentException("이미 완료된 계좌 인증입니다.");
+        }
+
+        if (verification.getLockedUntil() != null
+                && LocalDateTime.now().isBefore(verification.getLockedUntil())) {
+            throw new IllegalArgumentException("계좌 인증 시도 횟수를 초과했습니다. 5분 후 다시 시도해주세요.");
+        }
+
+        int failCount = verification.getFailCount() == null ? 0 : verification.getFailCount();
+        int resendCount = verification.getResendCount() == null ? 0 : verification.getResendCount();
+
+        if (failCount < 5) {
+            throw new IllegalArgumentException("인증번호 입력 가능 횟수가 남아있습니다.");
+        }
+
+        if (resendCount >= 1) {
+            throw new IllegalArgumentException("인증번호 재발급 가능 횟수를 초과했습니다.");
+        }
+
+        String verificationCode = String.format("%04d", secureRandom.nextInt(10000));
+
+        int updated = accountMapper.resendVerificationCode(verificationId, userId, verificationCode);
+
+        if (updated != 1) {
+            throw new IllegalStateException("계좌 인증번호 재발급에 실패했습니다.");
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("verificationId", verificationId);
+        response.put("verificationCode", verificationCode);
+        response.put("message", "계좌 인증번호가 재발급되었습니다.");
+
+        return response;
+    }
+
+    // 계좌 인증번호 확인
+    @Override
+    @Transactional(noRollbackFor = IllegalArgumentException.class)
+    public boolean confirmVerification(Long userId, AccountVerificationConfirmDTO confirmDTO) {
 
         if (confirmDTO.getVerificationId() == null) {
             throw new IllegalArgumentException("계좌 인증번호 식별값이 필요합니다.");
@@ -128,8 +189,43 @@ public class AccountServiceImpl implements AccountService {
 
         if ("Y".equals(verification.getVerifiedYn())) return true;
 
+        // 계좌 인증 잠금 확인
+        if (verification.getLockedUntil() != null
+                && LocalDateTime.now().isBefore(verification.getLockedUntil())) {
+            throw new IllegalArgumentException("계좌 인증 시도 횟수를 초과했습니다. 5분 후 다시 시도해주세요.");
+        }
+
+        int failCount = verification.getFailCount() == null ? 0 : verification.getFailCount();
+        int resendCount = verification.getResendCount() == null ? 0 : verification.getResendCount();
+
+        // 이미 첫 번째 5회 실패가 끝난 경우
+        if (failCount >= 5 && resendCount == 0) {
+            throw new IllegalArgumentException("계좌 인증번호 입력 가능 횟수를 초과했습니다. 인증번호를 다시 받아주세요.");
+        }
+
+        // 재발급 후 5회 실패로 잠금된 요청
+        if (failCount >= 5 && resendCount >= 1) {
+            throw new IllegalArgumentException("계좌 인증 시도 횟수를 초과했습니다. 5분 후 다시 시도해주세요.");
+        }
+
         if (!verification.getVerificationCode().equals(confirmDTO.getVerificationCode())) {
-            throw new IllegalArgumentException("계좌 인증번호가 일치하지 않습니다.");
+            accountMapper.increaseVerificationFailCount(confirmDTO.getVerificationId(), userId);
+
+            int newFailCount = failCount + 1;
+            int remainingCount = 5 - newFailCount;
+
+            // 첫 번째 인증번호 5회 실패
+            if (remainingCount <= 0 && resendCount == 0) {
+                throw new IllegalArgumentException("계좌 인증번호 입력 가능 횟수를 초과했습니다. 인증번호를 다시 받아주세요.");
+            }
+
+            // 재발급 인증번호도 5회 실패
+            if (remainingCount <= 0) {
+                accountMapper.lockVerification(confirmDTO.getVerificationId(), userId);
+                throw new IllegalArgumentException("계좌 인증 시도 횟수를 초과했습니다. 5분 후 다시 시도해주세요.");
+            }
+
+            throw new IllegalArgumentException("계좌 인증번호가 일치하지 않습니다. 남은 횟수: " + remainingCount);
         }
 
         return accountMapper.verifyAccount(confirmDTO.getVerificationId(), userId) > 0;

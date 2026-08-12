@@ -7,23 +7,35 @@ START TRANSACTION;
 -- ---------------------------------------------------------------------
 -- 1. user_tbl (3건)
 -- ---------------------------------------------------------------------
-INSERT INTO user_tbl (user_id,
-                      user_name,
-                      birth_date,
-                      phone_number,
-                      pin_password,
-                      user_status,
-                      created_at,
-                      updated_at,
-                      withdrawn_at,
-                      last_login_at)
-VALUES (1, '테스트회원1', '20000115', '01011112222', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'ACTIVE', '2026-07-01 09:00:00', '2026-07-24 08:30:00', NULL, '2026-07-24 08:30:00'),
-       (2, '테스트회원2', '19990321', '01022223333', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'ACTIVE', '2026-07-02 10:00:00', '2026-07-23 19:10:00', NULL, '2026-07-23 19:10:00'),
-       (3, '테스트회원3', '20010509', '01033334444', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK',
-        'ACTIVE', '2026-07-03 11:00:00', '2026-07-22 14:20:00', NULL, '2026-07-22 14:20:00');
+INSERT INTO user_tbl (
+    user_id,
+    user_name,
+    birth_date,
+    phone_number,
+    pin_password,
+    pin_fail_count,
+    pin_locked_yn,
+    user_status,
+    created_at,
+    updated_at,
+    withdrawn_at,
+    last_login_at
+)
+VALUES (1, '테스트회원1', '20000115', '01011112222', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK', 0, 'N',
+		'ACTIVE', '2026-07-01 09:00:00', '2026-07-24 08:30:00', NULL, '2026-07-24 08:30:00'),
+		(2, '테스트회원2', '19990321', '01022223333', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK', 0, 'N',
+		'ACTIVE', '2026-07-02 10:00:00', '2026-07-23 19:10:00', NULL, '2026-07-23 19:10:00'),
+		(3, '테스트회원3', '20010509', '01033334444', '$2y$10$du1EXjznqV1UChQm4Lc20eULZzTo8VtgPmKSotjgnDXkYmBQzjrzK', 0, 'N',
+		'ACTIVE', '2026-07-03 11:00:00', '2026-07-22 14:20:00', NULL, '2026-07-22 14:20:00');
 
+-- ---------------------------------------------------------------------
+-- 59. user_auth_tbl
+-- ---------------------------------------------------------------------
+INSERT INTO user_auth_tbl (user_id, auth)
+VALUES (1, 'ROLE_USER'),
+       (2, 'ROLE_USER'),
+       (3, 'ROLE_USER');
+       
 -- ---------------------------------------------------------------------
 -- 2. bank_tbl (10건)
 -- ---------------------------------------------------------------------

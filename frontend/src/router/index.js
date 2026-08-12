@@ -231,13 +231,45 @@ const router = createRouter({
   ],
 });
 
-// 로그인 필수 화면 접근 확인
+// 로그인 상태에 따른 화면 접근 제어
 router.beforeEach((to) => {
-  if (!to.matched.some((route) => route.meta.requiresAuth)) {
-    return true;
+  const authData = localStorage.getItem('auth');
+  let loggedIn = false;
+
+  if (authData) {
+    try {
+      const parsed = JSON.parse(authData);
+      loggedIn = !!parsed.accessToken;
+    } catch (e) {
+      localStorage.removeItem('auth');
+    }
   }
 
-  return isAuthenticated(to);
+  // 로그인 상태에서는 로그인/회원가입 화면 접근 차단
+  const guestOnlyPaths = [
+    '/intro',
+    '/auth/pin-login',
+    '/signup/agreement',
+    '/signup/existing-member',
+    '/signup/new-member',
+    '/signup/pin',
+    '/signup/pin-confirm',
+    '/signup/nickname',
+    '/signup/complete',
+  ];
+
+  const isGuestOnly = guestOnlyPaths.includes(to.path);
+
+  if (loggedIn && isGuestOnly) {
+    return '/wallet';
+  }
+
+  // 로그인이 필요한 화면
+  if (to.matched.some((route) => route.meta.requiresAuth)) {
+    return isAuthenticated(to);
+  }
+
+  return true;
 });
 
 export default router;

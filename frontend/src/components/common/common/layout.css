@@ -1,0 +1,31 @@
+/* ========================================
+공통 페이지 레이아웃
+
+- 전체 화면 기준 레이아웃
+- 기본 좌우 여백 24px
+- 하단 여백 32px
+======================================== */
+
+.page-layout {
+    width: 100%;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: 0 24px 32px;
+}
+
+/* 상단 여백이 필요한 페이지 */
+.page-layout-top {
+    padding-top: 40px;
+}
+
+/* 페이지 콘텐츠 영역 */
+.page-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}

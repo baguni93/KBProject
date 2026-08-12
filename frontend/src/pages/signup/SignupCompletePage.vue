@@ -1,48 +1,67 @@
 <template>
-  <div class="complete-page">
-    <main class="complete-container">
+  <div class="page-layout page-layout-top complete-page">
+    <!-- 배경 장식 -->
+    <div class="background-decoration decoration-left"></div>
+    <div class="background-decoration decoration-right"></div>
+
+    <main class="page-content content-area">
       <section class="complete-content">
+        <!-- 완료 비주얼 -->
         <div class="complete-visual">
-          <div class="wallet-card">
-            <div class="wallet-logo">W</div>
-            <div class="wallet-line"></div>
-            <div class="wallet-line short"></div>
+          <div class="circle-background"></div>
+
+          <div class="check-circle">
+            <i class="fa-solid fa-check"></i>
           </div>
 
-          <div class="check-badge">✓</div>
+          <!-- 작은 장식 -->
+          <span class="deco deco-one"></span>
+          <span class="deco deco-two"></span>
+          <span class="deco deco-three"></span>
+          <span class="deco deco-four"></span>
 
-          <span class="confetti confetti-one"></span>
-          <span class="confetti confetti-two"></span>
-          <span class="confetti confetti-three"></span>
-          <span class="confetti confetti-four"></span>
-          <span class="confetti confetti-five"></span>
-          <span class="confetti confetti-six"></span>
+          <i class="fa-solid fa-star sparkle sparkle-one"></i>
+          <i class="fa-solid fa-star sparkle sparkle-two"></i>
         </div>
 
-        <h1>회원가입이 완료되었어요!</h1>
+        <!-- 완료 메시지 -->
+        <div class="complete-message">
+          <h1 class="text-30-bold">
+            회원가입이<br />
+            완료되었어요!
+          </h1>
 
-        <p class="complete-description">
-          이제 계좌를 연결하면<br />
-          Social Wallet을 바로 이용할 수 있어요.
-        </p>
+          <p class="text-15">
+            이제 계좌를 연결하면<br />
+            Social Wallet을 이용할 수 있어요.
+          </p>
+        </div>
 
-        <section class="account-guide">
-          <div class="guide-icon">₩</div>
+        <!-- 다음 단계 안내 -->
+        <div class="guide-card">
+          <div class="guide-icon">
+            <i class="fa-solid fa-building-columns"></i>
+          </div>
 
           <div class="guide-text">
-            <strong>계좌 연결이 필요해요</strong>
-            <p>
-              송금과 결제 서비스를 이용하려면<br />
+            <strong class="text-15-bold">
+              다음은 계좌 연결이에요
+            </strong>
+
+            <p class="text-13">
               본인 명의 계좌를 연결해 주세요.
             </p>
           </div>
-        </section>
+        </div>
       </section>
+    </main>
 
-      <button class="connect-button" type="button" @click="goAccountConnect">
+    <!-- 하단 버튼 -->
+    <div class="bottom-btn-area single">
+      <button class="bottom-btn" type="button" @click="goAccountConnect">
         계좌 연결하기
       </button>
-    </main>
+    </div>
   </div>
 </template>
 
@@ -58,185 +77,198 @@ const goAccountConnect = () => {
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
+
 .complete-page {
-  width: 100%;
-  height: 100%;
-  background: #ffffff;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #fffdf8 0%, #ffffff 42%, #ffffff 100%);
 }
 
-.complete-container {
+.content-area {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
+  z-index: 2;
   min-height: 0;
-  padding: 40px 28px 140px;
-  background: #ffffff;
-  box-sizing: border-box;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .complete-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 54px;
   text-align: center;
 }
 
+/* 배경 장식 */
+.background-decoration {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.decoration-left {
+  top: -90px;
+  left: -110px;
+  width: 220px;
+  height: 220px;
+  background: rgba(255, 205, 91, 0.13);
+}
+
+.decoration-right {
+  top: 240px;
+  right: -110px;
+  width: 200px;
+  height: 200px;
+  background: rgba(176, 164, 255, 0.06);
+}
+
+/* 완료 비주얼 */
 .complete-visual {
   position: relative;
-  width: 180px;
-  height: 180px;
-  margin: 18px auto 34px;
+  width: 138px;
+  height: 138px;
+  margin-bottom: 28px;
 }
 
-.wallet-card {
+.circle-background {
   position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: linear-gradient(
+      135deg,
+      rgba(255, 188, 46, 0.17),
+      rgba(255, 225, 155, 0.07)
+  );
+}
+
+.check-circle {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 2;
+  display: flex;
+  width: 90px;
+  height: 90px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(
+      135deg,
+      #ffca52 0%,
+      var(--color-primary) 65%,
+      #f3a711 100%
+  );
+  box-shadow: 0 14px 30px rgba(255, 188, 46, 0.26);
+  color: #ffffff;
+}
+
+.check-circle i {
+  font-size: 34px;
+}
+
+/* 작은 장식 */
+.deco {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+}
+
+.deco-one {
+  top: 14px;
+  right: 10px;
+  width: 9px;
+  height: 9px;
+  background: #ffca52;
+}
+
+.deco-two {
   top: 42px;
-  left: 50%;
-  width: 130px;
-  height: 94px;
-  padding: 20px;
-  border-radius: 22px;
-  background: linear-gradient(145deg, #ffca49, #ffb212);
-  box-shadow: 0 20px 38px rgba(255, 181, 18, 0.26);
-  text-align: left;
-  transform: translateX(-50%) rotate(-5deg);
-  box-sizing: border-box;
-}
-
-.wallet-logo {
-  display: flex;
-  width: 34px;
-  height: 34px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #222222;
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 800;
-}
-
-.wallet-line {
-  width: 66px;
-  height: 7px;
-  margin-top: 14px;
-  border-radius: 6px;
-  background: rgba(34, 34, 34, 0.7);
-}
-
-.wallet-line.short {
-  width: 42px;
-  margin-top: 7px;
-  background: rgba(34, 34, 34, 0.4);
-}
-
-.check-badge {
-  position: absolute;
-  right: 12px;
-  bottom: 20px;
-  display: flex;
-  width: 58px;
-  height: 58px;
-  align-items: center;
-  justify-content: center;
-  border: 6px solid #ffffff;
-  border-radius: 50%;
-  background: #222222;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.16);
-  color: #ffffff;
-  font-size: 28px;
-  font-weight: 800;
-  box-sizing: border-box;
-}
-
-.confetti {
-  position: absolute;
+  left: 3px;
   width: 7px;
-  height: 18px;
-  border-radius: 4px;
+  height: 7px;
+  background: #9d90ff;
 }
 
-.confetti-one {
-  top: 20px;
-  left: 26px;
-  background: #ffbc2e;
-  transform: rotate(-32deg);
+.deco-three {
+  right: 4px;
+  bottom: 27px;
+  width: 7px;
+  height: 7px;
+  background: #7bd6c7;
 }
 
-.confetti-two {
-  top: 12px;
-  right: 30px;
-  background: #6e8cff;
-  transform: rotate(38deg);
+.deco-four {
+  bottom: 9px;
+  left: 25px;
+  width: 8px;
+  height: 8px;
+  background: #ff9eaa;
 }
 
-.confetti-three {
-  top: 78px;
-  left: 4px;
-  background: #63c975;
-  transform: rotate(55deg);
+.sparkle {
+  position: absolute;
+  color: var(--color-primary);
 }
 
-.confetti-four {
-  top: 70px;
-  right: 2px;
-  background: #f08ebf;
-  transform: rotate(-48deg);
+.sparkle-one {
+  top: 2px;
+  left: 31px;
+  font-size: 11px;
+  transform: rotate(15deg);
 }
 
-.confetti-five {
-  bottom: 14px;
-  left: 30px;
-  background: #ff8b65;
-  transform: rotate(28deg);
-}
-
-.confetti-six {
-  right: 34px;
+.sparkle-two {
+  right: 15px;
   bottom: 6px;
-  background: #ffbc2e;
-  transform: rotate(-25deg);
+  color: #a99df7;
+  font-size: 9px;
+  transform: rotate(-15deg);
 }
 
-.complete-content h1 {
+/* 완료 메시지 */
+.complete-message h1 {
   margin: 0;
-  color: #111111;
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.8px;
+  color: var(--color-text-main);
+  line-height: 1.3;
+  letter-spacing: -0.6px;
 }
 
-.complete-description {
-  margin: 18px 0 0;
-  color: #777777;
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.5;
+.complete-message p {
+  margin: 16px 0 0;
+  color: var(--color-text-sub);
+  line-height: 1.65;
 }
 
-.account-guide {
+/* 다음 단계 카드 */
+.guide-card {
   display: flex;
+  width: 100%;
   align-items: center;
-  gap: 16px;
-  margin-top: 42px;
-  padding: 20px;
-  border: 1px solid #f1e2b5;
+  margin-top: 36px;
+  padding: 18px;
+  border: 1px solid rgba(255, 188, 46, 0.15);
   border-radius: 18px;
-  background: #fff9e9;
+  background: linear-gradient(110deg, #fff9ec 0%, #fffdf8 70%, #faf8ff 100%);
+  box-sizing: border-box;
   text-align: left;
 }
 
 .guide-icon {
   display: flex;
-  flex: none;
-  width: 48px;
-  height: 48px;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
-  background: #ffbc2e;
-  color: #ffffff;
-  font-size: 23px;
-  font-weight: 800;
+  margin-right: 14px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(255, 188, 46, 0.12);
+  color: #d9980d;
+  font-size: 17px;
 }
 
 .guide-text {
@@ -245,36 +277,12 @@ const goAccountConnect = () => {
 
 .guide-text strong {
   display: block;
-  color: #222222;
-  font-size: 15px;
-  font-weight: 800;
+  color: var(--color-text-main);
 }
 
 .guide-text p {
-  margin: 7px 0 0;
-  color: #777777;
-  font-size: 12px;
-  line-height: 1.55;
-}
-
-.connect-button {
-  position: absolute;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
-  width: auto;
-  height: 58px;
-  margin: 0;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.connect-button:active {
-  background: #f2aa10;
+  margin: 5px 0 0;
+  color: var(--color-text-sub);
+  line-height: 1.45;
 }
 </style>
