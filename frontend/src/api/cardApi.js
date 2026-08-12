@@ -44,26 +44,23 @@ export const setRegisteredPrimaryCard = async (cardId, userId) => {
 };
 
 // setting-card-001 연결 카드 목록 조회
-export const getCards = async (userId) => {
-  const { data } = await api.get(`/api/users/${userId}/cards`);
+export const getCards = async () => {
+  const { data } = await api.get("/api/users/cards");
 
   return data;
 };
 
 // setting-card-002 연결 카드 대표카드 설정
-export const setPrimaryCard = async (userId, linkedCardId) => {
-  const { data } = await api.patch(
-    `/api/users/${userId}/cards/${linkedCardId}/primary`,
-  );
+export const setPrimaryCard = async (linkedCardId) => {
+  const { data } = await api.patch(`/api/users/cards/${linkedCardId}/represent`);
 
   return data;
 };
 
+
 // setting-card-003 카드 연결 해제
-export const disconnectCard = async (userId, linkedCardId) => {
-  const { data } = await api.delete(
-    `/api/users/${userId}/cards/${linkedCardId}`,
-  );
+export const disconnectCard = async (linkedCardId) => {
+  const { data } = await api.delete(`/api/users/cards/${linkedCardId}`);
 
   return data;
 };
