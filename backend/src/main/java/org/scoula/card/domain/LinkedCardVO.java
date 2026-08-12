@@ -13,7 +13,7 @@ public class LinkedCardVO {
 
     private Long linkedCardId;
     private Long userId;
-    private Long cardId;
+    private Long cardCode;
     private String cardCompanyCode;
     private String cardCompanyName;
     private String cardName;
