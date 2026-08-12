@@ -25,8 +25,23 @@
           AND user.user_status = 'ACTIVE'
         LIMIT 1
     </select>
+
+<!--    이벤트 챌린지 조회-->
+    <select id="getEventChallengeList" resultType="org.scoula.event.dto.EventChallengeDTO">
+        SELECT challenge_id
+             , challenge_name
+             , IFNULL(reward_point,0) AS rewardPoint
+             , IFNULL(max_level,0) AS maxLevel
+             , IFNULL(max_target,0) AS maxTarget
+             , DATE_FORMAT(start_date, '%Y-%m-%d') as startDate
+             , DATE_FORMAT(end_date, '%Y-%m-%d') as endDate
+          FROM event_challenge_tbl
+         WHERE NOW() BETWEEN start_date AND end_date
+
+    </select>
+
 <!--    사용자 이벤트 챌린지 현황 조회-->
-    <select id="getEventChallenge" resultType="org.scoula.event.domain.EventChallengeUserVO">
+    <select id="getEventChallengeUser" resultType="org.scoula.event.dto.EventChallengeResponseDTO">
         SELECT ec.challenge_id AS challengeId
              , ecu.user_challenge_id AS userChallengeId
              , ecu.user_id AS userId
@@ -39,63 +54,16 @@
              , ecu.exp AS exp
              , ecu.status AS status
              , ecu.updated_at AS updatedAt
-        FROM event_challenge_tbl AS ec
-                 LEFT OUTER JOIN event_challenge_user_tbl AS ecu
-                                 ON ec.challenge_id = ecu.challenge_id
-                                     AND ecu.user_id = #{userId}
-                 LEFT OUTER JOIN event_challenge_level_tbl AS ecl
-                                 ON ec.challenge_id = ecl.challenge_id
-                                     AND ecl.level = IFNULL(ecu.current_level, 1)
-        WHERE NOW() BETWEEN ec.start_date AND ec.end_date
-          AND ecu.user_challenge_id IS NOT NULL
-        ORDER BY ecu.current_level DESC
-        LIMIT 1
+          FROM event_challenge_tbl AS ec LEFT OUTER JOIN event_challenge_user_tbl AS ecu
+                                                      ON ec.challenge_id = ecu.challenge_id
+                                                     AND ecu.user_id = #{userId}
+                                         LEFT OUTER JOIN event_challenge_level_tbl AS ecl
+                                                      ON ec.challenge_id = ecl.challenge_id
+                                                     AND ecl.level = IFNULL(ecu.current_level, 1)
+         WHERE ecu.user_challenge_id IS NOT NULL
+      ORDER BY ecu.current_level DESC
+         LIMIT 1
     </select>
-
-<!--    이벤트 참여이력 데이터 생성 -->
-    <insert id="createParticipation">
-        INSERT INTO event_participation_tbl (event_id, user_id, participated_at)
-        VALUES (#{eventId}, #{userId}, NOW())
-    </insert>
-
-    <!--  출석체크 이벤트 참여이력 데이터 생성 -->
-    <insert id="createAttendanceParticipation">
-        INSERT INTO event_attendance_tbl (event_id, user_id, participated_at)
-        VALUES (#{eventId}, #{userId}, NOW())
-    </insert>
-
-<!--    이벤트 리워드 수령이력 데이터 생성 -->
-    <insert id="createEventRewardReceive">
-        INSERT INTO event_reward_receive_tbl (event_id, reward_id, user_id, received_at)
-        VALUES (#{eventId}, #{rewardId}, #{userId}, NOW())
-    </insert>
-
-    <!-- 포인트(리워드) 수령 내역 생성-->
-    <update id="createUserPointTransaction">
-        INSERT INTO point_transaction_tbl (
-            point_wallet_id,
-            transaction_type,
-            point_amount,
-            reason_type,
-            created_at
-        )
-        SELECT
-            w.point_wallet_id,
-            'EARN',
-            r.reward_point,
-            'EVENT',
-            CURRENT_TIMESTAMP
-         FROM point_wallet_tbl AS w, event_reward_tbl AS r
-        WHERE w.user_id = #{userId}
-          AND r.reward_id = #{rewardId}
-    </update>
-
-    <!-- 포인트 수령 반영 처리 -->
-    <update id="updateUserPoint">
-        UPDATE point_wallet_tbl AS w INNER JOIN event_reward_tbl AS r ON r.reward_id = #{rewardId}
-        SET w.point_balance = w.point_balance + r.reward_point
-        WHERE w.user_id = #{userId}
-    </update>
 
     <!-- 챌린지 참여 - 최초 참여이력 데이터 생성 -->
     <insert id="createEventChallengeParticipation">
@@ -107,20 +75,20 @@
                              FROM event_challenge_user_tbl ecu
                             WHERE ecu.user_id = #{userId}
                               AND ecu.challenge_id = ec.challenge_id)
-        ORDER BY ec.challenge_id ASC
-        LIMIT 1
+      ORDER BY ec.challenge_id ASC
+         LIMIT 1
     </insert>
 
     <!-- 이벤트 챌린지 반영  -->
     <update id="updateUserChallenge">
-        UPDATE event_challenge_user_tbl AS ecu INNER JOIN event_reward_tbl AS er ON er.reward_id = #{rewardId}
-           SET ecu.exp = ecu.exp + er.reward_exp,
-               ecu.updated_at = NOW()
-         WHERE ecu.user_id = #{userId}
-           AND ecu.status = 'PROCESS'
+       UPDATE event_challenge_user_tbl AS ecu INNER JOIN event_reward_tbl AS er ON er.reward_id = #{rewardId}
+          SET ecu.exp = ecu.exp + er.reward_exp,
+              ecu.updated_at = NOW()
+        WHERE ecu.user_id = #{userId}
+          AND ecu.status = 'PROCESS'
     </update>
 
-<!--    이벤트 챌린지 레벨 상승 시 누적 경험치 처리-->
+    <!--    이벤트 챌린지 레벨 상승 시 누적 경험치 처리-->
     <update id="updateUserLevel">
        UPDATE event_challenge_user_tbl AS ecu INNER JOIN event_challenge_level_tbl AS ecl
                                                       ON ecu.challenge_id = ecl.challenge_id
@@ -134,51 +102,50 @@
     </update>
 
     <!-- 챌린지 리워드 수령 처리 -->
-    <update id="claimChallengeReward">
-        UPDATE event_challenge_user_tbl
-           SET status = 'REWARDED',
-               updated_at = NOW()
-         WHERE user_id = #{userId}
-           AND status = 'COMPLETE'
-           AND challenge_id IN (
-                SELECT ec.challenge_id
-                FROM event_challenge_tbl ec
-                WHERE NOW() BETWEEN ec.start_date AND ec.end_date
-            )
+    <update id="receiveChallengeReward">
+        UPDATE event_challenge_user_tbl AS ecu INNER JOIN event_challenge_tbl AS ec ON ecu.challenge_id = ec.challenge_id
+           SET ecu.status = 'REWARDED',
+               ecu.updated_at = NOW()
+         WHERE ecu.user_id = #{userId}
+           AND ecu.status = 'COMPLETE'
+           AND NOW() BETWEEN ec.start_date AND ec.end_date
     </update>
 
 
-    <!--  이벤트 - 출석-->
-    <select id="getParticipationCount" resultType="java.lang.Integer">
-        SELECT COUNT(*)
-        FROM (
-                 SELECT event_id, user_id FROM event_participation_tbl
-                 WHERE event_id = #{eventId} AND user_id = #{userId}
-                 UNION ALL
-                 SELECT event_id, user_id FROM event_attendance_tbl
-                 WHERE event_id = #{eventId} AND user_id = #{userId}
-             ) AS total_part
-    </select>
+    <!-- 이벤트 챌린지 포인트(리워드) 수령 내역 생성-->
+    <insert id="createEventChallengeUserPointTransaction">
+        INSERT INTO point_transaction_tbl (
+                    point_wallet_id,
+                    transaction_type,
+                    point_amount,
+                    reason_type,
+                    created_at
+        )
+        SELECT w.point_wallet_id,
+               'EARN',
+               ecl.reward_point,
+               'EVENT',
+               NOW()
+          FROM point_wallet_tbl AS w INNER JOIN event_challenge_user_tbl ecu
+                                             ON w.user_id = ecu.user_id
+                                     INNER JOIN event_challenge_level_tbl ecl
+                                             ON ecu.challenge_id = ecl.challenge_id
+                                            AND ecu.current_level = ecl.level
+        WHERE w.user_id = #{userId}
+          AND ecu.challenge_id = #{challengeId}
 
-    <select id="getTodayParticipationCount" resultType="java.lang.Integer">
-#         SELECT COUNT(*)
-#         FROM (
-#                  SELECT event_id, user_id FROM event_participation_tbl
-#                  WHERE event_id = #{eventId} AND user_id = #{userId} AND DATE(participated_at) = CURDATE()
-#                  UNION ALL
-#                  SELECT event_id, user_id FROM event_attendance_tbl
-#                  WHERE event_id = #{eventId} AND user_id = #{userId} AND DATE(participated_at) = CURDATE()
-#              ) AS today_part
-    </select>
+    </insert>
 
-    <select id="checkRewardAlreadyReceived" resultType="java.lang.Integer">
-        SELECT COUNT(*)
-        FROM event_reward_receive_tbl
-        WHERE event_id = #{eventId}
-          AND reward_id = #{rewardId}
-          AND user_id = #{userId}
-    </select>
-
+    <!-- 이벤트 챌린지 포인트 수령 반영 처리 -->
+    <update id="updateEventChallengeUserPoint">
+        UPDATE point_wallet_tbl AS w INNER JOIN event_challenge_user_tbl AS ecu ON w.user_id = ecu.user_id
+                                     INNER JOIN event_challenge_level_tbl AS ecl ON ecu.challenge_id = ecl.challenge_id AND ecu.current_level = ecl.level
+           SET w.point_balance = w.point_balance + ecl.reward_point
+         WHERE w.user_id = #{userId}
+           AND ecu.challenge_id = #{challengeId}
+           AND ecu.exp >= ecl.required_exp
+           AND ecu.status = 'PROCESS'
+    </update>
 
     <insert id="joinEvent">
         insert event_user_tbl set user_id = #{userId} , event_id = #{eventId};
@@ -222,12 +189,12 @@
                      AND ep.event_id = a.event_id
                ) >= a.event_target AS completed,
 
-            EXISTS (
-                       SELECT 1
-                       FROM event_reward_receive_tbl err
-                       WHERE err.user_id = #{userId}
-                         AND err.event_id = a.event_id
-                   ) AS rewardReceived,
+               EXISTS (
+                   SELECT 1
+                   FROM event_reward_receive_tbl err
+                   WHERE err.user_id = #{userId}
+                     AND err.event_id = a.event_id
+               ) AS rewardReceived,
 
                EXISTS (
                    SELECT 1
@@ -236,10 +203,10 @@
                      AND eu.event_id = a.event_id
                ) AS joined
 
-               from event_tbl a
-            left join event_reward_tbl b
-            on a.event_id = b.event_id
-            WHERE a.event_type != 'ATTENDANCE'
+        from event_tbl a
+                 left join event_reward_tbl b
+                           on a.event_id = b.event_id
+        WHERE a.event_type != 'ATTENDANCE'
         ORDER BY a.created_at desc;
     </select>
 
@@ -262,22 +229,22 @@
                b.reward_exp,
 
                (a.event_daily_limit_count > 0 AND
-                   (
-                       SELECT COUNT(*)
-                       FROM event_participation_tbl ep
-                       WHERE ep.user_id = #{userId}
-                         AND ep.event_id = a.event_id
-                         AND DATE(ep.participated_at) = CURDATE()
-                   ) >= a.event_daily_limit_count
-                ) AS isDailyLimitReached,
+                (
+                    SELECT COUNT(*)
+                    FROM event_participation_tbl ep
+                    WHERE ep.user_id = #{userId}
+                      AND ep.event_id = a.event_id
+                      AND DATE(ep.participated_at) = CURDATE()
+                ) >= a.event_daily_limit_count
+                   ) AS isDailyLimitReached,
 
-                 EXISTS (
-                    SELECT 1
-                    FROM event_attendance_tbl ea
-                    WHERE ea.event_id = a.event_id
-                      AND ea.user_id = #{userId}
-                      AND  DATE(ea.participated_at) = CURDATE()
-                ) AS todayAttendanceCompleted,
+               EXISTS (
+                   SELECT 1
+                   FROM event_attendance_tbl ea
+                   WHERE ea.event_id = a.event_id
+                     AND ea.user_id = #{userId}
+                     AND  DATE(ea.participated_at) = CURDATE()
+               ) AS todayAttendanceCompleted,
 
                (
                    SELECT COUNT(*)
@@ -329,4 +296,79 @@
         ORDER BY err.received_at DESC
     </select>
 
+    <!--    이벤트 참여이력 데이터 생성 -->
+    <insert id="createParticipation">
+        INSERT INTO event_participation_tbl (event_id, user_id, participated_at)
+        VALUES (#{eventId}, #{userId}, NOW())
+    </insert>
+
+    <!--  출석체크 이벤트 참여이력 데이터 생성 -->
+    <insert id="createAttendanceParticipation">
+        INSERT INTO event_attendance_tbl (event_id, user_id, participated_at)
+        VALUES (#{eventId}, #{userId}, NOW())
+    </insert>
+
+<!--    이벤트 리워드 수령이력 데이터 생성 -->
+    <insert id="createEventRewardReceive">
+        INSERT INTO event_reward_receive_tbl (event_id, reward_id, user_id, received_at)
+        VALUES (#{eventId}, #{rewardId}, #{userId}, NOW())
+    </insert>
+
+    <!-- 포인트(리워드) 수령 내역 생성-->
+    <update id="createUserPointTransaction">
+        INSERT INTO point_transaction_tbl (
+            point_wallet_id,
+            transaction_type,
+            point_amount,
+            reason_type,
+            created_at
+        )
+        SELECT
+            w.point_wallet_id,
+            'EARN',
+            r.reward_point,
+            'EVENT',
+            CURRENT_TIMESTAMP
+         FROM point_wallet_tbl AS w, event_reward_tbl AS r
+        WHERE w.user_id = #{userId}
+          AND r.reward_id = #{rewardId}
+    </update>
+
+    <!-- 포인트 수령 반영 처리 -->
+    <update id="updateUserPoint">
+        UPDATE point_wallet_tbl AS w INNER JOIN event_reward_tbl AS r ON r.reward_id = #{rewardId}
+        SET w.point_balance = w.point_balance + r.reward_point
+        WHERE w.user_id = #{userId}
+    </update>
+
+    <!--  이벤트 - 출석-->
+    <select id="getParticipationCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM (
+                 SELECT event_id, user_id FROM event_participation_tbl
+                 WHERE event_id = #{eventId} AND user_id = #{userId}
+                 UNION ALL
+                 SELECT event_id, user_id FROM event_attendance_tbl
+                 WHERE event_id = #{eventId} AND user_id = #{userId}
+             ) AS total_part
+    </select>
+
+    <select id="getTodayParticipationCount" resultType="java.lang.Integer">
+#         SELECT COUNT(*)
+#         FROM (
+#                  SELECT event_id, user_id FROM event_participation_tbl
+#                  WHERE event_id = #{eventId} AND user_id = #{userId} AND DATE(participated_at) = CURDATE()
+#                  UNION ALL
+#                  SELECT event_id, user_id FROM event_attendance_tbl
+#                  WHERE event_id = #{eventId} AND user_id = #{userId} AND DATE(participated_at) = CURDATE()
+#              ) AS today_part
+    </select>
+
+    <select id="checkRewardAlreadyReceived" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM event_reward_receive_tbl
+        WHERE event_id = #{eventId}
+          AND reward_id = #{rewardId}
+          AND user_id = #{userId}
+    </select>
 </mapper>

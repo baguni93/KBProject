@@ -1947,6 +1947,8 @@ CREATE TABLE event_challenge_level_tbl
 
     required_exp     	 INT    NOT NULL COMMENT '챌린지 요구 경험치',
     
+    reward_point     	 INT    NOT NULL COMMENT '레벨 보상 포인트',
+    
      CONSTRAINT fk_event_challenge_level_challenge
 		FOREIGN KEY (challenge_id)
 			REFERENCES event_challenge_tbl (challenge_id)
@@ -3311,11 +3313,12 @@ INSERT INTO event_reward_tbl (reward_id,
                               event_id,
                               reward_point,
                               reward_exp)
-VALUES (1, 5, 100, 10),
+VALUES (1, 1, 100, 10),
        (2, 2, 200, 20),
-       (3, 3, 300, 30),
-       (4, 4, 400, 50),
-       (5, 6, 300, 50);
+       (3, 3, 300, 50),
+       (4, 4, 400, 60),
+       (5, 5, 300, 50),
+       (6, 6, 500, 50);
 
 -- ---------------------------------------------------------------------
 -- 49. event_participation_tbl (5건)
@@ -3362,25 +3365,26 @@ VALUES (1, 'SUMMER SEASON 이벤트 챌린지', 5000, 5, 20, '2026-07-01 00:00:0
 INSERT INTO event_challenge_level_tbl (challenge_level_id,
 									   challenge_id,
 									   level,
-                                       required_exp)
-VALUES	(1, 1, 1, 1000),
-		(2, 1, 2, 2500),
-		(3, 1, 3, 5000),
-		(4, 1, 4, 8000),
-		(5, 1, 5, 12000);
+                                       required_exp,
+                                       reward_point)
+VALUES	(1, 1, 1, 100, 1000),
+		(2, 1, 2, 250, 1500),
+		(3, 1, 3, 500, 2000),
+		(4, 1, 4, 800, 2500),
+		(5, 1, 5, 1200, 3000);
 
 -- ---------------------------------------------------------------------
 -- 53. event_challenge_user_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO event_challenge_user_tbl (user_challenge_id,
-                                      user_id,
-                                      challenge_id,
-                                      current_level,
-                                      current_target,
-                                      exp,
-                                      status,
-                                      updated_at)
-VALUES (1, 1, 1, 2, 12, 0, 'PROCESS', '2026-07-24 08:00:00');
+-- INSERT INTO event_challenge_user_tbl (user_challenge_id,
+--                                       user_id,
+--                                       challenge_id,
+--                                       current_level,
+--                                       current_target,
+--                                       exp,
+--                                       status,
+--                                       updated_at)
+-- VALUES (1, 1, 1, 2, 12, 0, 'PROCESS', '2026-07-24 08:00:00');
 
 
 -- ---------------------------------------------------------------------

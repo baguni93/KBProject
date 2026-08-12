@@ -20,7 +20,7 @@ public class EventChallengeDTO {
     private Integer maxTarget;
     private Date startDate; // 챌린지 시작일자
     private Date endDate;   // 챌린지 종료일자
-   // private String challengeDDay;           // 챌린지 남은 기간 (D-day)
+    private String dDay;           // 챌린지 남은 기간 (D-day)
 
     public static EventChallengeDTO of(EventChallengeVO eventChallengeVO) {
         return eventChallengeVO == null ? null : EventChallengeDTO.builder()

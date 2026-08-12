@@ -4,10 +4,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.scoula.event.dto.EventGetAttendanceResponseDTO;
-import org.scoula.event.dto.EventGetResponseDTO;
-import org.scoula.event.dto.EventMainDTO;
-import org.scoula.event.dto.EventResponseDTO;
+import org.scoula.event.dto.*;
 import org.scoula.event.service.EventService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -120,15 +117,13 @@ public class EventController {
         return ResponseEntity.ok(updatedList);
     }
 
+    // 이벤트 챌린지 보상 수령 처리
+    @PostMapping("/challenge/claim/{challengeId}")
+    public ResponseEntity<List<EventChallengeResponseDTO>> receiveChallengeReward(
+            @RequestParam(value = "userId") int userId,
+            @PathVariable int challengeId) {
 
-//    @ApiOperation("챌린지 리워드 수령 처리 (상단 챌린지 게이지 바 리워드 수령)")
-//    @PostMapping("/challenge/claim/{challengeId}")
-//    public ResponseEntity<HttpStatus> claimChallengeReward(
-//              @RequestParam(value = "userId") Integer userId),
-//              @PathVariable("challengeId") Integer challengeId))
-//           {
-//
-//        eventService.claimChallengeReward(userId, challengeId);
-//        return ResponseEntity.ok(HttpStatus.OK);
-//    }
+        List<EventChallengeResponseDTO> challengeList = eventService.receiveChallengeReward(userId, challengeId);
+        return ResponseEntity.ok(challengeList);
+    }
 }

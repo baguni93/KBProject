@@ -3,11 +3,13 @@
     <!-- 이벤트 챌린지 상단 타이틀 -->
     <div class="challenge-background">
       <div class="level-label">
-        <i class="fa-solid fa-bolt zap-icon"></i>
-        <span class="label-text">이벤트 챌린지</span>
-        <span class="reward-point-badge"
-          >+{{ challenge.rewardPoint || 1000 }}P</span
-        >
+        <div class="level-title-group">
+          <i class="fa-solid fa-bolt zap-icon"></i>
+          <span class="label-text">이벤트 챌린지</span>
+        </div>
+
+        <!-- 우측 상단 포인트 배지 -->
+        <span class="reward-point-badge">+{{ challenge.rewardPoint }}P</span>
       </div>
     </div>
 
@@ -73,9 +75,10 @@ const props = defineProps({
       currentLevel: 1,
       currentTarget: 0,
       requiredExp: 1000,
-      rewardPoint: 1000,
       exp: 0,
-      status: 'PROCESS',
+      startDate: '',
+      endDate: '',
+      dDay: '',
     }),
   },
 });
@@ -138,7 +141,23 @@ const handleclaimReward = async () => {
 .level-label {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.level-title-group {
+  display: flex;
+  align-items: center;
   gap: 6px;
+}
+
+.reward-point-badge {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffb703;
+  background-color: rgba(255, 183, 3, 0.12);
+  padding: 3px 8px;
+  border-radius: 10px;
 }
 
 .zap-icon {

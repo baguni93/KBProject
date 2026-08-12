@@ -19,13 +19,13 @@
       />
 
       <!-- 4. 현재 참여 가능 이벤트  -->
-      <template v-if="activeEvents && activeEvents.length > 0">
+      <template v-if="eventLists && eventLists.length > 0">
         <div class="section-title-group">
           <i class="fa-regular fa-star header-icon"></i>
           <span class="sub-section-title">현재 참여 가능 이벤트</span>
         </div>
         <EventItem
-          v-for="event in activeEvents.slice(0, 3)"
+          v-for="event in eventLists.slice(0, 3)"
           :key="event.eventId"
           v-bind="event"
           @clickAction="(payload) => onEventAction(payload)"
@@ -66,20 +66,21 @@ const router = useRouter();
 
 const userPoint = ref(0);
 const challengeData = ref(null);
-const activeEvents = ref([]);
+const eventLists = ref([]);
+
 // 메인 페이지 데이터 로드
 const fetchMainData = async () => {
   if (!userId) return;
 
   try {
-    const pointData = await eventApi.getEventMain(userId);
-    const data = await eventApi.getEventList(userId);
+    const mainData = await eventApi.getEventMain(userId);
+    const eventData = await eventApi.getEventList(userId);
 
-    userPoint.value = pointData.currentPoint || 0;
-    activeEvents.value = data;
+    userPoint.value = mainData.currentPoint || 0;
+    eventLists.value = eventData || [];
 
-    if (pointData.challengeList && pointData.challengeList.length > 0) {
-      challengeData.value = pointData.challengeList[0];
+    if (mainData?.userChallengeData?.length > 0) {
+      challengeData.value = mainData.userChallengeData[0];
     } else {
       // default
       challengeData.value = {
@@ -89,7 +90,9 @@ const fetchMainData = async () => {
         currentTarget: 0,
         requiredExp: 1000,
         exp: 0,
-        status: 'PROCESS',
+        startDate: '',
+        endDate: '',
+        dDay: '',
       };
     }
   } catch (err) {
@@ -114,7 +117,7 @@ watch(
 const handleClaimReward = async (challengeId) => {
   try {
     // API 호출
-    const response = await eventApi.receiveChallengeReward(challengeId, userId);
+    const response = await eventApi.receiveChallengeReward(userId, challengeId);
 
     if (response) {
       alert('보상 수령이 완료되었습니다.');

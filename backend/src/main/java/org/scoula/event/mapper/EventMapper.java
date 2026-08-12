@@ -2,6 +2,8 @@ package org.scoula.event.mapper;
 
 import org.apache.ibatis.annotations.Param;
 import org.scoula.event.domain.*;
+import org.scoula.event.dto.EventChallengeDTO;
+import org.scoula.event.dto.EventChallengeResponseDTO;
 import org.scoula.event.dto.EventResponseDTO;
 
 import java.util.List;
@@ -10,8 +12,10 @@ public interface EventMapper {
     // 현재 보유 포인트
     Integer getUserPoint(@Param("userId") int userId);
 
-    // 이벤트 챌린지 현황 조회
-    List<EventChallengeUserVO> getEventChallenge(@Param("userId") int userId);
+    // 이벤트 챌린지 조회
+    List<EventChallengeDTO> getEventChallengeList();
+    // 사용자 이벤트 챌린지 현황 조회
+    List<EventChallengeResponseDTO> getEventChallengeUser(@Param("userId") int userId);
 
     // 3. 현재 참여 가능 이벤트 목록 조회
     List<EventResponseDTO> getActiveEventProgressList(@Param("userId") Integer userId);
@@ -47,12 +51,16 @@ public interface EventMapper {
     // 포인트(리워드) 수령 내역 생성
     int createUserPointTransaction(@Param("userId") int userId, @Param("rewardId") int rewardId);
 
-    // 챌린지 참여 - 최초 참여이력 데이터 생성
+    // 이벤트 챌린지 사용자 데이터 생성
     int createEventChallengeParticipation(@Param("userId") int userId);
     // 이벤트 챌린지 경험치 반영
     int updateUserChallenge(@Param("userId") int userId, @Param("rewardId") int rewardId);
     // 챌린지 리워드 수령 처리
-    int createChallengeRewardReceive(@Param("userId") int userId, @Param("challengeId") int challengeId);
+    int receiveChallengeReward(@Param("userId") int userId, @Param("challengeId") int challengeId);
 
-    int updateUserLevel(@Param("userId") int userId);
+    int updateUserLevel(@Param("userId") int userId, @Param("challengeId") int challengeId);
+
+    int updateEventChallengeUserPoint(@Param("userId") int userId, @Param("challengeId") int challengeId);
+
+    void createEventChallengeUserPointTransaction(@Param("userId") int userId, @Param("challengeId") int challengeId);
 }

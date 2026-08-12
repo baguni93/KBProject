@@ -93,11 +93,14 @@ export default {
   },
 
   // 챌린지 리워드 수령 처리
-  async receiveChallengeReward(challengeId, userId) {
+  async receiveChallengeReward(userId, challengeId) {
     const { data } = await api.post(
       `${BASE_URL}/challenge/claim/${challengeId}`,
+      null,
       {
-        userId: userId,
+        params: {
+          userId,
+        },
       },
     );
     return data;
