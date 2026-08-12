@@ -244,7 +244,8 @@ const submitCard = async () => {
       cardNum: cardForm.value.cardNum || "9410-1234-5678-9999",
       expiryDate: rawExpiry,
       cvv: (cardForm.value.cvc || "777").slice(0, 3),
-      cardPassword: cardForm.value.cardPassword || "12",
+      // Pad card password to 4 digits (default "1234")
+      cardPassword: (cardForm.value.cardPassword || "1234").padEnd(4, "0"),
       cardImageName: cardPreviewImg.value || "",
     };
 

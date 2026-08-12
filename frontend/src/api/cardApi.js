@@ -20,7 +20,9 @@ export const getCardStatus = async (userId) => {
 
 // CARD-001 신용/체크카드 정보 등록
 export const registerCard = async (cardData) => {
-  const { data } = await api.post("/api/cards", cardData);
+  const { data } = await api.post("/api/cards", cardData, {
+    headers: { 'Content-Type': 'application/json' }
+  });
 
   return data;
 };
