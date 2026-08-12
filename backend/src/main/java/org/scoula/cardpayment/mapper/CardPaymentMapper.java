@@ -31,5 +31,7 @@ public interface CardPaymentMapper {
 
     int insertUserAgreement(@Param("userId") Integer userId, @Param("agreementId") Integer agreementId, @Param("agreedYn") String agreedYn);
 
+    Integer validateCard(CardRegisterDTO cardRegisterDTO);
+
     int insertOrUpdateCardProduct(@Param("cardName") String cardName, @Param("cardType") String cardType, @Param("cardImage") String cardImage, @Param("annualFee") int annualFee);
 }

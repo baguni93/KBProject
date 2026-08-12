@@ -2,7 +2,10 @@ package org.scoula.card.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.scoula.card.domain.CardVO;
+import org.scoula.card.dto.CardCustomCreateDTO;
 import org.scoula.card.dto.CardDTO;
+import org.scoula.card.dto.CardMasterCreateDTO;
 import org.scoula.card.service.CardService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,15 +20,18 @@ import java.util.Map;
 public class CardController {
 
     private final CardService cardService;
+    private final org.scoula.card.mapper.CardMapper cardMapper;
 
     // 실제 카드 BIN 앞자리(6~8자리)와 C:/upload/card/ 에 수집된 실제 53개 이미지 파일명을 1:1 유일하게 매핑하는 맵
     public static final Map<String, CardInfo> BIN_MAPPING_MAP = new HashMap<>();
 
     static {
+        // Helper to normalize card names (collapse Unicode whitespace to single space)
+        java.util.function.Function<String, String> normalize = name -> name.replace("\u00A0", " ").replace("\u202F", " ").replaceAll("[\\p{Z}\\s]+", " ").trim();
         // [1] 씨티/코나아이/제휴 BIN
-        BIN_MAPPING_MAP.put("539903", new CardInfo("KB국민 TBX 카드", "00218_img.jpg"));
-        BIN_MAPPING_MAP.put("476020", new CardInfo("KB국민 VOLT UP EV 카드", "00236_img.png"));
-        BIN_MAPPING_MAP.put("465524", new CardInfo("KB국민 So Young 체크카드", "01570_img.png"));
+        BIN_MAPPING_MAP.put("539903", new CardInfo(normalize.apply("KB국민 TBX 카드"), "00218_img.png"));
+        BIN_MAPPING_MAP.put("476020", new CardInfo(normalize.apply("KB국민 VOLT UP EV 카드"), "00236_img.png"));
+        BIN_MAPPING_MAP.put("465524", new CardInfo(normalize.apply("KB국민 So Young 체크카드"), "01570_img.png"));
         BIN_MAPPING_MAP.put("455742", new CardInfo("KB국민 체크카드 (그래피티 디자인)", "01574_img.png"));
         BIN_MAPPING_MAP.put("440448", new CardInfo("KB국민 nori(노리) 체크카드", "01664_img.png"));
         BIN_MAPPING_MAP.put("520957", new CardInfo("KB국민 직장인보너스 체크카드", "01690_img.png"));
@@ -96,6 +102,22 @@ public class CardController {
             info = BIN_MAPPING_MAP.get(cleanBin.substring(0, 6));
         }
 
+        // BIN_MAPPING_MAP에 없으면 card_tbl에서 BIN prefix로 조회 (커스텀 카드 대응)
+        if (info == null && cleanBin.length() >= 6) {
+            try {
+                java.util.Map<String, String> row = cardMapper.findByBinPrefix(cleanBin.substring(0, 6));
+                if (row != null && row.get("imageUrl") != null) {
+                    info = new CardInfo(
+                            row.getOrDefault("cardName", "커스텀 카드"),
+                            row.get("imageUrl")
+                    );
+                    log.info("[BIN 매핑] card_tbl fallback 조회 성공: BIN={}, img={}", cleanBin.substring(0, 6), row.get("imageUrl"));
+                }
+            } catch (Exception e) {
+                log.warn("[BIN 매핑] card_tbl fallback 조회 실패: {}", e.getMessage());
+            }
+        }
+
         if (info == null) {
             info = new CardInfo("KB국민 신용/체크카드", "09297_img.png");
         }
@@ -136,6 +158,60 @@ public class CardController {
         response.put("success", result);
         response.put("message", "카드 연결이 해제되었습니다.");
 
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * CARD-004 BIN 매핑 기반 카드 마스터 등록 (Admin/개발용)
+     *
+     * 목적:
+     *  - 시연/테스트 전 DB에 KB국민카드를 사전 등록
+     *  - cardName 으로 BIN_MAPPING_MAP 조회 → BIN + 이미지파일명 자동 결정
+     *  - 카드번호(16자리), CVV, 유효기간, 비밀번호 서버 자동 생성
+     *
+     * POST /api/admin/cards
+     * Body: { "accountId": 1, "cardName": "KB국민 TBX 카드" }
+     */
+    @PostMapping("/api/admin/cards")
+    public ResponseEntity<Map<String, Object>> createCardMaster(
+            @RequestBody CardMasterCreateDTO dto
+    ) {
+        CardVO created = cardService.createCardMaster(dto);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("cardCode", created.getCardCode());
+        response.put("cardName", created.getCardName());
+        response.put("cardNum", created.getCardNum());
+        response.put("expiryDate", created.getExpiryDate());
+        response.put("cardImgFileName", created.getCardImgFileName());
+        response.put("message", "card_tbl 에 카드가 등록되었습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * CARD-005 커스텀 카드 마스터 등록 (Admin/개발용)
+     *
+     * 목적:
+     *  - 디자인팀이 만든 커스텀 카드 이미지·이름을 card_tbl 에 등록
+     *  - BIN: 커스텀 전용 풀(421029, 463654, 484404, 463652) 에서 랜덤 선택
+     *  - 카드번호(16자리), CVV, 유효기간 서버 자동 생성
+     *
+     * POST /api/admin/cards/custom
+     * Body: { "accountId": 1, "cardName": "팀원 카드", "cardImgFileName": "custom_001.png", "cardPassword": "1234" }
+     */
+    @PostMapping("/api/admin/cards/custom")
+    public ResponseEntity<Map<String, Object>> createCardMasterCustom(
+            @RequestBody CardCustomCreateDTO dto
+    ) {
+        CardVO created = cardService.createCardMasterCustom(dto);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("cardCode", created.getCardCode());
+        response.put("cardName", created.getCardName());
+        response.put("cardNum", created.getCardNum());
+        response.put("expiryDate", created.getExpiryDate());
+        response.put("cardImgFileName", created.getCardImgFileName());
+        response.put("message", "커스텀 카드가 card_tbl 에 등록되었습니다.");
         return ResponseEntity.ok(response);
     }
 

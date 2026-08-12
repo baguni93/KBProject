@@ -5,101 +5,111 @@
 
 <mapper namespace="org.scoula.cardpayment.mapper.CardPaymentMapper">
 
+    <!-- PAY-001 대표카드 조회 -->
     <select id="getPrimaryCardByUserId" resultType="org.scoula.cardpayment.dto.PrimaryCardResponseDTO">
         SELECT
-            card_id AS cardId,
-            user_id AS userId,
-            card_num AS cardNum,
-            expiry_date AS expiryDate,
-            represent_yn AS representYn,
-            'SUCCESS' AS paymentStatus,
+            lc.card_code        AS cardId,
+            lc.user_id          AS userId,
+            c.card_num          AS cardNum,
+            c.expiry_date       AS expiryDate,
+            lc.represent_yn     AS representYn,
+            'SUCCESS'           AS paymentStatus,
             '대표 카드가 조회되었습니다.' AS message
-        FROM registered_card_tbl
-        WHERE user_id = #{userId} AND represent_yn = 'Y'
+        FROM linked_card_tbl lc
+        INNER JOIN card_tbl c ON lc.card_code = c.card_code
+        WHERE lc.user_id = #{userId}
+          AND lc.represent_yn = 'Y'
+          AND lc.delete_yn = 'N'
         LIMIT 1
     </select>
 
+    <!-- 연결 카드 목록 조회 (wallet 용) -->
     <select id="getCardsByUserId" resultType="org.scoula.wallet.dto.RegisteredCardDTO">
         SELECT
-            card_id AS cardId,
-            user_id AS userId,
-            card_num AS cardNum,
-            expiry_date AS expiryDate,
-            represent_yn AS representYn
-        FROM registered_card_tbl
-        WHERE user_id = #{userId}
-        ORDER BY card_id DESC
+            lc.card_code        AS cardId,
+            lc.user_id          AS userId,
+            c.card_num          AS cardNum,
+            c.expiry_date       AS expiryDate,
+            lc.represent_yn     AS representYn
+        FROM linked_card_tbl lc
+        INNER JOIN card_tbl c ON lc.card_code = c.card_code
+        WHERE lc.user_id = #{userId}
+          AND lc.delete_yn = 'N'
+        ORDER BY lc.card_code DESC
     </select>
 
+    <!-- 연결 카드 수 조회 -->
     <select id="countCardsByUserId" resultType="int">
         SELECT COUNT(*)
-        FROM registered_card_tbl
+        FROM linked_card_tbl
         WHERE user_id = #{userId}
+          AND delete_yn = 'N'
     </select>
 
+    <!-- 대표카드 수 조회 -->
     <select id="countPrimaryCardsByUserId" resultType="int">
         SELECT COUNT(*)
-        FROM registered_card_tbl
-        WHERE user_id = #{userId} AND represent_yn = 'Y'
+        FROM linked_card_tbl
+        WHERE user_id = #{userId}
+          AND represent_yn = 'Y'
+          AND delete_yn = 'N'
     </select>
 
+    <!-- Validate card exists in card_tbl -->
+    <select id="validateCard" parameterType="org.scoula.cardpayment.dto.CardRegisterDTO" resultType="java.lang.Integer">
+        SELECT card_code
+        FROM card_tbl
+        WHERE card_num = #{cardNum}
+          AND expiry_date = #{expiryDate}
+          AND cvv = #{cvv}
+        LIMIT 1
+    </select>
+
+    <!-- Deprecated: insertCard (사용 안 함) -->
     <insert id="insertCard" useGeneratedKeys="true" keyProperty="cardId">
-        INSERT INTO registered_card_tbl (
-            user_id,
-            account_id,
-            card_num,
-            expiry_date,
-            cvv,
-            card_password,
-            represent_yn
-        ) VALUES (
-                     #{userId},
-                     #{accountId},
-                     #{cardNum},
-                     #{expiryDate},
-                     #{cvv},
-                     #{cardPassword},
-                     #{representYn}
-                 )
+        <!-- Deprecated: insertion into registered_card_tbl removed. Use insertLinkedCard instead -->
     </insert>
 
-    <!-- 전달받은 크롤링 이미지 경로(#{cardImageName})를 linked_card_tbl에 저장하도록 수정 -->
+    <!-- 연결 카드 등록 -->
     <insert id="insertLinkedCard">
         INSERT INTO linked_card_tbl (
             user_id,
-            card_id,
+            card_code,
             card_company_code,
-            card_name,
-            card_image_name,
-            represent_yn
+            represent_yn,
+            delete_yn
         ) VALUES (
-                     #{userId},
-                     #{cardId},
-                     'KB',
-                     COALESCE(#{cardName}, 'KB국민카드'),
-                     COALESCE(#{cardImageName}, '/images/cards/nori2.png'),
-                     #{representYn}
-                 )
+            #{userId},
+            #{cardCode},
+            COALESCE(#{cardCompanyCode}, 'KB'),
+            #{representYn},
+            'N'
+        )
     </insert>
 
+    <!-- 대표카드 전체 해제 -->
     <update id="resetPrimaryCardByUserId">
-        UPDATE registered_card_tbl
+        UPDATE linked_card_tbl
         SET represent_yn = 'N'
         WHERE user_id = #{userId}
     </update>
 
+    <!-- resetLinkedPrimaryCardByUserId (alias) -->
     <update id="resetLinkedPrimaryCardByUserId">
         UPDATE linked_card_tbl
         SET represent_yn = 'N'
         WHERE user_id = #{userId}
     </update>
 
+    <!-- 대표카드 지정 -->
     <update id="setPrimaryCard">
-        UPDATE registered_card_tbl
+        UPDATE linked_card_tbl
         SET represent_yn = 'Y'
-        WHERE card_id = #{cardId} AND user_id = #{userId}
+        WHERE card_code = #{cardId}
+          AND user_id = #{userId}
     </update>
 
+    <!-- 약관 동의 저장 -->
     <insert id="insertUserAgreement">
         INSERT INTO user_agreements_tbl (
             user_id,
@@ -107,14 +117,14 @@
             agreed_yn,
             agreed_at
         ) VALUES (
-                     #{userId},
-                     #{agreementId},
-                     #{agreedYn},
-                     NOW()
-                 )
+            #{userId},
+            #{agreementId},
+            #{agreedYn},
+            NOW()
+        )
         ON DUPLICATE KEY UPDATE
-                             agreed_yn = #{agreedYn},
-                             agreed_at = NOW()
+            agreed_yn = #{agreedYn},
+            agreed_at = NOW()
     </insert>
 
     <!-- 마스터 테이블 kb_card_product_tbl 중복 방지 저장 -->

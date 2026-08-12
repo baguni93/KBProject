@@ -88,6 +88,9 @@ public class CardPaymentServiceImpl implements CardPaymentService {
 
         if (cardRegisterDTO.getCardNum() == null || cardRegisterDTO.getCardNum().trim().isEmpty()) {
             cardRegisterDTO.setCardNum("9410-1234-5678-9999");
+        } else {
+            // 하이픈/공백 등 비숫자 문자 제거 (DB에는 숫자만 저장됨)
+            cardRegisterDTO.setCardNum(cardRegisterDTO.getCardNum().replaceAll("[^0-9]", ""));
         }
         if (cardRegisterDTO.getExpiryDate() == null || cardRegisterDTO.getExpiryDate().trim().isEmpty()) {
             cardRegisterDTO.setExpiryDate("12/28");
@@ -123,12 +126,20 @@ public class CardPaymentServiceImpl implements CardPaymentService {
             cardRegisterDTO.setRepresentYn("N");
         }
 
+        // Validate that the card exists in card_tbl
+        Integer validatedCardCode = cardPaymentMapper.validateCard(cardRegisterDTO);
+        if (validatedCardCode == null) {
+            throw new IllegalArgumentException("카드 정보를 찾을 수 없습니다.");
+        }
+        cardRegisterDTO.setCardCode(validatedCardCode);
+
+        // 기존 이미지명 조회 로직 유지
         if (cardRegisterDTO.getCardImageName() == null || cardRegisterDTO.getCardImageName().trim().isEmpty()) {
             String foundImg = catalogRepository.getImageUrlByCardName(cardRegisterDTO.getCardName());
             cardRegisterDTO.setCardImageName(foundImg);
         }
 
-        cardPaymentMapper.insertCard(cardRegisterDTO);
+
 
         try {
             cardPaymentMapper.insertLinkedCard(cardRegisterDTO);

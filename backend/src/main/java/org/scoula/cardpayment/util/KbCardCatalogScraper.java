@@ -49,11 +49,12 @@ public class KbCardCatalogScraper implements InitializingBean {
                     .timeout(10000)
                     .get();
 
-            Elements cardElements = doc.select("li, div[class*=card], a[class*=card], div[class*=goods]");
+            // 부모/자식 중복 선택 방지: 가장 확실한 카드 리스트 단위(li)만 선택
+            Elements cardItems = doc.select("ul li, div.card_list_item, div[class*=goods_item]");
 
             int successCount = 0;
-            for (Element el : cardElements) {
-                Element imgEl = el.select("img").first();
+            for (Element item : cardItems) {
+                Element imgEl = item.select("img").first();
                 if (imgEl == null) {
                     continue;
                 }
@@ -73,13 +74,13 @@ public class KbCardCatalogScraper implements InitializingBean {
                     if (imgUrl.contains("crd") || imgUrl.contains("card") || imgUrl.contains("img")) {
                         String savedFileName = downloadAndSaveImage(imgUrl);
                         if (savedFileName != null) {
-                            // 1. 이미지 파일명을 기반으로 정확한 카드명 매핑 적용
-                            String cardName = resolveCardNameFromFile(savedFileName, el);
+                            // 카드 1개 단위 내에서 정밀 카드명 추출
+                            String cardName = resolveCardNameFromFile(savedFileName, item);
 
                             if (cardName != null && !cardName.trim().isEmpty()) {
                                 String cleanName = cardName.trim();
                                 catalogRepository.putCardInfo(cleanName, savedFileName);
-                                
+
                                 // 마스터 테이블 kb_card_product_tbl 에 정보 저장
                                 String cardType = cleanName.contains("체크") ? "CHECK" : "CREDIT";
                                 try {
@@ -116,19 +117,28 @@ public class KbCardCatalogScraper implements InitializingBean {
     }
 
     /**
-     * UI 순위 텍스트(예: 체크발급 18위)를 배제하고 파일명 또는 확실한 alt 속성 기반으로 정제된 카드명을 반환
+     * UI 순위 텍스트 배제 및 개별 카드 요소(Element) 내부에서 정확한 카드명 정제
      */
-    private String resolveCardNameFromFile(String fileName, Element el) {
-        // 1. 이미지 alt 속성 확인 (불필요한 UI 문구가 포함되지 않은 경우 우선 사용)
-        Element imgEl = el.select("img").first();
+    private String resolveCardNameFromFile(String fileName, Element item) {
+        // 1. 해당 카드 아이템 내부의 alt 속성 우선 검사
+        Element imgEl = item.select("img").first();
         if (imgEl != null) {
             String alt = imgEl.attr("alt");
-            if (alt != null && !alt.trim().isEmpty() && !alt.contains("위") && !alt.contains("발급") && !alt.contains("정지")) {
-                return alt.trim();
+            if (isValidCardName(alt)) {
+                return cleanCardNameText(alt);
             }
         }
 
-        // 2. 파일명 기준으로 사전에 정의된 정확한 카드 상품명 매핑 테이블 반환
+        // 2. 이미지 alt가 비어있는 경우, 카드 아이템 내부의 텍스트 요소 추출
+        Element titleEl = item.select(".card_name, .name, .title, strong, dt").first();
+        if (titleEl != null) {
+            String textName = titleEl.text();
+            if (isValidCardName(textName)) {
+                return cleanCardNameText(textName);
+            }
+        }
+
+        // 3. 파일명 기반 하드코딩 매핑 테이블
         if (fileName.contains("00218")) return "KB국민 TBX 카드";
         if (fileName.contains("00236")) return "KB국민 VOLT UP EV 카드";
         if (fileName.contains("01570")) return "KB국민 So Young 체크카드";
@@ -183,8 +193,21 @@ public class KbCardCatalogScraper implements InitializingBean {
         if (fileName.contains("09924")) return "KB국민 청춘대로 티타늄 체크카드";
         if (fileName.contains("19565")) return "KB국민 나라사랑카드";
 
-        // 3. 매칭되지 않는 기타 이미지의 경우 깔끔한 기본 이름 부여
         return "KB국민카드 상품 (" + fileName.replace(".png", "").replace(".jpg", "") + ")";
+    }
+
+    private boolean isValidCardName(String text) {
+        if (text == null || text.trim().isEmpty()) return false;
+        String t = text.trim();
+        // UI용 불필요 단어 필터링 ('연회비' 추가)
+        return !t.contains("위") && !t.contains("발급") && !t.contains("정지")
+                && !t.contains("이미지") && !t.contains("연회비") && t.length() > 1;
+    }
+
+    private String cleanCardNameText(String text) {
+        return text.replaceAll("\\[.*?\\]", "") // [혜택] 같은 태그 제거
+                .replaceAll("\\s+", " ")     // 연속 공백 하나로 축소
+                .trim();
     }
 
     private String downloadAndSaveImage(String imgUrl) {
