@@ -8,6 +8,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuthResultDTO {
-    private String token;
+
+    private String tokenType;
+    private String accessToken;
+    private String refreshToken;
+    private long accessTokenExpiresIn;
     private UserInfoDTO user;
 }
