@@ -127,7 +127,7 @@ const verifyCurrentPin = async () => {
     loading.value = true;
     errorMessage.value = '';
 
-    const response = await verifyPin(authStore.userId, pinPassword.value);
+    const response = await verifyPin(pinPassword.value);
 
     if (!response.verified) {
       pinPassword.value = '';
