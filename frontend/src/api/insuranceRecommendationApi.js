@@ -38,6 +38,14 @@ export default {
     return data;
   },
 
+  // 추천 보험 한 건 상세: 상품정보 + 보장내용 + 실제 추천근거 거래
+  async getRecommendationDetail(insuranceRecommendationId) {
+    const { data } = await api.get(
+      `/api/insurance-recommendations/${insuranceRecommendationId}`,
+    );
+    return data;
+  },
+
   // 추천에 사용된 실제 거래 카테고리 집계
   async getEvidence(spendingAnalysisId) {
     const { data } = await api.get(

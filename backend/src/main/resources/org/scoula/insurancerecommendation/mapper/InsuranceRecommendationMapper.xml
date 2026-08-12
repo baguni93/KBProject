@@ -35,6 +35,13 @@
                 column="recommendation_reason"/>
         <result property="priority"
                 column="priority"/>
+
+        <result property="evidenceTransactionId"
+                column="evidence_transaction_id"/>
+        <result property="evidenceMerchantName"
+                column="evidence_merchant_name"/>
+        <result property="evidenceCreatedAt"
+                column="evidence_created_at"/>
     </resultMap>
 
     <!--
@@ -65,7 +72,80 @@
             matched_category.parent_category_id,
 
             COALESCE(match_tbl.recommendation_reason, '') AS recommendation_reason,
-            match_tbl.priority
+            match_tbl.priority,
+
+            /*
+             * 상품별 추천 사유에 사용할 대표 결제 1건.
+             * 가장 최근 PAYMENT + SUCCESS 거래를 선택한다.
+             */
+            (
+                SELECT transaction_tbl.transaction_id
+                FROM financial_transaction_tbl transaction_tbl
+                LEFT JOIN spending_category_tbl transaction_category
+                       ON transaction_category.spending_category_id =
+                          transaction_tbl.spending_category_id
+                WHERE transaction_tbl.user_id = #{userId}
+                  AND transaction_tbl.transaction_type = 'PAYMENT'
+                  AND transaction_tbl.transaction_status = 'SUCCESS'
+                  AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
+                  AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}
+                  AND (
+                      match_tbl.spending_category_id =
+                          transaction_tbl.spending_category_id
+                      OR
+                      match_tbl.spending_category_id =
+                          transaction_category.parent_category_id
+                  )
+                ORDER BY transaction_tbl.created_at DESC,
+                         transaction_tbl.transaction_id DESC
+                LIMIT 1
+            ) AS evidence_transaction_id,
+
+            (
+                SELECT transaction_tbl.merchant_name
+                FROM financial_transaction_tbl transaction_tbl
+                LEFT JOIN spending_category_tbl transaction_category
+                       ON transaction_category.spending_category_id =
+                          transaction_tbl.spending_category_id
+                WHERE transaction_tbl.user_id = #{userId}
+                  AND transaction_tbl.transaction_type = 'PAYMENT'
+                  AND transaction_tbl.transaction_status = 'SUCCESS'
+                  AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
+                  AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}
+                  AND (
+                      match_tbl.spending_category_id =
+                          transaction_tbl.spending_category_id
+                      OR
+                      match_tbl.spending_category_id =
+                          transaction_category.parent_category_id
+                  )
+                ORDER BY transaction_tbl.created_at DESC,
+                         transaction_tbl.transaction_id DESC
+                LIMIT 1
+            ) AS evidence_merchant_name,
+
+            (
+                SELECT transaction_tbl.created_at
+                FROM financial_transaction_tbl transaction_tbl
+                LEFT JOIN spending_category_tbl transaction_category
+                       ON transaction_category.spending_category_id =
+                          transaction_tbl.spending_category_id
+                WHERE transaction_tbl.user_id = #{userId}
+                  AND transaction_tbl.transaction_type = 'PAYMENT'
+                  AND transaction_tbl.transaction_status = 'SUCCESS'
+                  AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
+                  AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}
+                  AND (
+                      match_tbl.spending_category_id =
+                          transaction_tbl.spending_category_id
+                      OR
+                      match_tbl.spending_category_id =
+                          transaction_category.parent_category_id
+                  )
+                ORDER BY transaction_tbl.created_at DESC,
+                         transaction_tbl.transaction_id DESC
+                LIMIT 1
+            ) AS evidence_created_at
 
         FROM kb_insurance_category_match_tbl match_tbl
 
@@ -85,7 +165,7 @@
                         transaction_tbl.spending_category_id
 
               WHERE transaction_tbl.user_id = #{userId}
-                AND transaction_tbl.transaction_type IN ('PAYMENT', 'TRANSFER', 'SETTLEMENT')
+                AND transaction_tbl.transaction_type = 'PAYMENT'
                 AND transaction_tbl.transaction_status = 'SUCCESS'
                 AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
                 AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}

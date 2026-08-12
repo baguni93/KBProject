@@ -21,17 +21,23 @@
       </section>
 
       <section class="result-hero kb-card">
-        <div>
-          <span class="ai-label text-13-bold">AI 칭호</span>
-          <h2 class="text-20-bold">{{ analysis.aiTitle }}</h2>
-          <p class="text-13">{{ analysis.aiAnalysisSummary }}</p>
+        <div class="hero-main">
+          <div class="hero-copy">
+            <span class="ai-label text-13-bold">AI 칭호</span>
+            <h2 class="text-20-bold">{{ analysis.aiTitle }}</h2>
+            <p class="text-13">{{ analysis.aiAnalysisSummary }}</p>
+          </div>
+
+          <div class="hero-icon" aria-hidden="true">
+            <i :class="getCategoryIcon(analysis.representativeCategoryName)"></i>
+          </div>
+        </div>
+
+        <div class="hero-share-row">
           <button type="button" class="hero-share-button content-btn secondary" @click="shareResult">
             <i class="fa-solid fa-share-nodes"></i>
             분석 결과 공유하기
           </button>
-        </div>
-        <div class="hero-icon" aria-hidden="true">
-          <i :class="getCategoryIcon(analysis.representativeCategoryName)"></i>
         </div>
       </section>
 
@@ -627,18 +633,22 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect());
 
 .result-hero {
   padding: 16px;
+  display: block;
+  border: 1px solid #ffe19a;
+  background: linear-gradient(135deg, #fffaf0, #fff3cc);
+  box-shadow: none;
+}
+
+.hero-main {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border: 1px solid #ffe19a;
-  background: linear-gradient(135deg, #fffaf0, #fff3cc);
-  box-shadow: none
 }
 
-.result-hero > div:first-child {
+.hero-copy {
   min-width: 0;
-  flex: 1
+  flex: 1;
 }
 
 .ai-label {
@@ -664,10 +674,17 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect());
   -webkit-line-clamp: 4
 }
 
+.hero-share-row {
+  width: 100%;
+  margin-top: 11px;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .hero-share-button {
   width: auto;
   height: 36px;
-  margin-top: 11px;
+  margin: 0;
   padding: 0 12px;
   color: var(--color-text-main);
 }

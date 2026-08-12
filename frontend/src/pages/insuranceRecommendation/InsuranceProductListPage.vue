@@ -70,12 +70,6 @@
               <span class="category-chip text-13-bold">{{ product.insuranceCategory }}</span>
               <h3 class="text-15-bold">{{ product.insuranceName }}</h3>
               <p class="text-13">{{ product.insuranceDescription }}</p>
-              <div class="product-premium">
-                <span class="text-13">예상 월 보험료</span>
-                <strong class="text-15-bold">
-                  {{ formatInsuranceAmount(product.monthlyPremium) }}원
-                </strong>
-              </div>
             </div>
 
             <i class="fa-solid fa-chevron-right product-chevron" aria-hidden="true"></i>
@@ -111,7 +105,6 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import insuranceRecommendationApi from '@/api/insuranceRecommendationApi';
 import {
   INSURANCE_CATEGORY_OPTIONS,
-  formatInsuranceAmount,
   getInsuranceCategoryIcon,
   getInsuranceImageUrl,
   getInsuranceRecommendationErrorMessage,
@@ -363,17 +356,7 @@ onMounted(loadProducts);
   -webkit-line-clamp: 2;
 }
 
-.product-premium {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 9px;
-}
 
-.product-premium span {
-  color: var(--color-text-muted);
-}
 
 .product-chevron {
   align-self: center;
