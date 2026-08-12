@@ -80,7 +80,7 @@ const eventList = ref([]);
 const isLoading = ref(false);
 
 const goToEventPage = () => {
-  router.push('/event');
+  router.push('/event/main');
 };
 
 // 날짜 관련 헬퍼 함수

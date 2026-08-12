@@ -100,10 +100,9 @@ const router = createRouter({
     },
     {
       path: '/event/list',
-      //path: '/event/eventList',
       name: 'EventList',
       component: EventListPage,
-      alias: '/event/eventList/joined',
+      alias: '/event/list/joined',
       meta: {
         showBottomNav: true,
       },
@@ -187,17 +186,6 @@ const router = createRouter({
       path: '/member/:userId',
       name: 'member-detail',
       component: MemberDetailPage,
-    },
-    {
-      path: '/event',
-      name: 'EventMain',
-      component: EventPage,
-    },
-    {
-      path: '/event/list',
-      name: 'EventList',
-      component: EventListPage,
-      alias: '/event/list/joined',
     },
   ],
 });
