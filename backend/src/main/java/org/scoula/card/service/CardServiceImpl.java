@@ -157,15 +157,10 @@ public class CardServiceImpl implements CardService {
     }
 
     // ──────────────────────────────────────────────────────────────
-    // 커스텀 카드 마스터 등록
+    // 커스텀 카드 등록
     // ──────────────────────────────────────────────────────────────
 
-    /**
-     * 디자인팀이 만든 커스텀 카드를 card_tbl 에 등록.
-     * - BIN: 커스텀 전용 풀(421029, 463654, 484404, 463652) 에서 랜덤 선택
-     * - 카드번호(16자리), CVV, 유효기간 자동 생성
-     * - 카드명, 이미지파일명, 비밀번호는 입력 받음
-     */
+
     @Override
     @Transactional
     public CardVO createCardMasterCustom(CardCustomCreateDTO dto) {

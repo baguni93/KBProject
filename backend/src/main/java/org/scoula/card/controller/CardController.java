@@ -22,6 +22,10 @@ public class CardController {
     private final CardService cardService;
     private final org.scoula.card.mapper.CardMapper cardMapper;
 
+    /** 커스텀 카드 전용 BIN 풀 (CardServiceImpl과 동일하게 유지) */
+    private static final java.util.Set<String> CUSTOM_BIN_SET =
+            new java.util.HashSet<>(java.util.Arrays.asList("421029", "463654", "484404", "463652"));
+
     // 실제 카드 BIN 앞자리(6~8자리)와 C:/upload/card/ 에 수집된 실제 53개 이미지 파일명을 1:1 유일하게 매핑하는 맵
     public static final Map<String, CardInfo> BIN_MAPPING_MAP = new HashMap<>();
 
@@ -102,24 +106,29 @@ public class CardController {
             info = BIN_MAPPING_MAP.get(cleanBin.substring(0, 6));
         }
 
-        // BIN_MAPPING_MAP에 없으면 card_tbl에서 BIN prefix로 조회 (커스텀 카드 대응)
+        // 커스텀 BIN 풀에 속하는 경우에만 card_tbl에서 조회 (임의 번호로 잘못 매칭 방지)
         if (info == null && cleanBin.length() >= 6) {
-            try {
-                java.util.Map<String, String> row = cardMapper.findByBinPrefix(cleanBin.substring(0, 6));
-                if (row != null && row.get("imageUrl") != null) {
-                    info = new CardInfo(
-                            row.getOrDefault("cardName", "커스텀 카드"),
-                            row.get("imageUrl")
-                    );
-                    log.info("[BIN 매핑] card_tbl fallback 조회 성공: BIN={}, img={}", cleanBin.substring(0, 6), row.get("imageUrl"));
+            String prefix6 = cleanBin.substring(0, 6);
+            boolean isCustomBin = CUSTOM_BIN_SET.contains(prefix6);
+            if (isCustomBin) {
+                try {
+                    java.util.Map<String, String> row = cardMapper.findByBinPrefix(prefix6);
+                    if (row != null && row.get("imageUrl") != null) {
+                        info = new CardInfo(
+                                row.getOrDefault("cardName", "커스텀 카드"),
+                                row.get("imageUrl")
+                        );
+                        log.info("[BIN 매핑] 커스텀 card_tbl 조회 성공: BIN={}, img={}", prefix6, row.get("imageUrl"));
+                    }
+                } catch (Exception e) {
+                    log.warn("[BIN 매핑] 커스텀 card_tbl 조회 실패: {}", e.getMessage());
                 }
-            } catch (Exception e) {
-                log.warn("[BIN 매핑] card_tbl fallback 조회 실패: {}", e.getMessage());
             }
         }
 
+        // 완전히 인식되지 않는 BIN → imageUrl=null 반환 (프론트에서 이미지 미표시)
         if (info == null) {
-            info = new CardInfo("KB국민 신용/체크카드", "09297_img.png");
+            info = new CardInfo(null, null);
         }
 
         return ResponseEntity.ok(info);
@@ -189,15 +198,11 @@ public class CardController {
     }
 
     /**
-     * CARD-005 커스텀 카드 마스터 등록 (Admin/개발용)
-     *
-     * 목적:
-     *  - 디자인팀이 만든 커스텀 카드 이미지·이름을 card_tbl 에 등록
+     * CARD-005 커스텀 카드 등록용
      *  - BIN: 커스텀 전용 풀(421029, 463654, 484404, 463652) 에서 랜덤 선택
-     *  - 카드번호(16자리), CVV, 유효기간 서버 자동 생성
-     *
+     *  - 카드번호(16자리), CVV, 유효기간 자동 생성
      * POST /api/admin/cards/custom
-     * Body: { "accountId": 1, "cardName": "팀원 카드", "cardImgFileName": "custom_001.png", "cardPassword": "1234" }
+     * Body: { "cardName": "카드이름", "cardImgFileName": "custom_001.png", "cardPassword": "1234" }
      */
     @PostMapping("/api/admin/cards/custom")
     public ResponseEntity<Map<String, Object>> createCardMasterCustom(

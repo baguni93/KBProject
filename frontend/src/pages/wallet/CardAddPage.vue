@@ -160,7 +160,7 @@ const onCardNumInput = async (e) => {
   if (val.length >= 6) {
     const bin = val.slice(0, 6);
     let detectedName = "KB국민 신용/체크카드";
-    let matchedImageFileName = "09297_img.png"; // 기본 매핑 이미지 (노리2 등)
+    let matchedImageFileName = null; // null = 이미지 없음 (인식 안 된 카드)
 
     try {
       const { data } = await api.get(`/api/cards/bin/${bin}`);
@@ -185,7 +185,10 @@ const onCardNumInput = async (e) => {
     }
 
     cardForm.value.cardName = detectedName;
-    cardPreviewImg.value = `/api/feeds/cardImage/${matchedImageFileName}`;
+    // imageUrl이 없으면 이미지 표시 안 함 (인식 안 된 카드)
+    cardPreviewImg.value = matchedImageFileName
+      ? `/api/feeds/cardImage/${matchedImageFileName}`
+      : "";
     isImgError.value = false;
   } else {
     cardForm.value.cardName = "KB국민카드";
