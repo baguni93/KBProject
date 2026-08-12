@@ -28,13 +28,14 @@
           </div>
 
           <input
-            ref="verificationInput"
-            :value="verificationCode"
-            class="hidden-input"
-            inputmode="numeric"
-            maxlength="4"
-            type="text"
-            @input="changeVerificationCode"
+              ref="verificationInput"
+              :value="verificationCode"
+              :disabled="resendRequired || verificationLocked"
+              class="hidden-input"
+              inputmode="numeric"
+              maxlength="4"
+              type="text"
+              @input="changeVerificationCode"
           />
         </div>
 
@@ -51,10 +52,21 @@
       </section>
 
       <button
-        class="confirm-button"
-        :disabled="verificationCode.length !== 4 || loading"
-        type="button"
-        @click="confirmAndConnect"
+          v-if="resendRequired"
+          class="confirm-button"
+          :disabled="loading"
+          type="button"
+          @click="resendVerification"
+      >
+        {{ loading ? '인증번호 재발급 중...' : '인증번호 다시 받기' }}
+      </button>
+
+      <button
+          v-else
+          class="confirm-button"
+          :disabled="verificationCode.length !== 4 || loading || verificationLocked"
+          type="button"
+          @click="confirmAndConnect"
       >
         {{ loading ? '계좌 연결 중...' : '확인' }}
       </button>
@@ -65,7 +77,7 @@
 <script setup>
 import { nextTick, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { confirmAccountVerification, connectAccount } from '@/api/accountApi';
+import { confirmAccountVerification, connectAccount, resendAccountVerification } from '@/api/accountApi';
 import { useAccountStore } from '@/stores/account';
 
 const router = useRouter();
@@ -75,9 +87,13 @@ const verificationInput = ref(null);
 const verificationCode = ref('');
 const loading = ref(false);
 const errorMessage = ref('');
+const resendRequired = ref(false);
+const verificationLocked = ref(false);
 
 // 입력창 포커스
 const focusInput = async () => {
+  if (resendRequired.value || verificationLocked.value) return;
+
   await nextTick();
   verificationInput.value?.focus();
 };
@@ -117,12 +133,60 @@ const confirmAndConnect = async () => {
     router.replace('/setting/account/complete');
   } catch (error) {
     console.error(error);
+
     verificationCode.value = '';
     accountStore.setVerificationCode('');
-    errorMessage.value =
-      error.response?.data?.message || '인증번호가 일치하지 않습니다.';
+
+    const message = error.response?.data?.message || '인증번호가 일치하지 않습니다.';
+    errorMessage.value = message;
+
+    // 최초 인증번호 5회 실패
+    if (message.includes('인증번호를 다시 받아주세요')) {
+      resendRequired.value = true;
+    }
+
+    // 재발급 후 5회 실패
+    if (message.includes('5분 후 다시 시도해주세요')) {
+      resendRequired.value = false;
+      verificationLocked.value = true;
+    }
+
+    if (!resendRequired.value && !verificationLocked.value) await focusInput();
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 계좌 인증번호 재발급
+const resendVerification = async () => {
+  const userId = accountStore.userId;
+  const verificationId = accountStore.accountForm.verificationId;
+
+  if (!userId || !verificationId) return;
+
+  try {
+    loading.value = true;
+    errorMessage.value = '';
+
+    const response = await resendAccountVerification(userId, verificationId);
+
+    accountStore.accountForm.developmentCode = response.verificationCode;
+
+    verificationCode.value = '';
+    accountStore.setVerificationCode('');
+    resendRequired.value = false;
 
     await focusInput();
+  } catch (error) {
+    console.error(error);
+
+    const message = error.response?.data?.message || '인증번호 재발급에 실패했습니다.';
+    errorMessage.value = message;
+
+    if (message.includes('5분 후 다시 시도해주세요')) {
+      resendRequired.value = false;
+      verificationLocked.value = true;
+    }
   } finally {
     loading.value = false;
   }

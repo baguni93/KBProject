@@ -21,6 +21,12 @@ public interface UserMapper {
     // 회원 저장
     int insert(UserVO user);
 
+    // 회원 기본 권한 저장
+    int insertAuth(
+            @Param("userId") Long userId,
+            @Param("auth") String auth
+    );
+
     // 프로필 저장
     int insertProfile(UserVO user);
 

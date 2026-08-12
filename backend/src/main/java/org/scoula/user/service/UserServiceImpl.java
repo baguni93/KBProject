@@ -86,6 +86,13 @@ public class UserServiceImpl implements UserService {
             throw new IllegalStateException("회원정보 저장 중 오류가 발생했습니다.");
         }
 
+        // 기본 회원 권한 저장
+        int authResult = userMapper.insertAuth(user.getUserId(), "ROLE_USER");
+
+        if (authResult != 1) {
+            throw new IllegalStateException("회원 권한 저장 중 오류가 발생했습니다.");
+        }
+
         int profileResult = userMapper.insertProfile(user);
 
         if (profileResult != 1) {
@@ -430,6 +437,9 @@ public class UserServiceImpl implements UserService {
         if (updateResult != 1) {
             throw new IllegalStateException("PIN 재설정 처리에 실패했습니다.");
         }
+
+        // PIN 재설정 완료 후 로그인 실패 횟수 및 잠금 상태 초기화
+        loginMapper.resetPinFailCount(user.getUserId());
 
         // 사용한 PIN_RESET 인증 기록 삭제
         int deleteResult = loginMapper.deleteVerificationById(verificationId);

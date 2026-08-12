@@ -21,6 +21,12 @@
     font-weight: 600;
 }
 
+/* 금액, 잔액, 포인트 */
+.text-26-bold {
+    font-size: 26px;
+    font-weight: 600;
+}
+
 /* 섹션 제목 */
 .text-20-bold {
     font-size: 20px;

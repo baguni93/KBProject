@@ -1,33 +1,41 @@
 <template>
-  <div class="signup-page">
-    <!-- 1. 상단 영역 (Header + 뒤로가기 버튼) -->
+  <div class="signup-page page-layout">
+    <!-- 공통 상단바 -->
+    <PageHeader
+        custom-back
+        @back="goBack"
+    />
+
+    <!-- 페이지 제목 -->
     <header class="signup-header">
-      <button class="back-button" type="button" @click="goBack">&lt;</button>
-      <h1>휴대폰 본인인증</h1>
-      <p>본인 확인을 위해 정보를 입력해주세요.</p>
+      <h1 class="text-26-bold">
+        {{ stepTitle }}
+      </h1>
     </header>
 
-    <!-- 2. 중앙 내용 영역 (내용이 길어지면 내부 스크롤) -->
-    <main class="content-area">
+    <!-- 입력 영역 -->
+    <main class="content-area page-content">
       <PhoneAuthForm
-        ref="phoneAuthFormRef"
-        :initial-value="signupStore.phoneAuth"
-        :loading="loading"
-        @submit="sendCode"
+          ref="phoneAuthFormRef"
+          :initial-value="signupStore.phoneAuth"
+          :loading="loading"
+          @step-change="handleStepChange"
+          @phone-valid-change="handlePhoneValidChange"
+          @submit="sendCode"
       />
 
-      <p v-if="errorMessage" class="error-message">
+      <p v-if="errorMessage" class="error-message text-13">
         {{ errorMessage }}
       </p>
     </main>
 
-    <!-- 3. 하단 버튼 영역 (버튼 크기 및 위치 고정) -->
-    <div class="bottom-btn-area.single">
+    <!-- 휴대폰번호 입력 완료 시에만 버튼 -->
+    <div v-if="currentStep === 4 && phoneValid" class="bottom-btn-area single">
       <button
-        class="bottom-btn"
-        :disabled="loading"
-        type="button"
-        @click="handleButtonClick"
+          class="bottom-btn"
+          :disabled="loading"
+          type="button"
+          @click="handleButtonClick"
       >
         인증번호 받기
       </button>
@@ -36,17 +44,50 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import loginApi from '@/api/loginApi';
 import PhoneAuthForm from '@/components/auth/PhoneAuthForm.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useSignupStore } from '@/stores/signup';
 
 const router = useRouter();
 const signupStore = useSignupStore();
+
 const loading = ref(false);
 const errorMessage = ref('');
 const phoneAuthFormRef = ref(null);
+const currentStep = ref(1);
+const phoneValid = ref(false);
+
+// 단계별 제목
+const stepTitle = computed(() => {
+  switch (currentStep.value) {
+    case 1:
+      return '이름을 입력해주세요.';
+    case 2:
+      return '생년월일을 입력해주세요.';
+    case 3:
+      return '통신사를 선택해주세요.';
+    case 4:
+      return '휴대폰 번호를 입력해주세요.';
+    default:
+      return '휴대폰 본인인증';
+  }
+});
+
+// 단계 변경
+const handleStepChange = (step) => {
+  currentStep.value = step;
+  errorMessage.value = '';
+
+  if (step !== 4) phoneValid.value = false;
+};
+
+// 휴대폰번호 유효성 변경
+const handlePhoneValidChange = (valid) => {
+  phoneValid.value = valid;
+};
 
 // 인증번호 발급
 const sendCode = async (formData) => {
@@ -54,10 +95,7 @@ const sendCode = async (formData) => {
     loading.value = true;
     errorMessage.value = '';
 
-    const requestData = {
-      ...formData,
-      verificationPurpose: signupStore.phoneAuth.verificationPurpose,
-    };
+    const requestData = { ...formData, verificationPurpose: signupStore.phoneAuth.verificationPurpose };
     const response = await loginApi.sendPhoneAuthCode(requestData);
 
     signupStore.setPhoneAuth(requestData);
@@ -67,116 +105,52 @@ const sendCode = async (formData) => {
     router.push('/signup/verification');
   } catch (error) {
     console.error(error);
-    errorMessage.value =
-      error.response?.data?.message || '인증번호 발급에 실패했습니다.';
+    errorMessage.value = error.response?.data?.message || '인증번호 발급에 실패했습니다.';
   } finally {
     loading.value = false;
   }
 };
 
-// 하단 버튼 클릭 시 폼 제출 함수 실행
+// 인증번호 받기
 const handleButtonClick = () => {
-  if (phoneAuthFormRef.value?.submitForm) {
-    phoneAuthFormRef.value.submitForm();
-  }
+  phoneAuthFormRef.value?.submitForm();
 };
 
-// 이전 화면
+// 이전
 const goBack = () => {
-  router.back();
+  const handled = phoneAuthFormRef.value?.previousStep();
+
+  if (!handled) router.back();
 };
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
+
 .signup-page {
-  width: 100%;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  box-sizing: border-box;
-  overflow: hidden;
-  /* 💡 하단 패딩을 20px -> 40px로 늘려 버튼 위치를 위로 올립니다 */
-  padding: 36px 24px 70px;
-  background: #ffffff;
+  background: var(--color-bg-page);
 }
 
-/* 1. 상단 헤더 영역 */
 .signup-header {
   flex-shrink: 0;
-}
-
-.back-button {
-  align-self: flex-start;
-  margin-bottom: 16px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #555555;
-  font-size: 26px;
-  line-height: 1;
-  cursor: pointer;
+  margin-top: 24px;
 }
 
 .signup-header h1 {
-  margin: 0 0 16px;
-  color: #111111;
-  font-size: 28px;
-  font-weight: 700;
-}
-
-.signup-header p {
   margin: 0;
-  color: #777777;
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.4;
+  color: var(--color-text-main);
+  line-height: 1.35;
 }
 
-/* 2. 중앙 내용 영역 (내용이 길어지면 내부 스크롤) */
 .content-area {
-  flex: 1;
-  min-height: 0;
-  margin-top: 28px;
+  margin-top: 36px;
   overflow-y: auto;
   box-sizing: border-box;
 }
 
 .error-message {
   margin: 16px 0 0;
-  color: #d32f2f;
-  font-size: 14px;
-}
-
-/* 3. 하단 버튼 영역 */
-.button-area {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-top: 16px;
-  background: #ffffff;
-}
-
-.next-btn {
-  width: 100%;
-  height: 52px;
-  border: none;
-  border-radius: 14px;
-  background: #ffc400;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.next-btn:active:not(:disabled) {
-  background: #f3aa0b;
-}
-
-.next-btn:disabled {
-  background: #e0e0e0;
-  color: #9e9e9e;
-  cursor: not-allowed;
+  color: var(--color-error);
 }
 </style>

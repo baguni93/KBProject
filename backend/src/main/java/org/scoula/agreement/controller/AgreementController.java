@@ -5,7 +5,9 @@ import org.scoula.agreement.dto.AgreementConsentDTO;
 import org.scoula.agreement.dto.AgreementDTO;
 import org.scoula.agreement.dto.AgreementDetailDTO;
 import org.scoula.agreement.service.AgreementService;
+import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -19,61 +21,46 @@ public class AgreementController {
 
     private final AgreementService agreementService;
 
-
     // 약관 목록 조회
     @GetMapping("/agreements")
     public ResponseEntity<Map<String, Object>> getAgreements() {
+        List<AgreementDTO> agreements = agreementService.getAgreements();
 
-        List<AgreementDTO> agreements =
-                agreementService.getAgreements();
-
-        Map<String, Object> response =
-                new HashMap<>();
-
+        Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("data", agreements);
 
         return ResponseEntity.ok(response);
     }
 
-
     // 약관 상세 조회
     @GetMapping("/agreements/{agreementType}")
     public ResponseEntity<Map<String, Object>> getAgreementDetail(
             @PathVariable String agreementType
     ) {
-        AgreementDetailDTO agreement =
-                agreementService.getAgreementDetail(
-                        agreementType
-                );
+        AgreementDetailDTO agreement = agreementService.getAgreementDetail(agreementType);
 
-        Map<String, Object> response =
-                new HashMap<>();
-
+        Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("data", agreement);
 
         return ResponseEntity.ok(response);
     }
 
-
     // 회원 약관 동의 저장
-    @PostMapping("/users/me/agreements")
+    @PostMapping("/users/agreements")
     public ResponseEntity<Map<String, Object>> saveConsent(
+            @AuthenticationPrincipal CustomUser customUser,
             @RequestBody AgreementConsentDTO consentDTO
     ) {
-        agreementService.saveConsent(
-                consentDTO
-        );
+        Long userId = customUser.getUser().getUserId();
 
-        Map<String, Object> response =
-                new HashMap<>();
+        consentDTO.setUserId(userId);
+        agreementService.saveConsent(consentDTO);
 
+        Map<String, Object> response = new HashMap<>();
         response.put("success", true);
-        response.put(
-                "message",
-                "약관 동의 정보가 저장되었습니다."
-        );
+        response.put("message", "약관 동의 정보가 저장되었습니다.");
 
         return ResponseEntity.ok(response);
     }

@@ -43,6 +43,15 @@ public interface LoginMapper {
     // 로그인 회원 조회
     UserVO findUserByPhoneNumber(@Param("phoneNumber") String phoneNumber);
 
+    // PIN 로그인 실패 횟수 증가
+    int increasePinFailCount(@Param("userId") Long userId);
+
+    // PIN 로그인 5회 실패 시 잠금
+    int lockPin(@Param("userId") Long userId);
+
+    // PIN 로그인 성공 시 실패 횟수 및 잠금 상태 초기화
+    int resetPinFailCount(@Param("userId") Long userId);
+
     // PIN 재설정용 인증 완료 정보 조회
     Long findVerifiedPinResetId(@Param("phoneNumber") String phoneNumber);
 

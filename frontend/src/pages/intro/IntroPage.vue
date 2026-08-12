@@ -1,16 +1,18 @@
 <template>
   <div class="intro-page">
-    <main class="intro-container">
-      <!-- 1. 상단 / 내용 영역 -->
-      <section class="intro-content">
-        <div class="service-badge">SOCIAL WALLET</div>
+    <main class="page-layout page-layout-top">
+      <!-- 상단 콘텐츠 -->
+      <section class="page-content">
+        <div class="service-badge text-13-bold">
+          SOCIAL WALLET
+        </div>
 
-        <h1>
+        <h1 class="text-32-bold">
           결제는 순식간,<br />
           소통은 자연스럽게
         </h1>
 
-        <p>
+        <p class="text-15-bold">
           결제와 송금은 간편하게,<br />
           친구들과의 금융 생활은 더 즐겁게
         </p>
@@ -19,7 +21,7 @@
           <div class="visual-glow"></div>
 
           <div class="wallet-card back-card">
-            <span class="card-label">SOCIAL</span>
+            <span class="card-label text-13-bold">SOCIAL</span>
             <span class="card-circle"></span>
           </div>
 
@@ -30,8 +32,8 @@
             </div>
 
             <div class="card-text">
-              <strong>Social Wallet</strong>
-              <span>MZ세대를 위한 소셜 전자지갑</span>
+              <strong class="text-18-bold">Social Wallet</strong>
+              <span class="text-13">MZ세대를 위한 소셜 전자지갑</span>
             </div>
           </div>
 
@@ -45,8 +47,8 @@
         </div>
       </section>
 
-      <!-- 3. 하단 버튼 영역 -->
-      <div class="bottom-btn-area.single">
+      <!-- 하단 버튼 -->
+      <div class="bottom-btn-area single">
         <button class="bottom-btn" type="button" @click="start">
           시작하기
         </button>
@@ -67,62 +69,15 @@ const start = () => {
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
+
 .intro-page {
   width: 100%;
   height: 100dvh;
-  display: flex;
-  flex-direction: column;
   box-sizing: border-box;
+  background: var(--color-bg-page);
   overflow: hidden;
-  padding: 12px;
-}
-
-.intro-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between; /* 상단과 하단을 양쪽 끝으로 배치 */
-  width: 100%;
-  height: 100%;
-  padding: 40px 28px 30px;
-  background: #ffffff;
-  box-sizing: border-box;
-}
-
-.intro-content {
-  display: flex;
-  flex-direction: column;
-}
-
-/* 3. 하단 버튼 영역 */
-.button-area {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-top: 16px;
-  background: #ffffff;
-}
-
-.next-btn {
-  width: 100%;
-  height: 52px;
-  border: none;
-  border-radius: 14px;
-  background: #ffc400;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.next-btn:active:not(:disabled) {
-  background: #f3aa0b;
-}
-
-.next-btn:disabled {
-  background: #e0e0e0;
-  color: #9e9e9e;
-  cursor: not-allowed;
 }
 
 .service-badge {
@@ -134,25 +89,19 @@ const start = () => {
   border-radius: 18px;
   background: #fff3cf;
   color: #b77700;
-  font-size: 12px;
-  font-weight: 800;
   letter-spacing: 1px;
 }
 
-.intro-content h1 {
+.page-content h1 {
   margin: 26px 0 0;
-  color: #111111;
-  font-size: 32px;
-  font-weight: 800;
+  color: var(--color-text-main);
   line-height: 1.3;
   letter-spacing: -1px;
 }
 
-.intro-content p {
+.page-content p {
   margin: 22px 0 0;
-  color: #777777;
-  font-size: 17px;
-  font-weight: 600;
+  color: var(--color-text-sub);
   line-height: 1.6;
 }
 
@@ -171,10 +120,10 @@ const start = () => {
   height: 220px;
   border-radius: 50%;
   background: radial-gradient(
-    circle,
-    rgba(255, 188, 46, 0.32) 0%,
-    rgba(255, 188, 46, 0.12) 45%,
-    rgba(255, 188, 46, 0) 72%
+      circle,
+      rgba(255, 188, 46, 0.32) 0%,
+      rgba(255, 188, 46, 0.12) 45%,
+      rgba(255, 188, 46, 0) 72%
   );
   transform: translateX(-50%);
 }
@@ -185,8 +134,8 @@ const start = () => {
   width: 230px;
   height: 142px;
   border-radius: 20px;
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14);
   box-sizing: border-box;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14);
 }
 
 .back-card {
@@ -204,14 +153,8 @@ const start = () => {
   top: 82px;
   padding: 20px;
   background: linear-gradient(135deg, #ffc43d, #ffad12);
-  color: #111111;
+  color: var(--color-text-main);
   transform: translateX(-44%) rotate(7deg);
-}
-
-.card-label {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 1px;
 }
 
 .card-circle {
@@ -244,7 +187,7 @@ const start = () => {
   background: #111111;
   color: #ffffff;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .card-text {
@@ -253,15 +196,8 @@ const start = () => {
   margin-top: 26px;
 }
 
-.card-text strong {
-  font-size: 18px;
-  font-weight: 800;
-}
-
 .card-text span {
   margin-top: 4px;
-  font-size: 11px;
-  font-weight: 600;
 }
 
 .message-bubble {
@@ -274,10 +210,10 @@ const start = () => {
   justify-content: center;
   border: 4px solid #ffffff;
   border-radius: 50%;
+  box-sizing: border-box;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14);
   font-size: 18px;
-  font-weight: 800;
-  box-sizing: border-box;
+  font-weight: 600;
 }
 
 .left-bubble {
@@ -291,6 +227,6 @@ const start = () => {
   right: 10px;
   bottom: 20px;
   background: #222222;
-  color: #ffbc2e;
+  color: var(--color-primary);
 }
 </style>

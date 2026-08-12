@@ -1,7 +1,9 @@
 <template>
   <form class="nickname-form" @submit.prevent="handleSubmit">
     <div class="input-group">
-      <label for="nickname">닉네임</label>
+      <label for="nickname" class="text-15-bold">
+        닉네임
+      </label>
 
       <div class="nickname-input-wrap">
         <input
@@ -15,7 +17,7 @@
 
         <button
             type="button"
-            class="check-button"
+            class="check-button text-13-bold"
             :disabled="!nicknamePattern.test(nickname) || checking"
             @click="handleCheckNickname"
         >
@@ -24,15 +26,18 @@
       </div>
 
       <div class="input-info">
-        <p v-if="message" :class="messageClass">{{ message }}</p>
+        <p
+            v-if="message"
+            :class="[messageClass, 'text-13']"
+        >
+          {{ message }}
+        </p>
 
-        <span class="character-count">{{ nickname.length }}/15</span>
+        <span class="character-count text-13">
+          {{ nickname.length }}/15
+        </span>
       </div>
     </div>
-
-    <button type="submit" class="submit-button" :disabled="!available || submitting">
-      {{ submitting ? '가입 중' : '회원가입' }}
-    </button>
   </form>
 </template>
 
@@ -47,7 +52,7 @@ defineProps({
   },
 });
 
-const emit = defineEmits(['submit']);
+const emit = defineEmits(['submit', 'valid-change']);
 
 const nickname = ref('');
 const available = ref(false);
@@ -55,15 +60,13 @@ const checking = ref(false);
 const message = ref('');
 const nicknamePattern = /^[가-힣a-z0-9_]{1,15}$/;
 
-const messageClass = computed(() =>
-    available.value ? 'success-message' : 'error-message'
-);
+const messageClass = computed(() => available.value ? 'success-message' : 'error-message');
 
 // 닉네임 입력
 const handleNicknameInput = () => {
   nickname.value = nickname.value.toLowerCase();
-
   available.value = false;
+  emit('valid-change', false);
 
   if (!nickname.value) {
     message.value = '';
@@ -87,6 +90,7 @@ const handleCheckNickname = async () => {
 
   if (!nicknamePattern.test(nickname.value)) {
     available.value = false;
+    emit('valid-change', false);
     message.value = '한글, 영어, 숫자, _만 사용할 수 있습니다.';
     return;
   }
@@ -97,13 +101,12 @@ const handleCheckNickname = async () => {
     const data = await checkNickname(nickname.value);
 
     available.value = data.available;
-    message.value = data.available
-        ? '사용 가능한 닉네임입니다.'
-        : '이미 사용 중인 닉네임입니다.';
+    emit('valid-change', data.available);
+    message.value = data.available ? '사용 가능한 닉네임입니다.' : '이미 사용 중인 닉네임입니다.';
   } catch (error) {
     available.value = false;
-    message.value =
-        error.response?.data?.message || '닉네임 중복 확인에 실패했습니다.';
+    emit('valid-change', false);
+    message.value = error.response?.data?.message || '닉네임 중복 확인에 실패했습니다.';
   } finally {
     checking.value = false;
   }
@@ -118,6 +121,7 @@ const handleSubmit = () => {
 
   if (!nicknamePattern.test(nickname.value)) {
     available.value = false;
+    emit('valid-change', false);
     message.value = '한글, 영어, 숫자, _만 사용할 수 있습니다.';
     return;
   }
@@ -129,12 +133,16 @@ const handleSubmit = () => {
 
   emit('submit', nickname.value);
 };
+
+defineExpose({
+  submitForm: handleSubmit,
+});
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+
 .nickname-form {
-  display: flex;
-  flex-direction: column;
   width: 100%;
 }
 
@@ -145,52 +153,53 @@ const handleSubmit = () => {
 }
 
 .input-group label {
-  color: #222222;
-  font-size: 15px;
-  font-weight: 600;
+  color: var(--color-text-main);
 }
 
+/* 닉네임 입력 영역 */
 .nickname-input-wrap {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 96px;
-  gap: 8px;
   width: 100%;
+  grid-template-columns: minmax(0, 1fr) 88px;
+  gap: 10px;
 }
 
+/* 닉네임 입력 */
 .nickname-input-wrap input {
   width: 100%;
   min-width: 0;
-  height: 50px;
+  height: 52px;
   padding: 0 16px;
-  border: 1px solid #dddddd;
+  border: 1px solid var(--color-border-main);
   border-radius: 10px;
-  background: #ffffff;
-  color: #222222;
-  font-size: 16px;
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
+  font-size: 15px;
+  font-weight: 500;
   outline: none;
   box-sizing: border-box;
 }
 
 .nickname-input-wrap input:focus {
-  border-color: #ffbc2e;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
 }
 
 .nickname-input-wrap input::placeholder {
-  color: #aaaaaa;
+  color: var(--color-text-disabled);
 }
 
+/* 중복 확인 버튼 */
 .check-button {
-  width: 96px;
-  height: 50px;
+  width: 88px;
+  height: 52px;
   padding: 0;
-  border: 1px solid #dddddd;
+  border: 1px solid var(--color-border-main);
   border-radius: 10px;
-  background: #ffffff;
-  color: #333333;
-  font-size: 14px;
-  font-weight: 700;
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .check-button:active:not(:disabled) {
@@ -198,18 +207,19 @@ const handleSubmit = () => {
 }
 
 .check-button:disabled {
-  border-color: #eeeeee;
-  background: #f5f5f5;
-  color: #aaaaaa;
+  border-color: var(--color-border-main);
+  background: var(--color-bg-disabled);
+  color: var(--color-text-disabled);
   cursor: not-allowed;
 }
 
+/* 하단 상태 영역 */
 .input-info {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 96px;
-  gap: 8px;
   width: 100%;
   min-height: 20px;
+  grid-template-columns: minmax(0, 1fr) 88px;
+  gap: 10px;
   align-items: start;
 }
 
@@ -217,7 +227,6 @@ const handleSubmit = () => {
 .error-message {
   grid-column: 1;
   margin: 0;
-  font-size: 13px;
   line-height: 1.5;
   text-align: left;
 }
@@ -227,44 +236,15 @@ const handleSubmit = () => {
 }
 
 .error-message {
-  color: #e53935;
+  color: var(--color-error);
 }
 
 .character-count {
   grid-column: 2;
   margin: 0;
-  color: #999999;
-  font-size: 13px;
+  color: var(--color-text-muted);
   line-height: 1.5;
   text-align: right;
   white-space: nowrap;
-}
-
-.submit-button {
-  position: absolute;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
-  width: auto;
-  height: 58px;
-  margin: 0;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.submit-button:active:not(:disabled) {
-  background: #f2aa10;
-}
-
-.submit-button:disabled {
-  border-color: #dddddd;
-  background: #eeeeee;
-  color: #999999;
-  cursor: not-allowed;
 }
 </style>

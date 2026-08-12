@@ -3,16 +3,13 @@ package org.scoula.security.account.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.security.account.domain.CustomUser;
-import org.scoula.security.account.domain.MemberVO;
 import org.scoula.security.account.mapper.UserDetailMapper;
+import org.scoula.user.domain.UserVO;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
-
 
 @Log4j2
 @Component
@@ -30,12 +27,12 @@ public class CustomUserDetailsService implements UserDetailsService {
 //        }
 //        return new CustomUser(vo);
 
-        MemberVO vo =  mapper.get2(username);
-        if(vo == null) {
+        UserVO vo = mapper.get2(username);
+        if (vo == null) {
             throw new UsernameNotFoundException(username + "은 없는 id입니다.");
         }
 
-        vo.setAuthList(mapper.getAuthList(username));
+        vo.setAuthList(mapper.getAuthList(vo.getUserId()));
 
         return new CustomUser(vo);
 //

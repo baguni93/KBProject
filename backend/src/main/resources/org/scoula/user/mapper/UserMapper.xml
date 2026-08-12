@@ -194,6 +194,21 @@
     </insert>
 
 
+    <!-- 회원 기본 권한 저장 -->
+    <insert id="insertAuth" parameterType="map">
+
+        INSERT INTO user_auth_tbl (
+        user_id,
+        auth
+        )
+        VALUES (
+        #{userId},
+        #{auth}
+        )
+
+    </insert>
+
+
     <!-- 닉네임 수정 -->
     <update id="update"
             parameterType="org.scoula.user.domain.UserVO">

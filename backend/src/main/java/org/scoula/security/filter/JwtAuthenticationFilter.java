@@ -1,7 +1,6 @@
 package org.scoula.security.filter;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.java.Log;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.security.util.JwtProcessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,7 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return request.getServletPath().equals("/api/auth/login");
+        return request.getServletPath().equals("/api/login");
     }
 
     @Override
@@ -39,7 +38,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (bearerToken != null && bearerToken.startsWith(BEARER_PREFIX)) {
             String token = bearerToken.substring(BEARER_PREFIX.length());
-// 토큰에서 사용자 정보 추출 및 Authentication 객체 구성 후 SecurityContext에 저장
+
+            if (!"ACCESS".equals(jwtProcessor.getTokenType(token))) {
+                throw new IllegalArgumentException("Access Token이 아닙니다.");
+            }
+
+            // 토큰에서 사용자 정보 추출 및 Authentication 객체 구성 후 SecurityContext에 저장
             Authentication authentication = getAuthentication(token);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }

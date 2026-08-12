@@ -234,21 +234,15 @@ const getBankInitial = (bankName) => {
   return bankName.charAt(0);
 };
 
-// 계좌 목록 조회
+// 계좌 목록 조회 (userId 인자 제거)
 const loadAccounts = async () => {
-  const userId = accountStore.userId;
-
-  if (!userId) {
-    await router.replace('/intro');
-    return;
-  }
-
   try {
     loading.value = true;
     errorMessage.value = '';
     openedAccountId.value = null;
 
-    const data = await getAccounts(userId);
+    // 💡 수정: userId를 넘기지 않고 호출
+    const data = await getAccounts();
     const accounts = Array.isArray(data) ? data : data.accounts || [];
 
     accountStore.setAccounts(accounts);
@@ -270,12 +264,13 @@ const closeMenu = () => {
   openedAccountId.value = null;
 };
 
-// 대표계좌 변경
+// 대표계좌 변경 (userId 인자 제거)
 const changePrimary = async (account) => {
   try {
     errorMessage.value = '';
 
-    await setPrimaryAccount(accountStore.userId, account.linkedAccountId);
+    // 💡 수정: linkedAccountId만 전달
+    await setPrimaryAccount(account.linkedAccountId);
 
     openedAccountId.value = null;
 
@@ -299,14 +294,15 @@ const closeDisconnectModal = () => {
   disconnectTarget.value = null;
 };
 
-// 계좌 연결 해제
+// 계좌 연결 해제 (userId 인자 제거)
 const removeAccount = async () => {
   if (!disconnectTarget.value) return;
 
   try {
     errorMessage.value = '';
 
-    await disconnectAccount(accountStore.userId, disconnectTarget.value.linkedAccountId);
+    // 💡 수정: linkedAccountId만 전달
+    await disconnectAccount(disconnectTarget.value.linkedAccountId);
 
     disconnectTarget.value = null;
 

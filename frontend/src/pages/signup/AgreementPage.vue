@@ -1,53 +1,58 @@
 <template>
-  <div class="signup-page">
-    <!-- 1. 상단 영역 (Header) -->
+  <div class="signup-page page-layout">
+    <!-- 공통 상단바 -->
+    <PageHeader
+        :show-back="false"
+        :show-refresh="false"
+    />
+
+    <!-- 상단 영역 -->
     <section class="signup-header">
-      <h1>약관 동의</h1>
-      <p>가입을 위해 약관에 동의해주세요.</p>
+      <h1 class="text-30-bold">약관 동의</h1>
+      <p class="text-15">가입을 위해 약관에 동의해주세요.</p>
     </section>
 
-    <!-- 2. 중앙 내용 영역 -->
-    <section class="agreement-section">
+    <!-- 중앙 내용 -->
+    <section class="agreement-section page-content">
       <label class="all-agreement">
         <input
-          :checked="signupStore.isAllChecked"
-          type="checkbox"
-          @change="changeAll"
+            :checked="signupStore.isAllChecked"
+            type="checkbox"
+            @change="changeAll"
         />
+
         <span class="check-box"></span>
-        <strong>전체 동의</strong>
+        <strong class="text-18-bold">전체 동의</strong>
       </label>
 
       <div class="divider"></div>
 
       <AgreementCheckItem
-        v-for="agreement in signupStore.agreements"
-        :key="agreement.agreementId"
-        :model-value="agreement.agreed"
-        :title="agreement.agreementName"
-        :required="agreement.requiredYn === 'Y'"
-        detail-mode="navigate"
-        @update:model-value="
-          (agreed) =>
-            changeAgreement({ agreementType: agreement.agreementType, agreed })
-        "
-        @open-detail="showAgreementDetail(agreement.agreementType)"
+          v-for="(agreement, index) in signupStore.agreements"
+          :key="agreement.agreementId"
+          :model-value="agreement.agreed"
+          :title="agreement.agreementName"
+          :required="agreement.requiredYn === 'Y'"
+          :last="index === signupStore.agreements.length - 1"
+          detail-mode="navigate"
+          @update:model-value="(agreed) => changeAgreement({ agreementType: agreement.agreementType, agreed })"
+          @open-detail="showAgreementDetail(agreement.agreementType)"
       />
 
       <div class="divider bottom-divider"></div>
 
-      <p v-if="errorMessage" class="error-message">
+      <p v-if="errorMessage" class="error-message text-13">
         {{ errorMessage }}
       </p>
     </section>
 
-    <!-- 3. 하단 버튼 영역 -->
-    <div class="bottom-btn-area.single">
+    <!-- 하단 버튼 -->
+    <div class="bottom-btn-area single">
       <button
-        class="bottom-btn"
-        :disabled="!signupStore.isRequiredChecked"
-        type="button"
-        @click="next"
+          class="bottom-btn"
+          :disabled="!signupStore.isRequiredChecked"
+          type="button"
+          @click="next"
       >
         다음
       </button>
@@ -60,6 +65,7 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import agreementApi from '@/api/agreementApi';
 import AgreementCheckItem from '@/components/common/AgreementCheckItem.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useSignupStore } from '@/stores/signup';
 
 const router = useRouter();
@@ -101,44 +107,30 @@ onMounted(loadAgreements);
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
+
 .signup-page {
-  width: 100%;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  box-sizing: border-box;
-  overflow: hidden;
-  /* 💡 하단 패딩을 20px -> 40px로 늘려 버튼 위치를 위로 올립니다 */
-  padding: 36px 24px 70px;
-  background: #ffffff;
+  background: var(--color-bg-page);
 }
 
-/* 1. 상단 헤더 영역 */
 .signup-header {
   flex-shrink: 0;
+  margin-top: 24px;
 }
 
 .signup-header h1 {
   margin: 0 0 16px;
-  color: #111111;
-  font-size: 28px;
-  font-weight: 700;
+  color: var(--color-text-main);
 }
 
 .signup-header p {
   margin: 0;
-  color: #777777;
-  font-size: 15px;
-  font-weight: 500;
+  color: var(--color-text-sub);
   line-height: 1.4;
 }
 
-/* 2. 중앙 내용 영역 */
 .agreement-section {
-  flex: 1;
-  min-height: 0;
-  /* 💡 헤더와의 간격을 적당히 조절합니다 */
   margin-top: 28px;
   overflow-y: auto;
   box-sizing: border-box;
@@ -166,13 +158,13 @@ onMounted(loadAgreements);
   margin-right: 14px;
   border: 1px solid #999999;
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--color-bg-page);
   box-sizing: border-box;
 }
 
 .all-agreement input:checked + .check-box {
-  border-color: #ffbc2e;
-  background: #ffbc2e;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
 }
 
 .all-agreement input:checked + .check-box::after {
@@ -187,15 +179,13 @@ onMounted(loadAgreements);
 }
 
 .all-agreement strong {
-  font-size: 17px;
-  font-weight: 700;
-  color: #111111;
+  color: var(--color-text-main);
 }
 
 .divider {
   height: 1px;
   margin: 12px 0 8px;
-  background: #eeeeee;
+  background: var(--color-divider);
 }
 
 .bottom-divider {
@@ -204,7 +194,6 @@ onMounted(loadAgreements);
 
 .error-message {
   margin: 16px 0 0;
-  color: #d32f2f;
-  font-size: 14px;
+  color: var(--color-error);
 }
 </style>

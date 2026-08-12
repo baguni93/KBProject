@@ -2,6 +2,7 @@ package org.scoula.security.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.scoula.login.mapper.LoginMapper;
 import org.scoula.security.filter.AuthenticationErrorFilter;
 import org.scoula.security.filter.JwtAuthenticationFilter;
 import org.scoula.security.filter.JwtUsernamePasswordAuthenticationFilter;
@@ -23,6 +24,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -47,6 +49,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final AuthenticationErrorFilter authenticationErrorFilter;
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+    private final LoginMapper loginMapper;
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
@@ -56,10 +59,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .authenticationEntryPoint(authenticationEntryPoint)
             .accessDeniedHandler(accessDeniedHandler);
 
-
-//        http.addFilterBefore(authenticationErrorFilter, UsernamePasswordAuthenticationFilter.class)
-//            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-//            .addFilterBefore(jwtFilter(authenticationManager()), UsernamePasswordAuthenticationFilter.class);
+        // JWT 인증 필터
+        http.addFilterBefore(authenticationErrorFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(jwtFilter(authenticationManager()), UsernamePasswordAuthenticationFilter.class);
 
         http.httpBasic().disable() // 기본 HTTP 인증 비활성화
                 .csrf().disable() // CSRF 비활성화
@@ -69,12 +72,29 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             //이미 만들어진 Authentication을 가지고 "이 사용자가 이 URL에 들어갈 수 있는지" 판단하는
             //FilterSecurityInterceptor의 접근 제어 규칙 설정
         http
-                .authorizeRequests() // 경로별 접근 권한 설정
+                .authorizeRequests()
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
-                .antMatchers(HttpMethod.PUT,"/api/member").authenticated()
-                .antMatchers(HttpMethod.PUT, "/api/member/*/changepassword").authenticated()
+
+                // 로그인
+                .antMatchers("/api/login/**").permitAll()
+
+                // 회원가입
+                .antMatchers(HttpMethod.POST, "/api/users").permitAll()
+
+                // 닉네임 중복 확인
+                .antMatchers(HttpMethod.GET, "/api/users/nickname/check").permitAll()
+
+                // 관리자만
+                .antMatchers("/api/security/admin").hasRole("ADMIN")
+
+                // 로그인한 사용자
+                .antMatchers("/api/security/member").authenticated()
+                .antMatchers("/api/users/**").authenticated()
+
                 .anyRequest().permitAll();
 
+//                .antMatchers(HttpMethod.PUT,"/api/member").authenticated()
+//                .antMatchers(HttpMethod.PUT, "/api/member/*/changepassword").authenticated()
     }
 
     @Override
@@ -98,11 +118,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public JwtUsernamePasswordAuthenticationFilter jwtFilter(AuthenticationManager authenticationManager) {
-
         return new JwtUsernamePasswordAuthenticationFilter(
                 authenticationManager,
                 loginSuccessHandler,
-                loginFailureHandler
+                loginFailureHandler,
+                loginMapper
         );
     }
 
