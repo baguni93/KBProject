@@ -144,6 +144,18 @@ export default [
         },
     },
     {
+        path: '/setting/account-management/name/verification',
+        name: 'account-name-verification',
+        component: () =>
+            import(
+                '@/pages/signup/VerificationCodePage.vue'
+                ),
+        meta: {
+            requiresAuth: true,
+            showBottomNav: false,
+        },
+    },
+    {
         path: '/setting/account-management/phone',
         name: 'account-phone-change',
         component: () =>
@@ -191,12 +203,25 @@ export default [
             showBottomNav: false,
         },
     },
+
     {
         path: '/setting/account-management/withdraw',
         name: 'account-withdraw',
         component: () =>
             import(
                 '@/pages/setting/accountManagement/WithdrawPage.vue'
+                ),
+        meta: {
+            requiresAuth: true,
+            showBottomNav: false,
+        },
+    },
+    {
+        path: '/setting/account-management/logout',
+        name: 'account-logout',
+        component: () =>
+            import(
+                '@/pages/setting/accountManagement/LogoutPage.vue'
                 ),
         meta: {
             requiresAuth: true,
