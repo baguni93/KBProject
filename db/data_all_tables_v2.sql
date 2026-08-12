@@ -1280,15 +1280,12 @@ CREATE TABLE card_tbl
 (
     card_code          INT         AUTO_INCREMENT PRIMARY KEY COMMENT '카드 코드 (PK)',
 
-    account_id         INT          NOT NULL UNIQUE COMMENT '계좌 ID',
-
     card_img_file_name VARCHAR(255) NULL COMMENT '카드이미지파일명',
 
     card_num           VARCHAR(255) NOT NULL COMMENT '카드번호',
     expiry_date        CHAR(5)     NOT NULL COMMENT '유효기간',
     cvv                VARCHAR(255) NOT NULL COMMENT 'cvv',
     card_password      VARCHAR(255) NOT NULL COMMENT '카드 비밀번호 4자리',
-    card_img_file_name VARCHAR(255) NULL COMMENT '카드 이미지 파일명',
     card_name          VARCHAR(255) NULL COMMENT '카드 이름'
 
     
@@ -1418,7 +1415,7 @@ CREATE TABLE feed_comment_tbl
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id)
 );
-select * from custom_card_tbl;
+
 DROP TABLE IF EXISTS custom_card_tbl;
 -- 42-1. 카드 메인 테이블
 CREATE TABLE custom_card_tbl (

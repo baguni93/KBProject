@@ -68,10 +68,9 @@ import { storeToRefs } from 'pinia';
 import eventApi from '@/api/eventApi';
 import EventItem from '@/components/event/EventItem.vue';
 import EventHistoryItem from '@/components/event/EventHistoryItem.vue';
-import { useUserStore } from '@/stores/user';
-
+import { useAuthStore } from '@/stores/auth';
 // 1. 유저 정보
-const userStore = useUserStore();
+const userStore = useAuthStore();
 const { userId } = storeToRefs(userStore);
 
 const router = useRouter();

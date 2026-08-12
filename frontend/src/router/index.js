@@ -231,7 +231,6 @@ router.beforeEach((to) => {
     '/signup/pin',
     '/signup/pin-confirm',
     '/signup/nickname',
-    '/signup/complete',
   ];
 
   const isGuestOnly = guestOnlyPaths.includes(to.path);
