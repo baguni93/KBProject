@@ -108,6 +108,8 @@ DROP TABLE IF EXISTS `linked_account_tbl`;
 
 DROP TABLE IF EXISTS `bank_tbl`;
 
+DROP TABLE IF EXISTS `user_auth_tbl`;
+
 DROP TABLE IF EXISTS `user_tbl`;
 
 DROP TABLE IF EXISTS `merchant_category_mapping_tbl`;
@@ -117,25 +119,59 @@ DROP TABLE IF EXISTS user_tbl;
 
 CREATE TABLE user_tbl
 (
-    user_id       INT AUTO_INCREMENT PRIMARY KEY COMMENT '회원번호',
-    user_name     VARCHAR(30)  NOT NULL COMMENT '이름',
-    birth_date    DATE         NOT NULL COMMENT '생년월일',
-    phone_number  VARCHAR(20)  NOT NULL UNIQUE COMMENT '휴대폰번호',
-    pin_password  VARCHAR(255) NOT NULL COMMENT '암호화된 숫자 6자리 간편비밀번호',
-    user_status   VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE' COMMENT '회원상태',
-    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '가입일시',
-    updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    user_id         INT AUTO_INCREMENT PRIMARY KEY COMMENT '회원번호',
+    user_name       VARCHAR(30)  NOT NULL COMMENT '이름',
+    birth_date      DATE         NOT NULL COMMENT '생년월일',
+    phone_number    VARCHAR(20)  NOT NULL UNIQUE COMMENT '휴대폰번호',
+    pin_password    VARCHAR(255) NOT NULL COMMENT '암호화된 숫자 6자리 간편비밀번호',
+    pin_fail_count  INT          NOT NULL DEFAULT 0 COMMENT 'PIN 로그인 실패 횟수',
+    pin_locked_yn   CHAR(1)      NOT NULL DEFAULT 'N' COMMENT 'PIN 로그인 잠금 여부',
+    user_status     VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE' COMMENT '회원상태',
+    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '가입일시',
+    updated_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP
         COMMENT '수정일시',
-    withdrawn_at  DATETIME     NULL COMMENT '탈퇴일시',
-    last_login_at DATETIME     NULL COMMENT '최근접속일시',
+    withdrawn_at    DATETIME     NULL COMMENT '탈퇴일시',
+    last_login_at   DATETIME     NULL COMMENT '최근접속일시',
 
     CONSTRAINT chk_user_name_length
         CHECK (CHAR_LENGTH(user_name) BETWEEN 2 AND 30),
 
+    CONSTRAINT chk_pin_fail_count
+        CHECK (pin_fail_count BETWEEN 0 AND 5),
+
+    CONSTRAINT chk_pin_locked_yn
+        CHECK (pin_locked_yn IN ('Y', 'N')),
+
     CONSTRAINT chk_user_status
         CHECK (user_status IN ('ACTIVE', 'WITHDRAWN'))
 ) COMMENT = '회원';
+
+
+-- 59. 사용자 권한 테이블
+DROP TABLE IF EXISTS user_auth_tbl;
+
+CREATE TABLE user_auth_tbl
+(
+    user_id INT         NOT NULL COMMENT '회원번호',
+    auth    VARCHAR(50) NOT NULL COMMENT '권한',
+
+    PRIMARY KEY (user_id, auth),
+
+    CONSTRAINT fk_user_auth_user
+        FOREIGN KEY (user_id)
+            REFERENCES user_tbl (user_id)
+            ON DELETE CASCADE,
+
+    CONSTRAINT chk_user_auth
+        CHECK (
+            auth IN (
+                'ROLE_USER',
+                'ROLE_MANAGER',
+                'ROLE_ADMIN'
+            )
+        )
+) COMMENT = '사용자 권한';
 
 -- 2. 은행 테이블
 DROP TABLE IF EXISTS bank_tbl;
@@ -1981,22 +2017,17 @@ DROP TABLE IF EXISTS account_verification_tbl;
 
 CREATE TABLE account_verification_tbl
 (
-
     verification_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '계좌인증번호',
-
     user_id           INT          NOT NULL COMMENT '회원번호',
-
     bank_code         VARCHAR(10)  NOT NULL COMMENT '은행코드',
-
     account_number    VARCHAR(255) NOT NULL COMMENT '계좌번호',
-
     account_holder    VARCHAR(50)  NOT NULL COMMENT '예금주',
-
     verification_code CHAR(4)      NOT NULL COMMENT '입금자명4자리',
-
     verified_yn       CHAR(1)      NOT NULL DEFAULT 'N' COMMENT '인증여부',
-
     requested_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
+    fail_count        INT          NOT NULL DEFAULT 0 COMMENT '인증번호 실패 횟수',
+    resend_count      INT          NOT NULL DEFAULT 0 COMMENT '인증번호 재발급 횟수',
+    locked_until      DATETIME     NULL COMMENT '계좌 인증 잠금 해제 일시',
 
     CONSTRAINT fk_account_verification_user
         FOREIGN KEY (user_id)
@@ -2007,8 +2038,13 @@ CREATE TABLE account_verification_tbl
             REFERENCES bank_tbl (bank_code),
 
     CONSTRAINT chk_account_verification_verified_yn
-        CHECK (verified_yn IN ('Y', 'N'))
+        CHECK (verified_yn IN ('Y', 'N')),
 
+    CONSTRAINT chk_account_verification_fail_count
+        CHECK (fail_count BETWEEN 0 AND 5),
+
+    CONSTRAINT chk_account_verification_resend_count
+        CHECK (resend_count BETWEEN 0 AND 1)
 ) COMMENT = '계좌인증';
 
 -- 57. 카테고리 분류 저장 테이블
@@ -2056,6 +2092,7 @@ CREATE TABLE merchant_category_mapping_tbl
 );
 
 -- 58. 소비카테고리 <-> 보험 종류 매칭 정책 테이블
+DROP TABLE IF EXISTS kb_insurance_category_match_tbl;
 CREATE TABLE kb_insurance_category_match_tbl
 (
     insurance_category_match_id INT AUTO_INCREMENT PRIMARY KEY
