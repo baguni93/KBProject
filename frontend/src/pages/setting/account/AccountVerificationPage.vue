@@ -123,12 +123,12 @@ const confirmAndConnect = async () => {
     loading.value = true;
     errorMessage.value = '';
 
-    await confirmAccountVerification(userId, {
+    await confirmAccountVerification({
       verificationId,
       verificationCode: verificationCode.value,
     });
 
-    await connectAccount(userId, { verificationId });
+    await connectAccount({ verificationId });
 
     router.replace('/setting/account/complete');
   } catch (error) {
@@ -168,7 +168,7 @@ const resendVerification = async () => {
     loading.value = true;
     errorMessage.value = '';
 
-    const response = await resendAccountVerification(userId, verificationId);
+    const response = await resendAccountVerification(verificationId);
 
     accountStore.accountForm.developmentCode = response.verificationCode;
 
