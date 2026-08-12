@@ -1343,17 +1343,12 @@ DROP TABLE IF EXISTS card_tbl;
 CREATE TABLE card_tbl
 (
     card_code          INT         AUTO_INCREMENT PRIMARY KEY COMMENT '카드 코드 (PK)',
-    account_id         INT         NOT NULL COMMENT '계좌 ID',
     card_num           VARCHAR(255) NOT NULL COMMENT '카드번호',
     expiry_date        CHAR(5)     NOT NULL COMMENT '유효기간',
     cvv                VARCHAR(255) NOT NULL COMMENT 'cvv',
     card_password      VARCHAR(255) NOT NULL COMMENT '카드 비밀번호 4자리',
     card_img_file_name VARCHAR(255) NULL COMMENT '카드 이미지 파일명',
-    card_name          VARCHAR(255) NULL COMMENT '카드 이름',
-
-    CONSTRAINT fk_card_account
-        FOREIGN KEY (account_id)
-            REFERENCES account_dummy_tbl (account_id)
+    card_name          VARCHAR(255) NULL COMMENT '카드 이름'
 ) COMMENT = '실물 카드 원장';
 
 
