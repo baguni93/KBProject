@@ -6,7 +6,7 @@ import org.springframework.security.core.GrantedAuthority;
 @Data
 public class AuthVO implements GrantedAuthority {
 
-    private String username;
+    private Long userId;
     private String auth;
 
     @Override
