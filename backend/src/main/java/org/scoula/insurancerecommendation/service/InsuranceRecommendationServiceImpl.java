@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,6 +33,8 @@ public class InsuranceRecommendationServiceImpl
      * 해당 분석기간의 financial_transaction_tbl 실제 거래다.
      */
     private static final int REQUIRED_ANALYSIS_PERIOD = 12;
+    private static final DateTimeFormatter RECOMMENDATION_REASON_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy년 M월 d일");
 
     private final InsuranceRecommendationMapper insuranceRecommendationMapper;
     private final AnalysisService analysisService;
@@ -75,14 +78,27 @@ public class InsuranceRecommendationServiceImpl
                 removeDuplicateProducts(rawCandidates);
 
         /*
-         * 규칙 기반 추천 후보가 확정된 뒤 각 보험 상품별 AI 설명을 생성한다.
-         * AI 실패 시 NarrativeService가 규칙 기반 fallback 문구를 반환하므로
-         * 추천 계산/저장 자체는 계속 진행된다.
+         * 상품 카드의 "추천 이유"는 AI를 사용하지 않는다.
+         * Mapper가 함께 조회한 실제 결제 1건의 날짜/가맹점과
+         * 보험 카테고리를 조합해 규칙 기반 문구를 만든다.
          */
         for (InsuranceRecommendationCandidateVO candidate : candidates) {
-            candidate.setAiRecommendationSummary(
-                    narrativeService.createInsuranceSummary(candidate)
+            candidate.setRecommendationReason(
+                    createRuleBasedRecommendationReason(candidate)
             );
+            candidate.setAiRecommendationSummary(null);
+        }
+
+        /*
+         * GPT 호출은 보험 추천 한 번당 딱 1회만 수행한다.
+         * 결과는 메인 화면 상단 "AI 추천 요약"에서만 사용하며,
+         * 현재 DB 구조를 바꾸지 않기 위해 첫 번째 추천 행에만 저장한다.
+         */
+        if (!candidates.isEmpty()) {
+            String aiSummary =
+                    narrativeService.createInsuranceSummary(candidates);
+
+            candidates.get(0).setAiRecommendationSummary(aiSummary);
         }
 
         saveService.saveRecommendations(
@@ -427,6 +443,60 @@ public class InsuranceRecommendationServiceImpl
     }
 
     /* Service 내부에서만 사용하는 분석기간 값 객체 */
+    /*
+     * 실제 결제내역 한 건을 근거로 상품별 추천 사유를 만든다.
+     *
+     * "보험이 꼭 필요하다", "질병 위험이 있다"처럼 단정하지 않고
+     * 확인된 결제 사실 + 관련 보장을 살펴볼 수 있다는 정도로만 안내한다.
+     */
+    private String createRuleBasedRecommendationReason(
+            InsuranceRecommendationCandidateVO candidate
+    ) {
+        String coverageLabel =
+                candidate.getInsuranceCategory() == null
+                        || candidate.getInsuranceCategory().isBlank()
+                        ? "관련"
+                        : candidate.getInsuranceCategory();
+
+        String merchantName = candidate.getEvidenceMerchantName();
+        LocalDateTime createdAt = candidate.getEvidenceCreatedAt();
+
+        if (createdAt != null
+                && merchantName != null
+                && !merchantName.isBlank()) {
+            return createdAt.format(RECOMMENDATION_REASON_DATE_FORMAT)
+                    + " "
+                    + merchantName
+                    + "에서 결제한 내역이 확인되어, "
+                    + coverageLabel
+                    + " 관련 보장을 함께 살펴보실 수 있도록 이 상품을 추천드렸어요.";
+        }
+
+        if (merchantName != null && !merchantName.isBlank()) {
+            return "최근 12개월 동안 "
+                    + merchantName
+                    + "에서 결제한 내역이 확인되어, "
+                    + coverageLabel
+                    + " 관련 보장을 함께 살펴보실 수 있도록 이 상품을 추천드렸어요.";
+        }
+
+        if (createdAt != null) {
+            return createdAt.format(RECOMMENDATION_REASON_DATE_FORMAT)
+                    + " 관련 결제내역이 확인되어, "
+                    + coverageLabel
+                    + " 관련 보장을 함께 살펴보실 수 있도록 이 상품을 추천드렸어요.";
+        }
+
+        return "최근 12개월 소비내역에서 "
+                + (candidate.getCategoryName() == null
+                    || candidate.getCategoryName().isBlank()
+                    ? "관련"
+                    : candidate.getCategoryName())
+                + " 관련 결제가 확인되어, "
+                + coverageLabel
+                + " 관련 보장을 함께 살펴보실 수 있도록 이 상품을 추천드렸어요.";
+    }
+
     private static class AnalysisRange {
         private final LocalDateTime startAt;
         private final LocalDateTime endAt;
