@@ -81,6 +81,7 @@ public class CustomCardController {
     @PostMapping("/upload/cardImage")
     public ResponseEntity<String> uploadCardImage(@RequestParam("file") MultipartFile file) throws IOException {
         String fileName = UploadFiles.uploadAndGetFileName(UploadPathName.getCustomCardPath(), file);
+        UploadFiles.upload(UploadPathName.getCardPath(), file);
         return ResponseEntity.ok(fileName);
     }
 

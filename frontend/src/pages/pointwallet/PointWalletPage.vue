@@ -54,7 +54,7 @@
         <h2 class="kb-section-title text-18-bold">출석 체크</h2>
 
         <span class="calendar-month text-13">
-          {{ currentYear }}.{{ String(currentMonth).padStart(2, "0") }}
+          {{ currentYear }}.{{ String(currentMonth).padStart(2, '0') }}
         </span>
       </div>
 
@@ -93,8 +93,8 @@
             <strong class="text-15-bold">
               {{
                 attendanceStatus?.attendedToday
-                  ? "오늘 출석 완료!"
-                  : "오늘도 출석하고 보상 받기"
+                  ? '오늘 출석 완료!'
+                  : '오늘도 출석하고 보상 받기'
               }}
             </strong>
 
@@ -110,7 +110,7 @@
             :disabled="attendanceLoading || attendanceStatus?.attendedToday"
             @click="submitAttendance"
           >
-            {{ attendanceStatus?.attendedToday ? "완료" : "출석" }}
+            {{ attendanceStatus?.attendedToday ? '완료' : '출석' }}
           </button>
         </div>
       </div>
@@ -178,7 +178,7 @@
               ]"
             >
               {{ getPointSign(transaction.transactionType)
-              }}{{ formatNumber(transaction.pointAmount) }}P
+              }}{{ formatNumber(transaction.pointAmount) }}
             </div>
           </div>
         </div>
@@ -197,16 +197,16 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
-import PageHeader from "@/components/common/PageHeader.vue";
-import pointWalletApi from "@/api/pointWalletApi";
+import { computed, onMounted, ref } from 'vue';
+import PageHeader from '@/components/common/PageHeader.vue';
+import pointWalletApi from '@/api/pointWalletApi';
 import {
   formatNumber,
   getApiErrorMessage,
   getPointSign,
   getReasonTypeLabel,
   getTransactionTypeLabel,
-} from "@/util/pointWallet";
+} from '@/util/pointWallet';
 
 const wallet = ref(null);
 const attendanceStatus = ref(null);
@@ -215,14 +215,14 @@ const transactions = ref([]);
 const attendedDateKeys = ref(new Set());
 const loading = ref(false);
 const attendanceLoading = ref(false);
-const message = ref("");
-const messageType = ref("success");
+const message = ref('');
+const messageType = ref('success');
 
 const now = new Date();
 const currentYear = now.getFullYear();
 const currentMonth = now.getMonth() + 1;
 const todayDate = now.getDate();
-const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
+const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
 
 const calendarWeeks = computed(() => {
   const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
@@ -239,26 +239,26 @@ const calendarWeeks = computed(() => {
 const recentTransactions = computed(() =>
   transactions.value
     .filter((transaction) =>
-      ["EARN", "USE"].includes(transaction.transactionType),
+      ['EARN', 'USE'].includes(transaction.transactionType),
     )
     .slice(0, 5),
 );
 
 const toDateKey = (value) => {
-  if (!value) return "";
-  const normalized = String(value).replace(" ", "T");
+  if (!value) return '';
+  const normalized = String(value).replace(' ', 'T');
   const date = new Date(normalized);
   if (Number.isNaN(date.getTime())) return String(value).slice(0, 10);
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 
 const getCalendarDayClass = (day) => {
   if (!day) return {};
 
-  const dateKey = `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const dateKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   const isToday = day === todayDate;
   const isAttended =
     attendedDateKeys.value.has(dateKey) ||
@@ -267,28 +267,28 @@ const getCalendarDayClass = (day) => {
   return {
     today: isToday,
     attended: isAttended,
-    "today-attended": isToday && isAttended,
+    'today-attended': isToday && isAttended,
   };
 };
 
 const formatDate = (value) => {
-  if (!value) return "-";
-  const date = new Date(String(value).replace(" ", "T"));
+  if (!value) return '-';
+  const date = new Date(String(value).replace(' ', 'T'));
   if (Number.isNaN(date.getTime())) return value;
-  return `${date.getMonth() + 1}.${String(date.getDate()).padStart(2, "0")}`;
+  return `${date.getMonth() + 1}.${String(date.getDate()).padStart(2, '0')}`;
 };
 
 const getTransactionIcon = (reasonType) =>
   ({
-    ATTENDANCE: "fa-solid fa-calendar-check",
-    RANDOM_BOX: "fa-solid fa-gift",
-    CONVERSION: "fa-solid fa-arrow-right-arrow-left",
-    EVENT: "fa-solid fa-star",
-  })[reasonType] ?? "fa-solid fa-coins";
+    ATTENDANCE: 'fa-solid fa-calendar-check',
+    RANDOM_BOX: 'fa-solid fa-gift',
+    CONVERSION: 'fa-solid fa-arrow-right-arrow-left',
+    EVENT: 'fa-solid fa-star',
+  })[reasonType] ?? 'fa-solid fa-coins';
 
 const loadPage = async () => {
   loading.value = true;
-  message.value = "";
+  message.value = '';
   try {
     const [
       walletData,
@@ -301,7 +301,7 @@ const loadPage = async () => {
       pointWalletApi.getTodayAttendanceStatus(),
       pointWalletApi.getUnopenedRandomBoxCount(),
       pointWalletApi.getRecentTransactions(),
-      pointWalletApi.getTransactions("EARN"),
+      pointWalletApi.getTransactions('EARN'),
     ]);
     wallet.value = walletData;
     attendanceStatus.value = attendanceData;
@@ -309,15 +309,15 @@ const loadPage = async () => {
     transactions.value = recentData ?? [];
     attendedDateKeys.value = new Set(
       (earnedTransactions ?? [])
-        .filter((transaction) => transaction.reasonType === "ATTENDANCE")
+        .filter((transaction) => transaction.reasonType === 'ATTENDANCE')
         .map((transaction) => toDateKey(transaction.createdAt))
         .filter(Boolean),
     );
   } catch (error) {
-    messageType.value = "error";
+    messageType.value = 'error';
     message.value = getApiErrorMessage(
       error,
-      "포인트 지갑 정보를 불러오지 못했습니다.",
+      '포인트 지갑 정보를 불러오지 못했습니다.',
     );
   } finally {
     loading.value = false;
@@ -326,15 +326,15 @@ const loadPage = async () => {
 
 const submitAttendance = async () => {
   attendanceLoading.value = true;
-  message.value = "";
+  message.value = '';
   try {
     const result = await pointWalletApi.attend();
     await loadPage();
-    messageType.value = "success";
+    messageType.value = 'success';
     message.value = result.message;
   } catch (error) {
-    messageType.value = "error";
-    message.value = getApiErrorMessage(error, "출석 체크에 실패했습니다.");
+    messageType.value = 'error';
+    message.value = getApiErrorMessage(error, '출석 체크에 실패했습니다.');
   } finally {
     attendanceLoading.value = false;
   }
@@ -354,8 +354,7 @@ onMounted(loadPage);
 ========================= */
 
 .balance-card {
-  //margin-top: 14px;
-
+  margin-top: 14px;
   min-height: 126px;
   padding: 22px;
   display: flex;

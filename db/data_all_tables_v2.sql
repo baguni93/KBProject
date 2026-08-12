@@ -1176,7 +1176,7 @@ CREATE TABLE account_dummy_tbl
     balance          INT          NOT NULL COMMENT '보유잔액',
     account_password VARCHAR(255) NOT NULL COMMENT '계좌비밀번호',
     created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '개설일시',
-
+    issue_type          varchar(20) default 'NORMAL' null,
     CONSTRAINT fk_account_dummy_user
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id),
@@ -1275,7 +1275,6 @@ CREATE TABLE wallet_transaction_tbl
 
 -- 35. 카드 더미 테이블
 DROP TABLE IF EXISTS card_tbl;
-
 CREATE TABLE card_tbl
 (
     card_code          INT         AUTO_INCREMENT PRIMARY KEY COMMENT '카드 코드 (PK)',

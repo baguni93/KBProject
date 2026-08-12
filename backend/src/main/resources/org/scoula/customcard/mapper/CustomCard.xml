@@ -43,7 +43,7 @@
             d.user_name,
             CASE
                 -- 1. 국민은행('004')이면서, KBONMYWAY 카드가 이미 발급되어 있는 경우
-                WHEN a.bank_code = '004' AND c.card_type = 'KBONMYWAY' THEN 'KB_ALREADY_HAS_CUSTOM'
+                WHEN a.bank_code = '004' AND a.issue_type = 'KBONMYWAY' THEN 'KB_ALREADY_HAS_CUSTOM'
 
                 -- 2. 국민은행('004')이지만, KBONMYWAY 카드는 아직 없는 경우 (일반 국민 계좌 혹은 다른 카드 존재)
                 WHEN a.bank_code = '004' THEN 'KB_AVAILABLE_FOR_CUSTOM'
@@ -52,7 +52,6 @@
                 ELSE 'NOT_KB_BANK'
                 END AS checkCanIssueStatus
         FROM account_dummy_tbl a
-                 LEFT JOIN card_tbl c ON a.account_id = c.account_id
                     LEFT JOIN user_tbl d on d.user_id = a.user_id
         WHERE a.account_number = #{accountNumber} and a.user_id = #{userId}
     </select>
@@ -106,8 +105,8 @@
         </foreach>
     </insert>
     <insert id="insertHistory">
-        insert into card_application_history_tbl (custom_card_id)
-        value (#{customCardId})
+        insert into card_application_history_tbl (custom_card_id, apply_status)
+        value (#{customCardId}  , 'COMPLETE')
 
     </insert>
     <insert id="createCustomCardImage" useGeneratedKeys="true" keyProperty="customCardImageId">

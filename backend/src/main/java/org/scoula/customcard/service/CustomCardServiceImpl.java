@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.account.domain.AccountVerificationVO;
 import org.scoula.account.mapper.AccountMapper;
+import org.scoula.card.dto.CardCustomCreateDTO;
+import org.scoula.card.service.CardService;
 import org.scoula.common.util.UploadFiles;
 import org.scoula.common.util.UploadPathName;
 import org.scoula.customcard.domain.*;
@@ -31,6 +33,7 @@ public class CustomCardServiceImpl implements CustomCardService {
     private final CustomCardMapper customCardMapper;
     private final AccountMapper accountMapper;
     private final SecureRandom secureRandom = new SecureRandom();
+    private final CardService cardService;
 
     @Override
     public List<CustomCardAgreementDTO> getAgreements() {
@@ -137,11 +140,18 @@ public class CustomCardServiceImpl implements CustomCardService {
         //신청 이력 내역 추가
         customCardMapper.insertHistory(customCardId);
 
-        //카드 발급 승인
 
 
         CardImageVO cardImageVO = CardImageVO.of(dto.getCardImageName(),  customCardId);
         customCardMapper.createCustomCardImage(cardImageVO);
+
+        //카드 발급 승인
+        cardService.createCardMasterCustom(CardCustomCreateDTO
+                .builder()
+                .cardName(dto.getCardName())
+                .cardImgFileName(dto.getCardImageName())
+                .cardPassword("1234")
+                .build());
 
         return customCardId;
     }

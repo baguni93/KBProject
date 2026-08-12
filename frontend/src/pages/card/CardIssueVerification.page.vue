@@ -107,7 +107,7 @@ const confirmAndConnect = async () => {
     loading.value = true;
     errorMessage.value = '';
 
-    await confirmAccountVerification(userId, {
+    await confirmAccountVerification({
       verificationId,
       verificationCode: verificationCode.value,
     });
