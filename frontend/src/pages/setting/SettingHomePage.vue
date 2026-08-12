@@ -2,10 +2,10 @@
   <main class="setting-page">
     <header class="setting-header">
       <button
-        class="back-button"
-        type="button"
-        aria-label="이전 화면"
-        @click="goBack"
+          class="back-button"
+          type="button"
+          aria-label="이전 화면"
+          @click="goBack"
       >
         &lt;
       </button>
@@ -29,11 +29,11 @@
     <section class="menu-section">
       <div class="menu-list">
         <button
-          v-for="menu in menus"
-          :key="menu.path"
-          class="menu-item"
-          type="button"
-          @click="goMenu(menu.path)"
+            v-for="menu in menus"
+            :key="menu.path"
+            class="menu-item"
+            type="button"
+            @click="goMenu(menu.path)"
         >
           <div class="menu-content">
             <span class="menu-icon">
@@ -53,13 +53,11 @@
 <script setup>
 import { computed, onActivated, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { getProfileImageUrl } from '@/api/profileApi';
+import { getProfileImage } from '@/api/profileApi';
 import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const authStore = useAuthStore();
-
-const imageVersion = ref(Date.now());
 
 // 로그인 사용자 이름
 const displayName = computed(() => {
@@ -67,9 +65,12 @@ const displayName = computed(() => {
 });
 
 // 프로필 이미지 주소
-const profileImageUrl = computed(() => {
-  return `${getProfileImageUrl()}?t=${imageVersion.value}`;
-});
+const profileImageUrl = ref('');
+
+// 프로필 이미지 새로고침
+const refreshProfileImage = async () => {
+  profileImageUrl.value = await getProfileImage();
+};
 
 // 설정 메뉴
 const menus = [
@@ -100,11 +101,6 @@ const menus = [
   },
 ];
 
-// 프로필 이미지 새로고침
-const refreshProfileImage = () => {
-  imageVersion.value = Date.now();
-};
-
 // 메뉴 화면 이동
 const goMenu = async (path) => {
   await router.push(path);
@@ -112,16 +108,16 @@ const goMenu = async (path) => {
 
 // 이전 화면
 const goBack = () => {
-  //설정에서 뒤돌아가기는 마이페이지로
+  // 설정에서 뒤돌아가기는 마이페이지로
   router.push('/mypage');
 };
 
-onMounted(() => {
-  refreshProfileImage();
+onMounted(async () => {
+  await refreshProfileImage();
 });
 
-onActivated(() => {
-  refreshProfileImage();
+onActivated(async () => {
+  await refreshProfileImage();
 });
 </script>
 

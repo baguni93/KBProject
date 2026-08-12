@@ -2,8 +2,6 @@
   <div class="kb-mobile-page random-box-page">
     <PageHeader title="랜덤박스" />
 
-    <div v-if="message" :class="['kb-toast', messageType === 'success' ? 'kb-toast--success' : 'kb-toast--error']">{{ message }}</div>
-
     <section class="box-stage kb-card">
       <div
         :class="[

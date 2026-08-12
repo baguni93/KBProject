@@ -1,19 +1,32 @@
 <template>
-  <div class="pin-page">
-    <main class="pin-container">
-      <button class="back-button" type="button" @click="goBack">&lt;</button>
+  <div class="page-layout pin-page">
+    <!-- 공통 상단 헤더 -->
+    <PageHeader
+        custom-back
+        @back="goBack"
+    />
 
+    <!-- 콘텐츠 -->
+    <main class="page-content pin-content">
+      <!-- 진행 단계 -->
+      <div class="step-area">
+        <span class="step active"></span>
+        <span class="step-line"></span>
+        <span class="step"></span>
+      </div>
+
+      <!-- 제목 -->
       <header class="pin-header">
-        <div class="step-area">
-          <span class="step active"></span>
-          <span class="step-line"></span>
-          <span class="step"></span>
-        </div>
+        <h1 class="text-30-bold">
+          새 간편비밀번호 설정
+        </h1>
 
-        <h1>새 간편비밀번호 설정</h1>
-        <p>새로 사용할 숫자 6자리를<br />입력해 주세요.</p>
+        <p class="text-15">
+          새로 사용할 PIN을 입력해 주세요.
+        </p>
       </header>
 
+      <!-- PIN 입력 -->
       <section class="pin-section">
         <div
             :class="{ error: !!errorMessage }"
@@ -27,12 +40,15 @@
               v-for="index in 6"
               :key="index"
               :class="{
-              filled: pinPassword.length >= index,
-              active: pinPassword.length === index - 1 && !errorMessage,
-            }"
+                filled: pinPassword.length >= index,
+                active: pinPassword.length === index - 1 && !errorMessage,
+              }"
               class="pin-box"
           >
-            <span v-if="pinPassword.length >= index" class="pin-dot"></span>
+            <span
+                v-if="pinPassword.length >= index"
+                class="pin-dot"
+            ></span>
           </div>
 
           <input
@@ -48,24 +64,33 @@
           />
         </div>
 
-        <p v-if="errorMessage" class="error-message">
+        <p
+            v-if="errorMessage"
+            class="error-message text-13"
+        >
           {{ errorMessage }}
         </p>
 
-        <p v-else class="security-message">
+        <p
+            v-else
+            class="security-message text-13"
+        >
           생년월일, 연속된 숫자는 사용할 수 없어요.
         </p>
       </section>
+    </main>
 
+    <!-- 공통 하단 버튼 -->
+    <div class="bottom-btn-area single">
       <button
-          class="next-button"
+          class="bottom-btn"
           :disabled="pinPassword.length !== 6"
           type="button"
           @click="next"
       >
         다음
       </button>
-    </main>
+    </div>
   </div>
 </template>
 
@@ -74,6 +99,7 @@ import { nextTick, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSignupStore } from '@/stores/signup';
 import { validatePin } from '@/util/pinValidation';
+import PageHeader from '@/components/common/PageHeader.vue';
 
 const router = useRouter();
 const signupStore = useSignupStore();
@@ -130,40 +156,18 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
+
 .pin-page {
-  width: 100%;
-  height: 100%;
-  background: #ffffff;
+  background: var(--color-bg-page);
 }
 
-.pin-container {
-  position: relative;
-  display: flex;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-  padding: 10px 28px 140px;
-  background: #ffffff;
-  box-sizing: border-box;
-  overflow: hidden;
+.pin-content {
+  padding-top: 30px;
 }
 
-.back-button {
-  align-self: flex-start;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #555555;
-  font-size: 27px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.pin-header {
-  margin-top: 38px;
-}
-
+/* 진행 단계 */
 .step-area {
   display: flex;
   align-items: center;
@@ -175,51 +179,49 @@ onMounted(() => {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #dddddd;
+  background: var(--color-border-main);
 }
 
 .step.active {
   width: 44px;
   height: 12px;
   border-radius: 999px;
-  background: #ffbc2e;
+  background: var(--color-primary);
 }
 
 .step-line {
   width: 38px;
   height: 1px;
   margin: 0 8px;
-  background: #dddddd;
+  background: var(--color-border-main);
 }
 
+/* 제목 */
 .pin-header h1 {
   margin: 0;
-  color: #111111;
-  font-size: 30px;
-  font-weight: 800;
+  color: var(--color-text-main);
   line-height: 1.35;
   letter-spacing: -0.7px;
 }
 
 .pin-header p {
-  margin: 16px 0 0;
-  color: #777777;
-  font-size: 17px;
-  font-weight: 400;
+  margin: 14px 0 0;
+  color: var(--color-text-sub);
   line-height: 1.6;
 }
 
+/* PIN 입력 */
 .pin-section {
-  margin-top: 58px;
+  margin-top: 52px;
   text-align: center;
 }
 
 .pin-boxes {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 9px;
   width: 100%;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
   cursor: text;
   outline: none;
 }
@@ -229,7 +231,7 @@ onMounted(() => {
   height: 54px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #dddddd;
+  border: 1px solid var(--color-border-main);
   border-radius: 12px;
   background: #fafafa;
   box-sizing: border-box;
@@ -240,18 +242,18 @@ onMounted(() => {
 }
 
 .pin-box.active {
-  border-color: #ffbc2e;
+  border-color: var(--color-primary);
   background: #fffaf0;
   box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
 }
 
 .pin-box.filled {
-  border-color: #ffbc2e;
+  border-color: var(--color-primary);
   background: #fff8e5;
 }
 
 .pin-boxes.error .pin-box {
-  border-color: #e53935;
+  border-color: var(--color-error);
   background: #fff7f7;
   box-shadow: none;
 }
@@ -260,7 +262,7 @@ onMounted(() => {
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: #222222;
+  background: var(--color-text-main);
 }
 
 .hidden-pin-input {
@@ -272,64 +274,19 @@ onMounted(() => {
   pointer-events: none;
 }
 
+/* 안내 문구 */
 .error-message,
 .security-message {
-  min-height: 40px;
-  margin: 18px 0 0;
-  font-size: 13px;
+  min-height: 20px;
+  margin: 16px 0 0;
   line-height: 1.5;
-  text-align: center;
 }
 
 .error-message {
-  color: #e53935;
+  color: var(--color-error);
 }
 
 .security-message {
-  color: #999999;
-}
-
-.next-button {
-  position: absolute;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
-  width: auto;
-  height: 58px;
-  margin: 0;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.next-button:active:not(:disabled) {
-  background: #f2aa10;
-}
-
-.next-button:disabled {
-  border-color: #dddddd;
-  background: #eeeeee;
-  color: #aaaaaa;
-  cursor: not-allowed;
-}
-
-@media (max-width: 360px) {
-  .pin-container {
-    padding-right: 20px;
-    padding-left: 20px;
-  }
-
-  .next-button {
-    right: 20px;
-    left: 20px;
-  }
-
-  .step-line {
-    width: 30px;
-  }
+  color: var(--color-text-muted);
 }
 </style>

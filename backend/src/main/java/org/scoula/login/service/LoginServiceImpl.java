@@ -120,7 +120,7 @@ public class LoginServiceImpl implements LoginService {
 
     // AUTH-003 인증번호 확인
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = IllegalArgumentException.class)
     public void verifyPhoneAuthCode(PhoneAuthVerifyDTO verifyDTO) {
 
         validateVerifyRequest(verifyDTO);
@@ -221,7 +221,7 @@ public class LoginServiceImpl implements LoginService {
 
     // AUTH-005 PIN 로그인
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = IllegalArgumentException.class)
     public TokenDTO login(PinLoginDTO loginDTO) {
 
         validateLoginRequest(loginDTO);
@@ -237,16 +237,26 @@ public class LoginServiceImpl implements LoginService {
             throw new IllegalArgumentException("로그인할 수 없는 회원 상태입니다.");
         }
 
-        if (isBlank(user.getPinPassword())) {
-            throw new IllegalStateException("등록된 간편비밀번호가 없습니다.");
+        if ("Y".equals(user.getPinLockedYn())) {
+            throw new IllegalArgumentException("간편비밀번호 입력 가능 횟수를 초과했습니다. 본인인증 후 재설정해주세요.");
         }
 
-        boolean matched =
-                passwordEncoder.matches(loginDTO.getPinPassword(), user.getPinPassword());
+        boolean matched = passwordEncoder.matches(loginDTO.getPinPassword(), user.getPinPassword());
 
         if (!matched) {
-            throw new IllegalArgumentException("간편비밀번호가 일치하지 않습니다.");
+            loginMapper.increasePinFailCount(user.getUserId());
+
+            int remainingCount = MAX_FAIL_COUNT - user.getPinFailCount() - 1;
+
+            if (remainingCount <= 0) {
+                loginMapper.lockPin(user.getUserId());
+                throw new IllegalArgumentException("간편비밀번호 입력 가능 횟수를 초과했습니다. 본인인증 후 재설정해주세요.");
+            }
+
+            throw new IllegalArgumentException("간편비밀번호가 일치하지 않습니다. 남은 횟수: " + remainingCount);
         }
+
+        loginMapper.resetPinFailCount(user.getUserId());
 
         String accessToken = jwtProcessor.generateAccessToken(phoneNumber, user.getUserId());
         String refreshToken = jwtProcessor.generateRefreshToken(phoneNumber, user.getUserId());
@@ -503,5 +513,47 @@ public class LoginServiceImpl implements LoginService {
     // null 또는 빈 문자열 검사
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    @Override
+    @Transactional
+    public TokenDTO reissueTokenAfterPhoneChange(Long userId, String newPhoneNumber) {
+
+        String accessToken =
+                jwtProcessor.generateAccessToken(newPhoneNumber, userId);
+
+        String refreshToken =
+                jwtProcessor.generateRefreshToken(newPhoneNumber, userId);
+
+        // 기존 번호로 발급됐던 Refresh Token 제거
+        loginMapper.deleteRefreshTokenByUserId(userId);
+
+        LocalDateTime issuedAt = LocalDateTime.now();
+
+        LocalDateTime expiresAt =
+                issuedAt.plusSeconds(jwtProcessor.getRefreshTokenValidSeconds());
+
+        RefreshTokenVO refreshTokenVO = RefreshTokenVO.builder()
+                .userId(userId)
+                .refreshToken(refreshToken)
+                .issuedAt(issuedAt)
+                .expiresAt(expiresAt)
+                .build();
+
+        int inserted = loginMapper.insertRefreshToken(refreshTokenVO);
+
+        if (inserted != 1) {
+            throw new IllegalStateException("리프레시 토큰 저장에 실패했습니다.");
+        }
+
+        log.info("휴대폰번호 변경 후 토큰 재발급 완료 - userId: {}", userId);
+
+        return TokenDTO.builder()
+                .userId(userId)
+                .tokenType("Bearer")
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .accessTokenExpiresIn(jwtProcessor.getAccessTokenValidSeconds())
+                .build();
     }
 }

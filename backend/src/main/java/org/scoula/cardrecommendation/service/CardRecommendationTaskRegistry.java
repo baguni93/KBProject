@@ -8,13 +8,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-// 현재 어떤 카드의 추천작업이 진행중인지 메모리에 저장하는 곳
-// 이 Registry는 Tomcat 메모리에 저장된다.
+/*
+ * 카드 추천 비동기 작업 상태를 Tomcat 메모리에 보관하는 Registry.
+ *
+ * Key   : userId + spendingAnalysisId
+ * Value : PROCESSING / COMPLETED / FAILED 상태와 결과 개수, 메시지
+ *
+ * DB가 아니라 메모리에 저장되므로 서버를 재시작하면 상태는 사라진다.
+ * 다만 AsyncService가 DB의 기존 추천 결과를 다시 확인해 COMPLETED 상태를 복원한다.
+ */
 @Service
 public class CardRecommendationTaskRegistry {
 
-    // 이 해시맵은 비동기처리가 가능하다.
-    // 여러 쓰레드가 동시에 이 Map을 사용한다.
+    // 비동기 Worker와 상태 조회 요청이 동시에 접근하므로 thread-safe한 ConcurrentHashMap을 사용한다.
     private final ConcurrentMap<String, CardRecommendationTaskState> taskStates =
             new ConcurrentHashMap<>();
     // 현재의 작업 상태를 가져오는 메서드

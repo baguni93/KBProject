@@ -20,6 +20,11 @@ public interface AnalysisService {
             Integer period
     );
 
+    // 분석 기간과 무관한 전체 정상 결제 거래 조회
+    AnalysisTransactionListDTO getAllPaymentTransactions(
+            Integer userId
+    );
+
     // 현재 사용자의 결제 거래 단건 조회
     AnalysisTransactionDTO getAnalysisTransaction(
             Integer userId,

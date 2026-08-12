@@ -38,9 +38,13 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAccountStore } from '@/stores/account';
+import { useSignupStore } from '@/stores/signup';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const accountStore = useAccountStore();
+const signupStore = useSignupStore();
+const authStore = useAuthStore();
 
 // 회원가입 직후 첫 계좌 연결 여부
 const isInitialConnection = computed(() => {
@@ -65,8 +69,24 @@ const complete = async () => {
   accountStore.resetAccountForm();
 
   if (initialConnection) {
-    sessionStorage.removeItem('signupUserId');
-    await router.replace('/wallet');
+    const phoneNumber = signupStore.phoneAuth.phoneNumber;
+    const pinPassword = signupStore.pin;
+
+    try {
+      await authStore.login({
+        phoneNumber,
+        pinPassword,
+      });
+
+      sessionStorage.removeItem('signupUserId');
+      signupStore.reset();
+
+      await router.replace('/wallet');
+    } catch (error) {
+      console.error('회원가입 후 자동 로그인 실패', error);
+      await router.replace('/intro');
+    }
+
     return;
   }
 

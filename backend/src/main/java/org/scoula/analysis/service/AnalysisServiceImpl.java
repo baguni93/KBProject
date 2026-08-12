@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AnalysisServiceImpl implements AnalysisService {
 
-    // 분석에 필요한 최소 카테고리 분류 개수는 10개
-    private static final int REQUIRED_TRANSACTION_COUNT = 10;
+    // 분석에 필요한 최소 카테고리 분류 개수는 10개 -> 5개 조정 완료
+    private static final int REQUIRED_TRANSACTION_COUNT = 5;
 
     // 소비분석 및 거래 조회 Mapper
     private final AnalysisMapper analysisMapper;
@@ -179,6 +179,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                         .map(vo -> AnalysisTransactionDTO.builder()
                                 .transactionId(vo.getTransactionId())
                                 .merchantName(vo.getMerchantName())
+                                .transactionLabel(vo.getTransactionLabel())
                                 .amount(vo.getAmount())
                                 .createdAt(vo.getCreatedAt())
                                 .spendingCategoryId(vo.getSpendingCategoryId())
@@ -193,6 +194,36 @@ public class AnalysisServiceImpl implements AnalysisService {
                 .periodLabel(createPeriodLabel(period))
                 .analysisStartDate(analysisStartDate.toString())
                 .analysisEndDate(analysisEndDate.toString())
+                .transactionCount(transactions.size())
+                .transactions(transactions)
+                .build();
+    }
+
+    @Override
+    public AnalysisTransactionListDTO getAllPaymentTransactions(
+            Integer userId
+    ) {
+        List<AnalysisTransactionDTO> transactions =
+                analysisMapper.selectAllPaymentTransactions(userId)
+                        .stream()
+                        .map(vo -> AnalysisTransactionDTO.builder()
+                                .transactionId(vo.getTransactionId())
+                                .merchantName(vo.getMerchantName())
+                                .transactionLabel(vo.getTransactionLabel())
+                                .amount(vo.getAmount())
+                                .createdAt(vo.getCreatedAt())
+                                .spendingCategoryId(vo.getSpendingCategoryId())
+                                .categoryName(vo.getCategoryName())
+                                .parentCategoryId(vo.getParentCategoryId())
+                                .parentCategoryName(vo.getParentCategoryName())
+                                .build())
+                        .collect(Collectors.toList());
+
+        return AnalysisTransactionListDTO.builder()
+                .period(null)
+                .periodLabel("전체 기간")
+                .analysisStartDate(null)
+                .analysisEndDate(null)
                 .transactionCount(transactions.size())
                 .transactions(transactions)
                 .build();
@@ -224,6 +255,7 @@ public class AnalysisServiceImpl implements AnalysisService {
         return AnalysisTransactionDTO.builder()
                 .transactionId(transaction.getTransactionId())
                 .merchantName(transaction.getMerchantName())
+                .transactionLabel(transaction.getTransactionLabel())
                 .amount(transaction.getAmount())
                 .createdAt(transaction.getCreatedAt())
                 .spendingCategoryId(transaction.getSpendingCategoryId())
@@ -264,6 +296,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                         .map(vo -> AnalysisTransactionDTO.builder()
                                 .transactionId(vo.getTransactionId())
                                 .merchantName(vo.getMerchantName())
+                                .transactionLabel(vo.getTransactionLabel())
                                 .amount(vo.getAmount())
                                 .createdAt(vo.getCreatedAt())
                                 .spendingCategoryId(vo.getSpendingCategoryId())
@@ -1058,12 +1091,6 @@ public class AnalysisServiceImpl implements AnalysisService {
                 )
                 .aiAnalysisSummary(
                         analysisDetail.getAiAnalysisSummary()
-                )
-                .aiCardRecommendationSummary(
-                        analysisDetail.getAiCardRecommendationSummary()
-                )
-                .aiInsuranceRecommendationSummary(
-                        analysisDetail.getAiInsuranceRecommendationSummary()
                 )
                 .createdAt(
                         analysisDetail.getCreatedAt()

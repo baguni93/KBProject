@@ -7,7 +7,13 @@ import org.scoula.exception.CustomException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-// 카드 추천계산 메서드를 별도의 쓰레드에서 실행하고, 결과에 따라 작업상태를 완료, 실패로 변경(put)한다.
+/*
+ * 카드 추천의 실제 비동기 실행 담당.
+ *
+ * AsyncService가 작업 시작 상태만 만든 뒤 이 Worker를 호출하면,
+ * 별도 스레드에서 CardRecommendationService.createOrReuse()를 수행한다.
+ * 성공/실패 결과는 TaskRegistry에 기록되어 프론트의 상태 조회 API에서 확인할 수 있다.
+ */
 @Service
 public class CardRecommendationAsyncWorker {
 
@@ -21,8 +27,7 @@ public class CardRecommendationAsyncWorker {
     // 계산 결과에 따라 상태를 변경해야한다.
     private final CardRecommendationTaskRegistry taskRegistry;
 
-    // 생성자 주입 -> spring이 worker를 생성할 때 필요한 두가지 필수 매개변수
-    //
+    // 생성자 주입: 실제 추천 Service와 작업 상태 Registry가 반드시 필요하다.
     public CardRecommendationAsyncWorker(
             CardRecommendationService cardRecommendationService,
             CardRecommendationTaskRegistry taskRegistry
@@ -31,7 +36,10 @@ public class CardRecommendationAsyncWorker {
         this.taskRegistry = taskRegistry;
     }
 
-    // 비동기 실행을 하고 결과를 Registry(톰켓 메모리)에 저장하는 방식
+    /*
+     * @Async 때문에 호출한 HTTP 요청 스레드와 분리되어 실행된다.
+     * 추천 계산 중 페이지를 벗어나도 서버 작업이 계속되는 이유가 이 구조 때문이다.
+     */
     @Async
     public void execute(
             Integer userId,

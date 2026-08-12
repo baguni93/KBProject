@@ -2,14 +2,14 @@
   <div class="wallet-section-container">
     <!-- 섹션 헤더 -->
     <div class="section-header">
-      <div class="d-flex align-items-center gap-2">
+      <div class="section-title-wrap">
         <div class="section-icon-badge">
-          <i class="bi bi-receipt-cutoff"></i>
+          <i class="fa-solid fa-receipt"></i>
         </div>
-        <h6 class="section-title">최근 거래 내역</h6>
+        <h6 class="section-title text-18-bold">최근 거래 내역</h6>
       </div>
-      <router-link to="/transactions" class="more-link">
-        전체보기 <i class="bi bi-chevron-right"></i>
+      <router-link to="/transactions" class="more-link text-13">
+        전체보기 <i class="fa-solid fa-chevron-right"></i>
       </router-link>
     </div>
 
@@ -19,7 +19,7 @@
         v-for="tab in tabs"
         :key="tab.value"
         type="button"
-        class="filter-tab-btn"
+        class="filter-tab-btn text-13-bold"
         :class="{ active: selectedType === tab.value }"
         @click="changeTab(tab.value)"
       >
@@ -28,15 +28,15 @@
     </div>
 
     <!-- 로딩 중 -->
-    <div v-if="loading" class="text-center py-4">
-      <div class="spinner-border spinner-border-sm text-warning" role="status"></div>
-      <div class="small text-muted mt-2">내역을 불러오는 중...</div>
+    <div v-if="loading" class="loading-box text-13">
+      <div class="spinner"></div>
+      <div class="loading-text">내역을 불러오는 중...</div>
     </div>
 
     <!-- 내역 없음 -->
     <div v-else-if="transactions.length === 0" class="empty-tx-box">
-      <i class="bi bi-receipt empty-icon"></i>
-      <p class="empty-text">최근 거래 내역이 없습니다</p>
+      <i class="fa-solid fa-receipt empty-icon"></i>
+      <p class="empty-text text-13">최근 거래 내역이 없습니다</p>
     </div>
 
     <!-- 거래 내역 목록 -->
@@ -48,33 +48,46 @@
         @click="openReceipt(item.transactionId)"
       >
         <div class="tx-left">
-          <div :class="['tx-icon-circle', getTypeIconClass(item.transactionType)]">
+          <div
+            :class="['tx-icon-circle', getTypeIconClass(item.transactionType)]"
+          >
             <i :class="getTypeIcon(item.transactionType)"></i>
           </div>
           <div class="tx-info">
-            <strong class="tx-title">{{ getItemTitle(item) }}</strong>
-            <span class="tx-date">{{ formatDate(item.createdAt) }}</span>
-            <span v-if="item.memo" class="tx-memo">"{{ item.memo }}"</span>
+            <strong class="tx-title text-15-bold">{{
+              getItemTitle(item)
+            }}</strong>
+            <span class="tx-date text-13">{{
+              formatDate(item.createdAt)
+            }}</span>
+            <span v-if="item.memo" class="tx-memo text-13"
+              >"{{ item.memo }}"</span
+            >
           </div>
         </div>
 
         <div class="tx-right">
-          <span :class="['tx-amount', getAmountClass(item.transactionType)]">
-            {{ getAmountPrefix(item.transactionType) }}{{ formatCurrency(item.amount) }}
+          <span
+            :class="[
+              'tx-amount',
+              'text-15-bold',
+              getAmountClass(item.transactionType),
+            ]"
+          >
+            {{ getAmountPrefix(item.transactionType)
+            }}{{ formatCurrency(item.amount) }}
           </span>
         </div>
       </div>
     </div>
-
-
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import transactionApi from '@/api/transactionApi';
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import transactionApi from "@/api/transactionApi";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -86,36 +99,39 @@ const props = defineProps({
   },
 });
 
-const selectedType = ref('');
+const selectedType = ref("");
 const transactions = ref([]);
 const loading = ref(false);
 
-const emit = defineEmits(['open-receipt']);
+const emit = defineEmits(["open-receipt"]);
 
 const tabs = [
-  { label: '전체', value: '' },
-  { label: '충전', value: 'CHARGE' },
-  { label: '송금', value: 'TRANSFER' },
-  { label: '결제', value: 'PAYMENT' },
+  { label: "전체", value: "" },
+  { label: "충전", value: "CHARGE" },
+  { label: "송금", value: "TRANSFER" },
+  { label: "결제", value: "PAYMENT" },
 ];
 
 const formatCurrency = (val) => {
-  if (val === undefined || val === null) return '₩0';
-  return '₩' + Number(val).toLocaleString('ko-KR');
+  if (val === undefined || val === null) return "0원";
+  return Number(val).toLocaleString("ko-KR") + "원";
 };
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return '';
+  if (!dateStr) return "";
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return dateStr;
-  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 
 const getItemTitle = (item) => {
-  const tType = (item.transactionType || item.type || '').toUpperCase();
-  if (tType === 'CHARGE') return item.merchantName || item.merchant_name || item.title || '지갑 충전';
-  if (tType === 'TRANSFER' || tType === 'REMIT') {
-    return item.receiverName ? `송금 (${item.receiverName})` : (item.title || '송금 완료');
+  const tType = (item.transactionType || item.type || "").toUpperCase();
+  if (tType === "CHARGE")
+    return item.merchantName || item.merchant_name || item.title || "지갑 충전";
+  if (tType === "TRANSFER" || tType === "REMIT") {
+    return item.receiverName
+      ? `송금 (${item.receiverName})`
+      : item.title || "송금 완료";
   }
   return (
     item.merchantName ||
@@ -129,36 +145,37 @@ const getItemTitle = (item) => {
     item.name ||
     item.memo ||
     item.description ||
-    '현장 결제'
+    "현장 결제"
   );
 };
 
 const getTypeIcon = (type) => {
-  const tStr = (type || '').toUpperCase();
-  if (tStr.includes('CHARGE')) return 'bi bi-plus-lg';
-  if (tStr.includes('TRANSFER') || tStr.includes('REMIT')) return 'bi bi-send-fill';
-  if (tStr.includes('PAY')) return 'bi bi-bag-check-fill';
-  return 'bi bi-arrow-left-right';
+  const tStr = (type || "").toUpperCase();
+  if (tStr.includes("CHARGE")) return "fa-solid fa-plus";
+  if (tStr.includes("TRANSFER") || tStr.includes("REMIT"))
+    return "fa-solid fa-paper-plane";
+  if (tStr.includes("PAY")) return "fa-solid fa-bag-shopping";
+  return "fa-solid fa-arrow-left-right";
 };
 
 const getTypeIconClass = (type) => {
-  const tStr = (type || '').toUpperCase();
-  if (tStr.includes('CHARGE')) return 'yellow';
-  if (tStr.includes('TRANSFER') || tStr.includes('REMIT')) return 'blue';
-  if (tStr.includes('PAY')) return 'dark';
-  return 'gray';
+  const tStr = (type || "").toUpperCase();
+  if (tStr.includes("CHARGE")) return "yellow";
+  if (tStr.includes("TRANSFER") || tStr.includes("REMIT")) return "blue";
+  if (tStr.includes("PAY")) return "dark";
+  return "gray";
 };
 
 const getAmountClass = (type) => {
-  const tStr = (type || '').toUpperCase();
-  if (tStr.includes('CHARGE')) return 'plus';
-  return 'minus';
+  const tStr = (type || "").toUpperCase();
+  if (tStr.includes("CHARGE")) return "plus";
+  return "minus";
 };
 
 const getAmountPrefix = (type) => {
-  const tStr = (type || '').toUpperCase();
-  if (tStr.includes('CHARGE')) return '+';
-  return '-';
+  const tStr = (type || "").toUpperCase();
+  if (tStr.includes("CHARGE")) return "+";
+  return "-";
 };
 
 const changeTab = (val) => {
@@ -176,16 +193,17 @@ const fetchTransactions = async () => {
     if (list && Array.isArray(list)) {
       let filtered = list;
       if (selectedType.value) {
-        filtered = list.filter(t => {
-          const typeStr = (t.transactionType || t.type || '').toUpperCase();
-          if (selectedType.value === 'CHARGE') return typeStr.includes('CHARGE');
-          if (selectedType.value === 'TRANSFER') return typeStr.includes('TRANSFER') || typeStr.includes('REMIT');
-          if (selectedType.value === 'PAYMENT') return typeStr.includes('PAY');
+        filtered = list.filter((t) => {
+          const typeStr = (t.transactionType || t.type || "").toUpperCase();
+          if (selectedType.value === "CHARGE")
+            return typeStr.includes("CHARGE");
+          if (selectedType.value === "TRANSFER")
+            return typeStr.includes("TRANSFER") || typeStr.includes("REMIT");
+          if (selectedType.value === "PAYMENT") return typeStr.includes("PAY");
           return true;
         });
       }
 
-      // 최신순 정렬 (날짜 기준 내림차순)
       filtered.sort((a, b) => {
         const dateA = new Date(a.createdAt || a.transactionDate || a.date || 0);
         const dateB = new Date(b.createdAt || b.transactionDate || b.date || 0);
@@ -195,7 +213,7 @@ const fetchTransactions = async () => {
       transactions.value = filtered;
     }
   } catch (err) {
-    console.log('WalletSection 거래내역 로드 예외', err);
+    console.log("WalletSection 거래내역 로드 예외", err);
   } finally {
     loading.value = false;
   }
@@ -207,11 +225,11 @@ const addTransaction = (newTx) => {
 
 defineExpose({
   fetchTransactions,
-  addTransaction
+  addTransaction,
 });
 
 const openReceipt = (transactionId) => {
-  emit('open-receipt', transactionId);
+  emit("open-receipt", transactionId);
 };
 
 onMounted(() => {
@@ -220,94 +238,131 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ==========================================================================
+   디자인 시스템 명세서(common.css) 100% 반영 스타일링
+   ========================================================================== */
+
 .wallet-section-container {
-  background: #fff;
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  background-color: var(--color-bg-page, #ffffff);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 14px;
+  padding: 16px;
   margin-top: 16px;
+  text-align: left;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+}
+
+.section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .section-icon-badge {
-  width: 32px;
-  height: 32px;
-  background: #FFF8E1;
-  color: #FFBC00;
-  border-radius: 10px;
+  width: 28px;
+  height: 28px;
+  background-color: #fffbe6;
+  color: var(--color-primary-border, #cc9200);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 13px;
 }
 
 .section-title {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: #1A1A2E;
+  color: var(--color-text-main, #111111);
   margin: 0;
 }
 
 .more-link {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #94A3B8;
+  color: var(--color-text-sub, #777777);
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   transition: color 0.15s ease;
 }
+
 .more-link:hover {
-  color: #FFBC00;
+  color: var(--color-primary-border, #cc9200);
 }
 
 /* 필터 탭 */
 .filter-tab-row {
   display: flex;
   gap: 6px;
-  margin-bottom: 14px;
-  background: #F8FAFC;
+  margin-bottom: 12px;
+  background-color: var(--color-bg-screen, #f5f6f8);
   padding: 4px;
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .filter-tab-btn {
   flex: 1;
   border: none;
   background: transparent;
-  padding: 7px 0;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #94A3B8;
+  padding: 8px 0;
+  color: var(--color-text-sub, #777777);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .filter-tab-btn.active {
-  background: #fff;
-  color: #1A1A2E;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background-color: var(--color-bg-page, #ffffff);
+  color: var(--color-text-main, #111111);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 로딩 */
+.loading-box {
+  padding: 24px 0;
+  text-align: center;
+  color: var(--color-text-sub, #777777);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border-main, #dddddd);
+  border-top-color: var(--color-primary, #ffbc2e);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 빈 목록 */
 .empty-tx-box {
-  padding: 32px 0;
+  padding: 28px 0;
   text-align: center;
 }
+
 .empty-icon {
-  font-size: 2rem;
-  color: #CBD5E1;
-  margin-bottom: 8px;
+  font-size: 24px;
+  color: var(--color-text-disabled, #aaaaaa);
+  margin-bottom: 6px;
   display: block;
 }
+
 .empty-text {
-  font-size: 0.82rem;
-  color: #94A3B8;
+  color: var(--color-text-sub, #777777);
   margin: 0;
 }
 
@@ -315,77 +370,93 @@ onMounted(() => {
 .tx-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .tx-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 14px;
-  background: #FAFAFA;
-  border-radius: 14px;
-  border: 1px solid #F1F5F9;
+  padding: 10px 12px;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border-radius: 10px;
+  border: 1px solid var(--color-border-main, #dddddd);
   cursor: pointer;
   transition: all 0.15s ease;
 }
+
 .tx-item:hover {
-  background: #FFFBEB;
-  border-color: #FFBC00;
+  background-color: #fffbe6;
+  border-color: var(--color-primary-border, #cc9200);
 }
 
 .tx-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .tx-icon-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: 13px;
   flex-shrink: 0;
 }
-.tx-icon-circle.yellow { background: #FFF8E1; color: #FFBC00; }
-.tx-icon-circle.blue { background: #EFF6FF; color: #3B82F6; }
-.tx-icon-circle.dark { background: #1A1A2E; color: #fff; }
-.tx-icon-circle.gray { background: #F1F5F9; color: #64748B; }
+
+.tx-icon-circle.yellow {
+  background-color: #fffbe6;
+  color: var(--color-primary-border, #cc9200);
+}
+
+.tx-icon-circle.blue {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.tx-icon-circle.dark {
+  background-color: var(--color-text-main, #111111);
+  color: #ffffff;
+}
+
+.tx-icon-circle.gray {
+  background-color: var(--color-border-main, #dddddd);
+  color: var(--color-text-sub, #777777);
+}
 
 .tx-info {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 2px;
 }
+
 .tx-title {
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: #1A1A2E;
+  color: var(--color-text-main, #111111);
 }
+
 .tx-date {
-  font-size: 0.72rem;
-  color: #94A3B8;
+  color: var(--color-text-sub, #777777);
 }
+
 .tx-memo {
-  font-size: 0.72rem;
-  color: #FF9900;
-  font-weight: 700;
+  color: var(--color-primary-border, #cc9200);
 }
 
 .tx-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
 }
 
-.tx-amount {
-  font-size: 0.92rem;
-  font-weight: 900;
+.tx-amount.plus {
+  color: var(--color-success, #1fa64b);
 }
-.tx-amount.plus { color: #10B981; }
-.tx-amount.minus { color: #1A1A2E; }
+
+.tx-amount.minus {
+  color: var(--color-text-main, #111111);
+}
 </style>

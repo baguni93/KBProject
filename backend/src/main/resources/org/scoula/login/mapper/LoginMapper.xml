@@ -178,6 +178,8 @@
             u.birth_date,
             u.phone_number,
             u.pin_password,
+            u.pin_fail_count,
+            u.pin_locked_yn,
             p.nickname,
             u.user_status,
             u.created_at,
@@ -188,6 +190,29 @@
         WHERE u.phone_number = #{phoneNumber}
         LIMIT 1
     </select>
+
+    <!-- PIN 로그인 실패 횟수 증가 -->
+    <update id="increasePinFailCount">
+        UPDATE user_tbl
+        SET pin_fail_count = pin_fail_count + 1
+        WHERE user_id = #{userId}
+          AND pin_fail_count &lt; 5
+    </update>
+
+    <!-- PIN 로그인 5회 실패 시 잠금 -->
+    <update id="lockPin">
+        UPDATE user_tbl
+        SET pin_locked_yn = 'Y'
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- PIN 로그인 성공 또는 재설정 시 실패 횟수 및 잠금 상태 초기화 -->
+    <update id="resetPinFailCount">
+        UPDATE user_tbl
+        SET pin_fail_count = 0,
+            pin_locked_yn = 'N'
+        WHERE user_id = #{userId}
+    </update>
 
 
     <!-- Refresh Token 저장 -->

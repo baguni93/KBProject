@@ -2,11 +2,14 @@ package org.scoula.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.scoula.account.dto.AccountDTO;
 import org.scoula.login.domain.PhoneAuthVO;
 import org.scoula.login.mapper.LoginMapper;
 import org.scoula.notifsetting.domain.NotificationSettingVO;
 import org.scoula.notifsetting.mapper.NotificationSettingMapper;
 import org.scoula.pointwallet.service.PointWalletService;
+import org.scoula.user.domain.AccountVO;
+import org.scoula.user.domain.BankVO;
 import org.scoula.user.domain.UserVO;
 import org.scoula.user.dto.*;
 import org.scoula.user.mapper.UserMapper;
@@ -18,6 +21,9 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -73,10 +79,18 @@ public class UserServiceImpl implements UserService {
                 .userStatus("ACTIVE")
                 .build();
 
+
         int userResult = userMapper.insert(user);
 
         if (userResult != 1) {
             throw new IllegalStateException("회원정보 저장 중 오류가 발생했습니다.");
+        }
+
+        // 기본 회원 권한 저장
+        int authResult = userMapper.insertAuth(user.getUserId(), "ROLE_USER");
+
+        if (authResult != 1) {
+            throw new IllegalStateException("회원 권한 저장 중 오류가 발생했습니다.");
         }
 
         int profileResult = userMapper.insertProfile(user);
@@ -84,6 +98,30 @@ public class UserServiceImpl implements UserService {
         if (profileResult != 1) {
             throw new IllegalStateException("프로필 저장 중 오류가 발생했습니다.");
         }
+
+        //박우진 추가 회원 가입 시 은행 마다 계좌 더미를 만들어준다.
+        Random random = new Random();
+        List<BankVO> list = userMapper.getBanks();
+        List<AccountVO> accountList = new ArrayList<>();
+        for(var bank : list){
+
+            String randomAccountNumber = generateRandomAccountNumber(bank.getBankCode(), random);
+
+            var accountVo = AccountVO.builder().
+                    userId(user.getUserId().intValue()).
+                    bankCode(bank.getBankCode()).
+                    accountNumber(randomAccountNumber).
+                    ownerName(user.getUserName()).
+                    balance(100000).
+                    accountPassword("1234").
+                    build();
+            accountList.add(accountVo);
+
+        }
+        if (!accountList.isEmpty()) {
+            userMapper.insertAccount(accountList);
+        }
+
 
         // 기본 알림 설정 생성
         NotificationSettingVO notificationSetting = NotificationSettingVO.builder()
@@ -107,6 +145,16 @@ public class UserServiceImpl implements UserService {
 
         return user.getUserId();
     }
+
+
+    //박우진 추가 , 은행 따른 계좌 받아오기
+    @Override
+    public AccountByBankCodeDTO getAccountByBankCode(int userId, String bankCode) {
+        AccountVO vo = userMapper.getAccountByBackCode(userId, bankCode);
+
+        return AccountByBankCodeDTO.of(vo);
+    }
+
 
     // 회원 기본정보 조회
     @Override
@@ -261,6 +309,7 @@ public class UserServiceImpl implements UserService {
         log.info("회원 휴대폰번호 변경 완료: userId={}", userId);
     }
 
+
     // 닉네임 중복 확인
     @Override
     @Transactional(readOnly = true)
@@ -388,6 +437,9 @@ public class UserServiceImpl implements UserService {
         if (updateResult != 1) {
             throw new IllegalStateException("PIN 재설정 처리에 실패했습니다.");
         }
+
+        // PIN 재설정 완료 후 로그인 실패 횟수 및 잠금 상태 초기화
+        loginMapper.resetPinFailCount(user.getUserId());
 
         // 사용한 PIN_RESET 인증 기록 삭제
         int deleteResult = loginMapper.deleteVerificationById(verificationId);
@@ -658,5 +710,36 @@ public class UserServiceImpl implements UserService {
         if (pinPassword == null || !pinPassword.matches("\\d{6}")) {
             throw new IllegalArgumentException("PIN은 숫자 6자리로 입력해주세요.");
         }
+    }
+
+    private String generateRandomAccountNumber(String bankCode, Random random) {
+        StringBuilder sb = new StringBuilder();
+        int length = 12; // 기본 자릿수
+
+        // 은행별 일반적인 계좌 자리수 및 접두사 반영 예시
+        switch (bankCode) {
+            case "090": // 카카오뱅크: 보통 3333-XX-XXXXXXX 형태 (총 12~13자리)
+                sb.append("3333");
+                length = 12;
+                break;
+            case "092": // 토스뱅크: 보통 1000-XXXX-XXXX 형태
+                sb.append("1000");
+                length = 12;
+                break;
+            case "089": // 케이뱅크: 보통 100-XXX-XXXXXX 형태
+                sb.append("100");
+                length = 12;
+                break;
+            default: // 그 외 일반 은행 (국민, 신한, 우리 등 10~14자리 랜덤)
+                length = 12;
+                break;
+        }
+
+        // 나머지 부족한 자릿수를 무작위 숫자로 채움
+        while (sb.length() < length) {
+            sb.append(random.nextInt(10));
+        }
+
+        return sb.toString();
     }
 }

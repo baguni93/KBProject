@@ -15,10 +15,10 @@
 import { ref, computed } from 'vue';
 import WalletSection from '@/components/wallet/WalletSection.vue';
 import ReceiptDetailModal from '@/components/transaction/ReceiptDetailModal.vue';
-import { useUserStore } from '@/stores/user';
+// import { useUserStore } from '@/stores/user';
 
-const userStore = useUserStore();
-const userId = computed(() => userStore.userId || 1);
+// const userStore = useUserStore();
+// const userId = computed(() => userStore.userId || 1);
 
 const showReceiptModal = ref(false);
 const selectedTransactionId = ref(null);

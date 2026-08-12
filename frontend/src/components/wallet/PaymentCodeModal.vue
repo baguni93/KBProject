@@ -9,94 +9,152 @@
     />
 
     <!-- 결제 코드 바텀 시트 모달 -->
-    <div v-if="isPinVerified" class="bottom-sheet-backdrop" @click.self="$emit('close')">
-      <div class="bottom-sheet-content bg-white shadow-2xl overflow-hidden animate-slide-up">
+    <div
+      v-if="isPinVerified"
+      class="bottom-sheet-backdrop"
+      @click.self="$emit('close')"
+    >
+      <div class="bottom-sheet-content">
         <!-- 드래그 핸들 바 -->
-        <div class="sheet-handle-bar my-2 mx-auto rounded-pill" @click="$emit('close')"></div>
+        <div class="sheet-handle-bar" @click="$emit('close')"></div>
 
         <!-- 헤더 -->
-        <div class="px-4 py-3 d-flex justify-content-between align-items-center border-bottom">
-          <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-dark text-warning font-outfit px-2.5 py-1 fw-bold rounded-pill">KB Pay</span>
-            <h5 class="fw-extrabold mb-0 text-dark font-outfit">1회용 보안 결제 코드</h5>
+        <div class="modal-header">
+          <div class="header-title-flex">
+            <span class="kb-badge text-13-bold">KB Pay</span>
+            <h5 class="text-18-bold modal-title">1회용 보안 결제 코드</h5>
           </div>
-          <button type="button" class="btn-close shadow-none" @click="$emit('close')"></button>
+          <button type="button" class="close-btn" @click="$emit('close')">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
 
-        <div class="p-4 text-center">
+        <div class="modal-body-padding">
           <!-- 탭 버튼 -->
-          <div class="btn-group w-100 mb-3" role="group">
+          <div class="tab-group-flex">
             <button
               type="button"
-              class="btn py-2.5 fw-bold"
-              :class="activeTab === 'barcode' ? 'btn-dark' : 'btn-outline-secondary'"
+              class="content-btn text-15-bold flex-1"
+              :class="activeTab === 'barcode' ? 'primary' : 'secondary'"
               @click="switchTab('barcode')"
             >
-              <i class="bi bi-upc-scan me-1"></i> 바코드 결제
+              <i class="fa-solid fa-barcode mr-1"></i> 바코드 결제
             </button>
             <button
               type="button"
-              class="btn py-2.5 fw-bold"
-              :class="activeTab === 'qr' ? 'btn-dark' : 'btn-outline-secondary'"
+              class="content-btn text-15-bold flex-1"
+              :class="activeTab === 'qr' ? 'primary' : 'secondary'"
               @click="switchTab('qr')"
             >
-              <i class="bi bi-qr-code-scan me-1"></i> QR코드 결제
+              <i class="fa-solid fa-qrcode mr-1"></i> QR코드 결제
             </button>
           </div>
 
           <!-- 1. 바코드 결제 화면 -->
-          <div v-if="activeTab === 'barcode'" class="code-box p-3 rounded-4 bg-light mb-3">
-            <div class="text-secondary small mb-2">가맹점 바코드 스캐너에 대어주세요</div>
+          <div v-if="activeTab === 'barcode'" class="code-box">
+            <div class="code-box-desc text-13">
+              가맹점 바코드 스캐너에 대어주세요
+            </div>
 
-            <div class="barcode-container my-3 d-flex justify-content-center">
-              <svg class="barcode-svg" viewBox="0 0 280 90" xmlns="http://www.w3.org/2000/svg">
+            <div class="barcode-container">
+              <svg
+                class="barcode-svg"
+                viewBox="0 0 280 90"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <rect width="100%" height="100%" fill="#ffffff" />
                 <g fill="#000000">
-                  <rect v-for="(bar, idx) in barcodeBars" :key="idx" :x="bar.x" y="10" :width="bar.w" height="70" />
+                  <rect
+                    v-for="(bar, idx) in barcodeBars"
+                    :key="idx"
+                    :x="bar.x"
+                    y="10"
+                    :width="bar.w"
+                    height="70"
+                  />
                 </g>
               </svg>
             </div>
 
-            <div class="fs-5 fw-bold text-dark font-monospace tracking-wider">
+            <div class="formatted-code text-20-bold">
               {{ formattedCode }}
             </div>
           </div>
 
           <!-- 2. QR코드 결제 화면 -->
-          <div v-else class="code-box p-3 rounded-4 bg-light mb-3">
-            <div class="text-secondary small mb-2">가맹점 QR 리더기에 스캔해 주세요</div>
+          <div v-else class="code-box">
+            <div class="code-box-desc text-13">
+              가맹점 QR 리더기에 스캔해 주세요
+            </div>
 
-            <div class="qr-container my-3 d-flex justify-content-center">
-              <svg class="qr-svg border rounded-3 p-2 bg-white" viewBox="0 0 210 210" width="180" height="180" xmlns="http://www.w3.org/2000/svg">
+            <div class="qr-container">
+              <svg
+                class="qr-svg"
+                viewBox="0 0 210 210"
+                width="180"
+                height="180"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <rect width="100%" height="100%" fill="#ffffff" />
                 <g fill="#000000">
-                  <rect v-for="(cell, idx) in qrModules" :key="idx" :x="cell.x" :y="cell.y" width="9.5" height="9.5" />
+                  <rect
+                    v-for="(cell, idx) in qrModules"
+                    :key="idx"
+                    :x="cell.x"
+                    :y="cell.y"
+                    width="9.5"
+                    height="9.5"
+                  />
                 </g>
-                <rect x="80" y="80" width="50" height="50" rx="8" fill="#FFBC00" />
-                <text x="105" y="110" font-size="16" font-weight="900" text-anchor="middle" fill="#000000">KB</text>
+                <rect
+                  x="80"
+                  y="80"
+                  width="50"
+                  height="50"
+                  rx="8"
+                  fill="#FFBC00"
+                />
+                <text
+                  x="105"
+                  y="110"
+                  font-size="16"
+                  font-weight="900"
+                  text-anchor="middle"
+                  fill="#000000"
+                >
+                  KB
+                </text>
               </svg>
             </div>
 
-            <div class="small text-muted font-monospace">토큰: {{ rawCode }}</div>
+            <div class="raw-token-text text-13">토큰: {{ rawCode }}</div>
           </div>
 
-          <!-- 3분 카운트다운 타이머 -->
-          <div class="d-flex justify-content-between align-items-center bg-warning-subtle p-3 rounded-3 mb-3">
-            <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-clock-history fs-5 text-dark"></i>
-              <span class="text-dark small fw-bold">인증 유효시간</span>
+          <!-- 타이머 카드 -->
+          <div class="timer-card flex-between">
+            <div class="timer-left">
+              <i class="fa-solid fa-clock-rotate-left brand-ic text-15"></i>
+              <span class="text-13-bold">인증 유효시간</span>
             </div>
-            <div class="d-flex align-items-center gap-2">
-              <span class="fs-5 fw-extrabold text-danger font-monospace">{{ timerText }}</span>
-              <button class="btn btn-sm btn-dark rounded-circle px-2 py-1" @click="fetchServerToken" title="토큰 재발급">
-                <i class="bi bi-arrow-clockwise"></i>
+            <div class="timer-right">
+              <span class="text-18-bold text-danger font-mono">{{
+                timerText
+              }}</span>
+              <button
+                type="button"
+                class="refresh-btn"
+                @click="fetchServerToken"
+                title="토큰 재발급"
+              >
+                <i class="fa-solid fa-rotate-right"></i>
               </button>
             </div>
           </div>
 
           <!-- 하단 안내 문구 -->
-          <p class="text-muted small mb-0" style="font-size: 0.75rem;">
-            <i class="bi bi-shield-check text-warning me-1"></i> 1회용 결제 코드는 1분 후 자동 소멸됩니다.
+          <p class="notice-text text-13">
+            <i class="fa-solid fa-shield-halved brand-ic"></i> 1회용 결제 코드는
+            1분 후 자동 소멸됩니다.
           </p>
         </div>
       </div>
@@ -105,47 +163,49 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted } from 'vue';
-import walletApi from '@/api/walletApi';
-import PinAuthModal from '@/components/auth/PinAuthModal.vue';
+import { ref, computed, onUnmounted } from "vue";
+import walletApi from "@/api/walletApi";
+import PinAuthModal from "@/components/auth/PinAuthModal.vue";
 
 const props = defineProps({
   userId: { type: Number, default: 1 },
-  initialTab: { type: String, default: 'barcode' }
+  initialTab: { type: String, default: "barcode" },
 });
 
-defineEmits(['close']);
+defineEmits(["close"]);
 
 const isPinVerified = ref(false);
-const activeTab = ref(props.initialTab || 'barcode');
-const rawCode = ref('');
+const activeTab = ref(props.initialTab || "barcode");
+const rawCode = ref("");
 const timeLeft = ref(60);
 
 let timerInterval = null;
 
 const handlePinSuccess = () => {
   isPinVerified.value = true;
-  activeTab.value = props.initialTab || 'barcode';
+  activeTab.value = props.initialTab || "barcode";
   fetchServerToken();
   startTimer();
 };
 
 const formattedCode = computed(() => {
-  if (!rawCode.value) return '';
-  return rawCode.value.replace(/(\d{4})/g, '$1 ').trim();
+  if (!rawCode.value) return "";
+  return rawCode.value.replace(/(\d{4})/g, "$1 ").trim();
 });
 
 const timerText = computed(() => {
-  if (timeLeft.value <= 0) return '00:00 (만료)';
-  const m = Math.floor(timeLeft.value / 60).toString().padStart(2, '0');
-  const s = (timeLeft.value % 60).toString().padStart(2, '0');
+  if (timeLeft.value <= 0) return "00:00 (만료)";
+  const m = Math.floor(timeLeft.value / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = (timeLeft.value % 60).toString().padStart(2, "0");
   return `${m}:${s}`;
 });
 
 const fetchServerToken = async () => {
   try {
     let data;
-    if (activeTab.value === 'qr') {
+    if (activeTab.value === "qr") {
       data = await walletApi.getQrToken(props.userId);
     } else {
       data = await walletApi.getBarcodeToken(props.userId);
@@ -156,7 +216,7 @@ const fetchServerToken = async () => {
       timeLeft.value = data.expiresInSeconds || 60;
     }
   } catch (e) {
-    console.error('Token fetch error:', e);
+    console.error("Token fetch error:", e);
   }
 };
 
@@ -168,10 +228,12 @@ const switchTab = (tab) => {
 const barcodeBars = computed(() => {
   const bars = [];
   let currentX = 15;
-  const str = rawCode.value || '8804123456789012';
+  const str = rawCode.value || "8804123456789012";
 
-  bars.push({ x: currentX, w: 3 }); currentX += 5;
-  bars.push({ x: currentX, w: 2 }); currentX += 4;
+  bars.push({ x: currentX, w: 3 });
+  currentX += 5;
+  bars.push({ x: currentX, w: 2 });
+  currentX += 4;
 
   for (let i = 0; i < str.length; i++) {
     const digit = str.charCodeAt(i) % 10;
@@ -185,7 +247,8 @@ const barcodeBars = computed(() => {
     currentX += w2 + 3;
   }
 
-  bars.push({ x: currentX, w: 3 }); currentX += 5;
+  bars.push({ x: currentX, w: 3 });
+  currentX += 5;
   bars.push({ x: currentX, w: 2 });
 
   return bars;
@@ -213,7 +276,10 @@ const qrModules = computed(() => {
         const isBorder = r === 0 || r === 6 || c === 0 || c === 6;
         const isInner = r >= 2 && r <= 4 && c >= 2 && c <= 4;
         if (isBorder || isInner) {
-          modules.push({ x: (startC + c) * cellSize, y: (startR + r) * cellSize });
+          modules.push({
+            x: (startC + c) * cellSize,
+            y: (startR + r) * cellSize,
+          });
         }
       }
     }
@@ -223,7 +289,7 @@ const qrModules = computed(() => {
   addSquare(0, size - 7);
   addSquare(size - 7, 0);
 
-  const seed = rawCode.value || 'KBQR880412345678';
+  const seed = rawCode.value || "KBQR880412345678";
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
       if (isFinder(r, c) || isCenter(r, c)) continue;
@@ -254,15 +320,13 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* 백드롭 및 바텀 시트 구조 */
 .bottom-sheet-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  inset: 0;
+  background: rgba(17, 17, 17, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -272,16 +336,12 @@ onUnmounted(() => {
 .bottom-sheet-content {
   width: 100%;
   max-width: 480px;
-  border-top-left-radius: 28px;
-  border-top-right-radius: 28px;
+  background-color: var(--color-bg-page, #ffffff);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
   padding-bottom: 24px;
-}
-
-.sheet-handle-bar {
-  width: 40px;
-  height: 5px;
-  background: #CBD5E1;
-  cursor: pointer;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes slideUp {
@@ -293,16 +353,197 @@ onUnmounted(() => {
   }
 }
 
-.animate-slide-up {
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.sheet-handle-bar {
+  width: 40px;
+  height: 5px;
+  background-color: var(--color-border-main, #dddddd);
+  border-radius: 999px;
+  margin: 10px auto 4px auto;
+  cursor: pointer;
+}
+
+/* 모달 헤더 */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-divider, #ededed);
+}
+
+.header-title-flex {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-badge {
+  background-color: var(--color-text-main, #111111);
+  color: var(--color-primary, #ffbc2e);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.modal-title {
+  color: var(--color-text-main, #111111);
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-sub, #777777);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.modal-body-padding {
+  padding: 20px;
+  text-align: center;
+}
+
+/* 탭 그룹 */
+.tab-group-flex {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.mr-1 {
+  margin-right: 4px;
+}
+
+/* 코드 박스 */
+.code-box {
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.code-box-desc {
+  color: var(--color-text-sub, #777777);
+  margin-bottom: 12px;
+}
+
+.barcode-container {
+  margin: 12px 0;
+  display: flex;
+  justify-content: center;
 }
 
 .barcode-svg {
   width: 100%;
   max-width: 280px;
-  height: 90px;
+  height: 80px;
 }
-.tracking-wider {
+
+.formatted-code {
+  color: var(--color-text-main, #111111);
   letter-spacing: 2px;
+  font-family: monospace;
+}
+
+.qr-container {
+  margin: 12px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.qr-svg {
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 12px;
+  padding: 8px;
+  background-color: #ffffff;
+}
+
+.raw-token-text {
+  color: var(--color-text-sub, #777777);
+  font-family: monospace;
+}
+
+/* 타이머 카드 */
+.timer-card {
+  background-color: #fffbe6;
+  border: 1px solid var(--color-primary-border, #cc9200);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.timer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-main, #111111);
+}
+
+.brand-ic {
+  color: var(--color-primary-border, #cc9200);
+}
+
+.timer-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.text-danger {
+  color: var(--color-error, #e53935);
+}
+
+.font-mono {
+  font-family: monospace;
+}
+
+.refresh-btn {
+  background-color: var(--color-text-main, #111111);
+  color: #ffffff;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* 콘텐츠 버튼 가이드라인 스타일 */
+.content-btn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.content-btn.primary {
+  background-color: var(--color-primary, #ffbc2e);
+  border-color: var(--color-primary-border, #cc9200);
+  color: var(--color-text-main, #111111);
+}
+
+.content-btn.secondary {
+  background-color: var(--color-bg-page, #ffffff);
+  border-color: var(--color-border-main, #dddddd);
+  color: var(--color-text-sub, #777777);
+}
+
+.notice-text {
+  color: var(--color-text-sub, #777777);
+  margin: 0;
 }
 </style>

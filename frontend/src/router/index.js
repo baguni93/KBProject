@@ -7,6 +7,7 @@ import signup from './signup';
 import setting from './setting';
 import pagesample from './pagesample';
 import analysis from './analysis';
+import customcard from './customcard';
 
 import WalletPage from '@/pages/wallet/WalletPage.vue';
 import RemittancePage from '@/pages/remittance/RemittancePage.vue';
@@ -22,8 +23,6 @@ import SignupCompletePage from '@/pages/signup/SignupCompletePage.vue';
 import EventPage from '@/pages/event/EventPage.vue';
 import EventListPage from '@/pages/event/EventListPage.vue';
 import FinancePage from '@/pages/finance/FinancePage.vue';
-import CardCreatePage from '@/pages/card/CardCreatePage.vue';
-import CardCompletePage from '@/pages/card/CardCompletePage.vue';
 
 import { isAuthenticated } from '@/util/guards';
 
@@ -116,24 +115,10 @@ const router = createRouter({
     ...setting,
     ...analysis,
     ...pagesample,
+    ...customcard,
 
     //bottom 이 필요없는 페이지
-    {
-      path: '/card/create',
-      name: 'card/create',
-      component: CardCreatePage,
-      meta: {
-        showBottomNav: false,
-      },
-    },
-    {
-      path: '/card/complete',
-      name: 'card/complete',
-      component: CardCompletePage,
-      meta: {
-        showBottomNav: false,
-      },
-    },
+
     {
       path: '/setting',
       name: 'setting',
@@ -204,11 +189,6 @@ const router = createRouter({
       component: MemberDetailPage,
     },
     {
-      path: '/finance',
-      name: 'Finance',
-      component: FinancePage,
-    },
-    {
       path: '/event',
       name: 'EventMain',
       component: EventPage,
@@ -219,25 +199,47 @@ const router = createRouter({
       component: EventListPage,
       alias: '/event/list/joined',
     },
-
-    ...feed,
-    ...mypage,
-    ...settlement,
-    ...auth,
-    ...signup,
-    ...setting,
-    ...analysis,
-    ...pagesample,
   ],
 });
 
-// 로그인 필수 화면 접근 확인
+// 로그인 상태에 따른 화면 접근 제어
 router.beforeEach((to) => {
-  if (!to.matched.some((route) => route.meta.requiresAuth)) {
-    return true;
+  const authData = localStorage.getItem('auth');
+  let loggedIn = false;
+
+  if (authData) {
+    try {
+      const parsed = JSON.parse(authData);
+      loggedIn = !!parsed.accessToken;
+    } catch (e) {
+      localStorage.removeItem('auth');
+    }
   }
 
-  return isAuthenticated(to);
+  // 로그인 상태에서는 로그인/회원가입 화면 접근 차단
+  const guestOnlyPaths = [
+    '/intro',
+    '/auth/pin-login',
+    '/signup/agreement',
+    '/signup/existing-member',
+    '/signup/new-member',
+    '/signup/pin',
+    '/signup/pin-confirm',
+    '/signup/nickname',
+  ];
+
+  const isGuestOnly = guestOnlyPaths.includes(to.path);
+
+  if (loggedIn && isGuestOnly) {
+    return '/wallet';
+  }
+
+  // 로그인이 필요한 화면
+  if (to.matched.some((route) => route.meta.requiresAuth)) {
+    return isAuthenticated(to);
+  }
+
+  return true;
 });
 
 export default router;

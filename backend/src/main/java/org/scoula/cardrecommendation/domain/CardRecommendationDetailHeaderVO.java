@@ -20,5 +20,5 @@ public class CardRecommendationDetailHeaderVO {
     private String cardImage;
     private String application;
     private Integer annualFee;
-    private String aiCardRecommendationSummary;
+    private String aiRecommendationSummary;
 }

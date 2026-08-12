@@ -7,15 +7,6 @@
     />
 
     <div class="category-edit-content">
-      <div
-        v-if="message"
-        :class="[
-          'kb-toast',
-          messageType === 'success' ? 'kb-toast--success' : 'kb-toast--error',
-        ]"
-      >
-        {{ message }}
-      </div>
 
       <div v-if="loading" class="kb-card kb-loading">
         <div class="spinner-border kb-spinner"></div>
@@ -35,7 +26,7 @@
           <div class="edit-info">
             <span class="text-13">카테고리를 수정할 거래</span>
             <strong class="text-15-bold">
-              {{ transaction.merchantName || '가맹점 정보 없음' }}
+              {{ transaction.transactionLabel || transaction.merchantName || '거래 정보 없음' }}
             </strong>
             <small class="text-13">
               {{ formatAnalysisDateTime(transaction.createdAt) }}
@@ -59,23 +50,18 @@
             <h2 class="kb-section-title text-20-bold">대분류 선택</h2>
           </div>
 
-          <div class="top-grid kb-card">
-            <button
-              v-for="category in topCategories"
-              :key="category.spendingCategoryId"
-              type="button"
-              :class="{
-                selected:
-                  selectedTopCategoryId === category.spendingCategoryId,
-              }"
-              @click="selectTopCategory(category)"
-            >
-              <div>
-                <i :class="getCategoryIcon(category.categoryName)"></i>
-              </div>
-              <span class="text-13-bold">{{ category.categoryName }}</span>
-            </button>
-          </div>
+          <!--
+            공용 소비 카테고리 선택 UI.
+            이 페이지에서는 기존 동작을 유지하기 위해 대분류 선택만 공용 컴포넌트에 맡기고,
+            세부 카테고리가 있는 경우의 라우팅/저장 로직은 이 페이지가 계속 담당합니다.
+          -->
+          <SpendingCategorySelector
+            v-model="selectedTopCategoryId"
+            class="edit-category-selector"
+            :categories="categories"
+            compact
+            @select="selectTopCategory"
+          />
         </section>
 
         <button
@@ -99,9 +85,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import PageHeader from '@/components/common/PageHeader.vue';
+import SpendingCategorySelector from '@/components/common/SpendingCategorySelector.vue';
 import analysisApi from '@/api/analysisApi';
 import {
   formatAnalysisDateTime,
@@ -125,26 +112,10 @@ const messageType = ref('success');
 const selectedTopCategoryId = ref(null);
 const selectedCategoryId = ref(null);
 
-const topCategories = computed(() =>
-  categories.value.filter((item) => item.parentCategoryId == null),
-);
-
-const selectedTopCategory = computed(() =>
-  topCategories.value.find(
-    (item) => item.spendingCategoryId === selectedTopCategoryId.value,
-  ),
-);
-
-const childCategories = (parentCategoryId) =>
-  categories.value.filter(
-    (item) => item.parentCategoryId === parentCategoryId,
-  );
-
-const selectTopCategory = async (category) => {
+const selectTopCategory = async (category, meta = {}) => {
   selectedTopCategoryId.value = category.spendingCategoryId;
-  const children = childCategories(category.spendingCategoryId);
 
-  if (children.length) {
+  if (meta.hasChildren) {
     await router.push({
       name: 'analysis-subcategory',
       params: { transactionId },
@@ -306,57 +277,13 @@ onMounted(loadData);
   color: #9a7200;
 }
 
-.top-grid {
+
+.edit-category-selector {
   margin-top: 17px;
-  padding: 12px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  border: 1px solid var(--color-divider);
-  background: var(--color-bg-page);
-  box-shadow: none;
-}
-
-.top-grid button {
-  min-width: 0;
-  min-height: 76px;
-  padding: 8px 4px;
-  border: 1px solid transparent;
-  border-radius: 12px;
-  background: #fafafa;
-  color: #555;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-}
-
-.top-grid button.selected {
-  border-color: var(--color-primary);
-  background: #fff7d7;
-  color: #8f6800;
-}
-
-.top-grid button > div {
-  font-size: 17px;
-  line-height: 1;
-}
-
-.top-grid button span {
-  display: block;
-  line-height: 1.25;
-  text-align: center;
-  word-break: keep-all;
 }
 
 .save-button {
   margin-top: 17px;
 }
 
-@media (max-width: 380px) {
-  .top-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
 </style>

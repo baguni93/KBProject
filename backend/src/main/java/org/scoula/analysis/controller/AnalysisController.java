@@ -80,6 +80,18 @@ public class AnalysisController {
         );
     }
 
+    @ApiOperation("전체 정상 결제 거래 목록 조회")
+    @GetMapping("/transactions/all")
+    public ResponseEntity<AnalysisTransactionListDTO> getAllPaymentTransactions(
+            HttpServletRequest httpRequest
+    ) {
+        Integer userId = resolveUserId(httpRequest);
+
+        return ResponseEntity.ok(
+                analysisService.getAllPaymentTransactions(userId)
+        );
+    }
+
     @ApiOperation("저장된 분석 결과의 전체 결제 거래 목록 조회")
     @GetMapping("/{spendingAnalysisId}/transactions")
     public ResponseEntity<AnalysisTransactionListDTO>

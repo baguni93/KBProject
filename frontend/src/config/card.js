@@ -46,12 +46,12 @@ export default {
       '/images/card_edit_emoji/sparkles.svg',
     ],
     text: [
-      '/images/card_edit_emoji/text_good.svg',
-      '/images/card_edit_emoji/text_lucky.svg',
-      '/images/card_edit_emoji/text_moment.svg',
-      '/images/card_edit_emoji/text_only.svg',
-      '/images/card_edit_emoji/text_sign_vibe.svg',
-      '/images/card_edit_emoji/text_stay.svg',
+      '/images/card_edit_emoji/good.svg',
+      '/images/card_edit_emoji/lucky.svg',
+      '/images/card_edit_emoji/moment.svg',
+      '/images/card_edit_emoji/only.svg',
+      '/images/card_edit_emoji/sign_vibe.svg',
+      '/images/card_edit_emoji/stay.svg',
     ],
   },
 };

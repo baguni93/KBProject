@@ -1,7 +1,11 @@
 package org.scoula.user.mapper;
 
 import org.apache.ibatis.annotations.Param;
+import org.scoula.user.domain.AccountVO;
+import org.scoula.user.domain.BankVO;
 import org.scoula.user.domain.UserVO;
+
+import java.util.List;
 
 public interface UserMapper {
 
@@ -16,6 +20,12 @@ public interface UserMapper {
 
     // 회원 저장
     int insert(UserVO user);
+
+    // 회원 기본 권한 저장
+    int insertAuth(
+            @Param("userId") Long userId,
+            @Param("auth") String auth
+    );
 
     // 프로필 저장
     int insertProfile(UserVO user);
@@ -61,4 +71,10 @@ public interface UserMapper {
             @Param("userId") Long userId,
             @Param("anonymousNickname") String anonymousNickname
     );
+
+    void insertAccount(@Param("accountList") List<AccountVO> accountList);
+
+    List<BankVO> getBanks();
+
+    AccountVO getAccountByBackCode(@Param("userId") int userId, @Param("bankCode") String bankCode);
 }

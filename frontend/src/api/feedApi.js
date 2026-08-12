@@ -4,6 +4,12 @@ const BASE_URL = '/api/feeds';
 const headers = { 'Content-Type': 'multipart/form-data' };
 
 export default {
+  async createFeed(formData) {
+    const { data } = await api.post(`${BASE_URL}`, formData, { headers });
+
+    return data;
+  },
+
   //  피드 조회
   async getFeed(feedId) {
     const { data } = await api.get(`${BASE_URL}/${feedId}`);

@@ -21,50 +21,21 @@ public class TokenController {
 
     private final LoginService loginService;
 
-
-    /**
-     * AUTH-006 로그아웃
-     */
+    // AUTH-006 로그아웃
     @PostMapping("/api/logout")
-    public ResponseEntity<Map<String, Object>> logout(
-            @RequestBody
-            LogoutDTO logoutDTO
-    ) {
+    public ResponseEntity<Map<String, Object>> logout(@RequestBody LogoutDTO logoutDTO) {
+        loginService.logout(logoutDTO);
 
-        loginService.logout(
-                logoutDTO
-        );
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("message", "로그아웃되었습니다.");
 
-        Map<String, Object> response =
-                new LinkedHashMap<>();
-
-        response.put(
-                "message",
-                "로그아웃되었습니다."
-        );
-
-        return ResponseEntity.ok(
-                response
-        );
+        return ResponseEntity.ok(response);
     }
 
-
-    /**
-     * AUTH-007 토큰 재발급
-     */
+    // AUTH-007 토큰 재발급
     @PostMapping("/api/refresh")
-    public ResponseEntity<TokenDTO> refreshToken(
-            @RequestBody
-            RefreshTokenRequestDTO requestDTO
-    ) {
-
-        TokenDTO tokenDTO =
-                loginService.refreshToken(
-                        requestDTO
-                );
-
-        return ResponseEntity.ok(
-                tokenDTO
-        );
+    public ResponseEntity<TokenDTO> refreshToken(@RequestBody RefreshTokenRequestDTO requestDTO) {
+        TokenDTO tokenDTO = loginService.refreshToken(requestDTO);
+        return ResponseEntity.ok(tokenDTO);
     }
 }

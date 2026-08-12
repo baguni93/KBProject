@@ -98,7 +98,7 @@ const handleBack = () => {
 
   width: 100%;
   height: 64px;
-  padding: 10px 28px 0;
+  padding: 10px 24px 0;
 
   background: var(--color-bg-page);
   box-sizing: border-box;

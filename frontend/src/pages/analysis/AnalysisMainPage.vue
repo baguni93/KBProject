@@ -3,15 +3,6 @@
     <PageHeader title="최근 소비 분석 결과" :showBack="false" />
 
     <div class="analysis-content-start">
-      <div
-          v-if="message"
-          :class="[
-          'kb-toast',
-          messageType === 'info' ? 'kb-toast--info' : 'kb-toast--error',
-        ]"
-      >
-        {{ message }}
-      </div>
 
       <div :class="['analysis-tabs', { 'is-loading': pageLoading }]">
         <CommonTabBar
@@ -185,10 +176,15 @@
             <div class="spending-icon">
               <i :class="getCategoryIcon(transaction.parentCategoryName || transaction.categoryName)"></i>
             </div>
-            <div class="spending-info">
-              <strong class="text-15-bold">{{ transaction.merchantName || '가맹점 정보 없음' }}</strong>
+            <!-- 거래명/거래일시 영역도 카테고리 수정 화면으로 이동할 수 있게 한다. -->
+            <button
+                type="button"
+                class="spending-info spending-info-button"
+                @click="goToCategoryEdit(transaction)"
+            >
+              <strong class="text-15-bold">{{ transaction.transactionLabel || transaction.merchantName || '거래 정보 없음' }}</strong>
               <span class="text-13">{{ formatShortDate(transaction.createdAt) }}</span>
-            </div>
+            </button>
             <div class="spending-right">
               <strong class="text-15-bold">-{{ formatAnalysisNumber(transaction.amount) }}원</strong>
               <button type="button" class="text-13-bold" @click="goToCategoryEdit(transaction)">
@@ -289,7 +285,7 @@ const loadLatestAnalysis = async () => {
 const loadTransactions = async () => {
   transactionsLoading.value = true;
   try {
-    const result = await analysisApi.getTransactions(selectedPeriod.value);
+    const result = await analysisApi.getAllTransactions();
     transactions.value = result.transactions ?? [];
   } catch (error) {
     transactions.value = [];
@@ -410,14 +406,7 @@ const goToCategorySummary = () => {
 };
 
 const goToAllTransactions = () => {
-  if (!latestAnalysis.value?.spendingAnalysisId) {
-    goToCheck();
-    return;
-  }
-  router.push({
-    name: 'analysis-transactions',
-    params: {spendingAnalysisId: latestAnalysis.value.spendingAnalysisId},
-  });
+  router.push({name: 'analysis-transactions'});
 };
 
 const goToCategoryEdit = (transaction) =>
@@ -446,9 +435,6 @@ onBeforeUnmount(stopStatusPolling);
   //margin-top: 14px;
 }
 
-.analysis-content-start .kb-toast {
-  margin-bottom: 12px;
-}
 
 .analysis-tabs.is-loading {
   pointer-events: none;
@@ -779,6 +765,15 @@ onBeforeUnmount(stopStatusPolling);
 .spending-info {
   min-width: 0;
   flex: 1;
+}
+
+.spending-info-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .spending-info strong,

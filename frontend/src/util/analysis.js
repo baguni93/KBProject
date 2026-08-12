@@ -12,9 +12,50 @@ export const normalizeAnalysisPeriod = (value) => {
 export const formatAnalysisNumber = (value) =>
   Number(value ?? 0).toLocaleString('ko-KR');
 
+const normalizeTransactionText = (value) =>
+  typeof value === 'string' && value.trim() ? value.trim() : '';
+
+export const getAnalysisTransactionLabel = (transaction = {}) => {
+  const transactionLabel = normalizeTransactionText(
+    transaction.transactionLabel,
+  );
+  if (transactionLabel) return transactionLabel;
+
+  const transactionType = normalizeTransactionText(
+    transaction.transactionType,
+  ).toUpperCase();
+  const merchantName = normalizeTransactionText(transaction.merchantName);
+
+  if (transactionType === 'PAYMENT') {
+    return merchantName || '결제';
+  }
+
+  if (transactionType === 'TRANSFER') {
+    const receiverName = normalizeTransactionText(transaction.receiverName);
+    return receiverName ? `${receiverName}에게 송금` : merchantName || '송금';
+  }
+
+  if (transactionType === 'SETTLEMENT') {
+    const settlementTitle = normalizeTransactionText(
+      transaction.settlementTitle,
+    );
+    const memo = normalizeTransactionText(transaction.memo);
+    return settlementTitle || memo || merchantName || '더치페이 정산';
+  }
+
+  return merchantName || '거래';
+};
+
 export const formatAnalysisDateTime = (value) => {
   if (!value) return '-';
   return String(value).replace('T', ' ');
+};
+
+// 일반 소비내역 화면에서는 초 단위까지 보여주지 않는다.
+// 카테고리 분류/수정 화면은 기존 formatAnalysisDateTime()을 사용해 초 단위를 유지한다.
+export const formatAnalysisDateTimeMinute = (value) => {
+  if (!value) return '-';
+  return String(value).replace('T', ' ').slice(0, 16);
 };
 
 export const formatAnalysisExecutionDate = (value, includeTime = true) => {

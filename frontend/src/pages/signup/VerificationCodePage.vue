@@ -1,93 +1,104 @@
 <template>
-  <div class="signup-page">
-    <!-- 1. 상단 영역 (Header + 뒤로가기 버튼) -->
-    <header class="signup-header">
-      <button class="back-button" type="button" @click="goBack">&lt;</button>
-      <h1>인증번호 입력</h1>
-      <p>문자로 받은 인증번호를 입력해 주세요.</p>
-    </header>
+  <div class="page-layout verification-page">
+    <!-- 공통 상단 헤더 -->
+    <PageHeader
+        custom-back
+        @back="goBack"
+    />
 
-    <!-- 2. 중앙 내용 영역 (휴대폰 본인인증 화면과 구조 통일) -->
-    <main class="content-area">
-      <div class="verification-info">
-        <div class="timer-area">
-          <span>입력시간</span>
-          <VerificationTimer
-            :key="timerKey"
-            :seconds="signupStore.expiresIn"
-            @expired="handleExpired"
-          />
+    <!-- 페이지 내용 -->
+    <main class="page-content verification-content">
+      <!-- 제목 -->
+      <header class="signup-header">
+        <h1 class="text-30-bold">인증번호 입력</h1>
+
+        <p class="text-15-bold">
+          문자로 받은 인증번호를 입력해 주세요.
+        </p>
+      </header>
+
+      <!-- 인증번호 영역 -->
+      <section class="verification-section">
+        <div class="verification-info">
+          <div class="timer-area text-13-bold">
+            <span>입력시간</span>
+
+            <VerificationTimer
+                :key="timerKey"
+                :seconds="signupStore.expiresIn"
+                @expired="handleExpired"
+            />
+          </div>
+
+          <button
+              class="resend-button text-13-bold"
+              :disabled="resending || resendCount >= 1"
+              type="button"
+              @click="resendCode"
+          >
+            {{ resending ? '재전송 중' : '재전송' }}
+          </button>
         </div>
 
-        <button
-          class="resend-button"
-          :disabled="resending || resendCount >= 1"
-          type="button"
-          @click="resendCode"
-        >
-          {{ resending ? '재전송 중' : '재전송' }}
-        </button>
-      </div>
+        <VerificationCodeInput
+            v-model="verificationCode"
+            :expired="expired || attemptExceeded"
+        />
 
-      <VerificationCodeInput v-model="verificationCode" :expired="expired" />
+        <p v-if="signupStore.developmentCode" class="development-code text-13">
+          개발용 인증번호: {{ signupStore.developmentCode }}
+        </p>
 
-      <p v-if="signupStore.developmentCode" class="development-code">
-        개발용 인증번호:
-        {{ signupStore.developmentCode }}
-      </p>
+        <p v-if="attemptExceeded" class="error-message text-13">
+          {{ errorMessage }}
+        </p>
 
-      <p v-if="expired && resendCount === 0" class="error-message">
-        인증시간이 만료되었어요.<br />
-        인증번호를 다시 받아 주세요.
-      </p>
+        <p v-else-if="expired && resendCount === 0" class="error-message text-13">
+          인증시간이 만료되었어요.<br />
+          인증번호를 다시 받아 주세요.
+        </p>
 
-      <p v-else-if="expired && resendCount >= 1" class="error-message">
-        인증 가능 횟수를 초과했어요.<br />
-        본인인증을 다시 진행해 주세요.
-      </p>
+        <p v-else-if="expired && resendCount >= 1" class="error-message text-13">
+          인증 가능 횟수를 초과했어요.<br />
+          본인인증을 다시 진행해 주세요.
+        </p>
 
-      <p v-else-if="errorMessage" class="error-message">
-        {{ errorMessage }}
-      </p>
+        <p v-else-if="errorMessage" class="error-message text-13">
+          {{ errorMessage }}
+        </p>
+      </section>
     </main>
 
-    <!-- 3. 하단 버튼 영역 (위치 및 크기 고정) -->
-    <div class="bottom-btn-area.single">
+    <!-- 만료 / 횟수 초과 시에만 하단 버튼 표시 -->
+    <div
+        v-if="(expired && resendCount >= 1) || (attemptExceeded && resendCount >= 1)"
+        class="bottom-btn-area single"
+    >
       <button
-        v-if="expired && resendCount >= 1"
-        class="bottom-btn"
-        type="button"
-        @click="restartVerification"
+          class="bottom-btn"
+          type="button"
+          @click="restartVerification"
       >
         본인인증 다시 하기
       </button>
-
-      <button
-        v-else
-        class="bottom-btn"
-        :disabled="verificationCode.length !== 6 || loading || expired"
-        type="button"
-        @click="verifyCode"
-      >
-        {{ loading ? '확인 중...' : '확인' }}
-      </button>
     </div>
 
-    <!-- 로딩 오버레이 -->
+    <!-- 로딩 -->
     <div v-if="loading" class="loading-overlay">
       <div class="loading-spinner"></div>
-      <span>인증정보를 확인하고 있어요.</span>
+      <span class="text-15-bold">인증정보를 확인하고 있어요.</span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import loginApi from '@/api/loginApi';
 import { changePhoneNumber, changeUserName } from '@/api/userApi';
 import VerificationCodeInput from '@/components/auth/VerificationCodeInput.vue';
 import VerificationTimer from '@/components/auth/VerificationTimer.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useSignupStore } from '@/stores/signup';
 
@@ -100,19 +111,15 @@ const errorMessage = ref('');
 const loading = ref(false);
 const resending = ref(false);
 const expired = ref(false);
+const attemptExceeded = ref(false);
 const timerKey = ref(0);
 const resendCount = ref(0);
 
-// 인증번호 오류 메시지 처리
+// 인증번호 오류 메시지
 const getVerificationErrorMessage = (error, fallbackMessage) => {
-  if (!error.response)
-    return '서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.';
+  if (!error.response) return '서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.';
 
-  const status = error.response.status;
   const serverMessage = error.response?.data?.message;
-
-  if (status >= 500) return fallbackMessage;
-
   return serverMessage || fallbackMessage;
 };
 
@@ -123,16 +130,13 @@ const handleExpired = () => {
   errorMessage.value = '';
 };
 
-// PIN 재설정 인증 완료 처리
+// PIN 재설정 인증 완료
 const handlePinReset = async () => {
-  sessionStorage.setItem(
-    'pinResetPhoneNumber',
-    signupStore.phoneAuth.phoneNumber,
-  );
+  sessionStorage.setItem('pinResetPhoneNumber', signupStore.phoneAuth.phoneNumber);
   await router.push('/auth/pin-reset');
 };
 
-// 이름 변경 인증 완료 처리
+// 이름 변경 인증 완료
 const handleNameChange = async () => {
   const newUserName = sessionStorage.getItem('nameChangeNewUserName');
 
@@ -156,17 +160,18 @@ const handleNameChange = async () => {
   });
 };
 
-// 휴대폰번호 변경 인증 완료 처리
+// 휴대폰번호 변경 인증 완료
 const handlePhoneChange = async () => {
   if (!authStore.userId) {
     await router.replace('/intro');
     return;
   }
 
-  await changePhoneNumber(authStore.userId, {
+  const tokenData = await changePhoneNumber(authStore.userId, {
     newPhoneNumber: signupStore.phoneAuth.phoneNumber,
   });
 
+  authStore.updateTokens(tokenData);
   signupStore.reset();
 
   await router.replace({
@@ -175,7 +180,7 @@ const handlePhoneChange = async () => {
   });
 };
 
-// 회원가입 인증 완료 처리
+// 회원가입 인증 완료
 const handleSignup = async () => {
   const signupResponse = await loginApi.checkSignupStatus({
     phoneNumber: signupStore.phoneAuth.phoneNumber,
@@ -184,10 +189,7 @@ const handleSignup = async () => {
   signupStore.setMemberStatus(signupResponse.memberStatus);
 
   if (signupResponse.existingMember) {
-    sessionStorage.setItem(
-      'pinLoginPhoneNumber',
-      signupStore.phoneAuth.phoneNumber,
-    );
+    sessionStorage.setItem('pinLoginPhoneNumber', signupStore.phoneAuth.phoneNumber);
     await router.push('/signup/existing-member');
     return;
   }
@@ -197,7 +199,7 @@ const handleSignup = async () => {
 
 // 인증번호 확인
 const verifyCode = async () => {
-  if (loading.value || expired.value) return;
+  if (loading.value || expired.value || attemptExceeded.value) return;
 
   errorMessage.value = '';
 
@@ -233,16 +235,23 @@ const verifyCode = async () => {
   } catch (error) {
     console.error(error);
 
-    errorMessage.value = getVerificationErrorMessage(
-      error,
-      '인증번호가 일치하지 않습니다.',
-    );
+    const message = getVerificationErrorMessage(error, '인증번호가 일치하지 않습니다.');
+    errorMessage.value = message;
+
+    if (message.includes('입력 가능 횟수를 초과')) attemptExceeded.value = true;
 
     verificationCode.value = '';
   } finally {
     loading.value = false;
   }
 };
+
+// 인증번호 6자리 입력 완료 시 자동 확인
+watch(verificationCode, async (code) => {
+  if (code.length !== 6 || loading.value || expired.value || attemptExceeded.value) return;
+
+  await verifyCode();
+});
 
 // 인증번호 재발급
 const resendCode = async () => {
@@ -261,17 +270,13 @@ const resendCode = async () => {
     signupStore.setDevelopmentCode(response.verificationCode);
 
     resendCount.value += 1;
-
     verificationCode.value = '';
     expired.value = false;
+    attemptExceeded.value = false;
     timerKey.value += 1;
   } catch (error) {
     console.error(error);
-
-    errorMessage.value = getVerificationErrorMessage(
-      error,
-      '인증번호 재전송에 실패했습니다.',
-    );
+    errorMessage.value = getVerificationErrorMessage(error, '인증번호 재전송에 실패했습니다.');
   } finally {
     resending.value = false;
   }
@@ -316,60 +321,31 @@ const goBack = async () => {
 </script>
 
 <style scoped>
-.signup-page {
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  box-sizing: border-box;
-  overflow: hidden;
-  /* 💡 버튼 위치를 일치시키기 위해 하단 패딩을 70px로 적용합니다 */
-  padding: 36px 24px 70px;
-  background: #ffffff;
+@import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
+
+.verification-page {
+  position: relative;
+  background: var(--color-bg-page);
 }
 
-/* 1. 상단 헤더 영역 */
+.verification-content {
+  padding-top: 24px;
+}
+
 .signup-header {
-  flex-shrink: 0;
-}
-
-.back-button {
-  align-self: flex-start;
-  margin-bottom: 16px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #555555;
-  font-size: 26px;
-  line-height: 1;
-  cursor: pointer;
+  margin-bottom: 44px;
 }
 
 .signup-header h1 {
   margin: 0 0 16px;
-  color: #111111;
-  font-size: 28px;
-  font-weight: 700;
+  color: var(--color-text-main);
 }
 
 .signup-header p {
   margin: 0;
-  color: #777777;
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.4;
-}
-
-/* 2. 중앙 내용 영역 */
-.content-area {
-  flex: 1;
-  min-height: 0;
-  margin-top: 28px;
-  overflow-y: auto;
-  box-sizing: border-box;
-  padding-right: 2px;
+  color: var(--color-text-sub);
+  line-height: 1.5;
 }
 
 .verification-section {
@@ -388,62 +364,53 @@ const goBack = async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #222222;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.development-code {
-  margin: 14px 0 0;
-  color: #777777;
-  font-size: 13px;
+  color: var(--color-text-main);
 }
 
 .resend-button {
   padding: 6px 12px;
-  border: 1px solid #999999;
+  border: 1px solid var(--color-text-disabled);
   border-radius: 16px;
-  background: #ffffff;
-  color: #444444;
-  font-size: 13px;
-  font-weight: 600;
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
   cursor: pointer;
 }
 
 .resend-button:disabled {
-  border-color: #dddddd;
-  color: #aaaaaa;
+  border-color: var(--color-border-main);
+  color: var(--color-text-disabled);
   cursor: not-allowed;
+}
+
+.development-code {
+  margin: 14px 0 0;
+  color: var(--color-text-sub);
 }
 
 .error-message {
   margin: 16px 0 0;
-  color: #e53935;
-  font-size: 14px;
+  color: var(--color-error);
   line-height: 1.5;
 }
 
-/* 로딩 오버레이 */
 .loading-overlay {
   position: absolute;
   inset: 0;
-  z-index: 10;
+  z-index: 200;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 14px;
   background: rgba(255, 255, 255, 0.86);
-  color: #333333;
-  font-size: 15px;
-  font-weight: 700;
+  color: var(--color-text-main);
 }
 
 .loading-spinner {
   width: 36px;
   height: 36px;
-  border: 4px solid #eeeeee;
-  border-top-color: #ffbc2e;
+  border: 4px solid var(--color-bg-disabled);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

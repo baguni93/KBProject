@@ -1,5 +1,6 @@
 package org.scoula.user.service;
 
+import org.scoula.account.dto.AccountDTO;
 import org.scoula.user.dto.*;
 
 public interface UserService {
@@ -23,4 +24,6 @@ public interface UserService {
     void changeUserName(Long userId, UserNameChangeDTO changeDTO); // 회원 이름 변경
 
     void changePhoneNumber(Long userId, UserPhoneChangeDTO changeDTO); // 회원 휴대폰번호 변경
+
+    AccountByBankCodeDTO getAccountByBankCode(int userId, String bankCode);
 }

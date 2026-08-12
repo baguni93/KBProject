@@ -16,6 +16,9 @@ public interface AccountService {
     // 계좌 인증번호 발급
     Map<String, Object> requestVerification(Long userId, AccountVerificationRequestDTO requestDTO);
 
+    // 계좌 인증번호 재발급
+    Map<String, Object> resendVerification(Long userId, Long verificationId);
+
     // 계좌 인증번호 확인
     boolean confirmVerification(Long userId, AccountVerificationConfirmDTO confirmDTO);
 

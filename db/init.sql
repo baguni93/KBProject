@@ -38,10 +38,6 @@ DROP TABLE IF EXISTS `feed_tbl`;
 
 DROP TABLE IF EXISTS `receipt_memo_tbl`;
 
-DROP TABLE IF EXISTS `payment_token_tbl`;
-
-DROP TABLE IF EXISTS `registered_card_tbl`;
-
 DROP TABLE IF EXISTS `card_tbl`;
 
 DROP TABLE IF EXISTS `wallet_transaction_tbl`;
@@ -112,6 +108,8 @@ DROP TABLE IF EXISTS `linked_account_tbl`;
 
 DROP TABLE IF EXISTS `bank_tbl`;
 
+DROP TABLE IF EXISTS `user_auth_tbl`;
+
 DROP TABLE IF EXISTS `user_tbl`;
 
 DROP TABLE IF EXISTS `merchant_category_mapping_tbl`;
@@ -121,25 +119,59 @@ DROP TABLE IF EXISTS user_tbl;
 
 CREATE TABLE user_tbl
 (
-    user_id       INT AUTO_INCREMENT PRIMARY KEY COMMENT '회원번호',
-    user_name     VARCHAR(30)  NOT NULL COMMENT '이름',
-    birth_date    DATE         NOT NULL COMMENT '생년월일',
-    phone_number  VARCHAR(20)  NOT NULL UNIQUE COMMENT '휴대폰번호',
-    pin_password  VARCHAR(255) NOT NULL COMMENT '암호화된 숫자 6자리 간편비밀번호',
-    user_status   VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE' COMMENT '회원상태',
-    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '가입일시',
-    updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    user_id         INT AUTO_INCREMENT PRIMARY KEY COMMENT '회원번호',
+    user_name       VARCHAR(30)  NOT NULL COMMENT '이름',
+    birth_date      DATE         NOT NULL COMMENT '생년월일',
+    phone_number    VARCHAR(20)  NOT NULL UNIQUE COMMENT '휴대폰번호',
+    pin_password    VARCHAR(255) NOT NULL COMMENT '암호화된 숫자 6자리 간편비밀번호',
+    pin_fail_count  INT          NOT NULL DEFAULT 0 COMMENT 'PIN 로그인 실패 횟수',
+    pin_locked_yn   CHAR(1)      NOT NULL DEFAULT 'N' COMMENT 'PIN 로그인 잠금 여부',
+    user_status     VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE' COMMENT '회원상태',
+    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '가입일시',
+    updated_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP
         COMMENT '수정일시',
-    withdrawn_at  DATETIME     NULL COMMENT '탈퇴일시',
-    last_login_at DATETIME     NULL COMMENT '최근접속일시',
+    withdrawn_at    DATETIME     NULL COMMENT '탈퇴일시',
+    last_login_at   DATETIME     NULL COMMENT '최근접속일시',
 
     CONSTRAINT chk_user_name_length
         CHECK (CHAR_LENGTH(user_name) BETWEEN 2 AND 30),
 
+    CONSTRAINT chk_pin_fail_count
+        CHECK (pin_fail_count BETWEEN 0 AND 5),
+
+    CONSTRAINT chk_pin_locked_yn
+        CHECK (pin_locked_yn IN ('Y', 'N')),
+
     CONSTRAINT chk_user_status
         CHECK (user_status IN ('ACTIVE', 'WITHDRAWN'))
 ) COMMENT = '회원';
+
+
+-- 59. 사용자 권한 테이블
+DROP TABLE IF EXISTS user_auth_tbl;
+
+CREATE TABLE user_auth_tbl
+(
+    user_id INT         NOT NULL COMMENT '회원번호',
+    auth    VARCHAR(50) NOT NULL COMMENT '권한',
+
+    PRIMARY KEY (user_id, auth),
+
+    CONSTRAINT fk_user_auth_user
+        FOREIGN KEY (user_id)
+            REFERENCES user_tbl (user_id)
+            ON DELETE CASCADE,
+
+    CONSTRAINT chk_user_auth
+        CHECK (
+            auth IN (
+                'ROLE_USER',
+                'ROLE_MANAGER',
+                'ROLE_ADMIN'
+            )
+        )
+) COMMENT = '사용자 권한';
 
 -- 2. 은행 테이블
 DROP TABLE IF EXISTS bank_tbl;
@@ -615,8 +647,6 @@ CREATE TABLE spending_analysis_tbl
     representative_category_id          INT          NOT NULL COMMENT '가장 많이 소비한 대표 카테고리',
     ai_title                            VARCHAR(100) NOT NULL COMMENT 'AI 생성 칭호',
     ai_analysis_summary                 TEXT         NOT NULL COMMENT 'AI가 생성한 소비 분석 요약',
-    ai_card_recommendation_summary      TEXT         NULL COMMENT 'AI가 생성한 카드 추천 요약',
-    ai_insurance_recommendation_summary TEXT         NULL COMMENT 'AI가 생성한 보험 추천 요약',
     created_at                          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '분석 일자',
 
     CONSTRAINT fk_spending_analysis_user
@@ -737,9 +767,10 @@ CREATE TABLE card_recommendation_tbl
     card_recommendation_id  INT AUTO_INCREMENT PRIMARY KEY COMMENT '카드 추천 PK',
     spending_analysis_id    INT      NOT NULL COMMENT '소비분석 ID',
     card_product_id         INT      NOT NULL COMMENT '추천 카드',
-    recommendation_rank     INT      NOT NULL COMMENT '추천 순위',
-    expected_benefit_amount INT      NULL COMMENT '예상 할인 금액',
-    created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '추천 일시',
+    recommendation_rank       INT      NOT NULL COMMENT '추천 순위',
+    expected_benefit_amount   INT      NULL COMMENT '예상 할인 금액',
+    ai_recommendation_summary TEXT     NULL COMMENT 'AI가 생성한 카드별 추천 요약',
+    created_at                DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '추천 일시',
 
     CONSTRAINT uq_card_recommendation
         UNIQUE (spending_analysis_id, card_product_id),
@@ -868,7 +899,8 @@ CREATE TABLE kb_insurance_recommendation_tbl
     insurance_recommendation_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '보험 추천 PK',
     spending_analysis_id        INT           NOT NULL COMMENT '소비분석 ID',
     insurance_product_id        INT           NOT NULL COMMENT '추천 보험 ID',
-    recommendation_reason       VARCHAR(1000) NOT NULL COMMENT '추천이유',
+    recommendation_reason       VARCHAR(1000) NOT NULL COMMENT '규칙 기반 추천 이유',
+    ai_recommendation_summary   TEXT          NULL COMMENT 'AI가 생성한 보험 상품별 추천 요약',
     created_at                  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '추천 생성 일시',
 
     CONSTRAINT uq_insurance_recommendation
@@ -1107,6 +1139,9 @@ CREATE TABLE financial_transaction_tbl
     parent_transaction_id INT          NULL
         COMMENT '상위 거래번호',
 
+    settlement_id         INT          NULL
+        COMMENT '정산 ID',
+
     user_id               INT          NOT NULL
         COMMENT '거래 요청자 회원번호',
 
@@ -1142,6 +1177,12 @@ CREATE TABLE financial_transaction_tbl
     CONSTRAINT fk_financial_transaction_parent
         FOREIGN KEY (parent_transaction_id)
             REFERENCES financial_transaction_tbl (transaction_id),
+
+
+    -- 정산 관계
+    CONSTRAINT fk_financial_transaction_settlement
+        FOREIGN KEY (settlement_id)
+            REFERENCES settlement_tbl (settlement_id),
 
 
     -- 요청자 회원
@@ -1210,6 +1251,9 @@ CREATE TABLE financial_transaction_tbl
         CHECK (
             amount >= 0
             )
+
+    -- 송금/정산은 사용자가 소비 카테고리를 반드시 선택한다.
+    -- PAYMENT는 AI 자동분류 실패 시 미분류(NULL)를 허용한다.
 );
 
 -- 32.은행 계좌 더미 테이블
@@ -1346,69 +1390,15 @@ DROP TABLE IF EXISTS card_tbl;
 
 CREATE TABLE card_tbl
 (
-    card_code          VARCHAR(20) PRIMARY KEY COMMENT '카드코드',
-
-    account_id         INT          NOT NULL UNIQUE COMMENT '계좌 ID',
-
-    card_img_file_name VARCHAR(255) NULL COMMENT '카드이미지파일명',
-
+    card_code          INT         AUTO_INCREMENT PRIMARY KEY COMMENT '카드 코드 (PK)',
     card_num           VARCHAR(255) NOT NULL COMMENT '카드번호',
-
-    expiry_date        CHAR(5)      NOT NULL COMMENT '유효기간',
-
+    expiry_date        CHAR(5)     NOT NULL COMMENT '유효기간',
     cvv                VARCHAR(255) NOT NULL COMMENT 'cvv',
+    card_password      VARCHAR(255) NOT NULL COMMENT '카드 비밀번호 4자리',
+    card_img_file_name VARCHAR(255) NULL COMMENT '카드 이미지 파일명',
+    card_name          VARCHAR(255) NULL COMMENT '카드 이름'
+) COMMENT = '실물 카드 원장';
 
-    CONSTRAINT fk_card_account
-        FOREIGN KEY (account_id)
-            REFERENCES account_dummy_tbl (account_id)
-);
-
--- 36.등록실물카드 테이블
-DROP TABLE IF EXISTS registered_card_tbl;
-
-CREATE TABLE registered_card_tbl
-(
-    card_id       INT AUTO_INCREMENT PRIMARY KEY COMMENT '카드id',
-
-    account_id    INT          NULL COMMENT '계좌 ID',
-
-    user_id       INT          NOT NULL COMMENT '회원번호',
-
-    card_num      VARCHAR(255) NOT NULL COMMENT '카드번호',
-
-    expiry_date   CHAR(5)      NOT NULL COMMENT '유효기간',
-
-    cvv           VARCHAR(255) NOT NULL COMMENT 'cvv',
-
-    card_password VARCHAR(255) NOT NULL COMMENT '카드 비밀번호 4자리',
-
-    represent_yn  CHAR(1)      NOT NULL DEFAULT 'N' COMMENT '대표카드여부',
-
-    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
-
-    delete_yn     CHAR(1)      NOT NULL DEFAULT 'N' COMMENT '삭제여부',
-
-    CONSTRAINT uq_registered_card_user
-        UNIQUE (card_id, user_id),
-
-    CONSTRAINT fk_registered_card_account
-        FOREIGN KEY (account_id)
-            REFERENCES account_dummy_tbl (account_id),
-
-    CONSTRAINT fk_registered_card_user
-        FOREIGN KEY (user_id)
-            REFERENCES user_tbl (user_id),
-
-    CONSTRAINT chk_registered_card_represent_yn
-        CHECK (
-            represent_yn IN ('Y', 'N')
-            ),
-
-    CONSTRAINT chk_registered_card_delete_yn
-        CHECK (
-            delete_yn IN ('Y', 'N')
-            )
-);
 
 -- 37.결제일회성토큰 테이블
 -- card_id 복합 FK 설정 오류 가능성이 있습니다.
@@ -1419,34 +1409,6 @@ CREATE TABLE registered_card_tbl
 -- REFERENCES registered_card_tbl(card_id, user_id)
 -- 그런데 registered_card_tbl에서는 UNIQUE(card_id, user_id)가 설정되어 있어 현재 구조로는 참조 가능합니다.
 -- 따라서 그대로 반영했습니다.
-
-DROP TABLE IF EXISTS payment_token_tbl;
-
-CREATE TABLE payment_token_tbl
-(
-    token_value VARCHAR(255) PRIMARY KEY COMMENT '토큰값',
-
-    user_id     INT      NOT NULL COMMENT '회원번호',
-
-    card_id     INT      NULL COMMENT '매핑카드id',
-
-    expired_at  DATETIME NOT NULL COMMENT '만료일시',
-
-    used_yn     CHAR(1)  NOT NULL DEFAULT 'N' COMMENT '사용여부',
-
-    CONSTRAINT fk_payment_token_user
-        FOREIGN KEY (user_id)
-            REFERENCES user_tbl (user_id),
-
-    CONSTRAINT fk_payment_token_card
-        FOREIGN KEY (card_id, user_id)
-            REFERENCES registered_card_tbl (card_id, user_id),
-
-    CONSTRAINT chk_payment_token_used_yn
-        CHECK (
-            used_yn IN ('Y', 'N')
-            )
-);
 
 -- 38.영수증메모 테이블
 DROP TABLE IF EXISTS receipt_memo_tbl;
@@ -2023,59 +1985,49 @@ DROP TABLE IF EXISTS linked_card_tbl;
 
 CREATE TABLE linked_card_tbl
 (
-    linked_card_id    BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '연결카드번호',
-    user_id           INT          NOT NULL COMMENT '회원번호',
-
-    card_id           INT          NOT NULL UNIQUE COMMENT '등록카드번호',
-
-    card_company_code VARCHAR(10)  NOT NULL COMMENT '카드사코드',
-
-    card_name         VARCHAR(100) NOT NULL COMMENT '카드명',
-
-    card_image_name   VARCHAR(255) NULL COMMENT '카드이미지파일명',
-
-    represent_yn      CHAR(1)      NOT NULL DEFAULT 'N' COMMENT '대표카드여부',
+    linked_card_id      INT         AUTO_INCREMENT PRIMARY KEY COMMENT '연결카드번호',
+    user_id             INT         NOT NULL COMMENT '회원번호',
+    card_code             INT         NOT NULL COMMENT '카드 ID',
+    card_company_code   VARCHAR(10) NOT NULL COMMENT '카드사코드',
+    represent_yn        CHAR(1)     NOT NULL DEFAULT 'N' COMMENT '대표카드여부',
+    delete_yn           CHAR(1)     NOT NULL DEFAULT 'N' COMMENT '삭제여부',
+    created_at          DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시',
 
     CONSTRAINT fk_linked_card_user
         FOREIGN KEY (user_id)
             REFERENCES user_tbl (user_id),
 
-    CONSTRAINT fk_linked_card_registered_card
-        FOREIGN KEY (card_id)
-            REFERENCES registered_card_tbl (card_id),
-
     CONSTRAINT fk_linked_card_company
         FOREIGN KEY (card_company_code)
             REFERENCES card_company_tbl (card_company_code),
 
-    CONSTRAINT chk_linked_card_name_length
-        CHECK (CHAR_LENGTH(card_name) BETWEEN 1 AND 100),
+    CONSTRAINT fk_linked_card_card
+        FOREIGN KEY (card_code)
+            REFERENCES card_tbl (card_code),
 
     CONSTRAINT chk_linked_card_represent_yn
-        CHECK (represent_yn IN ('Y', 'N'))
-) COMMENT = '연결카드';
+        CHECK (represent_yn IN ('Y', 'N')),
+
+    CONSTRAINT chk_linked_card_delete_yn
+        CHECK (delete_yn IN ('Y', 'N'))
+) COMMENT = '사용자 연결 카드';
 
 -- 56. 계좌인증 테이블 정의서
 DROP TABLE IF EXISTS account_verification_tbl;
 
 CREATE TABLE account_verification_tbl
 (
-
     verification_id   INT AUTO_INCREMENT PRIMARY KEY COMMENT '계좌인증번호',
-
     user_id           INT          NOT NULL COMMENT '회원번호',
-
     bank_code         VARCHAR(10)  NOT NULL COMMENT '은행코드',
-
     account_number    VARCHAR(255) NOT NULL COMMENT '계좌번호',
-
     account_holder    VARCHAR(50)  NOT NULL COMMENT '예금주',
-
     verification_code CHAR(4)      NOT NULL COMMENT '입금자명4자리',
-
     verified_yn       CHAR(1)      NOT NULL DEFAULT 'N' COMMENT '인증여부',
-
     requested_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '인증요청일시',
+    fail_count        INT          NOT NULL DEFAULT 0 COMMENT '인증번호 실패 횟수',
+    resend_count      INT          NOT NULL DEFAULT 0 COMMENT '인증번호 재발급 횟수',
+    locked_until      DATETIME     NULL COMMENT '계좌 인증 잠금 해제 일시',
 
     CONSTRAINT fk_account_verification_user
         FOREIGN KEY (user_id)
@@ -2086,8 +2038,13 @@ CREATE TABLE account_verification_tbl
             REFERENCES bank_tbl (bank_code),
 
     CONSTRAINT chk_account_verification_verified_yn
-        CHECK (verified_yn IN ('Y', 'N'))
+        CHECK (verified_yn IN ('Y', 'N')),
 
+    CONSTRAINT chk_account_verification_fail_count
+        CHECK (fail_count BETWEEN 0 AND 5),
+
+    CONSTRAINT chk_account_verification_resend_count
+        CHECK (resend_count BETWEEN 0 AND 1)
 ) COMMENT = '계좌인증';
 
 -- 57. 카테고리 분류 저장 테이블
@@ -2135,6 +2092,7 @@ CREATE TABLE merchant_category_mapping_tbl
 );
 
 -- 58. 소비카테고리 <-> 보험 종류 매칭 정책 테이블
+DROP TABLE IF EXISTS kb_insurance_category_match_tbl;
 CREATE TABLE kb_insurance_category_match_tbl
 (
     insurance_category_match_id INT AUTO_INCREMENT PRIMARY KEY

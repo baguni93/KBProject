@@ -16,15 +16,15 @@ public class AuthController {
 
     private final AuthService authService;
 
-    // auth-001: 간편 PIN 6자리 인증 (POST /api/auth/pin/verify)
+    // auth-001: 간편 PIN 6자리 인증
     @PostMapping("/pin/verify")
     public ResponseEntity<PinVerifyResponseDTO> verifyPin(@RequestBody PinVerifyRequestDTO requestDTO) {
         log.info("간편 PIN 6자리 인증 요청: {}", requestDTO);
+
         PinVerifyResponseDTO response = authService.verifyPin(requestDTO);
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
-        }
+
+        if (response.isSuccess()) return ResponseEntity.ok(response);
+
+        return ResponseEntity.badRequest().body(response);
     }
 }

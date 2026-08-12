@@ -67,7 +67,7 @@ public class FeedController {
     }
 
     @PostMapping
-    public ResponseEntity<FeedResponseDTO> createFeed(@RequestBody FeedCreateRequestDTO feedCreateRequestDTO) {
+    public ResponseEntity<FeedResponseDTO> createFeed(FeedCreateRequestDTO feedCreateRequestDTO) {
         log.info("feed create request : {}", feedCreateRequestDTO);
         return ResponseEntity.ok(feedService.create(feedCreateRequestDTO));
     }
@@ -94,7 +94,7 @@ public class FeedController {
 
     @GetMapping("/cardImage/{imageName}")
     public void viewCardImage(@PathVariable String imageName, HttpServletResponse response) {
-        File file = new File(UploadPathName.getCardPath()+imageName);
+        File file = new File(UploadPathName.getCustomCardPath()+imageName);
         UploadFiles.downloadImage(response, file);
     }
 

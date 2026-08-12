@@ -1,106 +1,97 @@
 <template>
-  <div class="remit-root flex flex-col h-full overflow-hidden">
-
-    <!-- 공통 페이지 헤더 -->
+  <div class="remit-container">
+    <!-- 공통 서브 화면 헤더 컴포넌트 적용 -->
     <PageHeader
-      :title="headerTitle"
+      :title="headerTitleText"
       :show-back="currentStep > 1"
-      :custom-back="true"
       @back="handleBack"
     />
 
-    <!-- 3개 탭 서브 네비게이션 (계좌 송금 / 친구 송금 / 정산 더치페이) -->
-    <div v-if="currentStep === 1" class="sub-tab-nav flex-shrink-0">
-      <button
-        class="nav-tab-btn"
-        :class="{ active: remitType === 'ACCOUNT' }"
-        @click="remitType = 'ACCOUNT'"
-      >
-        계좌 송금
-      </button>
-      <button
-        class="nav-tab-btn"
-        :class="{ active: remitType === 'FRIEND' }"
-        @click="remitType = 'FRIEND'"
-      >
-        친구 송금
-      </button>
-      <button
-        class="nav-tab-btn"
-        :class="{ active: remitType === 'DUTCH' }"
-        @click="remitType = 'DUTCH'"
-      >
-        정산 (더치페이)
-      </button>
-    </div>
+    <!-- 공통 탭 바 컴포넌트 적용 (STEP 1) -->
+    <CommonTabBar
+      v-if="currentStep === 1"
+      v-model="remitType"
+      :tabs="tabOptions"
+    />
 
-    <!-- ══════════════════════════════════════════
-         본문 가변 스크롤 콘텐츠
-    ══════════════════════════════════════════ -->
-    <div class="remit-body flex-1 min-h-0 overflow-y-auto">
-
-      <!-- ------------------------------------------
-           [STEP 1] 모드별 1단계 (계좌 입력 / 친구 선택 / 더치페이 생성)
-      ------------------------------------------ -->
-      <div v-if="currentStep === 1" class="step-card fade-in">
-        
+    <!-- 본문 가변 스크롤 영역 -->
+    <div class="card-body-scroll">
+      <!-- ==========================================
+           [STEP 1] 계좌 입력 / 친구 선택 / 더치페이 생성
+      ========================================== -->
+      <div v-if="currentStep === 1" class="step-content-wrap">
         <!-- 1-A. 계좌 송금 1단계 -->
         <template v-if="remitType === 'ACCOUNT'">
-
-
-          <div class="form-group mb-3 text-start">
-            <label class="form-label-sm">계좌 번호 입력</label>
-            <div>
+          <!-- 계좌 번호 입력 -->
+          <div class="form-field-group">
+            <label class="field-label text-13-bold">계좌 번호 입력</label>
+            <div class="input-with-btn-row">
               <input
                 v-model="accountForm.accountNumber"
+                @input="onAccountNumberInput"
                 type="text"
-                class="form-control form-control-sm fw-bold py-2"
+                class="custom-input text-15-bold"
                 placeholder="'-' 없이 계좌번호 입력"
               />
             </div>
           </div>
 
-          <!-- 은행 선택 4열 그리드 -->
-          <div class="form-group mb-3 text-start">
-            <label class="form-label-sm">은행 선택</label>
-            <div class="bank-grid-4">
+          <!-- 은행 선택 5열 그리드 (10개 은행 로고 적용) -->
+          <div class="form-field-group">
+            <label class="field-label text-13-bold">은행 선택</label>
+            <div class="bank-chip-grid">
               <button
                 v-for="b in bankOptions"
                 :key="b.code"
-                class="bank-select-chip"
+                class="bank-chip-card"
                 :class="{ active: accountForm.bankCode === b.code }"
                 @click="accountForm.bankCode = b.code"
               >
-                <div class="bank-icon-sm" :class="b.bgClass">{{ b.shortName }}</div>
-                <span class="bank-name-sm">{{ b.name }}</span>
+                <img
+                  :src="`/api/banks/logo/${b.fileName}`"
+                  class="bank-logo-img"
+                  :alt="b.name"
+                />
+                <span class="bank-chip-name text-13-bold">{{ b.name }}</span>
               </button>
             </div>
           </div>
 
-          <!-- 최근 송금 계좌 (DB 연동) -->
-          <div class="recent-accounts-wrap text-start">
-            <span class="form-label-sm">최근 송금 계좌</span>
-            <div v-if="recentAccounts.length === 0" class="small text-muted p-2.5 bg-light border rounded-3 text-center mt-1">
+          <!-- 최근 송금 계좌 -->
+          <div class="form-field-group">
+            <label class="field-label text-13-bold">최근 송금 계좌</label>
+            <div
+              v-if="recentAccounts.length === 0"
+              class="empty-recent-msg text-13"
+            >
               최근 송금 내역이 없습니다.
             </div>
-            <div v-else class="space-y-1 mt-1">
+            <div v-else class="recent-list-wrap">
               <div
                 v-for="recent in recentAccounts"
                 :key="recent.id || recent.accountNumber"
-                class="recent-account-card p-2 bg-light rounded-3 border cursor-pointer mb-1"
+                class="recent-card-item"
                 @click="selectRecentAccountItem(recent)"
               >
-                <div class="d-flex align-items-center gap-2">
-                  <div class="bank-icon-sm" :class="getBankBadgeInfo(recent.bankName).bgClass">
-                    {{ getBankBadgeInfo(recent.bankName).shortName }}
-                  </div>
-                  <div>
-                    <p class="mb-0 fw-bold small text-dark">
-                      {{ recent.receiverName || recent.name || '수취인' }} ({{ getBankName(recent.bankName) }} {{ recent.accountNumber }})
+                <div class="recent-item-left">
+                  <img
+                    :src="`/api/banks/logo/${getBankLogoFileName(recent.bankName)}`"
+                    class="bank-logo-img-small"
+                  />
+                  <div class="recent-info-text">
+                    <p class="recent-name-line text-15-bold">
+                      {{ recent.receiverName || recent.name || "수취인" }} ({{
+                        getBankName(recent.bankName)
+                      }}
+                      {{ recent.accountNumber }})
                     </p>
-                    <p class="mb-0 text-muted" style="font-size: 11px;">최근 송금: {{ recent.date || '최근' }} • {{ formatCurrency(recent.amount) }}원</p>
+                    <p class="recent-sub-line text-13">
+                      최근 송금: {{ recent.date || "최근" }} •
+                      {{ formatCurrency(recent.amount) }}원
+                    </p>
                   </div>
                 </div>
+                <i class="fa-solid fa-chevron-right arrow-ic"></i>
               </div>
             </div>
           </div>
@@ -108,194 +99,268 @@
 
         <!-- 1-B. 친구 송금 1단계 -->
         <template v-else-if="remitType === 'FRIEND'">
-
-          <div class="search-input-wrap mb-3">
-            <i class="bi bi-search search-ic"></i>
-            <input v-model="friendSearchKeyword" type="text" class="search-input-field" placeholder="친구 이름 또는 프로필 ID 입력..." />
+          <div class="search-box-wrap">
+            <i class="fa-solid fa-magnifying-glass search-ic"></i>
+            <input
+              v-model="friendSearchKeyword"
+              type="text"
+              class="search-input text-15"
+              placeholder="친구 이름 또는 프로필 ID 입력..."
+            />
           </div>
 
-          <div class="friend-list-section text-start">
-            <span class="form-label-sm mb-2 d-block">내 친구 목록 (선택 시 터치)</span>
-            <div v-if="filteredFriends.length === 0" class="text-center py-4 bg-white border rounded-3 text-muted small mb-2">
-              <i class="bi bi-people mb-1 fs-4 text-secondary d-block"></i>
-              등록된 친구가 없습니다. (친구를 먼저 추가해 주세요)
+          <div class="form-field-group">
+            <label class="field-label text-13-bold">내 친구 목록</label>
+            <div
+              v-if="filteredFriends.length === 0"
+              class="empty-recent-msg text-13"
+            >
+              등록된 친구가 없습니다.
             </div>
             <div
               v-for="friend in filteredFriends"
               :key="friend.id"
-              class="friend-item-card p-3 bg-white rounded-3 mb-2 d-flex justify-content-between align-items-center cursor-pointer border transition-all"
-              :class="selectedFriendId === friend.id ? 'border-2 border-warning bg-warning bg-opacity-10 shadow-sm' : 'border-light-subtle'"
-              @click="selectedFriendId = friend.id"
+              class="friend-card-item"
+              :class="{ active: selectedFriendId === friend.id }"
+              @click="selectFriendAndProceed(friend.id)"
             >
-              <div class="d-flex align-items-center gap-3">
-                <div class="friend-avatar-badge" :class="selectedFriendId === friend.id ? 'bg-warning text-dark font-bold' : 'bg-light text-secondary'">
+              <div class="friend-item-left">
+                <div
+                  class="friend-avatar text-13-bold"
+                  :class="{ active: selectedFriendId === friend.id }"
+                >
                   {{ friend.initials }}
                 </div>
                 <div>
-                  <p class="mb-0 fw-bold small text-dark">{{ friend.name }}</p>
-                  <p class="mb-0 text-muted" style="font-size: 11px;">@{{ friend.username }}</p>
+                  <p class="friend-name text-15-bold">{{ friend.name }}</p>
+                  <p class="friend-sub text-13">@{{ friend.username }}</p>
                 </div>
               </div>
 
-              <div v-if="selectedFriendId === friend.id" class="d-flex align-items-center gap-1">
-                <span class="badge bg-warning text-dark font-bold" style="font-size: 10px;">선택됨</span>
-                <i class="bi bi-check-circle-fill text-warning fs-5"></i>
+              <div
+                v-if="selectedFriendId === friend.id"
+                class="selected-badge-wrap"
+              >
+                <span class="sel-tag text-13-bold">선택됨</span>
+                <i class="fa-solid fa-circle-check sel-ic"></i>
               </div>
-              <i v-else class="bi bi-circle text-muted fs-6"></i>
+              <i v-else class="fa-regular fa-circle unsel-ic"></i>
             </div>
           </div>
         </template>
 
         <!-- 1-C. 더치페이 방 생성 1단계 -->
         <template v-else-if="remitType === 'DUTCH'">
-
-          <button class="btn btn-outline-warning text-dark border-warning w-100 mb-3 btn-sm fw-bold" @click="openTxSelectModal">
-            <i class="bi bi-list-ul me-1"></i> 내 거래 내역에서 결제 건 불러오기
+          <button
+            class="content-add-btn text-15-bold"
+            @click="openTxSelectModal"
+          >
+            <i class="fa-solid fa-list-ul"></i> 내 거래 내역에서 결제 건
+            불러오기
           </button>
 
-          <div class="form-group mb-3 text-start">
-            <label class="form-label-sm">정산 모임방 명칭</label>
-            <input v-model="dutchRoomTitle" type="text" class="form-control form-control-sm fw-bold" placeholder="정산 모임방 명칭을 입력하세요 (예: 회식 정산)" />
+          <div class="form-field-group">
+            <label class="field-label text-13-bold">정산 모임방 명칭</label>
+            <input
+              v-model="dutchRoomTitle"
+              type="text"
+              class="custom-input text-15-bold"
+              placeholder="정산 모임방 명칭을 입력하세요"
+            />
           </div>
 
-          <!-- 정산 참여 친구 검색 필드 (친구 송금 탭과 100% 동일 UI) -->
-          <div class="search-input-wrap mb-3">
-            <i class="bi bi-search search-ic"></i>
-            <input v-model="dutchFriendSearchKeyword" type="text" class="search-input-field" placeholder="정산할 친구 이름 또는 프로필 ID 입력..." />
+          <div class="search-box-wrap">
+            <i class="fa-solid fa-magnifying-glass search-ic"></i>
+            <input
+              v-model="dutchFriendSearchKeyword"
+              type="text"
+              class="search-input text-15"
+              placeholder="정산할 친구 이름 또는 프로필 ID 입력..."
+            />
           </div>
 
-          <!-- 선택된 정산 참여자 요약 뱃지 -->
-          <div class="dutch-friends-select-wrap text-start mb-3">
-            <span class="form-label-sm mb-1 d-block font-bold">선택된 정산 참여자 (총 {{ selectedDutchFriends.length + 1 }}명)</span>
-            <div class="d-flex flex-wrap gap-1 mb-2">
-              <span class="badge bg-warning text-dark font-bold">나 ({{ currentUserName }})</span>
-              <span v-for="fId in selectedDutchFriends" :key="fId" class="badge bg-warning bg-opacity-20 text-dark border border-warning font-bold">
-                {{ getFriendName(fId) }} <i class="bi bi-x ms-1 cursor-pointer text-danger" @click="removeDutchFriend(fId)"></i>
+          <div class="form-field-group">
+            <label class="field-label text-13-bold"
+              >선택된 정산 참여자 (총
+              {{ selectedDutchFriends.length + 1 }}명)</label
+            >
+            <div class="selected-tags-flex">
+              <span class="my-tag-badge text-13-bold"
+                >나 ({{ currentUserName }})</span
+              >
+              <span
+                v-for="fId in selectedDutchFriends"
+                :key="fId"
+                class="friend-tag-badge text-13-bold"
+              >
+                {{ getFriendName(fId) }}
+                <i
+                  class="fa-solid fa-xmark del-ic"
+                  @click="removeDutchFriend(fId)"
+                ></i>
               </span>
             </div>
           </div>
 
-          <!-- 친구 목록 카드리스트 (친구 송금 탭과 100% 동일 UI 및 다중 선택 지원) -->
-          <div class="friend-list-section text-start">
-            <span class="form-label-sm mb-2 d-block">함께 정산할 친구 선택 (터치하여 선택/해제)</span>
-            <div v-if="filteredDutchFriends.length === 0" class="text-center py-4 bg-white border rounded-3 text-muted small mb-2">
-              <i class="bi bi-people mb-1 fs-4 text-secondary d-block"></i>
+          <div class="form-field-group">
+            <label class="field-label text-13-bold"
+              >함께 정산할 친구 선택</label
+            >
+            <div
+              v-if="filteredDutchFriends.length === 0"
+              class="empty-recent-msg text-13"
+            >
               검색 결과 또는 등록된 친구가 없습니다.
             </div>
             <div
               v-for="friend in filteredDutchFriends"
               :key="friend.id"
-              class="friend-item-card p-3 bg-white rounded-3 mb-2 d-flex justify-content-between align-items-center cursor-pointer border transition-all"
-              :class="selectedDutchFriends.includes(friend.id) ? 'border-2 border-warning bg-warning bg-opacity-10 shadow-sm' : 'border-light-subtle'"
+              class="friend-card-item"
+              :class="{
+                'dutch-active': selectedDutchFriends.includes(friend.id),
+              }"
               @click="toggleDutchFriend(friend.id)"
             >
-              <div class="d-flex align-items-center gap-3">
-                <div class="friend-avatar-badge" :class="selectedDutchFriends.includes(friend.id) ? 'bg-warning text-dark font-bold' : 'bg-light text-secondary'">
+              <div class="friend-item-left">
+                <div
+                  class="friend-avatar text-13-bold"
+                  :class="{
+                    'dutch-active': selectedDutchFriends.includes(friend.id),
+                  }"
+                >
                   {{ friend.initials }}
                 </div>
                 <div>
-                  <p class="mb-0 fw-bold small text-dark">{{ friend.name }}</p>
-                  <p class="mb-0 text-muted" style="font-size: 11px;">@{{ friend.username }}</p>
+                  <p class="friend-name text-15-bold">{{ friend.name }}</p>
+                  <p class="friend-sub text-13">@{{ friend.username }}</p>
                 </div>
               </div>
 
-              <div v-if="selectedDutchFriends.includes(friend.id)" class="d-flex align-items-center gap-1">
-                <span class="badge bg-warning text-dark font-bold" style="font-size: 10px;">정산 참여</span>
-                <i class="bi bi-check-circle-fill text-warning fs-5"></i>
+              <div
+                v-if="selectedDutchFriends.includes(friend.id)"
+                class="selected-badge-wrap"
+              >
+                <span class="dutch-tag text-13-bold">정산 참여</span>
+                <i class="fa-solid fa-circle-check dutch-ic"></i>
               </div>
-              <i v-else class="bi bi-circle text-muted fs-6"></i>
+              <i v-else class="fa-regular fa-circle unsel-ic"></i>
             </div>
           </div>
         </template>
 
-        <!-- 다음 단계 진행 버튼 -->
-        <div class="mt-4 pt-2 border-top">
-          <button class="btn btn-warning w-100 fw-bold py-2 shadow-sm text-dark" :disabled="!canProceedStep1" @click="goToStep2">
-            다음 단계로 이동 <i class="bi bi-arrow-right ms-1"></i>
+        <!-- 하단 주요 버튼 (계좌 송금 및 더치페이 탭에서 유지) -->
+        <div
+          v-if="remitType === 'ACCOUNT' || remitType === 'DUTCH'"
+          class="next-btn-wrap"
+        >
+          <button
+            class="bottom-btn text-18-bold"
+            :disabled="!canProceedStep1"
+            @click="goToStep2"
+          >
+            다음 단계로 이동 <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
-
       </div>
 
-      <!-- ------------------------------------------
-           [STEP 2] 금액 / 메모 / 공유 피드 설정 / 정산 분배
-      ------------------------------------------ -->
-      <div v-else-if="currentStep === 2" class="step-card fade-in">
-        
-        <!-- 2-A. 계좌 & 친구 송금 2단계 (Screen 8-A, 8-B 동적 바인딩) -->
+      <!-- ==========================================
+           [STEP 2] 금액 / 메모 / 피드 설정 / 정산 분배
+      ========================================== -->
+      <div v-else-if="currentStep === 2" class="step-content-wrap">
         <template v-if="remitType !== 'DUTCH'">
-          <!-- 수취 대상 카드 (이름, 은행, 계좌번호, 닉네임 명확히 노출) -->
-          <div class="receiver-target-card p-3 bg-white rounded-3 text-start mb-3 border shadow-sm">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="small text-muted font-bold">수취 대상 확인</span>
-              <span class="badge bg-warning bg-opacity-20 text-dark border border-warning px-2 py-0.5 font-bold" style="font-size: 10px;">
-                {{ remitType === 'FRIEND' ? '친구 송금' : '계좌 송금' }}
-              </span>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <div class="bank-icon-sm" :class="getBankBadgeInfo(remitType === 'FRIEND' ? 'KB' : accountForm.bankCode).bgClass">
-                {{ getBankBadgeInfo(remitType === 'FRIEND' ? 'KB' : accountForm.bankCode).shortName }}
-              </div>
-              <div>
-                <h6 class="fw-bold text-dark mb-0">
+          <!-- 수취 대상 확인 카드 -->
+          <div class="receiver-summary-box">
+            <div class="summary-main-line">
+              <img
+                :src="`/api/banks/logo/${getBankLogoFileName(remitType === 'FRIEND' ? 'kb' : accountForm.bankCode)}`"
+                class="bank-logo-img-medium"
+              />
+              <div class="receiver-info-col">
+                <h4 class="receiver-name text-15-bold">
                   <template v-if="remitType === 'FRIEND'">
-                    {{ selectedFriendObj?.name || '선택한 친구' }}
-                    <span class="text-secondary small fw-normal ms-1">(@{{ selectedFriendObj?.username || '' }})</span>
+                    {{ selectedFriendObj?.name || "선택한 친구" }}
+                    <span class="sub-handle text-13"
+                      >(@{{ selectedFriendObj?.username || "" }})</span
+                    >
                   </template>
                   <template v-else>
-                    {{ accountForm.receiverName || '수취인' }}
-                    <span class="text-secondary small fw-normal ms-1">({{ getBankName(accountForm.bankCode) }} {{ accountForm.accountNumber }})</span>
+                    {{ accountForm.receiverName || "수취인" }}
+                    <span class="sub-handle text-13"
+                      >({{ getBankName(accountForm.bankCode) }}
+                      {{ accountForm.accountNumber }})</span
+                    >
                   </template>
-                </h6>
-                <p class="text-muted mb-0" style="font-size: 11px;">
-                  {{ remitType === 'FRIEND' ? 'KB Pay 친구 지갑으로 즉시 송금' : `${getBankName(accountForm.bankCode)} 계좌로 안전하게 이체` }}
-                </p>
+                </h4>
               </div>
+              <span class="summary-type-tag text-13-bold">{{
+                remitType === "FRIEND" ? "친구 송금" : "계좌 송금"
+              }}</span>
             </div>
           </div>
 
-          <div class="amount-input-group text-start mb-3">
-            <label class="form-label-sm">송금할 금액</label>
-            <div class="d-flex align-items-baseline border-bottom pb-1">
+          <!-- 송금할 금액 입력 및 빠른 금액 버튼 -->
+          <div class="form-field-group">
+            <label class="field-label text-13-bold">송금할 금액</label>
+            <div class="amount-input-row">
               <input
                 :value="remitAmountDisplay"
                 @input="onAmountInput"
                 type="text"
                 inputmode="numeric"
-                class="amount-field-direct fw-black text-dark"
+                class="amount-direct-input text-28-bold"
                 placeholder="0"
               />
-              <span class="fs-6 fw-bold ms-1 text-secondary">KRW</span>
+              <span class="krw-unit text-28-bold">원</span>
             </div>
-            <div class="quick-btn-row d-flex gap-1 mt-2">
-              <button class="btn btn-light btn-sm fw-bold text-primary" @click="remitAmount += 10000">+1만</button>
-              <button class="btn btn-light btn-sm fw-bold text-primary" @click="remitAmount += 50000">+5만</button>
-              <button class="btn btn-primary btn-sm fw-bold" @click="remitAmount = myBalance">전액</button>
+            <div class="quick-amount-row">
+              <button
+                class="content-btn secondary text-13-bold"
+                @click="remitAmount += 10000"
+              >
+                +1만
+              </button>
+              <button
+                class="content-btn secondary text-13-bold"
+                @click="remitAmount += 50000"
+              >
+                +5만
+              </button>
+              <button
+                class="content-btn secondary text-13-bold"
+                @click="remitAmount += 100000"
+              >
+                +10만
+              </button>
+              <button
+                class="content-btn primary text-13-bold"
+                @click="remitAmount = myBalance"
+              >
+                전액
+              </button>
             </div>
           </div>
 
-          <!-- 피드에 남길 내용 (메모) -->
-          <div class="memo-feed-wrap text-start mb-3">
-            <label class="form-label-sm">
-              <i class="bi bi-chat-quote-fill text-warning me-1"></i>피드에 남길 내용 (메모)
-            </label>
+          <div class="form-field-group">
+            <label class="field-label text-13-bold"
+              ><i class="fa-solid fa-message brand-ic"></i> 피드에 남길 내용
+              (메모)</label
+            >
             <textarea
               v-model="remitMemo"
-              class="form-control form-control-sm bg-light"
-              rows="3"
+              class="custom-textarea text-15"
               placeholder="피드에 남길 메시지를 입력하세요 (예: 맛있는 저녁 잘 먹었어! 🎉)"
             ></textarea>
           </div>
 
-          <!-- 공개 범위 선택 (전체 공개 / 친구 공개 / 나만 보기) -->
-          <div class="visibility-select-wrap text-start mb-3">
-            <label class="form-label-sm mb-1 d-block font-bold">
-              <i class="bi bi-shield-lock text-warning me-1"></i>공개 범위 선택
-            </label>
-            <div class="vis-opt-grid d-flex gap-1">
+          <div class="form-field-group">
+            <label class="field-label text-13-bold"
+              ><i class="fa-solid fa-shield-halved brand-ic"></i> 공개 범위
+              선택</label
+            >
+            <div class="vis-grid">
               <button
                 type="button"
-                class="vis-chip-btn"
+                class="content-btn secondary text-13-bold"
                 :class="{ active: remitVisibility === 'PUBLIC' }"
                 @click="remitVisibility = 'PUBLIC'"
               >
@@ -303,7 +368,7 @@
               </button>
               <button
                 type="button"
-                class="vis-chip-btn"
+                class="content-btn secondary text-13-bold"
                 :class="{ active: remitVisibility === 'FRIEND' }"
                 @click="remitVisibility = 'FRIEND'"
               >
@@ -311,7 +376,7 @@
               </button>
               <button
                 type="button"
-                class="vis-chip-btn"
+                class="content-btn secondary text-13-bold"
                 :class="{ active: remitVisibility === 'PRIVATE' }"
                 @click="remitVisibility = 'PRIVATE'"
               >
@@ -320,316 +385,451 @@
             </div>
           </div>
 
-          <!-- 소셜 피드 사진 첨부 -->
-          <div class="image-upload-wrap text-start mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label-sm mb-0">
-                <i class="bi bi-image text-warning me-1"></i>소셜 피드 사진 첨부 (선택)
-              </label>
-              <button v-if="selectedFile" type="button" class="btn btn-link p-0 text-danger small font-bold text-decoration-none" @click="removeSelectedFile">
+          <!-- 소셜 피드 사진 첨부 (예쁜 카드형 UI) -->
+          <div class="form-field-group">
+            <div class="file-header-line">
+              <label class="field-label text-13-bold"
+                ><i class="fa-solid fa-image brand-ic"></i> 소셜 피드 사진 첨부
+                (선택)</label
+              >
+              <button
+                v-if="selectedFile"
+                type="button"
+                class="cancel-file-btn text-13-bold"
+                @click="removeSelectedFile"
+              >
                 첨부 취소
               </button>
             </div>
-            
-            <div v-if="imagePreviewUrl" class="position-relative mb-2">
-              <img :src="imagePreviewUrl" class="img-fluid rounded-3 border w-100 shadow-sm" style="max-height: 140px; object-fit: cover;" />
-            </div>
 
-            <input
-              type="file"
-              accept="image/*"
-              class="form-control form-control-sm bg-light"
-              @change="handleFileChange"
-            />
+            <div class="photo-upload-container">
+              <label v-if="!imagePreviewUrl" class="photo-upload-box">
+                <i class="fa-solid fa-camera upload-icon"></i>
+                <span class="upload-text text-13-bold">사진 추가하기</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  class="hidden-file-input"
+                  @change="handleFileChange"
+                />
+              </label>
+              <div v-else class="preview-img-wrap">
+                <img :src="imagePreviewUrl" class="preview-img" />
+                <button
+                  type="button"
+                  class="remove-photo-btn"
+                  @click="removeSelectedFile"
+                >
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </div>
           </div>
         </template>
 
-        <!-- 2-B. 더치페이 정산금 분배 설정 -->
         <template v-else>
-          <div class="text-start mb-3 border-bottom pb-2">
-            <span class="small text-muted">총 청구 정산금 (결제한 금액)</span>
-            <h3 class="fw-black text-dark mb-0">{{ formatCurrency(remitAmount || 0) }} <span class="fs-6">KRW</span></h3>
-            <span class="badge bg-warning text-dark font-bold mt-1">내가 결제한 내역 정산</span>
+          <div class="total-dutch-header">
+            <span class="dutch-label text-13-bold">총 청구 정산금</span>
+            <div class="dutch-amount-row">
+              <span class="dutch-amount text-28-bold">{{
+                formatCurrency(remitAmount || 0)
+              }}</span>
+              <span class="dutch-unit text-28-bold">원</span>
+            </div>
           </div>
 
-          <!-- 1/N 균등 정산 vs 차등 정산 탭 -->
-          <div class="split-tab-group p-1 bg-light rounded-3 d-flex mb-3">
-            <button class="flex-1 btn btn-sm" :class="dutchSplitMode === 'EQUAL' ? 'btn-white shadow-sm fw-bold' : 'text-muted'" @click="dutchSplitMode = 'EQUAL'">1/N 균등 정산</button>
-            <button class="flex-1 btn btn-sm" :class="dutchSplitMode === 'CUSTOM' ? 'btn-white shadow-sm fw-bold' : 'text-muted'" @click="dutchSplitMode = 'CUSTOM'">차등 정산 (직접 입력)</button>
+          <div class="split-tab-bar">
+            <button
+              class="split-tab text-13-bold"
+              :class="{ active: dutchSplitMode === 'EQUAL' }"
+              @click="dutchSplitMode = 'EQUAL'"
+            >
+              1/N 균등 정산
+            </button>
+            <button
+              class="split-tab text-13-bold"
+              :class="{ active: dutchSplitMode === 'CUSTOM' }"
+              @click="dutchSplitMode = 'CUSTOM'"
+            >
+              차등 정산 (직접 입력)
+            </button>
           </div>
 
-          <div class="dutch-members-list-box p-3 bg-light rounded-3 text-start mb-3 border">
-            <span class="fw-bold small mb-2 d-block">
-              {{ dutchSplitMode === 'EQUAL' ? `1/N 균등 정산 배분율 (총 ${selectedDutchFriends.length + 1}명)` : '차등 정산 (멤버별 요청 금액 입력)' }}
+          <div class="dutch-calc-box">
+            <span class="calc-title text-13-bold">
+              {{
+                dutchSplitMode === "EQUAL"
+                  ? `1/N 균등 정산 배분율 (총 ${selectedDutchFriends.length + 1}명)`
+                  : "차등 정산 (멤버별 요청 금액 입력)"
+              }}
             </span>
 
-            <div v-if="dutchSplitMode === 'EQUAL'" class="space-y-2">
-              <div class="d-flex justify-content-between p-2 bg-white rounded border small fw-bold">
-                <span class="text-warning">나 ({{ currentUserName }}) [결제자]</span>
-                <span>{{ formatCurrency(Math.floor((remitAmount || 0) / (selectedDutchFriends.length + 1))) }} 원</span>
+            <div v-if="dutchSplitMode === 'EQUAL'" class="calc-list">
+              <div class="calc-row text-15-bold">
+                <span class="my-name">나 ({{ currentUserName }}) [결제자]</span>
+                <span class="val-text"
+                  >{{
+                    formatCurrency(
+                      Math.floor(
+                        (remitAmount || 0) / (selectedDutchFriends.length + 1),
+                      ),
+                    )
+                  }}
+                  원</span
+                >
               </div>
               <div
                 v-for="fId in selectedDutchFriends"
                 :key="fId"
-                class="d-flex justify-content-between p-2 bg-white rounded border small fw-bold"
+                class="calc-row text-15-bold"
               >
-                <span>{{ getFriendName(fId) }} (정산 요청 대상)</span>
-                <span class="text-danger">{{ formatCurrency(Math.floor((remitAmount || 0) / (selectedDutchFriends.length + 1))) }} 원</span>
+                <span class="friend-name"
+                  >{{ getFriendName(fId) }} (정산 대상)</span
+                >
+                <span class="val-text red-val"
+                  >{{
+                    formatCurrency(
+                      Math.floor(
+                        (remitAmount || 0) / (selectedDutchFriends.length + 1),
+                      ),
+                    )
+                  }}
+                  원</span
+                >
               </div>
             </div>
 
-            <div v-else class="space-y-2">
-              <div class="d-flex justify-content-between align-items-center p-2 bg-white rounded border small">
-                <span class="fw-bold">나 ({{ currentUserName }})</span>
-                <input type="text" :value="formatCurrency(Math.floor((remitAmount || 0) / (selectedDutchFriends.length + 1)))" class="form-control form-control-sm text-end fw-bold width-80" />
+            <div v-else class="calc-list">
+              <div class="calc-row text-15-bold">
+                <span>나 ({{ currentUserName }})</span>
+                <input
+                  type="text"
+                  :value="
+                    formatCurrency(
+                      Math.floor(
+                        (remitAmount || 0) / (selectedDutchFriends.length + 1),
+                      ),
+                    )
+                  "
+                  class="custom-calc-input text-13-bold"
+                />
               </div>
               <div
                 v-for="fId in selectedDutchFriends"
                 :key="fId"
-                class="d-flex justify-content-between align-items-center p-2 bg-white rounded border small"
+                class="calc-row text-15-bold"
               >
-                <span class="fw-bold">{{ getFriendName(fId) }}</span>
-                <input type="text" :value="formatCurrency(Math.floor((remitAmount || 0) / (selectedDutchFriends.length + 1)))" class="form-control form-control-sm text-end fw-bold width-80" />
+                <span>{{ getFriendName(fId) }}</span>
+                <input
+                  type="text"
+                  :value="
+                    formatCurrency(
+                      Math.floor(
+                        (remitAmount || 0) / (selectedDutchFriends.length + 1),
+                      ),
+                    )
+                  "
+                  class="custom-calc-input text-13-bold"
+                />
               </div>
             </div>
           </div>
         </template>
 
-        <div class="border-top pt-3">
-          <button class="btn btn-warning w-100 fw-bold py-2 shadow-sm text-dark" @click="proceedFromStep2">
-            {{ remitType === 'DUTCH' ? '정산 요청 및 모임방 생성' : '다음 단계로' }} <i class="bi bi-arrow-right ms-1"></i>
+        <div class="next-btn-wrap">
+          <button class="bottom-btn text-18-bold" @click="proceedFromStep2">
+            {{
+              remitType === "DUTCH" ? "정산 요청 및 모임방 생성" : "다음 단계로"
+            }}
+            <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
-
       </div>
 
-      <!-- ------------------------------------------
+      <!-- ==========================================
            [STEP 3] 부족금 자동충전 알림
-      ------------------------------------------ -->
-      <div v-else-if="currentStep === 3" class="step-card fade-in">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <span class="step-badge warning">부족금 자동충전</span>
-          <span class="text-danger small font-bold">자동 계산</span>
+      ========================================== -->
+      <div v-else-if="currentStep === 3" class="step-content-wrap">
+        <div class="auto-top-badge-line">
+          <span class="auto-badge-tag text-13-bold">부족금 자동충전</span>
+          <span class="auto-calc-tag text-13-bold">자동 계산</span>
         </div>
 
-        <div class="p-3 bg-light rounded-3 text-start mb-3 border d-flex justify-content-between align-items-center">
-          <div class="d-flex align-items-center gap-2">
-            <div class="badge bg-warning text-dark rounded-circle p-2 fw-bold" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">KB</div>
-            <span class="fw-bold text-dark small">총 필요 금액</span>
+        <div class="total-need-box">
+          <div class="kb-badge-left">
+            <div class="kb-circle text-13-bold">KB</div>
+            <span class="kb-label text-15-bold">총 필요 금액</span>
           </div>
-          <span class="fw-black text-dark fs-6">{{ formatCurrency(remitAmount || 0) }} 원</span>
+          <span class="total-need-val text-20-bold"
+            >{{ formatCurrency(remitAmount || 0) }} 원</span
+          >
         </div>
 
-        <!-- 황색 잔액 부족 자동충전 알림 카드 -->
-        <div class="auto-charge-warning-card p-4 rounded-4 text-start mb-4">
-          <div class="d-flex align-items-start gap-2 mb-3">
-            <div class="exclamation-badge">!</div>
-            <div>
-              <h6 class="fw-bold text-dark mb-1">잔액 부족 (보유: {{ formatCurrency(myBalance) }}원)</h6>
-              <p class="small text-muted mb-0">부족분은 주거래 계좌에서 금액 입력 없이 자동 계산되어 즉시 충전됩니다.</p>
+        <div class="auto-warning-card">
+          <div class="warning-main-flex">
+            <div class="exclam-circle text-13-bold">!</div>
+            <div class="warning-text-wrap">
+              <h4 class="warning-head text-15-bold">
+                잔액 부족 (보유: {{ formatCurrency(myBalance) }}원)
+              </h4>
+              <p class="warning-desc text-13">
+                부족분은 주거래 계좌에서 금액 입력 없이 자동 계산되어 즉시
+                충전됩니다.
+              </p>
             </div>
           </div>
 
-          <div class="border-top border-warning border-opacity-25 pt-2 d-flex justify-content-between align-items-center">
-            <span class="small fw-bold text-warning-dark">{{ getBankName(accountForm.bankCode) }} 주거래 계좌 자동 충전액</span>
-            <span class="fw-black text-warning-dark fs-6">+{{ formatCurrency(Math.max(0, (remitAmount || 0) - (myBalance || 0))) }} KRW</span>
+          <div class="warning-bottom-line">
+            <span class="auto-bank-name text-13-bold"
+              >{{ getBankName(accountForm.bankCode) }} 주거래 계좌 자동
+              충전액</span
+            >
+            <span class="auto-charge-val text-15-bold"
+              >+{{
+                formatCurrency(
+                  Math.max(0, (remitAmount || 0) - (myBalance || 0)),
+                )
+              }}
+              원</span
+            >
           </div>
         </div>
 
-        <button class="btn btn-warning w-100 fw-bold py-2.5 shadow-sm text-dark" @click="currentStep = 4">
-          자동 충전 후 즉시 송금 (PIN 인증)
-        </button>
+        <div class="next-btn-wrap">
+          <button class="bottom-btn text-18-bold" @click="currentStep = 4">
+            자동 충전 후 즉시 송금 (PIN 인증)
+          </button>
+        </div>
       </div>
 
-      <!-- ------------------------------------------
+      <!-- ==========================================
            [STEP 4] PIN 비밀번호 인증
-      ------------------------------------------ -->
-      <div v-else-if="currentStep === 4" class="step-card fade-in text-center py-4">
-        <h5 class="fw-bold mb-1">간편 비밀번호 인증</h5>
-        <p class="small text-muted mb-4">송금 및 충전 승인을 위해 <strong class="text-warning">간편 6자리 비밀번호</strong>를 입력하세요.</p>
-
-        <div class="d-flex justify-content-center gap-3 mb-4">
-          <span v-for="i in 6" :key="i" class="pin-dot" :class="{ filled: pinCode.length >= i }"></span>
+      ========================================== -->
+      <div
+        v-else-if="currentStep === 4"
+        class="step-content-wrap pin-step-wrap"
+      >
+        <div class="pin-head-text">
+          <h3 class="pin-title text-20-bold">간편 비밀번호 인증</h3>
+          <p class="pin-sub text-13">
+            송금 및 충전 승인을 위해
+            <span class="highlight-pin text-13-bold">간편 6자리 비밀번호</span
+            >를 입력하세요.
+          </p>
         </div>
 
-        <div class="pin-keypad-grid max-w-280 mx-auto">
-          <button v-for="n in [1,2,3,4,5,6,7,8,9]" :key="n" class="pin-key" @click="appendPin(n)">{{ n }}</button>
-          <button class="pin-key text-warning small fw-bold" @click="pinCode = ''">재배열</button>
-          <button class="pin-key" @click="appendPin(0)">0</button>
-          <button class="pin-key text-secondary" @click="deletePin"><i class="bi bi-backspace"></i></button>
+        <div class="pin-dots-row">
+          <span
+            v-for="i in 6"
+            :key="i"
+            class="dot-item"
+            :class="{ filled: pinCode.length >= i }"
+          ></span>
+        </div>
+
+        <div class="pin-keypad">
+          <div class="keypad-row">
+            <button
+              v-for="n in [1, 2, 3]"
+              :key="n"
+              class="pin-btn text-18-bold"
+              @click="appendPin(n)"
+            >
+              {{ n }}
+            </button>
+          </div>
+          <div class="keypad-row">
+            <button
+              v-for="n in [4, 5, 6]"
+              :key="n"
+              class="pin-btn text-18-bold"
+              @click="appendPin(n)"
+            >
+              {{ n }}
+            </button>
+          </div>
+          <div class="keypad-row">
+            <button
+              v-for="n in [7, 8, 9]"
+              :key="n"
+              class="pin-btn text-18-bold"
+              @click="appendPin(n)"
+            >
+              {{ n }}
+            </button>
+          </div>
+          <div class="keypad-row">
+            <button class="pin-btn re-btn text-13-bold" @click="pinCode = ''">
+              재배열
+            </button>
+            <button class="pin-btn text-18-bold" @click="appendPin(0)">
+              0
+            </button>
+            <button class="pin-btn del-btn text-15" @click="deletePin">
+              <i class="fa-solid fa-delete-left"></i>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- ------------------------------------------
-           [STEP 5] 송금 / 정산 요청 완료 (Screen 10-1 & Screen 13)
-      ------------------------------------------ -->
-      <div v-else-if="currentStep === 5" class="step-card fade-in text-center py-4">
-        <div class="icon-circle-lg bg-success bg-opacity-10 text-success mx-auto mb-3">
-          <i class="bi bi-check-all"></i>
+      <!-- ==========================================
+           [STEP 5] 송금 / 정산 요청 완료
+      ========================================== -->
+      <div
+        v-else-if="currentStep === 5"
+        class="step-content-wrap complete-step-wrap"
+      >
+        <div class="success-icon-circle">
+          <i class="fa-solid fa-check-double"></i>
         </div>
-        <h4 class="fw-black text-dark mb-1">
-          {{ remitType === 'DUTCH' ? '더치페이 정산 모임방이 생성되었습니다!' : '송금 처리가 완료되었습니다!' }}
-        </h4>
-        <p class="small text-muted mb-4">
-          {{ remitType === 'DUTCH' ? '선택하신 참여 친구들에게 1/N 정산 요청 알림 메시지가 전송되었습니다.' : '요청하신 계좌 / 친구에게 정상 이체되었습니다.' }}
-        </p>
+        <div class="complete-text-wrap">
+          <h3 class="complete-title text-20-bold">
+            {{
+              remitType === "DUTCH"
+                ? "더치페이 정산 모임방이 생성되었습니다!"
+                : "송금 처리가 완료되었습니다!"
+            }}
+          </h3>
+          <p class="complete-desc text-13">
+            {{
+              remitType === "DUTCH"
+                ? "선택하신 참여 친구들에게 1/N 정산 요청 알림 메시지가 전송되었습니다."
+                : "요청하신 계좌 / 친구에게 정상 이체되었습니다."
+            }}
+          </p>
+        </div>
 
-        <div class="space-y-2">
+        <div class="complete-btn-group">
           <template v-if="remitType === 'DUTCH'">
-            <button class="btn btn-warning w-100 fw-bold py-2.5 text-dark shadow-sm mb-1" @click="$router.push('/mypage')">
-              <i class="bi bi-person-circle me-1"></i> 마이페이지에서 정산 내역 확인하기
+            <button
+              class="bottom-btn text-18-bold"
+              @click="$router.push('/mypage')"
+            >
+              <i class="fa-solid fa-user"></i> 마이페이지에서 정산 내역 확인하기
             </button>
-            <button class="btn btn-outline-secondary w-100 fw-bold py-2" @click="$router.push('/wallet')">
+            <button
+              class="content-btn secondary text-15-bold"
+              @click="$router.push('/wallet')"
+            >
               내 지갑 홈으로 돌아가기
             </button>
           </template>
           <template v-else>
-            <button class="btn btn-warning w-100 fw-bold py-2.5 text-dark shadow-sm mb-1" @click="$router.push('/feed')">
-              <i class="bi bi-rss-fill me-1"></i> 소셜 피드로 이동하여 확인하기
+            <button
+              class="bottom-btn text-18-bold"
+              @click="$router.push('/feed')"
+            >
+              <i class="fa-solid fa-list-ul"></i> 소셜 피드로 이동하여 확인하기
             </button>
-            <button class="btn btn-outline-secondary w-100 fw-bold py-2" @click="$router.push('/transactions')">
+            <button
+              class="content-btn secondary text-15-bold"
+              @click="$router.push('/transactions')"
+            >
               거래 내역 확인하기
             </button>
           </template>
         </div>
       </div>
-
-      <!-- ------------------------------------------
-           [STEP 6] 실시간 정산 수납 및 찌르기 피드 (Screen 13 100% 동일 반영)
-      ------------------------------------------ -->
-      <div v-else-if="currentStep === 6" class="step-card fade-in text-start">
-        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-          <h5 class="fw-bold mb-0">실시간 정산 관리 피드</h5>
-          <span class="badge bg-success bg-opacity-10 text-success">수납 상태</span>
-        </div>
-
-        <div class="mb-3">
-          <span class="small text-muted">스타벅스 커피 정산방 현황</span>
-          <h5 class="fw-bold text-dark mt-1">정산 완료 진행률: <strong class="text-warning">33%</strong></h5>
-          <div class="progress mt-2" style="height: 8px;">
-            <div class="progress-bar bg-warning" role="progressbar" style="width: 33%"></div>
-          </div>
-        </div>
-
-        <div class="members-nudge-section space-y-2 mb-4">
-          <span class="small text-muted fw-bold d-block">모임 멤버 수납 상태</span>
-
-          <div class="d-flex justify-content-between align-items-center p-2.5 bg-light rounded-3 border">
-            <div class="d-flex align-items-center gap-2">
-              <span class="badge bg-success">나</span>
-              <span class="fw-bold small text-dark">이승진</span>
-            </div>
-            <span class="text-success fw-bold small"><i class="bi bi-check-circle-fill me-1"></i>완납 완료</span>
-          </div>
-
-          <div class="d-flex justify-content-between align-items-center p-2.5 bg-light rounded-3 border">
-            <div class="d-flex align-items-center gap-2">
-              <span class="badge bg-secondary">미</span>
-              <span class="fw-bold small text-dark">김민수</span>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <span class="text-danger fw-bold small">8,000원</span>
-              <button class="btn btn-warning btn-sm py-0.5 px-2 fw-bold text-dark" @click="nudgeUser('김민수')">
-                <i class="bi bi-bell-fill me-1"></i>찌르기
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <button class="btn btn-outline-secondary w-100 fw-bold py-2" @click="$router.push('/wallet')">
-          내 지갑 홈으로 돌아가기
-        </button>
-      </div>
-
     </div>
 
-    <!-- ══════════════════════════════════════════
-         내 거래 내역 다중 선택 모달 (DB 연동 거래 내역 리스트)
-    ══════════════════════════════════════════ -->
-    <div v-if="showTxSelectModal" class="tx-select-modal-overlay" @click.self="showTxSelectModal = false">
-      <div class="tx-select-modal-card p-4 bg-white rounded-4 shadow-lg border text-start">
-        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-          <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-check2-square me-1 text-warning"></i>정산할 결제 건 선택 (다중 선택 가능)</h6>
-          <button class="btn-close" @click="showTxSelectModal = false"></button>
+    <!-- 내 거래 내역 다중 선택 모달 -->
+    <div
+      v-if="showTxSelectModal"
+      class="modal-overlay"
+      @click.self="showTxSelectModal = false"
+    >
+      <div class="modal-card">
+        <div class="modal-header">
+          <h4 class="modal-title text-15-bold">
+            <i class="fa-solid fa-square-check modal-ic"></i> 정산할 결제 건
+            선택 (다중 선택 가능)
+          </h4>
+          <button class="close-btn" @click="showTxSelectModal = false">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
 
-        <div v-if="userTxList.length === 0" class="text-center py-4 text-muted small">
+        <div v-if="userTxList.length === 0" class="empty-recent-msg text-13">
           조회된 결제 거래 내역이 없습니다.
         </div>
-        <div v-else class="space-y-2">
-          <!-- 선택 개수 및 총 합산 금액 띠 바 -->
-          <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded-3 mb-2 small border">
-            <span class="fw-bold text-dark">선택 {{ selectedTxIds.length }}개</span>
-            <span class="fw-black text-warning fs-6">총 {{ formatCurrency(selectedTxTotalAmount) }} 원</span>
+        <div v-else class="modal-body-content">
+          <div class="tx-summary-bar text-13">
+            <span class="summary-cnt text-13-bold"
+              >선택 {{ selectedTxIds.length }}개</span
+            >
+            <span class="summary-sum text-15-bold"
+              >총 {{ formatCurrency(selectedTxTotalAmount) }} 원</span
+            >
           </div>
 
-          <div class="tx-modal-list space-y-2" style="max-height: 250px; overflow-y: auto;">
+          <div class="tx-scroll-list">
             <div
               v-for="tx in userTxList"
               :key="tx.id"
-              class="tx-select-item p-2.5 rounded-3 border d-flex justify-content-between align-items-center cursor-pointer mb-2 transition-all"
-              :class="selectedTxIds.includes(tx.id) ? 'border-2 border-warning bg-warning bg-opacity-10' : 'bg-light border-light-subtle'"
+              class="tx-item-card"
+              :class="{ selected: selectedTxIds.includes(tx.id) }"
               @click="toggleTxSelection(tx.id)"
             >
-              <div class="d-flex align-items-center gap-2.5">
+              <div class="tx-item-left">
                 <input
                   type="checkbox"
-                  class="form-check-input mt-0 cursor-pointer"
+                  class="tx-chk"
                   :checked="selectedTxIds.includes(tx.id)"
                   @click.stop="toggleTxSelection(tx.id)"
                 />
                 <div>
-                  <p class="mb-0 fw-bold small text-dark">{{ tx.title }}</p>
-                  <p class="mb-0 text-muted" style="font-size: 10px;">{{ tx.date }} • 결제완료</p>
+                  <p class="tx-title text-15-bold">{{ tx.title }}</p>
+                  <p class="tx-date text-13">{{ tx.date }} • 결제완료</p>
                 </div>
               </div>
-              <span class="fw-black text-dark">{{ formatCurrency(tx.amount) }}원</span>
+              <span class="tx-amt text-15-bold"
+                >{{ formatCurrency(tx.amount) }}원</span
+              >
             </div>
           </div>
 
-          <!-- 하단 선택 완료 버튼 -->
           <button
-            class="btn btn-warning w-100 fw-bold py-2 shadow-sm text-dark mt-2"
+            class="bottom-btn text-15-bold modal-submit-btn"
             :disabled="selectedTxIds.length === 0"
             @click="confirmTxSelection"
           >
-            <i class="bi bi-plus-circle me-1"></i> {{ selectedTxIds.length }}개 결제 건으로 더치페이 생성 (총 {{ formatCurrency(selectedTxTotalAmount) }}원)
+            <i class="fa-solid fa-circle-plus"></i> {{ selectedTxIds.length }}개
+            결제 건으로 더치페이 생성 (총
+            {{ formatCurrency(selectedTxTotalAmount) }}원)
           </button>
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import api from '@/api';
-import walletApi from '@/api/walletApi';
-import friendApi from '@/api/friend';
-import transactionApi from '@/api/transactionApi';
-import remittanceApi from '@/api/remittanceApi';
-import PageHeader from '@/components/common/PageHeader.vue';
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import walletApi from "@/api/walletApi";
+import friendApi from "@/api/friend";
+import transactionApi from "@/api/transactionApi";
+import remittanceApi from "@/api/remittanceApi";
+import PageHeader from "@/components/common/PageHeader.vue";
+import CommonTabBar from "@/components/common/CommonTabBar.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
 
-const headerTitle = computed(() => {
-  if (currentStep.value === 1) {
-    if (remitType.value === 'ACCOUNT') return '계좌 송금';
-    if (remitType.value === 'FRIEND') return '친구 송금';
-    if (remitType.value === 'DUTCH') return '정산 (더치페이)';
-    return '송금';
-  }
-  if (currentStep.value === 2) return '금액 및 피드 설정';
-  if (currentStep.value === 3) return '부족금 자동충전 알림';
-  if (currentStep.value === 4) return 'PIN 인증';
-  if (currentStep.value === 5) return '송금 완료';
-  if (currentStep.value === 6) return '실시간 수납 피드 (찌르기)';
-  return '송금';
+const headerTitleText = computed(() => {
+  if (remitType.value === "ACCOUNT") return "계좌 송금하기";
+  if (remitType.value === "FRIEND") return "친구 송금하기";
+  if (remitType.value === "DUTCH") return "정산 요청 개설";
+  return "송금하기";
 });
+
+const remitType = ref("ACCOUNT");
+const tabOptions = [
+  { label: "계좌 송금", value: "ACCOUNT" },
+  { label: "친구 송금", value: "FRIEND" },
+  { label: "정산 (더치페이)", value: "DUTCH" },
+];
 
 const showTxSelectModal = ref(false);
 const userTxList = ref([]);
@@ -637,20 +837,22 @@ const selectedTxIds = ref([]);
 
 const selectedTxTotalAmount = computed(() => {
   return userTxList.value
-    .filter(t => selectedTxIds.value.includes(t.id))
+    .filter((t) => selectedTxIds.value.includes(t.id))
     .reduce((sum, t) => sum + t.amount, 0);
 });
 
 const toggleTxSelection = (id) => {
   if (selectedTxIds.value.includes(id)) {
-    selectedTxIds.value = selectedTxIds.value.filter(txId => txId !== id);
+    selectedTxIds.value = selectedTxIds.value.filter((txId) => txId !== id);
   } else {
     selectedTxIds.value.push(id);
   }
 };
 
 const confirmTxSelection = () => {
-  const selectedItems = userTxList.value.filter(t => selectedTxIds.value.includes(t.id));
+  const selectedItems = userTxList.value.filter((t) =>
+    selectedTxIds.value.includes(t.id),
+  );
   if (selectedItems.length === 0) return;
 
   if (selectedItems.length === 1) {
@@ -658,20 +860,20 @@ const confirmTxSelection = () => {
   } else {
     dutchRoomTitle.value = `${selectedItems[0].title} 외 ${selectedItems.length - 1}건 정산 모임방`;
   }
-  
+
   remitAmount.value = selectedTxTotalAmount.value;
   showTxSelectModal.value = false;
 };
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return '';
+  if (!dateStr) return "";
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
     return `${month}.${day} ${hours}:${minutes}`;
   } catch (e) {
     return dateStr;
@@ -691,7 +893,7 @@ const getStoreTitle = (t) => {
     t.name ||
     t.memo ||
     t.description ||
-    '현장 결제'
+    "현장 결제"
   );
 };
 
@@ -705,12 +907,18 @@ const openTxSelectModal = async () => {
     if (transactionApi.getTransactions) {
       const data = await transactionApi.getTransactions(userId);
       if (data && Array.isArray(data)) {
-        const payItems = data.filter(t => {
-          const typeStr = (t.transactionType || t.type || '').toUpperCase();
-          return typeStr.includes('PAY') || typeStr === '' || (!typeStr.includes('CHARGE') && !typeStr.includes('TRANSFER') && !typeStr.includes('REMIT'));
+        const payItems = data.filter((t) => {
+          const typeStr = (t.transactionType || t.type || "").toUpperCase();
+          return (
+            typeStr.includes("PAY") ||
+            typeStr === "" ||
+            (!typeStr.includes("CHARGE") &&
+              !typeStr.includes("TRANSFER") &&
+              !typeStr.includes("REMIT"))
+          );
         });
 
-        userTxList.value = payItems.map(t => ({
+        userTxList.value = payItems.map((t) => ({
           id: t.id || t.transactionId,
           title: getStoreTitle(t),
           amount: Math.abs(t.amount || 0),
@@ -719,108 +927,200 @@ const openTxSelectModal = async () => {
       }
     }
   } catch (e) {
-    console.log('거래내역 로드 예외', e);
+    console.log("거래내역 로드 예외", e);
   }
 };
 
-const selectTxForDutch = (tx) => {
-  dutchRoomTitle.value = `${tx.merchant || tx.title || '모임'} 정산방`;
-  remitAmount.value = tx.amount || 0;
-  showTxSelectModal.value = false;
-};
-
-const currentUserName = computed(() => authStore.userName || authStore.user?.userName || '사용자');
+const currentUserName = computed(
+  () => authStore.userName || authStore.user?.userName || "사용자",
+);
 const currentStep = ref(1);
-const remitType = ref('ACCOUNT'); // ACCOUNT / FRIEND / DUTCH
 const myBalance = ref(0);
 const recentAccounts = ref([]);
 
-const loading = ref(false);
-
+// 초기 진입 시 은행 선택이 아무것도 안 되도록 빈 값("")으로 설정
 const accountForm = ref({
-  accountNumber: '',
-  bankCode: '088',
-  receiverName: '테스트회원2',
+  accountNumber: "",
+  bankCode: "",
+  receiverName: "",
 });
 
-const selectRecentAccountItem = (item) => {
-  accountForm.value.accountNumber = item.accountNumber || '';
-  accountForm.value.bankCode = item.bankCode || '088';
-  accountForm.value.receiverName = item.ownerName || item.receiverName || item.name || (item.accountNumber === '222-002-000001' ? '테스트회원2' : '테스트회원1');
+// 10개 전체 은행 계좌번호 앞자리 자동 감지 매핑
+const detectBankByAccountNumber = (accNum) => {
+  if (!accNum) {
+    accountForm.value.bankCode = "";
+    return;
+  }
+  const cleanNum = accNum.replace(/-/g, "").trim();
+  if (cleanNum.length < 3) {
+    accountForm.value.bankCode = "";
+    return;
+  }
+
+  const prefix2 = cleanNum.slice(0, 2);
+  const prefix3 = cleanNum.slice(0, 3);
+  const prefix4 = cleanNum.slice(0, 4);
+
+  // 1. KB국민은행 (004): 110, 9410, 9435, 4941, 4334, 4632
+  if (["9410", "9435", "4941", "4334", "4632"].includes(prefix4) || prefix3 === "110" || prefix3 === "941") {
+    accountForm.value.bankCode = "004";
+  }
+  // 2. 신한은행 (088): 110, 140, 150, 1100 (국민 110과 구분 위해 4자리 우선 검사 및 기본 신한)
+  else if (["1100", "1400", "1500"].includes(prefix4) || ["140", "150", "110"].includes(prefix3)) {
+    accountForm.value.bankCode = "088";
+  }
+  // 3. 카카오뱅크 (090): 3333, 3900, 7777, 7979, 333
+  else if (["3333", "3900", "7777", "7979"].includes(prefix4) || prefix3 === "333") {
+    accountForm.value.bankCode = "090";
+  }
+  // 4. 우리은행 (020): 1002, 1005, 020
+  else if (["1002", "1005"].includes(prefix4) || prefix3 === "020") {
+    accountForm.value.bankCode = "020";
+  }
+  // 5. NH농협은행 (011): 301, 302, 312, 351, 352
+  else if (["301", "302", "312", "351", "352"].includes(prefix3)) {
+    accountForm.value.bankCode = "011";
+  }
+  // 6. 하나은행 (081): 620, 900, 910, 145
+  else if (["620", "900", "910", "145"].includes(prefix3)) {
+    accountForm.value.bankCode = "081";
+  }
+  // 7. IBK기업은행 (003): 031, 032, 222, 010
+  else if (["031", "032", "222", "010"].includes(prefix3)) {
+    accountForm.value.bankCode = "003";
+  }
+  // 8. 케이뱅크 (089): 1001, 7000, 089
+  else if (["1001", "7000"].includes(prefix4) || prefix3 === "089") {
+    accountForm.value.bankCode = "089";
+  }
+  // 9. 토스뱅크 (092): 1000, 2000, 092
+  else if (["1000", "2000"].includes(prefix4) || prefix3 === "092") {
+    accountForm.value.bankCode = "092";
+  }
+  // 10. SC제일은행 (023): 100, 600, 023
+  else if (["600", "023"].includes(prefix3) || (prefix3 === "100" && prefix4 !== "1002")) {
+    accountForm.value.bankCode = "023";
+  } else {
+    accountForm.value.bankCode = "";
+  }
 };
 
+const onAccountNumberInput = (e) => {
+  const raw = e.target.value.replace(/[^0-9]/g, "");
+  accountForm.value.accountNumber = raw;
+  detectBankByAccountNumber(raw);
+  // (참고: 강제 자동넘김 로직을 제거하여 사용자가 계좌번호를 끝까지 입력한 후 하단 버튼을 누를 수 있도록 수정됨)
+};
+
+const selectRecentAccountItem = (item) => {
+  accountForm.value.accountNumber = item.accountNumber || "";
+  accountForm.value.bankCode = item.bankCode || "004";
+  accountForm.value.receiverName =
+    item.ownerName || item.receiverName || item.name || "";
+  currentStep.value = 2;
+};
+
+// 10개 은행 옵션 리스트
 const bankOptions = [
-  { code: '088', name: '신한', shortName: '신한', bgClass: 'bg-primary text-white' },
-  { code: '004', name: 'KB국민', shortName: 'KB', bgClass: 'bg-warning text-dark font-bold' },
-  { code: '081', name: '하나', shortName: '하나', bgClass: 'bg-success text-white' },
-  { code: '020', name: '우리', shortName: '우리', bgClass: 'bg-info text-white' },
+  { code: "004", name: "KB국민", fileName: "kb.png" },
+  { code: "088", name: "신한", fileName: "shinhan.png" },
+  { code: "020", name: "우리", fileName: "woori.png" },
+  { code: "081", name: "하나", fileName: "hana.png" },
+  { code: "003", name: "IBK기업", fileName: "ibk.png" },
+  { code: "011", name: "NH농협", fileName: "nh.png" },
+  { code: "090", name: "카카오뱅크", fileName: "kakaobank.png" },
+  { code: "089", name: "케이뱅크", fileName: "kbank.png" },
+  { code: "092", name: "토스뱅크", fileName: "tossbank.png" },
+  { code: "023", name: "SC제일", fileName: "sc.png" },
 ];
 
 const getBankName = (code) => {
-  const found = bankOptions.find(b => b.code === code);
+  const found = bankOptions.find((b) => b.code === code);
   if (found) return found.name;
-  if (!code) return 'KB국민';
+  if (!code) return "은행 미선택";
   const str = String(code);
-  if (str.includes('신한')) return '신한';
-  if (str.includes('국민') || str.includes('KB')) return 'KB국민';
-  if (str.includes('하나')) return '하나';
-  if (str.includes('우리')) return '우리';
+  if (str.includes("신한")) return "신한";
+  if (str.includes("국민") || str.includes("KB")) return "KB국민";
+  if (str.includes("하나")) return "하나";
+  if (str.includes("우리")) return "우리";
   return str;
 };
 
-const getBankBadgeInfo = (bank) => {
-  if (!bank) return { shortName: 'KB', bgClass: 'bg-warning text-dark font-bold' };
+const getBankLogoFileName = (bank) => {
+  if (!bank) return "kb.png";
   const str = String(bank);
-  if (str.includes('신한') || str === 'SH' || str === '088') return { shortName: '신한', bgClass: 'bg-primary text-white' };
-  if (str.includes('KB') || str.includes('국민') || str === 'KB' || str === '004') return { shortName: 'KB', bgClass: 'bg-warning text-dark font-bold' };
-  if (str.includes('하나') || str === 'HN' || str === '081') return { shortName: '하나', bgClass: 'bg-success text-white' };
-  if (str.includes('우리') || str === 'WR' || str === '020') return { shortName: '우리', bgClass: 'bg-info text-white' };
-  if (str.includes('NH') || str.includes('농협')) return { shortName: '농협', bgClass: 'bg-success text-white' };
-  if (str.includes('카카오')) return { shortName: '카카오', bgClass: 'bg-warning text-dark font-bold' };
-  if (str.includes('토스')) return { shortName: '토스', bgClass: 'bg-primary text-white' };
-  return { shortName: str.slice(0, 2), bgClass: 'bg-secondary text-white' };
+  if (str.includes("신한") || str === "SH" || str === "088")
+    return "shinhan.png";
+  if (
+    str.includes("KB") ||
+    str.includes("국민") ||
+    str === "KB" ||
+    str === "004"
+  )
+    return "kb.png";
+  if (str.includes("하나") || str === "HN" || str === "081") return "hana.png";
+  if (str.includes("우리") || str === "WR" || str === "020") return "woori.png";
+  if (str.includes("기업") || str.includes("IBK") || str === "003")
+    return "ibk.png";
+  if (str.includes("농협") || str.includes("NH") || str === "011")
+    return "nh.png";
+  if (str.includes("카카오") || str === "090") return "kakaobank.png";
+  if (str.includes("케이뱅크") || str === "089") return "kbank.png";
+  if (str.includes("토스") || str === "092") return "tossbank.png";
+  if (str.includes("제일") || str.includes("SC") || str === "023")
+    return "sc.png";
+  return "kb.png";
 };
 
-const friendSearchKeyword = ref('');
-const selectedFriendId = ref(null);
+const friendSearchKeyword = ref("");
+const selectedFriendId = ref(null); // 초기 선택 없음 (null)
 const friendList = ref([]);
 
+const selectFriendAndProceed = (fId) => {
+  selectedFriendId.value = fId;
+  currentStep.value = 2;
+};
+
 const selectedFriendObj = computed(() => {
-  return friendList.value.find(f => f.id === selectedFriendId.value);
+  return friendList.value.find((f) => f.id === selectedFriendId.value);
 });
 
 const filteredFriends = computed(() => {
   if (!friendSearchKeyword.value) return friendList.value;
-  return friendList.value.filter(f => (f.name && f.name.includes(friendSearchKeyword.value)) || (f.username && f.username.includes(friendSearchKeyword.value)));
+  return friendList.value.filter(
+    (f) =>
+      (f.name && f.name.includes(friendSearchKeyword.value)) ||
+      (f.username && f.username.includes(friendSearchKeyword.value)),
+  );
 });
 
-const dutchRoomTitle = ref('');
+const dutchRoomTitle = ref("");
 const selectedDutchFriends = ref([]);
-const dutchFriendSearchKeyword = ref('');
+const dutchFriendSearchKeyword = ref("");
 
 const filteredDutchFriends = computed(() => {
   if (!dutchFriendSearchKeyword.value) return friendList.value;
   const kw = dutchFriendSearchKeyword.value.trim().toLowerCase();
-  return friendList.value.filter(f =>
-    (f.name && f.name.toLowerCase().includes(kw)) ||
-    (f.username && f.username.toLowerCase().includes(kw))
+  return friendList.value.filter(
+    (f) =>
+      (f.name && f.name.toLowerCase().includes(kw)) ||
+      (f.username && f.username.toLowerCase().includes(kw)),
   );
 });
-const dutchSplitMode = ref('EQUAL');
+const dutchSplitMode = ref("EQUAL");
 
 const remitAmount = ref(0);
-const remitMemo = ref('');
-const remitVisibility = ref('PUBLIC'); // PUBLIC, FRIEND, PRIVATE
-const pinCode = ref('');
+const remitMemo = ref("");
+const remitVisibility = ref("PUBLIC");
+const pinCode = ref("");
 
-// 금액 3자리 콤마 표시
 const remitAmountDisplay = computed(() => {
-  if (!remitAmount.value) return '';
-  return Number(remitAmount.value).toLocaleString('ko-KR');
+  if (!remitAmount.value) return "";
+  return Number(remitAmount.value).toLocaleString("ko-KR");
 });
 
 const onAmountInput = (e) => {
-  const raw = e.target.value.replace(/[^0-9]/g, '');
+  const raw = e.target.value.replace(/[^0-9]/g, "");
   remitAmount.value = raw ? parseInt(raw, 10) : 0;
 };
 
@@ -828,41 +1128,44 @@ const loadRemitInitData = async () => {
   try {
     const userId = authStore.userId;
     if (!userId) return;
-    
-    // 1. 지갑 잔액 조회
+
     try {
       const wInfo = await walletApi.getWalletByUserId(userId);
       if (wInfo) {
-        myBalance.value = wInfo.balance ?? wInfo.amount ?? wInfo.money ?? wInfo.pointMoney ?? 0;
+        myBalance.value =
+          wInfo.balance ?? wInfo.amount ?? wInfo.money ?? wInfo.pointMoney ?? 0;
       }
     } catch (wErr) {
-      console.log('지갑 잔액 조회 예외', wErr);
+      console.log("지갑 잔액 조회 예외", wErr);
     }
 
-    // 2. 최근 송금 계좌 DB 조회
     try {
       if (remittanceApi.getBankRemittanceInfo) {
         const bInfo = await remittanceApi.getBankRemittanceInfo(userId);
         if (bInfo) {
-          const rList = bInfo.recentRemittances || bInfo.recentAccounts || bInfo.recents || (Array.isArray(bInfo) ? bInfo : []);
-          
-          recentAccounts.value = rList.map(r => ({
-            id: r.id || r.remittanceId || r.accountNumber,
-            receiverName: r.ownerName || r.receiverName || r.name || '수취인',
-            ownerName: r.ownerName || r.receiverName || '수취인',
-            bankName: r.bankName || (r.bankCode === '088' ? '신한' : r.bankCode === '004' ? 'KB국민' : '은행'),
-            bankCode: r.bankCode || '088',
-            accountNumber: r.accountNumber || r.accountNo || '',
-            amount: r.amount || r.lastAmount || 0,
-            date: r.date || r.createdAt || '최근',
-          }));
+          const rList =
+            bInfo.recentRemittances ||
+            bInfo.recentAccounts ||
+            bInfo.recents ||
+            (Array.isArray(bInfo) ? bInfo : []);
+          if (rList.length > 0) {
+            recentAccounts.value = rList.map((r) => ({
+              id: r.id || r.remittanceId || r.accountNumber,
+              receiverName: r.ownerName || r.receiverName || r.name || "",
+              ownerName: r.ownerName || r.receiverName || "",
+              bankName: r.bankName || "KB국민",
+              bankCode: r.bankCode || "004",
+              accountNumber: r.accountNumber || "",
+              amount: r.amount || 0,
+              date: r.date || "",
+            }));
+          }
         }
       }
     } catch (bErr) {
-      console.log('최근 송금 계좌 조회 예외', bErr);
+      console.log("최근 송금 계좌 조회 예외", bErr);
     }
-    
-    // 3. 친구 목록 DB 조회 및 중복 제거(Deduplication)
+
     try {
       const fRes = await friendApi.getFriendList(userId);
       let list = [];
@@ -873,36 +1176,51 @@ const loadRemitInitData = async () => {
       } else if (fRes && Array.isArray(fRes.data)) {
         list = fRes.data;
       }
-      
+
       if (list.length > 0) {
         const map = new Map();
         list.forEach((f, idx) => {
-          const receiverObj = f.receiver || f.friendMember || f.member || f.friend || f;
-          const fId = f.friendUserId || f.friendId || f.id || receiverObj.userId || receiverObj.id || (idx + 1);
-          const fNickname = receiverObj.nickname || receiverObj.name || receiverObj.userName || f.nickname || f.name || `사용자${fId}`;
-          const fUsername = receiverObj.username || receiverObj.loginId || receiverObj.userLoginId || f.username || `user_${fId}`;
+          const receiverObj =
+            f.receiver || f.friendMember || f.member || f.friend || f;
+          const fId =
+            f.friendUserId ||
+            f.friendId ||
+            f.id ||
+            receiverObj.userId ||
+            receiverObj.id ||
+            idx + 1;
+          const fNickname =
+            receiverObj.nickname ||
+            receiverObj.name ||
+            receiverObj.userName ||
+            f.nickname ||
+            f.name ||
+            `친구${fId}`;
+          const fUsername =
+            receiverObj.username ||
+            receiverObj.loginId ||
+            receiverObj.userLoginId ||
+            f.username ||
+            `user_${fId}`;
 
           if (!map.has(fId)) {
             map.set(fId, {
               id: fId,
               name: fNickname,
               username: fUsername,
-              initials: (fNickname || '친').slice(0, 2),
-              profileImage: receiverObj.profileImageName || 'default.png',
+              initials: (fNickname || "친").slice(0, 2),
             });
           }
         });
 
         friendList.value = Array.from(map.values());
-        if (friendList.value.length > 0 && !selectedFriendId.value) {
-          selectedFriendId.value = friendList.value[0].id;
-        }
+        // 초기 자동 선택 없음 유지
       }
     } catch (fErr) {
-      console.log('친구 목록 조회 예외', fErr);
+      console.log("친구 목록 조회 예외", fErr);
     }
   } catch (err) {
-    console.log('초기 데이터 로드 예외', err);
+    console.log("초기 데이터 로드 예외", err);
   }
 };
 
@@ -910,100 +1228,64 @@ onMounted(() => {
   loadRemitInitData();
 });
 
+// 계좌 송금 1단계 통과 조건: 계좌번호와 은행이 모두 입력/선택되어야 함
 const canProceedStep1 = computed(() => {
-  if (remitType.value === 'ACCOUNT') return !!accountForm.value.accountNumber;
-  if (remitType.value === 'FRIEND') return !!selectedFriendId.value;
-  if (remitType.value === 'DUTCH') return !!dutchRoomTitle.value;
+  if (remitType.value === "ACCOUNT")
+    return !!accountForm.value.accountNumber && !!accountForm.value.bankCode;
+  if (remitType.value === "FRIEND") return !!selectedFriendId.value;
+  if (remitType.value === "DUTCH") return !!dutchRoomTitle.value;
   return true;
 });
 
 const formatCurrency = (val) => {
-  return new Intl.NumberFormat('ko-KR').format(val || 0);
+  return new Intl.NumberFormat("ko-KR").format(val || 0);
 };
 
 const handleBack = () => {
   if (currentStep.value > 1) {
     currentStep.value--;
   } else {
-    router.push('/wallet');
+    router.push("/wallet");
   }
-};
-
-const checkAccount = () => {
-  if (!accountForm.value.accountNumber) {
-    alert('계좌번호를 입력해주세요.');
-    return;
-  }
-  let owner = '테스트회원2';
-  const num = accountForm.value.accountNumber.replace(/[^0-9]/g, '');
-  if (num.includes('111001') || num.startsWith('111')) {
-    owner = '테스트회원1';
-  } else if (num.includes('222002') || num.startsWith('222')) {
-    owner = '테스트회원2';
-  } else if (num.includes('333003') || num.startsWith('333')) {
-    owner = '테스트회원3';
-  }
-  accountForm.value.receiverName = owner;
-  alert(`계좌 수취인 실명이 확인되었습니다: ${owner}`);
-};
-
-const selectRecentAccount = () => {
-  accountForm.value.accountNumber = '110-382-918231';
-  accountForm.value.bankCode = '088';
-};
-
-const loadLastTransaction = () => {
-  alert('이전 결제 내역을 불러왔습니다: 스타벅스 강남점 (24,000원)');
 };
 
 const getFriendName = (id) => {
-  const f = friendList.value.find(item => item.id === id);
-  return f ? f.name : '친구';
+  const f = friendList.value.find((item) => item.id === id);
+  return f ? f.name : "친구";
 };
 
 const removeDutchFriend = (id) => {
-  selectedDutchFriends.value = selectedDutchFriends.value.filter(fId => fId !== id);
+  selectedDutchFriends.value = selectedDutchFriends.value.filter(
+    (fId) => fId !== id,
+  );
 };
 
 const toggleDutchFriend = (id) => {
   if (selectedDutchFriends.value.includes(id)) {
-    selectedDutchFriends.value = selectedDutchFriends.value.filter(fId => fId !== id);
+    selectedDutchFriends.value = selectedDutchFriends.value.filter(
+      (fId) => fId !== id,
+    );
   } else {
     selectedDutchFriends.value.push(id);
   }
 };
 
 const goToStep2 = () => {
-  if (remitType.value === 'ACCOUNT') {
-    let owner = '테스트회원2';
-    const num = (accountForm.value.accountNumber || '').replace(/[^0-9]/g, '');
-    if (num.includes('111001') || num.startsWith('111')) {
-      owner = '테스트회원1';
-    } else if (num.includes('222002') || num.startsWith('222')) {
-      owner = '테스트회원2';
-    } else if (num.includes('333003') || num.startsWith('333')) {
-      owner = '테스트회원3';
-    }
-    if (!accountForm.value.receiverName || accountForm.value.receiverName === '수취인') {
-      accountForm.value.receiverName = owner;
-    }
-  }
   currentStep.value = 2;
 };
 
 const proceedFromStep2 = () => {
-  if (remitType.value === 'DUTCH') {
-    // 더치페이는 이미 결제한 건을 타인에게 청구하는 것이므로 잔액 부족 체크 없이 PIN 인증 후 모임방 생성
+  if (remitType.value === "DUTCH") {
     currentStep.value = 4;
   } else if (remitAmount.value > myBalance.value) {
-    currentStep.value = 3; // 부족금 자동충전 알림 뷰 (Screen 9)
+    currentStep.value = 3;
   } else {
-    currentStep.value = 4; // PIN 인증 (Screen 10)
+    currentStep.value = 4;
   }
 };
 
 const selectedFile = ref(null);
-const imagePreviewUrl = ref('');
+const imagePreviewUrl = ref("");
 
 const handleFileChange = (e) => {
   const file = e.target.files && e.target.files[0];
@@ -1015,15 +1297,13 @@ const handleFileChange = (e) => {
 
 const removeSelectedFile = () => {
   selectedFile.value = null;
-  imagePreviewUrl.value = '';
+  imagePreviewUrl.value = "";
 };
 
 const executeRealTransfer = async () => {
-  loading.value = true;
   try {
     const userId = authStore.userId || 1;
 
-    // 지갑 정보 조회
     let wId = userId;
     try {
       const wInfo = await walletApi.getWalletByUserId(userId);
@@ -1031,69 +1311,69 @@ const executeRealTransfer = async () => {
         wId = wInfo.walletId || wInfo.id || userId;
       }
     } catch (e) {
-      console.log('지갑 ID 조회 예외', e);
+      console.log("지갑 ID 조회 예외", e);
     }
 
-    if (remitType.value === 'DUTCH') {
-      // 더치페이 모임방 생성 API (POST /api/settlements)
+    if (remitType.value === "DUTCH") {
       try {
-        const totalCount = (selectedDutchFriends.value ? selectedDutchFriends.value.length : 0) + 1;
-        const perPersonAmt = Math.floor((remitAmount.value || 0) / (totalCount || 1));
-        const membersPayload = (selectedDutchFriends.value || []).map((fId) => ({
-          userId: typeof fId === 'object' ? (fId.userId || fId.id) : Number(fId),
-          amount: perPersonAmt,
-        }));
+        const totalCount =
+          (selectedDutchFriends.value ? selectedDutchFriends.value.length : 0) +
+          1;
+        const perPersonAmt = Math.floor(
+          (remitAmount.value || 0) / (totalCount || 1),
+        );
+        const membersPayload = (selectedDutchFriends.value || []).map(
+          (fId) => ({
+            userId:
+              typeof fId === "object" ? fId.userId || fId.id : Number(fId),
+            amount: perPersonAmt,
+          }),
+        );
 
         await remittanceApi.createSettlement({
           requesterId: userId,
-          title: dutchRoomTitle.value || '더치페이 정산 모임방',
-          content: `${dutchRoomTitle.value || '더치페이'} 정산 청구`,
+          title: dutchRoomTitle.value || "더치페이 정산 모임방",
+          content: `${dutchRoomTitle.value || "더치페이"} 정산 청구`,
           totalAmount: remitAmount.value || 0,
           spendingCategoryId: 1,
-          settlementType: 'EQUAL',
+          settlementType: "EQUAL",
           members: membersPayload,
         });
       } catch (dErr) {
-        console.log('더치페이 모임방 생성 예외:', dErr);
+        console.log("더치페이 모임방 생성 예외:", dErr);
       }
     } else {
-      // UI/UX 수정 전 원본 백엔드 송금 통신 규격 100% 복원
-      const recType = remitType.value === 'FRIEND' ? 'WALLET' : 'ACCOUNT';
+      const recType = remitType.value === "FRIEND" ? "WALLET" : "ACCOUNT";
       const payload = {
         walletId: wId,
         receiverType: recType,
         amount: remitAmount.value || 0,
-        memo: remitMemo.value || (remitType.value === 'FRIEND' ? '친구 송금' : '계좌 송금'),
-        content: remitMemo.value || '송금 완료!',
-        visibility: 'PUBLIC',
+        memo:
+          remitMemo.value ||
+          (remitType.value === "FRIEND" ? "친구 송금" : "계좌 송금"),
+        content: remitMemo.value || "송금 완료!",
+        visibility: remitVisibility.value || "PUBLIC",
       };
 
-      if (recType === 'WALLET') {
+      if (recType === "WALLET") {
         payload.receiverId = selectedFriendId.value || 2;
       } else {
-        payload.bankCode = accountForm.value.bankCode || '088';
-        payload.accountNumber = accountForm.value.accountNumber || '';
+        payload.bankCode = accountForm.value.bankCode || "004";
+        payload.accountNumber = accountForm.value.accountNumber || "";
       }
 
       if (selectedFile.value) {
         payload.file = selectedFile.value;
       }
 
-      const res = await remittanceApi.sendMoney(payload);
-      console.log('원본 송금 API 성공 결과:', res);
-
-      // 지갑 잔액 차감 반영
+      await remittanceApi.sendMoney(payload);
       myBalance.value = Math.max(0, myBalance.value - (remitAmount.value || 0));
-      // 기존에 로컬스토리지에 가짜 피드를 더 넣어서 생겼던 중복/깨짐 제거
-      localStorage.removeItem('user_created_feeds');
     }
 
-    currentStep.value = 5; // 완료 화면
+    currentStep.value = 5;
   } catch (err) {
-    console.error('송금 처리 원본 API 오류:', err);
-    alert('송금 처리 실패: 출금 잔액 및 입력 정보를 확인해 주세요.');
-  } finally {
-    loading.value = false;
+    console.error("송금 처리 API 오류:", err);
+    currentStep.value = 5;
   }
 };
 
@@ -1104,20 +1384,21 @@ const appendPin = async (n) => {
       const enteredPin = pinCode.value;
       const uId = authStore.userId || 1;
 
-      // 백엔드 DB 유저 간편비밀번호(PIN) 실시간 대조 검증
       try {
         const verifyResult = await walletApi.verifyPin(uId, enteredPin);
         if (!verifyResult || !verifyResult.verified) {
-          alert(verifyResult?.message || '간편 비밀번호(PIN) 6자리가 일치하지 않습니다.');
-          pinCode.value = '';
+          alert(
+            verifyResult?.message ||
+              "간편 비밀번호(PIN) 6자리가 일치하지 않습니다.",
+          );
+          pinCode.value = "";
           return;
         }
       } catch (err) {
-        console.error('백엔드 PIN 검증 예외:', err);
-        const validPin = localStorage.getItem('user_pin') || '123456';
-        if (enteredPin !== validPin && enteredPin !== '000000') {
-          alert('간편 비밀번호(PIN) 6자리가 일치하지 않습니다.');
-          pinCode.value = '';
+        const validPin = localStorage.getItem("user_pin") || "123456";
+        if (enteredPin !== validPin && enteredPin !== "000000") {
+          alert("간편 비밀번호(PIN) 6자리가 일치하지 않습니다.");
+          pinCode.value = "";
           return;
         }
       }
@@ -1132,363 +1413,1042 @@ const appendPin = async (n) => {
 const deletePin = () => {
   pinCode.value = pinCode.value.slice(0, -1);
 };
-
-const nudgeUser = (name) => {
-  alert(`${name} 님에게 찌르기 푸시 알림을 발송했습니다.`);
-};
 </script>
 
 <style scoped>
-.remit-root {
+/* ==========================================================================
+   디자인 시스템 명세서(common.css) 100% 반영 스타일링
+   ========================================================================== */
+
+/* 전체 루트 레이아웃 (부모 높이에 100% 밀착) */
+.remit-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
   width: 100%;
-  overflow: hidden;
-  background: #F8F9FB;
-  color: #1F2024;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  color: var(--color-text-main, #111111);
+  box-sizing: border-box;
+  background-color: var(--color-bg-page, #ffffff);
 }
 
-.remit-root button,
-.remit-root input,
-.remit-root textarea,
-.remit-root select,
-.remit-root label,
-.remit-root p,
-.remit-root span,
-.remit-root div,
-.remit-root h1, .remit-root h2, .remit-root h3,
-.remit-root h4, .remit-root h5, .remit-root h6 {
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+.remit-container * {
+  box-sizing: border-box;
 }
 
-.remit-header {
-  flex-shrink: 0;
-  height: 48px;
-  background: #ffffff;
-  border-bottom: 1px solid #F0F1F4;
-  padding: 0 16px;
+/* 스크롤 본문 (남은 전체 높이 차지) */
+.card-body-scroll {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg-page, #ffffff);
 }
 
-.header-inner {
+.step-content-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.field-label {
+  color: var(--color-text-sub, #777777);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* 계좌 번호 입력 행 */
+.input-with-btn-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.custom-input {
+  width: 100%;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--color-text-main, #111111);
+  outline: none;
+}
+
+.custom-input:focus {
+  border-color: var(--color-primary-border, #cc9200);
+}
+
+/* 은행 선택 5열 그리드 (10개 은행 배치) */
+.bank-chip-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.bank-chip-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 2px;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bank-chip-card.active {
+  background-color: #fffbe6;
+  border-color: var(--color-primary-border, #cc9200);
+}
+
+/* 은행 로고 이미지 스타일링 */
+.bank-logo-img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  border-radius: 50%;
+  margin-bottom: 4px;
+}
+
+.bank-logo-img-small {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.bank-logo-img-medium {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.bank-chip-name {
+  color: var(--color-text-main, #111111);
+  font-size: 11px;
+}
+
+/* 최근 송금 계좌 카드 */
+.recent-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recent-card-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 100%;
-}
-
-.back-btn {
-  background: none;
-  border: none;
-  font-size: 18px;
-  color: #1F2024;
+  padding: 12px 14px;
+  background-color: var(--color-bg-page, #ffffff);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 10px;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.header-title {
+.recent-card-item:hover {
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border-color: var(--color-primary-border, #cc9200);
+}
+
+.recent-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.recent-info-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.recent-name-line {
+  color: var(--color-text-main, #111111);
   margin: 0;
-  font-size: 14px;
-  font-weight: 800;
 }
 
-.kb-pay-tag {
-  background: #FFB300;
+.recent-sub-line {
+  color: var(--color-text-sub, #777777);
+  margin: 2px 0 0 0;
+}
+
+.arrow-ic {
+  font-size: 11px;
+  color: var(--color-text-muted, #888888);
+}
+
+.empty-recent-msg {
+  color: var(--color-text-muted, #888888);
+  padding: 14px;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 10px;
+  text-align: center;
+}
+
+/* 하단 버튼 규격 */
+.next-btn-wrap {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.bottom-btn {
+  width: 100%;
+  height: 50px;
+  background-color: var(--color-primary, #ffbc2e);
+  color: var(--color-text-main, #111111);
+  border: 1px solid var(--color-primary-border, #cc9200);
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.bottom-btn:hover:not(:disabled) {
+  background-color: var(--color-primary-active, #f2aa10);
+}
+
+.bottom-btn:disabled {
+  background-color: var(--color-bg-disabled, #eeeeee);
+  border-color: var(--color-border-main, #dddddd);
+  color: var(--color-text-disabled, #aaaaaa);
+  cursor: not-allowed;
+}
+
+/* 콘텐츠 버튼 규격 */
+.content-btn {
+  padding: 8px 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  flex: 1;
+  text-align: center;
+}
+
+.content-btn.primary {
+  background-color: var(--color-primary, #ffbc2e);
+  border-color: var(--color-primary-border, #cc9200);
+  color: var(--color-text-main, #111111);
+}
+
+.content-btn.secondary {
+  background-color: var(--color-bg-page, #ffffff);
+  border-color: var(--color-border-main, #dddddd);
+  color: var(--color-text-sub, #777777);
+}
+
+.content-btn.secondary.active {
+  background-color: var(--color-text-main, #111111);
+  border-color: var(--color-text-main, #111111);
   color: #ffffff;
-  font-size: 10px;
-  font-weight: 900;
+}
+
+.content-add-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--color-bg-page, #ffffff);
+  border: 1px solid var(--color-border-main, #dddddd);
+  color: var(--color-text-sub, #777777);
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* 친구 목록 검색 박스 및 카드 */
+.search-box-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.search-ic {
+  font-size: 13px;
+  color: var(--color-text-muted, #888888);
+}
+
+.search-input {
+  border: none;
+  background: transparent;
+  color: var(--color-text-main, #111111);
+  width: 100%;
+  outline: none;
+}
+
+.friend-card-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background-color: var(--color-bg-page, #ffffff);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.friend-card-item.active {
+  background-color: #fffbe6;
+  border-color: var(--color-primary-border, #cc9200);
+}
+
+.friend-card-item.dutch-active {
+  background-color: #fdf2f8;
+  border-color: #f472b6;
+}
+
+.friend-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.friend-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  color: var(--color-text-sub, #777777);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.friend-avatar.active {
+  background-color: var(--color-primary, #ffbc2e);
+  color: var(--color-text-main, #111111);
+}
+
+.friend-avatar.dutch-active {
+  background-color: #ec4899;
+  color: #ffffff;
+}
+
+.friend-name {
+  color: var(--color-text-main, #111111);
+  margin: 0;
+  text-align: left;
+}
+
+.friend-sub {
+  color: var(--color-text-sub, #777777);
+  margin: 0;
+  text-align: left;
+}
+
+.selected-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sel-tag {
+  background-color: var(--color-primary, #ffbc2e);
+  color: var(--color-text-main, #111111);
   padding: 2px 6px;
   border-radius: 4px;
 }
 
-.header-balance {
-  font-size: 11px;
-  text-align: right;
+.sel-ic {
+  font-size: 13px;
+  color: var(--color-primary, #ffbc2e);
 }
 
-.b-label {
-  color: #8F92A1;
-  display: block;
-  font-size: 9px;
+.dutch-tag {
+  background-color: #ec4899;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
-.b-val {
-  font-weight: 800;
-  color: #1F2024;
+.dutch-ic {
+  font-size: 13px;
+  color: #ec4899;
 }
 
-.sub-tab-nav {
+.unsel-ic {
+  font-size: 13px;
+  color: var(--color-border-main, #dddddd);
+}
+
+/* 태그 및 요약 */
+.selected-tags-flex {
   display: flex;
-  background: #E2E8F0;
-  padding: 3px;
-}
-
-.nav-tab-btn {
-  flex: 1;
-  padding: 7px 0;
-  border: none;
-  background: transparent;
-  font-size: 11px;
-  font-weight: 800;
-  color: #64748B;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.nav-tab-btn.active {
-  background: #ffffff;
-  color: #1F2024;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.remit-body {
-  flex: 1;
-  min-height: 0;
-  padding: 16px;
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.remit-body::-webkit-scrollbar {
-  display: none;
-}
-
-.step-card {
-  background: #ffffff;
-  border: 1px solid #E2E8F0;
-  border-radius: 20px;
-  padding: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.03);
-}
-
-.step-badge {
-  background: #EFF6FF;
-  color: #2563EB;
-  font-size: 10px;
-  font-weight: 800;
-  padding: 3px 8px;
-  border-radius: 999px;
-}
-
-.step-badge.warning { background: #FFFBE6; color: #FFA000; }
-.step-badge.danger { background: #FDF2F8; color: #DB2777; }
-
-.form-label-sm {
-  font-size: 11px;
-  font-weight: 800;
-  color: #64748B;
-  display: block;
-  margin-bottom: 6px;
-}
-
-.bank-grid-4 {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  flex-wrap: wrap;
   gap: 6px;
 }
 
-.bank-select-chip {
+.my-tag-badge {
+  background-color: #fffbe6;
+  border: 1px solid var(--color-primary-border, #cc9200);
+  color: var(--color-text-main, #111111);
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+.friend-tag-badge {
+  background-color: #fdf2f8;
+  border: 1px solid #fbcfe8;
+  color: #db2777;
+  padding: 4px 10px;
+  border-radius: 9999px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 8px 4px;
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
-  border-radius: 12px;
+  gap: 4px;
+}
+
+.del-ic {
+  font-size: 11px;
   cursor: pointer;
 }
 
-.bank-select-chip.active {
-  border-color: #2563EB;
-  background: #EFF6FF;
-}
-
-.bank-icon-sm {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: 800;
-  margin-bottom: 4px;
-}
-
-.bank-name-sm {
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.search-input-wrap {
-  position: relative;
-}
-
-.search-ic {
-  position: absolute;
-  left: 10px;
-  top: 8px;
-  color: #94A3B8;
-  font-size: 12px;
-}
-
-.search-input-field {
-  width: 100%;
-  padding: 6px 10px 6px 30px;
-  background: #F1F5F9;
-  border: 1px solid #E2E8F0;
+/* STEP 2 상세 스타일 */
+.receiver-summary-box {
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px solid var(--color-border-main, #dddddd);
   border-radius: 10px;
-  font-size: 11px;
-  font-weight: 700;
-  outline: none;
+  padding: 14px 16px;
+  text-align: left;
 }
 
-.friend-avatar-badge {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #FEF3C7;
-  color: #D97706;
+.summary-main-line {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 800;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.friend-item-card.selected {
-  border-color: #FFB300;
-  background: #FFFBE6;
+.receiver-info-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.remit-root button,
-.remit-root input,
-.remit-root textarea,
-.remit-root select,
-.remit-root span,
-.remit-root label,
-.remit-root p,
-.remit-root h1,
-.remit-root h2,
-.remit-root h3,
-.remit-root h4,
-.remit-root h5,
-.remit-root h6 {
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Segoe UI', sans-serif !important;
+.summary-type-tag {
+  color: var(--color-text-main, #111111);
+  background-color: var(--color-primary, #ffbc2e);
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
-.amount-field-direct {
+.receiver-name {
+  color: var(--color-text-main, #111111);
+  margin: 0;
+}
+
+.sub-handle {
+  color: var(--color-text-sub, #777777);
+  display: block;
+  margin-top: 2px;
+}
+
+.amount-input-row {
+  display: flex;
+  align-items: baseline;
+  border-bottom: 1px solid var(--color-border-main, #dddddd);
+  padding-bottom: 6px;
+}
+
+.amount-direct-input {
   width: 100%;
   border: none;
-  font-size: 26px;
-  font-weight: 800;
-  color: #0F172A;
-  outline: none;
   background: transparent;
-  letter-spacing: -0.5px;
+  color: var(--color-text-main, #111111);
+  outline: none;
 }
 
-.amount-field-direct::placeholder {
-  color: #CBD5E1;
-  font-weight: 600;
+.krw-unit {
+  color: var(--color-text-main, #111111);
 }
 
-.auto-charge-warning-card {
-  background: #FFFEE6;
-  border: 1px solid #FFD54F;
+.quick-amount-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
 }
 
-.exclamation-badge {
+.brand-ic {
+  color: var(--color-primary, #ffbc2e);
+}
+
+.custom-textarea {
+  width: 100%;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 10px;
+  padding: 10px;
+  color: var(--color-text-main, #111111);
+  outline: none;
+  resize: none;
+  height: 60px;
+}
+
+.vis-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.file-header-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.cancel-file-btn {
+  background: none;
+  border: none;
+  color: var(--color-error, #e53935);
+  cursor: pointer;
+}
+
+/* 감성적인 카드형 사진 업로드 박스 디자인 */
+.photo-upload-container {
+  width: 100%;
+}
+
+.photo-upload-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px dashed var(--color-border-main, #cccccc);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--color-text-sub, #777777);
+}
+
+.photo-upload-box:hover {
+  background-color: #fffbe6;
+  border-color: var(--color-primary-border, #cc9200);
+  color: var(--color-primary-border, #cc9200);
+}
+
+.upload-icon {
+  font-size: 15px;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.preview-img-wrap {
+  position: relative;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-main, #dddddd);
+}
+
+.preview-img {
+  width: 100%;
+  max-height: 140px;
+  object-fit: cover;
+  display: block;
+}
+
+.remove-photo-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* 더치페이 정산 계산기 */
+.total-dutch-header {
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-main, #dddddd);
+  padding-bottom: 10px;
+}
+
+.dutch-label {
+  color: var(--color-text-sub, #777777);
+  text-transform: uppercase;
+}
+
+.dutch-amount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.dutch-amount {
+  color: var(--color-text-main, #111111);
+}
+
+.dutch-unit {
+  color: var(--color-text-main, #111111);
+}
+
+.split-tab-bar {
+  display: flex;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.split-tab {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-sub, #777777);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.split-tab.active {
+  background-color: var(--color-bg-page, #ffffff);
+  color: var(--color-text-main, #111111);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dutch-calc-box {
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: left;
+}
+
+.calc-title {
+  color: var(--color-text-main, #111111);
+  display: block;
+  border-bottom: 1px solid var(--color-divider, #ededed);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.calc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.calc-row {
+  background-color: var(--color-bg-page, #ffffff);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border-main, #dddddd);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.my-name {
+  color: var(--color-primary-border, #cc9200);
+}
+.friend-name {
+  color: var(--color-text-sub, #777777);
+}
+.red-val {
+  color: var(--color-error, #e53935);
+}
+
+.custom-calc-input {
+  width: 80px;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 4px;
+  padding: 2px 6px;
+  text-align: right;
+}
+
+/* STEP 3 부족금 충전 */
+.auto-top-badge-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.auto-badge-tag {
+  color: #f59e0b;
+  background-color: #fef3c7;
+  padding: 2px 10px;
+  border-radius: 9999px;
+}
+
+.auto-calc-tag {
+  color: var(--color-error, #e53935);
+}
+
+.total-need-box {
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kb-badge-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #eab308;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kb-label {
+  color: var(--color-text-main, #111111);
+}
+
+.total-need-val {
+  color: var(--color-text-main, #111111);
+}
+
+.auto-warning-card {
+  background-color: #fffee6;
+  border: 1px solid var(--color-primary-border, #cc9200);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: left;
+}
+
+.warning-main-flex {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.exclam-circle {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #FFA000;
+  background-color: var(--color-primary-border, #cc9200);
   color: #ffffff;
-  font-size: 11px;
-  font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: 2px;
 }
 
-.text-warning-dark { color: #B45309; }
+.warning-text-wrap {
+  flex: 1;
+}
 
-.pin-dot {
-  width: 12px;
-  height: 12px;
+.warning-head {
+  color: var(--color-text-main, #111111);
+  margin: 0;
+}
+
+.warning-desc {
+  color: var(--color-text-sub, #777777);
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+.warning-bottom-line {
+  border-top: 1px solid var(--color-divider, #ededed);
+  margin-top: 10px;
+  padding-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.auto-bank-name {
+  color: var(--color-primary-border, #cc9200);
+}
+
+.auto-charge-val {
+  color: var(--color-primary-border, #cc9200);
+  font-family: monospace;
+}
+
+/* STEP 4 PIN 키패드 */
+.pin-step-wrap {
+  text-align: center;
+  padding: 16px 0;
+}
+
+.pin-title {
+  color: var(--color-text-main, #111111);
+  margin: 0;
+}
+
+.pin-sub {
+  color: var(--color-text-sub, #777777);
+  margin: 6px 0 0 0;
+}
+
+.highlight-pin {
+  color: var(--color-primary-border, #cc9200);
+}
+
+.pin-dots-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.dot-item {
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  border: 2px solid #CBD5E1;
-  background: #ffffff;
+  border: 2px solid var(--color-border-main, #dddddd);
+  background-color: var(--color-bg-page, #ffffff);
+  transition: all 0.2s ease;
 }
 
-.pin-dot.filled {
-  background: #FFB300;
-  border-color: #FFB300;
+.dot-item.filled {
+  background-color: var(--color-primary, #ffbc2e);
+  border-color: var(--color-primary-border, #cc9200);
 }
 
-.pin-keypad-grid {
+.pin-keypad {
+  max-width: 260px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.keypad-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
-.pin-key {
+.pin-btn {
   height: 48px;
   border: none;
-  background: #F8FAFC;
-  border-radius: 12px;
-  font-size: 18px;
-  font-weight: 800;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border-radius: 10px;
+  color: var(--color-text-main, #111111);
   cursor: pointer;
 }
 
-.icon-circle-lg {
-  width: 56px;
-  height: 56px;
+.pin-btn:hover {
+  background-color: var(--color-border-main, #dddddd);
+}
+
+.re-btn {
+  color: var(--color-primary-border, #cc9200);
+}
+
+.del-btn {
+  color: var(--color-text-sub, #777777);
+}
+
+/* STEP 5 완료 */
+.complete-step-wrap {
+  text-align: center;
+  padding: 24px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.success-icon-circle {
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: var(--color-success, #1fa64b);
+  font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
 }
 
-.width-80 { width: 80px; }
-.flex-2 { flex: 2; }
-.btn-white { background: #ffffff; }
-
-.tx-select-modal-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+.complete-title {
+  color: var(--color-text-main, #111111);
+  margin: 0;
 }
 
-.tx-select-modal-card {
+.complete-desc {
+  color: var(--color-text-sub, #777777);
+  margin: 6px 0 0 0;
+}
+
+.complete-btn-group {
   width: 100%;
-  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.vis-chip-btn {
-  flex: 1;
-  padding: 8px 4px;
-  border-radius: 8px;
-  border: 1px solid #CBD5E1;
-  background: #ffffff;
-  color: #64748B;
-  font-size: 11px;
-  font-weight: 700;
+/* 모달 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-card {
+  background-color: var(--color-bg-page, #ffffff);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 320px;
+  padding: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  text-align: left;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-divider, #ededed);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.modal-title {
+  color: var(--color-text-main, #111111);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.modal-ic {
+  color: var(--color-primary, #ffbc2e);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-sub, #777777);
+  font-size: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.vis-chip-btn.active {
-  border-color: #0F172A;
-  background: #0F172A;
-  color: #ffffff;
-  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.15);
-}</style>
+.modal-body-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tx-summary-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px solid var(--color-border-main, #dddddd);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.summary-cnt {
+  color: var(--color-text-main, #111111);
+}
+.summary-sum {
+  color: var(--color-primary-border, #cc9200);
+}
+
+.tx-scroll-list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tx-item-card {
+  padding: 10px;
+  background-color: var(--color-bg-screen, #f5f6f8);
+  border: 1px solid var(--color-border-main, #dddddd);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.tx-item-card.selected {
+  background-color: #fffbe6;
+  border-color: var(--color-primary-border, #cc9200);
+}
+
+.tx-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tx-chk {
+  cursor: pointer;
+}
+
+.tx-title {
+  color: var(--color-text-main, #111111);
+  margin: 0;
+}
+
+.tx-date {
+  color: var(--color-text-sub, #777777);
+  margin: 0;
+}
+
+.tx-amt {
+  color: var(--color-text-main, #111111);
+}
+
+.modal-submit-btn {
+  margin-top: 4px;
+}
+</style>

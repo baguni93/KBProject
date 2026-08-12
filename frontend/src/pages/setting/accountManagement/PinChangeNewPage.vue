@@ -121,7 +121,7 @@ const loadUserBirthDate = async () => {
   try {
     loading.value = true;
 
-    const data = await getUserInfo(authStore.userId);
+    const data = await getUserInfo();
 
     birthDate.value = data.birthDate || '';
   } catch (error) {

@@ -2,6 +2,58 @@ import api from '@/api';
 
 const SPENDING_ANALYSIS_URL = '/api/spending-analyses';
 
+const mergeTransactionMetadata = (transaction, metadata) => {
+  if (!transaction || !metadata) return transaction;
+
+  return {
+    ...transaction,
+    transactionType:
+      transaction.transactionType ?? metadata.transactionType ?? null,
+    receiverName: transaction.receiverName ?? metadata.receiverName ?? null,
+    memo: transaction.memo ?? metadata.memo ?? null,
+    settlementTitle:
+      transaction.settlementTitle ?? metadata.settlementTitle ?? null,
+  };
+};
+
+const enrichTransactionList = async (payload) => {
+  const transactions = payload?.transactions ?? [];
+  if (!transactions.length) return payload;
+
+  try {
+    const { data: metadataList } = await api.get('/api/transactions');
+    const metadataMap = new Map(
+      (metadataList ?? []).map((item) => [Number(item.transactionId), item]),
+    );
+
+    return {
+      ...payload,
+      transactions: transactions.map((transaction) =>
+        mergeTransactionMetadata(
+          transaction,
+          metadataMap.get(Number(transaction.transactionId)),
+        ),
+      ),
+    };
+  } catch (error) {
+    // 거래 표시용 부가정보 조회 실패가 소비분석 자체 실패로 이어지지 않게 한다.
+    return payload;
+  }
+};
+
+const enrichTransaction = async (transaction) => {
+  if (!transaction?.transactionId) return transaction;
+
+  try {
+    const { data: metadata } = await api.get(
+      `/api/transactions/${transaction.transactionId}`,
+    );
+    return mergeTransactionMetadata(transaction, metadata);
+  } catch (error) {
+    return transaction;
+  }
+};
+
 export default {
   async getAvailability(period = 1) {
     const { data } = await api.get(`${SPENDING_ANALYSIS_URL}/availability`, {
@@ -14,21 +66,26 @@ export default {
     const { data } = await api.get(`${SPENDING_ANALYSIS_URL}/transactions`, {
       params: { period },
     });
-    return data;
+    return enrichTransactionList(data);
+  },
+
+  async getAllTransactions() {
+    const { data } = await api.get(`${SPENDING_ANALYSIS_URL}/transactions/all`);
+    return enrichTransactionList(data);
   },
 
   async getTransaction(transactionId) {
     const { data } = await api.get(
       `${SPENDING_ANALYSIS_URL}/transactions/${transactionId}`,
     );
-    return data;
+    return enrichTransaction(data);
   },
 
   async getAnalysisResultTransactions(spendingAnalysisId) {
     const { data } = await api.get(
       `${SPENDING_ANALYSIS_URL}/${spendingAnalysisId}/transactions`,
     );
-    return data;
+    return enrichTransactionList(data);
   },
 
   async getUnclassifiedTransactions(period = 1) {
@@ -36,7 +93,7 @@ export default {
       `${SPENDING_ANALYSIS_URL}/unclassified-transactions`,
       { params: { period } },
     );
-    return data;
+    return enrichTransactionList(data);
   },
 
   async getCategories() {

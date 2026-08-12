@@ -131,7 +131,7 @@ const submitPinChange = async () => {
     loading.value = true;
     errorMessage.value = '';
 
-    await changePin(authStore.userId, {
+    await changePin({
       currentPinPassword,
       newPinPassword,
       newPinPasswordConfirm: confirmPinPassword.value,

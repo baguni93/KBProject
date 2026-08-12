@@ -1,59 +1,64 @@
 <template>
-  <div class="signup-page">
-    <!-- 1. 중앙 내용 영역 (기존 스타일 및 정렬 그대로 유지) -->
-    <main class="content-area">
-      <div class="member-content">
+  <div class="page-layout page-layout-top member-page">
+    <!-- 배경 장식 -->
+    <div class="background-decoration decoration-left"></div>
+    <div class="background-decoration decoration-right"></div>
+
+    <main class="page-content content-area">
+      <section class="member-content">
+        <!-- 메인 비주얼 -->
         <div class="member-visual">
-          <div class="visual-card">
-            <span class="person person-left"></span>
-            <span class="person person-center"></span>
-            <span class="person person-right"></span>
+          <div class="circle-background"></div>
+
+          <div class="member-icon">
+            <i class="fa-solid fa-user-check"></i>
           </div>
 
-          <span class="confetti confetti-one"></span>
-          <span class="confetti confetti-two"></span>
-          <span class="confetti confetti-three"></span>
-          <span class="confetti confetti-four"></span>
+          <!-- 주변 장식 -->
+          <span class="deco deco-one"></span>
+          <span class="deco deco-two"></span>
+          <span class="deco deco-three"></span>
+          <span class="deco deco-four"></span>
+
+          <i class="fa-solid fa-star sparkle sparkle-one"></i>
+          <i class="fa-solid fa-star sparkle sparkle-two"></i>
         </div>
 
-        <h1>이미 가입된 회원이에요!</h1>
+        <!-- 메시지 -->
+        <div class="member-message">
+          <h1 class="text-30-bold">
+            이미 가입된 회원이에요!
+          </h1>
 
-        <p class="member-description">
-          등록한 간편비밀번호로<br />
-          빠르고 안전하게 로그인해 주세요.
-        </p>
+          <p class="text-15">
+            등록한 간편비밀번호로 로그인해 주세요.
+          </p>
+        </div>
 
-        <section class="guide-list">
-          <article class="guide-item">
-            <div class="guide-icon">✓</div>
-            <div>
-              <strong>본인인증 완료</strong>
-              <p>가입된 회원 정보를 확인했어요.</p>
-            </div>
-          </article>
+        <!-- 안내 카드 -->
+        <div class="guide-card">
+          <div class="guide-icon">
+            <i class="fa-solid fa-key"></i>
+          </div>
 
-          <article class="guide-item">
-            <div class="guide-icon">●</div>
-            <div>
-              <strong>간편한 PIN 로그인</strong>
-              <p>6자리 간편비밀번호로 로그인할 수 있어요.</p>
-            </div>
-          </article>
+          <div class="guide-text">
+            <strong class="text-15-bold">
+              간편비밀번호 로그인
+            </strong>
 
-          <article class="guide-item">
-            <div class="guide-icon">🔒</div>
-            <div>
-              <strong>안전한 금융 서비스</strong>
-              <p>회원님의 금융 정보를 안전하게 보호해요.</p>
-            </div>
-          </article>
-        </section>
-      </div>
+            <p class="text-13">
+              등록한 PIN을 입력해 주세요.
+            </p>
+          </div>
+        </div>
+      </section>
     </main>
 
-    <!-- 2. 하단 버튼 영역 (다른 페이지들과 완벽히 일치하는 위치) -->
+    <!-- 하단 버튼 -->
     <div class="bottom-btn-area single">
-      <button class="bottom-btn" type="button" @click="goLogin">다음</button>
+      <button class="bottom-btn" type="button" @click="goLogin">
+        다음
+      </button>
     </div>
   </div>
 </template>
@@ -77,192 +82,212 @@ const goLogin = () => {
 </script>
 
 <style scoped>
-.signup-page {
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  box-sizing: border-box;
+@import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
+
+.member-page {
+  position: relative;
   overflow: hidden;
-  /* 다른 회원가입 페이지들과 완전히 동일한 패딩 적용 */
-  padding: 36px 24px 70px;
-  background: #ffffff;
+  background: linear-gradient(180deg, #fffdf8 0%, #ffffff 42%, #ffffff 100%);
 }
 
-/* 중앙 내용 영역 (내부 스크롤 가능하며 기존 디자인 보존) */
 .content-area {
-  flex: 1;
+  position: relative;
+  z-index: 2;
   min-height: 0;
   overflow-y: auto;
-  box-sizing: border-box;
   padding-right: 2px;
 }
 
 .member-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 54px;
   text-align: center;
 }
 
+/* 배경 장식 */
+.background-decoration {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.decoration-left {
+  top: -90px;
+  left: -110px;
+  width: 220px;
+  height: 220px;
+  background: rgba(255, 205, 91, 0.13);
+}
+
+.decoration-right {
+  top: 240px;
+  right: -110px;
+  width: 200px;
+  height: 200px;
+  background: rgba(176, 164, 255, 0.06);
+}
+
+/* 메인 비주얼 */
 .member-visual {
   position: relative;
-  width: 150px;
-  height: 150px;
-  margin: 18px auto 32px;
+  width: 138px;
+  height: 138px;
+  margin-bottom: 28px;
 }
 
-.visual-card {
+.circle-background {
   position: absolute;
-  top: 28px;
-  left: 50%;
+  inset: 4px;
+  border-radius: 50%;
+  background: linear-gradient(
+      135deg,
+      rgba(255, 188, 46, 0.17),
+      rgba(255, 225, 155, 0.07)
+  );
+}
+
+.member-icon {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 2;
   display: flex;
-  width: 112px;
-  height: 104px;
+  width: 90px;
+  height: 90px;
   align-items: center;
   justify-content: center;
-  border-radius: 28px;
-  background: linear-gradient(145deg, #fff4cf, #ffe59a);
-  box-shadow: 0 18px 34px rgba(255, 188, 46, 0.22);
-  transform: translateX(-50%);
-}
-
-.person {
-  position: absolute;
-  bottom: 24px;
-  width: 30px;
-  height: 38px;
-  border-radius: 16px 16px 10px 10px;
-  background: #5c6670;
-}
-
-.person::before {
-  position: absolute;
-  top: -19px;
-  left: 5px;
-  width: 20px;
-  height: 20px;
   border-radius: 50%;
-  background: #7f8992;
-  content: '';
+  background: linear-gradient(
+      135deg,
+      #ffca52 0%,
+      var(--color-primary) 65%,
+      #f3a711 100%
+  );
+  box-shadow: 0 14px 30px rgba(255, 188, 46, 0.26);
+  color: #ffffff;
 }
 
-.person-left {
-  left: 17px;
-  transform: scale(0.86);
+.member-icon i {
+  font-size: 34px;
 }
 
-.person-center {
-  z-index: 2;
-  left: 41px;
-  background: #333333;
-}
-
-.person-center::before {
-  background: #555555;
-}
-
-.person-right {
-  right: 17px;
-  transform: scale(0.86);
-}
-
-.confetti {
+/* 작은 장식 */
+.deco {
   position: absolute;
-  width: 8px;
-  height: 18px;
-  border-radius: 4px;
+  display: block;
+  border-radius: 50%;
 }
 
-.confetti-one {
-  top: 18px;
-  left: 18px;
-  background: #ffbc2e;
-  transform: rotate(-35deg);
-}
-
-.confetti-two {
-  top: 12px;
-  right: 22px;
-  background: #6c8cff;
-  transform: rotate(42deg);
-}
-
-.confetti-three {
-  bottom: 16px;
-  left: 12px;
-  background: #63ca72;
-  transform: rotate(30deg);
-}
-
-.confetti-four {
+.deco-one {
+  top: 14px;
   right: 10px;
-  bottom: 24px;
-  background: #ff8a65;
-  transform: rotate(-28deg);
+  width: 9px;
+  height: 9px;
+  background: #ffca52;
 }
 
-.member-content h1 {
+.deco-two {
+  top: 42px;
+  left: 3px;
+  width: 7px;
+  height: 7px;
+  background: #9d90ff;
+}
+
+.deco-three {
+  right: 4px;
+  bottom: 27px;
+  width: 7px;
+  height: 7px;
+  background: #7bd6c7;
+}
+
+.deco-four {
+  bottom: 9px;
+  left: 25px;
+  width: 8px;
+  height: 8px;
+  background: #ff9eaa;
+}
+
+.sparkle {
+  position: absolute;
+  color: var(--color-primary);
+}
+
+.sparkle-one {
+  top: 2px;
+  left: 31px;
+  font-size: 11px;
+  transform: rotate(15deg);
+}
+
+.sparkle-two {
+  right: 15px;
+  bottom: 6px;
+  color: #a99df7;
+  font-size: 9px;
+  transform: rotate(-15deg);
+}
+
+/* 메시지 */
+.member-message h1 {
   margin: 0;
-  color: #111111;
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.7px;
+  color: var(--color-text-main);
+  line-height: 1.3;
+  letter-spacing: -0.6px;
 }
 
-.member-description {
-  margin: 18px 0 0;
-  color: #777777;
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.5;
+.member-message p {
+  margin: 16px 0 0;
+  color: var(--color-text-sub);
+  line-height: 1.65;
 }
 
-.guide-list {
-  margin-top: 42px;
-  padding: 6px 18px;
-  border-radius: 20px;
-  background: #fafafa;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
-  text-align: left;
-}
-
-.guide-item {
+/* 안내 카드 */
+.guide-card {
   display: flex;
-  min-height: 86px;
+  width: 100%;
   align-items: center;
-  gap: 14px;
-  border-bottom: 1px solid #eeeeee;
-}
-
-.guide-item:last-child {
-  border-bottom: 0;
+  margin-top: 36px;
+  padding: 18px;
+  border: 1px solid rgba(255, 188, 46, 0.15);
+  border-radius: 18px;
+  background: linear-gradient(110deg, #fff9ec 0%, #fffdf8 70%, #faf8ff 100%);
+  box-sizing: border-box;
+  text-align: left;
 }
 
 .guide-icon {
   display: flex;
-  flex: none;
-  width: 42px;
-  height: 42px;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
   align-items: center;
   justify-content: center;
+  margin-right: 14px;
   border-radius: 14px;
-  background: #fff2c9;
-  color: #bc7d00;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(255, 188, 46, 0.12);
+  color: #d9980d;
   font-size: 17px;
-  font-weight: 800;
 }
 
-.guide-item strong {
+.guide-text {
+  min-width: 0;
+}
+
+.guide-text strong {
   display: block;
-  color: #222222;
-  font-size: 15px;
-  font-weight: 700;
+  color: var(--color-text-main);
 }
 
-.guide-item p {
+.guide-text p {
   margin: 5px 0 0;
-  color: #888888;
-  font-size: 12px;
-  line-height: 1.4;
+  color: var(--color-text-sub);
+  line-height: 1.45;
 }
 </style>

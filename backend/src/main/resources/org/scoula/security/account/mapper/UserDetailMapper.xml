@@ -5,30 +5,60 @@
 <mapper namespace="org.scoula.security.account.mapper.UserDetailMapper">
 
     <resultMap id="authMap" type="org.scoula.security.account.domain.AuthVO">
-        <result property="username" column="username" />
+        <result property="userId" column="user_id" />
         <result property="auth" column="auth" />
     </resultMap>
-    <resultMap id="memberMap" type="org.scoula.security.account.domain.MemberVO">
-        <id property="username" column="username" />
-        <result property="password" column="password" />
-        <result property="email" column="email" />
-        <result property="regDate" column="reg_date" />
-        <result property="updateDate" column="update_date" />
+
+    <resultMap id="userMap" type="org.scoula.user.domain.UserVO">
+        <id property="userId" column="user_id" />
+        <result property="userName" column="user_name" />
+        <result property="birthDate" column="birth_date" />
+        <result property="phoneNumber" column="phone_number" />
+        <result property="pinPassword" column="pin_password" />
+        <result property="userStatus" column="user_status" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+        <result property="withdrawnAt" column="withdrawn_at" />
         <collection property="authList" resultMap="authMap" />
     </resultMap>
 
-    <select id="get" resultMap="memberMap">
-        select m.username, password, email, reg_date, update_date, auth
-        from
-            tbl_member m left outer join tbl_member_auth a
-                                         on m.username = a.username
-        where m.username = #{username}
+    <select id="get" resultMap="userMap">
+        SELECT
+            u.user_id,
+            u.user_name,
+            u.birth_date,
+            u.phone_number,
+            u.pin_password,
+            u.user_status,
+            u.created_at,
+            u.updated_at,
+            u.withdrawn_at,
+            a.auth
+        FROM user_tbl u
+                 LEFT OUTER JOIN user_auth_tbl a
+                                 ON u.user_id = a.user_id
+        WHERE u.phone_number = #{username}
     </select>
-    <select id="get2" resultType="org.scoula.security.account.domain.MemberVO">
-        select * from tbl_member where username =#{username}
+
+    <select id="get2" resultType="org.scoula.user.domain.UserVO">
+        SELECT
+            user_id,
+            user_name,
+            birth_date,
+            phone_number,
+            pin_password,
+            user_status,
+            created_at,
+            updated_at,
+            withdrawn_at
+        FROM user_tbl
+        WHERE phone_number = #{username}
     </select>
+
     <select id="getAuthList" resultType="org.scoula.security.account.domain.AuthVO">
-        select * from tbl_member_auth where username =#{username}
+        SELECT user_id, auth
+        FROM user_auth_tbl
+        WHERE user_id = #{userId}
     </select>
 
 </mapper>

@@ -2,7 +2,7 @@ package org.scoula.controller;
 
 import lombok.extern.log4j.Log4j2;
 import org.scoula.security.account.domain.CustomUser;
-import org.scoula.security.account.domain.MemberVO;
+import org.scoula.user.domain.UserVO;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -46,9 +46,7 @@ public class SecurityController {
     @GetMapping("/security/info")
     @ResponseBody
     public String info() {
-
-        Authentication auth =
-                SecurityContextHolder.getContext().getAuthentication();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         return auth.getName();
     }
@@ -66,9 +64,8 @@ public class SecurityController {
 
     @GetMapping("/admin3")
     public void doAdmin(@AuthenticationPrincipal CustomUser customUser) {
-        MemberVO member = customUser.getMember();
+        UserVO user = customUser.getUser();
 
-        log.info("username = " + member);
+        log.info("user = " + user);
     }
-
 }
