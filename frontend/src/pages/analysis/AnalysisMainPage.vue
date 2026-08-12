@@ -176,10 +176,15 @@
             <div class="spending-icon">
               <i :class="getCategoryIcon(transaction.parentCategoryName || transaction.categoryName)"></i>
             </div>
-            <div class="spending-info">
+            <!-- 거래명/거래일시 영역도 카테고리 수정 화면으로 이동할 수 있게 한다. -->
+            <button
+                type="button"
+                class="spending-info spending-info-button"
+                @click="goToCategoryEdit(transaction)"
+            >
               <strong class="text-15-bold">{{ transaction.transactionLabel || transaction.merchantName || '거래 정보 없음' }}</strong>
               <span class="text-13">{{ formatShortDate(transaction.createdAt) }}</span>
-            </div>
+            </button>
             <div class="spending-right">
               <strong class="text-15-bold">-{{ formatAnalysisNumber(transaction.amount) }}원</strong>
               <button type="button" class="text-13-bold" @click="goToCategoryEdit(transaction)">
@@ -760,6 +765,15 @@ onBeforeUnmount(stopStatusPolling);
 .spending-info {
   min-width: 0;
   flex: 1;
+}
+
+.spending-info-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .spending-info strong,

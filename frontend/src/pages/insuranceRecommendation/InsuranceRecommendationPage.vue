@@ -56,15 +56,6 @@
       <section class="kb-section recommendation-list-section">
         <div class="kb-section-title-row">
           <h2 class="kb-section-title text-20-bold">맞춤 보험 추천</h2>
-          <button
-            v-if="recommendations.length"
-            type="button"
-            class="kb-section-link evidence-link text-13-bold"
-            @click="openEvidence"
-          >
-            추천 근거 보기
-            <i class="fa-solid fa-chevron-right"></i>
-          </button>
         </div>
 
         <div v-if="recommendations.length" class="recommendation-list">
@@ -94,13 +85,6 @@
               <h3 class="text-18-bold">{{ insurance.insuranceName }}</h3>
               <p class="description text-13">{{ insurance.insuranceDescription }}</p>
 
-              <div class="premium-row">
-                <span class="text-13">예상 월 보험료</span>
-                <strong class="text-15-bold">
-                  {{ formatInsuranceAmount(insurance.monthlyPremium) }}원
-                </strong>
-              </div>
-
               <div v-if="insurance.recommendationReason" class="reason-box">
                 <span class="text-13-bold">
                   <i class="fa-solid fa-circle-check"></i>
@@ -112,7 +96,7 @@
               <button
                 type="button"
                 class="content-btn secondary detail-button"
-                @click="openProductDetail(insurance.insuranceProductId)"
+                @click="openProductDetail(insurance)"
               >
                 보험 상세보기
                 <i class="fa-solid fa-chevron-right"></i>
@@ -158,7 +142,6 @@ import { useRoute, useRouter } from 'vue-router';
 import PageHeader from '@/components/common/PageHeader.vue';
 import insuranceRecommendationApi from '@/api/insuranceRecommendationApi';
 import {
-  formatInsuranceAmount,
   getInsuranceCategoryIcon,
   getInsuranceImageUrl,
   getInsuranceRecommendationErrorMessage,
@@ -331,25 +314,21 @@ const reloadRecommendations = async () => {
   }
 };
 
-const openEvidence = () =>
-  router.push({
-    name: 'insurance-recommendation-evidence',
-    params: { spendingAnalysisId },
-  });
-
 const openProducts = () =>
   router.push({
     name: 'insurance-product-list',
     query: { spendingAnalysisId },
   });
 
-const openProductDetail = (insuranceProductId) =>
+const openProductDetail = (insurance) =>
   router.push({
     name: 'insurance-product-detail',
-    params: { insuranceProductId },
+    params: { insuranceProductId: insurance.insuranceProductId },
     query: {
       from: 'recommendation',
       spendingAnalysisId,
+      // 추천에서 진입한 상세 화면은 이 ID로 실제 추천 근거 거래까지 조회한다.
+      insuranceRecommendationId: insurance.insuranceRecommendationId,
     },
   });
 
@@ -537,19 +516,7 @@ onBeforeUnmount(stopStatusPolling);
   line-height: 1.6;
 }
 
-.premium-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 15px;
-  padding: 13px 0;
-  border-top: 1px solid var(--color-divider);
-  border-bottom: 1px solid var(--color-divider);
-}
 
-.premium-row span {
-  color: var(--color-text-muted);
-}
 
 .reason-box {
   margin-top: 14px;

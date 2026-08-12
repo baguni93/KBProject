@@ -7,6 +7,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import config from '@/config/feed';
 
 const props = defineProps({
   visibility: {
@@ -15,20 +16,7 @@ const props = defineProps({
   },
 });
 
-const visibilityMap = {
-  PUBLIC: {
-    icon: 'fa-solid fa-earth-americas',
-    text: '공개',
-  },
-  FRIEND: {
-    icon: 'fa-solid fa-user-group',
-    text: '친구',
-  },
-  PRIVATE: {
-    icon: 'fa-solid fa-lock',
-    text: '비공개',
-  },
-};
+const visibilityMap = config.visibilityMap;
 
 const icon = computed(() => {
   return visibilityMap[props.visibility]?.icon ?? '';

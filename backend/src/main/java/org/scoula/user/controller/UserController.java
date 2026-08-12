@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.scoula.login.dto.TokenDTO;
 import org.scoula.login.service.LoginService;
 import org.scoula.security.account.domain.CustomUser;
+import org.scoula.account.dto.AccountDTO;
 import org.scoula.user.dto.*;
 import org.scoula.user.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -112,5 +113,11 @@ public class UserController {
         response.put("message", "회원 탈퇴가 완료되었습니다.");
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/account/{bankCode}")
+    public ResponseEntity<AccountByBankCodeDTO> getAccountByBankCode(@RequestParam int userId, @PathVariable String bankCode){
+
+        return ResponseEntity.ok(userService.getAccountByBankCode(userId , bankCode));
     }
 }

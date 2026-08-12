@@ -85,7 +85,7 @@ const categoriesMap = {
   ],
   sticker: [
     { name: '아이콘', key: 'icon' },
-    { name: '문구', key: 'text' },
+    // { name: '문구', key: 'text' },
   ],
 };
 

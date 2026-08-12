@@ -1,8 +1,5 @@
 <template>
   <div class="complete-page">
-    <!-- 상단 타이틀 -->
-    <div class="page-header">카드 발급 완료</div>
-
     <!-- 메인 컨텐츠 영역 (폭죽 파티클 및 안내문구) -->
     <div class="content-body">
       <div class="confetti-area">
@@ -24,6 +21,10 @@
       <button class="share-btn" @click="openModal">
         <i class="fa-solid fa-share-nodes"></i> 카드 자랑하기
       </button>
+      <button class="share-btn" @click="handleAddCard">
+        간편 결제 연동하기
+      </button>
+
       <button class="confirm-btn" @click="handleConfirm">확인</button>
     </div>
 
@@ -42,11 +43,13 @@
           <!-- 전체 공개 -->
           <div
             class="option-card"
-            :class="{ active: selectedScope === 'public' }"
-            @click="selectedScope = 'public'"
+            :class="{ active: selectedScope === 'PUBLIC' }"
+            @click="selectedScope = 'PUBLIC'"
           >
             <div class="option-icon-text">
-              <div class="icon-circle">🌍</div>
+              <div class="icon-circle">
+                <i :class="config.visibilityMap.PUBLIC.icon"></i>
+              </div>
               <div class="text-group">
                 <div class="option-title">전체 공개</div>
                 <div class="option-desc">
@@ -56,7 +59,7 @@
             </div>
             <div class="radio-icon">
               <i
-                v-if="selectedScope === 'public'"
+                v-if="selectedScope === 'PUBLIC'"
                 class="fa-solid fa-circle-check"
               ></i>
               <div v-else class="radio-empty"></div>
@@ -66,11 +69,13 @@
           <!-- 친구 공개 -->
           <div
             class="option-card"
-            :class="{ active: selectedScope === 'friends' }"
-            @click="selectedScope = 'friends'"
+            :class="{ active: selectedScope === 'FRIEND' }"
+            @click="selectedScope = 'FRIEND'"
           >
             <div class="option-icon-text">
-              <div class="icon-circle">👥</div>
+              <div class="icon-circle">
+                <i :class="config.visibilityMap.FRIEND.icon"></i>
+              </div>
               <div class="text-group">
                 <div class="option-title">친구 공개</div>
                 <div class="option-desc">
@@ -80,7 +85,7 @@
             </div>
             <div class="radio-icon">
               <i
-                v-if="selectedScope === 'friends'"
+                v-if="selectedScope === 'FRIEND'"
                 class="fa-solid fa-circle-check"
               ></i>
               <div v-else class="radio-empty"></div>
@@ -88,11 +93,23 @@
           </div>
         </div>
 
+        <!-- 💡 [추가] 피드 내용 입력 영역 -->
+        <div class="feed-content-area">
+          <textarea
+            v-model="feedContent"
+            placeholder="자랑하고 싶은 내용을 입력해 보세요!"
+            maxlength="20"
+            class="feed-textarea"
+          ></textarea>
+          <div class="char-count">{{ feedContent.length }} / 20</div>
+        </div>
+
         <!-- 모달 내부 액션 버튼 -->
         <div class="sheet-action-area">
           <button class="action-share-btn" @click="handleShareSubmit">
             자랑하기
           </button>
+
           <button class="action-cancel-btn" @click="closeModal">취소</button>
         </div>
       </div>
@@ -105,12 +122,17 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCardEditorStore } from '@/stores/cardEditorStore';
 import CardCanvasPreview from '@/components/card-editor/CardCanvasPreview.vue';
+import config from '@/config/feed';
+import { useFeedStore } from '@/stores/feed';
+
+const feedStore = useFeedStore();
 
 const router = useRouter();
 const cardStore = useCardEditorStore();
 
 const isModalOpen = ref(false);
-const selectedScope = ref('public'); // 'public' 또는 'friends'
+const selectedScope = ref('PUBLIC'); // 'public' 또는 'friends'
+const feedContent = ref('');
 
 const openModal = () => {
   isModalOpen.value = true;
@@ -127,9 +149,25 @@ const handleConfirm = () => {
   router.push('/'); // 이동할 메인 페이지 경로로 수정하세요
 };
 
+const handleAddCard = () => {
+  cardStore.reset();
+  cardStore.history = [];
+  router.push('/wallet/card/add'); // 이동할 메인 페이지 경로로 수정하세요
+};
+
 // 자랑하기 최종 제출
-const handleShareSubmit = () => {
+const handleShareSubmit = async () => {
   console.log('공개 범위:', selectedScope.value);
+
+  const fromData = feedStore.createRequestDTO({
+    targetId: cardStore.customCardId,
+    feedType: 'CARD',
+    visibility: selectedScope.value,
+    content: feedContent.value,
+  });
+
+  await feedStore.createFeed(fromData);
+
   console.log('공유될 카드 데이터:', {
     name: cardStore.cardName,
     number: cardStore.cardNumber,
@@ -150,7 +188,7 @@ const handleShareSubmit = () => {
   flex-direction: column;
   background-color: #ffffff;
   box-sizing: border-box;
-  padding: 16px;
+  padding: 20px;
   position: relative;
   overflow: hidden;
 }
@@ -168,7 +206,8 @@ const handleShareSubmit = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
+  margin-top: -150px;
   gap: 24px;
 }
 
@@ -288,7 +327,7 @@ const handleShareSubmit = () => {
 }
 
 .sheet-desc {
-  font-size: 12px;
+  font-size: 13px;
   color: #888;
 }
 
@@ -337,13 +376,13 @@ const handleShareSubmit = () => {
 }
 
 .option-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: bold;
   color: #222;
 }
 
 .option-desc {
-  font-size: 11px;
+  font-size: 12px;
   color: #888;
   margin-top: 2px;
 }
@@ -375,7 +414,7 @@ const handleShareSubmit = () => {
   background-color: #ffc107;
   border: none;
   color: #111;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: bold;
   cursor: pointer;
 }
@@ -407,5 +446,35 @@ const handleShareSubmit = () => {
   to {
     transform: translateY(0);
   }
+}
+
+.feed-content-area {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feed-textarea {
+  width: 100%;
+  height: 80px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  resize: none;
+  font-size: 14px;
+  box-sizing: border-box; /* 패딩 포함하여 너비 계산 */
+  outline: none;
+}
+
+.feed-textarea:focus {
+  border-color: #3b82f6; /* 포커스 시 테두리 색상 */
+}
+
+.char-count {
+  text-align: right;
+  font-size: 12px;
+  color: #9ca3af;
 }
 </style>

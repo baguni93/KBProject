@@ -51,6 +51,13 @@ export const formatAnalysisDateTime = (value) => {
   return String(value).replace('T', ' ');
 };
 
+// 일반 소비내역 화면에서는 초 단위까지 보여주지 않는다.
+// 카테고리 분류/수정 화면은 기존 formatAnalysisDateTime()을 사용해 초 단위를 유지한다.
+export const formatAnalysisDateTimeMinute = (value) => {
+  if (!value) return '-';
+  return String(value).replace('T', ' ').slice(0, 16);
+};
+
 export const formatAnalysisExecutionDate = (value, includeTime = true) => {
   if (!value) return '-';
 

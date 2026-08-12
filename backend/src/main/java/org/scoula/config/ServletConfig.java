@@ -59,6 +59,7 @@ import org.springframework.web.servlet.config.annotation.*;
         "org.scoula.profileTest.controller",
         "org.scoula.event.controller",
         "org.scoula.insurancerecommendation.controller",
+        "org.scoula.customcard.controller",
 })
 public class ServletConfig implements WebMvcConfigurer {
 

@@ -13,7 +13,6 @@ import CardRecommendationPage from '@/pages/cardRecommendation/CardRecommendatio
 import CardRecommendationDetailPage from '@/pages/cardRecommendation/CardRecommendationDetailPage.vue';
 import analysisAgreementApi from '@/api/analysisAgreementApi';
 import InsuranceRecommendationPage from '@/pages/insuranceRecommendation/InsuranceRecommendationPage.vue';
-import InsuranceRecommendationEvidencePage from '@/pages/insuranceRecommendation/InsuranceRecommendationEvidencePage.vue';
 import InsuranceProductListPage from '@/pages/insuranceRecommendation/InsuranceProductListPage.vue';
 import InsuranceProductDetailPage from '@/pages/insuranceRecommendation/InsuranceProductDetailPage.vue';
 
@@ -109,13 +108,6 @@ export default [
     path: '/analysis/result/:spendingAnalysisId/insurance-recommendations',
     name: 'insurance-recommendation',
     component: InsuranceRecommendationPage,
-    beforeEnter: requireAnalysisAgreement,
-  },
-  {
-    // 보험 추천 결과의 근거 거래내역 화면
-    path: '/analysis/result/:spendingAnalysisId/insurance-recommendations/evidence',
-    name: 'insurance-recommendation-evidence',
-    component: InsuranceRecommendationEvidencePage,
     beforeEnter: requireAnalysisAgreement,
   },
   {

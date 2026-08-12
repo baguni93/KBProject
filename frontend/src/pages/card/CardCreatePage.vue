@@ -1,42 +1,71 @@
 <template>
   <div class="page">
-    <PageHeaderStep :title="pageTitle" @go-back="handleGoBack" />
+    <PageHeaderStep
+      :title="pageTitle"
+      @back="handleGoBack"
+      :custom-back="true"
+    />
 
-    <CardEditor class="card-editor" :tabs="editorTabs" :tab-height="tapHeight">
+    <CardEditor
+      class="card-editor"
+      :tabs="editorTabs"
+      :tab-height="tapHeight"
+      ref="editorRef"
+      :selected-benefit="selectedBenefitData"
+    >
       <template #default="{ tab }">
         <!-- 단계를 오갈 때 입력 상태가 유지되도록 KeepAlive 추가 -->
         <KeepAlive>
           <component
             :is="currentComponent"
             :tab="tab"
-            @update:isValid="(valid) => (isRegisterValid = valid)"
+            :action-trigger="actionTrigger"
+            @update:isValid="
+              (valid) => {
+                // 단계별로 유효성 변수를 다르게 분기 처리
+                if (currentIndex === 5) isRegisterValid = valid;
+                else if (currentIndex === 3) isAccountValid = valid;
+                else if (currentIndex === 0) isBenefitValid = valid;
+              }
+            "
+            @update:loading="(val) => (isAccountLoading = val)"
+            @next="handleStepNext"
+            @select-benefit="handleBenefitSelected"
           />
         </KeepAlive>
       </template>
     </CardEditor>
 
-    <div class="bottom-btn-area.single">
+    <div class="bottom-btn-area single">
       <button
         class="bottom-btn"
         :disabled="isNextButtonDisabled"
         @click="handleButtonClick"
       >
-        {{ btnText }}
+        {{ isAccountLoading ? '확인 중...' : btnText }}
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
+import { useModalStore } from '@/stores/userModalStore';
+const modalStore = useModalStore();
 import { ref, computed } from 'vue';
-
 import PageHeaderStep from '@/components/common/PageHeaderStep.vue';
 import CardEditor from '@/components/card-editor/CardEditor.vue';
 import CardBackgroundPanel from '@/components/card-editor/CardBackgroundPanel.vue';
 import CardDecorationPanel from '@/components/card-editor/CardDecorationPanel.vue';
 import CardRegisterPanel from '@/components/card-editor/CardRegisterPanel.vue';
+import CardBenifitPanel from '@/components/card-editor/CardBenifitPanel.vue';
+import CardCheckCanIssuePage from './CardCheckCanIssuePage.vue';
+import CardIssueVerificationPage from './CardIssueVerification.page.vue';
 import { useRouter } from 'vue-router';
 import { useCardEditorStore } from '@/stores/cardEditorStore';
+import customCardApi from '@/api/customCard.Api.js';
+import { useAuthStore } from '@/stores/auth.js';
+const authStore = useAuthStore();
+const userId = authStore.userId;
 
 const cardStore = useCardEditorStore();
 
@@ -45,19 +74,49 @@ cardStore.createCardNumber();
 
 const router = useRouter();
 
+// 💡 1. 최종 선택된 혜택 데이터를 담을 상태 추가
+const selectedBenefitData = ref(null); // 선택된 혜택 데이터
+const isBenefitValid = ref(false); // 0단계 유효성 상태
+
+// 💡 2. 자식/에디터에서 혜택이 선택되었을 때 호출될 함수 추가
+const handleBenefitSelected = (benefitPack) => {
+  selectedBenefitData.value = benefitPack; // 이 값이 바뀌면 에디터 뱃지가 뜸
+  console.log('최종 선택된 혜택:', benefitPack);
+};
+
 // 인덱스 초기값
 const stepIndex = ref(0);
 
+const currentIndex = computed(() => steps[stepIndex.value].index);
 const editorTabs = computed(() => steps[stepIndex.value].tabs);
 const pageTitle = computed(() => steps[stepIndex.value].title);
 const tapHeight = computed(() => steps[stepIndex.value].tabHeight);
 const currentStep = computed(() => steps[stepIndex.value]);
 const currentComponent = computed(() => currentStep.value.component);
 const btnText = computed(() => steps[stepIndex.value].buttonText);
+
+// 상태 변수들
 const isRegisterValid = ref(false);
+const isAccountValid = ref(false); // 3단계 유효성 상태
+const isAccountLoading = ref(false); // 3단계 로딩 상태
+const actionTrigger = ref(0); // 자식에게 실행 신호를 주는 트리거
+const editorRef = ref(null);
 
 const steps = [
   {
+    index: 0,
+    title: '나만의 혜택 선택',
+    buttonText: '다음',
+    component: CardBenifitPanel,
+    tabHeight: '42px',
+    tabs: [
+      { key: 'lifestyle', label: '디지털/구독' },
+      { key: 'shopping', label: '쇼핑/뷰티' },
+      { key: 'daily', label: '생활/교통' },
+    ],
+  },
+  {
+    index: 1,
     title: '카드 배경 선택',
     buttonText: '다음',
     component: CardBackgroundPanel,
@@ -68,6 +127,7 @@ const steps = [
     ],
   },
   {
+    index: 2,
     title: '카드 꾸미기',
     buttonText: '다음',
     component: CardDecorationPanel,
@@ -80,7 +140,24 @@ const steps = [
     ],
   },
   {
-    title: '신청하기',
+    index: 3,
+    title: '계좌 확인',
+    buttonText: '1원 송금',
+    component: CardCheckCanIssuePage,
+    tabHeight: '',
+    tabs: [],
+  },
+  {
+    index: 4,
+    title: '계좌 확인',
+    buttonText: '다음',
+    component: CardIssueVerificationPage,
+    tabHeight: '',
+    tabs: [],
+  },
+  {
+    index: 5,
+    title: '카드 정보 입력',
     buttonText: '신청하기',
     component: CardRegisterPanel,
     tabHeight: '',
@@ -88,39 +165,109 @@ const steps = [
   },
 ];
 
-// 마지막 단계일 때 폼이 미입력 상태면 버튼 비활성화
+// 버튼 비활성화 제어
 const isNextButtonDisabled = computed(() => {
   const isLastStep = stepIndex.value === steps.length - 1;
+
   if (isLastStep) {
     return !isRegisterValid.value;
   }
+
+  // 3단계(계좌 확인)일 때: 자식이 알려준 유효성값과 로딩 상태 반영
+  if (currentIndex.value === 3) {
+    return !isAccountValid.value || isAccountLoading.value;
+  } else if (currentIndex.value === 0) {
+    return !isBenefitValid.value; // 혜택이 선택 안 되었으면 비활성화!
+  }
+
   return false;
 });
 
-const handleGoBack = () => {
+const handleGoBack = async () => {
   if (stepIndex.value > 0) {
     stepIndex.value--;
     return;
   } else {
+    const isConfirmed = await modalStore.showConfirm(
+      '카드 신청을 취소하시겠습니까?',
+      '카드 신청',
+    );
+    if (!isConfirmed) {
+      return;
+    }
     cardStore.reset();
-    router.back();
+    router.push('/card/create/intro');
   }
 };
 
-// 버튼 클릭 시 마지막 단계면 최종 신청 로직, 아니면 다음 단계로 이동
-const handleButtonClick = () => {
+// 자식이 API 성공 후 @next 이벤트를 쏘았을 때 다음 단계로 이동
+const handleStepNext = () => {
+  if (stepIndex.value < steps.length - 1) {
+    stepIndex.value++;
+    cardStore.saveStep();
+  }
+};
+
+//카드 데이터 저장
+const handleSave = async () => {
+  // 1. 서버에 보낼 데이터 준비
+  try {
+    // 2. API 호출
+    console.log(editorRef.value.childRef);
+    const cardImageFormData = await editorRef.value.childRef.uploadCardImage();
+    const response = await cardStore.createCardPayload(
+      userId,
+      cardImageFormData,
+    );
+    console.log('저장 성공:', response.data);
+  } catch (error) {
+    console.error('저장 실패:', error);
+  }
+};
+
+//가상 실물 카드 테이블에 추가
+
+// 버튼 클릭 핸들러
+const handleButtonClick = async () => {
   const isLastStep = stepIndex.value === steps.length - 1;
 
   if (isLastStep) {
     cardStore.saveStep();
+
+    await handleSave();
+
     cardStore.reset();
     router.push('/card/complete');
+
     console.log('최종 제출 데이터:', cardStore.history);
-  } else {
-    if (stepIndex.value < steps.length - 1) {
-      stepIndex.value++;
-      cardStore.saveStep();
-    }
+    return;
+  }
+
+  // 3단계(계좌 확인)일 때는 ref 대신 트리거 값을 올려서 자식에게 실행 신호 전달
+  if (currentIndex.value === 3) {
+    actionTrigger.value++;
+    return;
+  }
+
+  // 4단계(인증번호 확인 등)는 기존 로직 유지 가능
+  if (currentIndex.value === 4) {
+    // 만약 4단계도 자식 내부 버튼이 없다면 동일하게 트리거를 쓰거나 기존 로직 유지
+    actionTrigger.value++;
+    return;
+  }
+
+  // 그 외 일반 단계 이동 (0, 1, 2 단계)
+  if (stepIndex.value < steps.length - 1) {
+    stepIndex.value++;
+    cardStore.saveStep();
+  }
+};
+
+const handleOuterClick = async () => {
+  // editorRef.value.childRef를 통해 손자(CardCanvas)의 함수 바로 호출!
+  if (editorRef.value?.childRef?.testDownloadCard) {
+    await editorRef.value.childRef.testDownloadCard();
+    console.log('부모가 손자의 캡처 기능을 직접 실행했습니다!');
   }
 };
 </script>

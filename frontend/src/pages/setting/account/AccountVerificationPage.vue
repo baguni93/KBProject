@@ -15,14 +15,14 @@
       <section class="verification-section">
         <div class="verification-boxes" @click="focusInput">
           <div
-              v-for="index in 4"
-              :key="index"
-              :class="{
+            v-for="index in 4"
+            :key="index"
+            :class="{
               filled: verificationCode.length >= index,
               active: verificationCode.length === index - 1 && !errorMessage,
               error: !!errorMessage,
             }"
-              class="verification-box"
+            class="verification-box"
           >
             {{ verificationCode[index - 1] || '' }}
           </div>
@@ -39,7 +39,10 @@
           />
         </div>
 
-        <p v-if="accountStore.accountForm.developmentCode" class="development-code">
+        <p
+          v-if="accountStore.accountForm.developmentCode"
+          class="development-code"
+        >
           개발용 인증번호: {{ accountStore.accountForm.developmentCode }}
         </p>
 
@@ -120,12 +123,12 @@ const confirmAndConnect = async () => {
     loading.value = true;
     errorMessage.value = '';
 
-    await confirmAccountVerification(userId, {
+    await confirmAccountVerification({
       verificationId,
       verificationCode: verificationCode.value,
     });
 
-    await connectAccount(userId, { verificationId });
+    await connectAccount({ verificationId });
 
     router.replace('/setting/account/complete');
   } catch (error) {
@@ -165,7 +168,7 @@ const resendVerification = async () => {
     loading.value = true;
     errorMessage.value = '';
 
-    const response = await resendAccountVerification(userId, verificationId);
+    const response = await resendAccountVerification(verificationId);
 
     accountStore.accountForm.developmentCode = response.verificationCode;
 
@@ -282,9 +285,9 @@ onMounted(() => {
   font-size: 24px;
   font-weight: 700;
   transition:
-      border-color 0.2s,
-      background 0.2s,
-      box-shadow 0.2s;
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
 }
 
 .verification-box.active {

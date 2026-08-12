@@ -1,16 +1,14 @@
 <template>
   <div class="account-page">
     <main class="account-container">
-      <button class="back-button" type="button" @click="goBack">
-        &lt;
-      </button>
+      <button class="back-button" type="button" @click="goBack">&lt;</button>
 
       <header class="page-header">
         <div class="selected-bank">
           <img
-              v-if="accountStore.accountForm.bankLogoUrl"
-              :alt="accountStore.accountForm.bankName"
-              :src="accountStore.accountForm.bankLogoUrl"
+            v-if="accountStore.accountForm.bankLogoUrl"
+            :alt="accountStore.accountForm.bankName"
+            :src="accountStore.accountForm.bankLogoUrl"
           />
 
           <strong>{{ accountStore.accountForm.bankName }}</strong>
@@ -25,17 +23,15 @@
 
         <div class="readonly-field">
           <input
-              id="accountHolder"
-              :value="accountHolder"
-              class="readonly-input"
-              placeholder="회원 실명을 불러오고 있어요"
-              type="text"
-              readonly
+            id="accountHolder"
+            :value="accountHolder"
+            class="readonly-input"
+            placeholder="회원 실명을 불러오고 있어요"
+            type="text"
+            readonly
           />
 
-          <span v-if="userLoading" class="field-loading">
-            조회 중
-          </span>
+          <span v-if="userLoading" class="field-loading"> 조회 중 </span>
         </div>
 
         <p class="field-guide">
@@ -45,13 +41,13 @@
         <label for="accountNumber">계좌번호</label>
 
         <input
-            id="accountNumber"
-            :value="accountNumber"
-            inputmode="numeric"
-            maxlength="20"
-            placeholder="'-' 없이 숫자만 입력해 주세요"
-            type="text"
-            @input="changeAccountNumber"
+          id="accountNumber"
+          :value="accountNumber"
+          inputmode="numeric"
+          maxlength="20"
+          placeholder="'-' 없이 숫자만 입력해 주세요"
+          type="text"
+          @input="changeAccountNumber"
         />
 
         <p v-if="errorMessage" class="error-message">
@@ -59,9 +55,9 @@
         </p>
 
         <button
-            class="next-button"
-            :disabled="!canSubmit || loading || userLoading"
-            type="submit"
+          class="next-button"
+          :disabled="!canSubmit || loading || userLoading"
+          type="submit"
         >
           {{ loading ? '인증 요청 중...' : '인증번호 받기' }}
         </button>
@@ -74,6 +70,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { requestAccountVerification } from '@/api/accountApi';
+import { getAccountByBankCode } from '@/api/userApi';
 import { getUserInfo } from '@/api/userApi';
 import { useAccountStore } from '@/stores/account';
 import { useAuthStore } from '@/stores/auth';
@@ -91,9 +88,9 @@ const errorMessage = ref('');
 // 인증 요청 가능 여부
 const canSubmit = computed(() => {
   return (
-      accountHolder.value.length > 0
-      && accountNumber.value.length >= 8
-      && !!accountStore.accountForm.bankCode
+    accountHolder.value.length > 0 &&
+    accountNumber.value.length >= 8 &&
+    !!accountStore.accountForm.bankCode
   );
 });
 
@@ -124,8 +121,7 @@ const loadAccountHolder = async () => {
     console.error(error);
 
     errorMessage.value =
-        error.response?.data?.message
-        || '회원 실명을 불러오지 못했습니다.';
+      error.response?.data?.message || '회원 실명을 불러오지 못했습니다.';
   } finally {
     userLoading.value = false;
   }
@@ -133,9 +129,7 @@ const loadAccountHolder = async () => {
 
 // 계좌번호 입력
 const changeAccountNumber = (event) => {
-  const value = event.target.value
-      .replace(/[^0-9]/g, '')
-      .slice(0, 20);
+  const value = event.target.value.replace(/[^0-9]/g, '').slice(0, 20);
 
   accountNumber.value = value;
   errorMessage.value = '';
@@ -166,10 +160,7 @@ const requestVerification = async () => {
       accountHolder: accountHolder.value,
     };
 
-    const response = await requestAccountVerification(
-        userId,
-        requestData,
-    );
+    const response = await requestAccountVerification(requestData);
 
     accountStore.setAccountInfo(requestData);
     accountStore.setVerification(response);
@@ -179,11 +170,22 @@ const requestVerification = async () => {
     console.error(error);
 
     errorMessage.value =
-        error.response?.data?.message
-        || '계좌 인증번호 발급에 실패했습니다.';
+      error.response?.data?.message || '계좌 인증번호 발급에 실패했습니다.';
   } finally {
     loading.value = false;
   }
+};
+
+//박우진 추가
+
+const accountInfo = async () => {
+  console.log(authStore.userId);
+  const response = await getAccountByBankCode(
+    authStore.userId,
+    accountStore.accountForm.bankCode,
+  );
+
+  accountNumber.value = response.accountNumber;
 };
 
 // 이전 화면
@@ -196,7 +198,7 @@ onMounted(async () => {
     await router.replace('/setting/account/connect');
     return;
   }
-
+  await accountInfo();
   await loadAccountHolder();
 });
 </script>

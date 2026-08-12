@@ -8,11 +8,11 @@ export const getUserInfo = async () => {
 
 // 닉네임 중복 확인
 export const checkNickname = async (nickname) => {
-    const { data } = await api.get('/api/users/nickname/check', {
-        params: { nickname },
-    });
+  const { data } = await api.get('/api/users/nickname/check', {
+    params: { nickname },
+  });
 
-    return data;
+  return data;
 };
 
 // 회원가입
@@ -27,7 +27,7 @@ export const verifyPin = async (pinPassword) => {
         pinPassword,
     });
 
-    return data;
+  return data;
 };
 
 // PIN 변경
@@ -60,5 +60,16 @@ export const withdrawUser = async (withdrawalData) => {
         data: withdrawalData,
     });
 
-    return data;
+  return data;
+};
+
+// 회원 계좌 조회
+export const getAccountByBankCode = async (userId, bankCode) => {
+  const { data } = await api.get(`/api/users/account/${bankCode}`, {
+    params: {
+      userId: userId,
+    },
+  });
+
+  return data;
 };
