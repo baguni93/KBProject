@@ -189,11 +189,6 @@ const router = createRouter({
       component: MemberDetailPage,
     },
     {
-      path: '/finance',
-      name: 'Finance',
-      component: FinancePage,
-    },
-    {
       path: '/event',
       name: 'EventMain',
       component: EventPage,
