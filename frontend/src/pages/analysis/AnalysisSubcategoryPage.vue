@@ -39,20 +39,17 @@
             </h2>
           </div>
 
-          <div class="subcategory-grid kb-card">
-            <button
-              v-for="category in subcategories"
-              :key="category.spendingCategoryId"
-              type="button"
-              :class="{ selected: selectedCategoryId === category.spendingCategoryId }"
-              @click="selectedCategoryId = category.spendingCategoryId"
-            >
-              <div>
-                <i :class="getCategoryIcon(category.categoryName)"></i>
-              </div>
-              <span class="text-13-bold">{{ category.categoryName }}</span>
-            </button>
-          </div>
+          <!--
+            같은 공용 컴포넌트를 세부 카테고리 모드로 사용합니다.
+            parent-category-id를 주면 해당 부모의 하위 카테고리만 표시합니다.
+          -->
+          <SpendingCategorySelector
+            v-model="selectedCategoryId"
+            :categories="categories"
+            :parent-category-id="requestedParentCategoryId"
+            :columns="2"
+            compact
+          />
         </section>
 
         <button
@@ -79,6 +76,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import PageHeader from '@/components/common/PageHeader.vue';
+import SpendingCategorySelector from '@/components/common/SpendingCategorySelector.vue';
 import analysisApi from '@/api/analysisApi';
 import {
   formatAnalysisDateTime,
@@ -324,38 +322,6 @@ onMounted(loadData);
   color: var(--color-error);
 }
 
-.subcategory-grid {
-  padding: 12px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 9px;
-  box-shadow: none;
-  border: 1px solid var(--color-divider);
-  background: var(--color-bg-page);
-}
-
-.subcategory-grid button {
-  min-height: 76px;
-  border: 1px solid transparent;
-  border-radius: 13px;
-  background: #fafafa;
-  color: #555;
-}
-
-.subcategory-grid button.selected {
-  border-color: var(--color-primary);
-  background: #fff7d8;
-  color: #8e6900;
-}
-
-.subcategory-grid button div {
-  font-size: 19px;
-}
-
-.subcategory-grid button span {
-  display: block;
-  margin-top: 5px;
-}
 
 .complete-button {
   margin-top: 16px;
