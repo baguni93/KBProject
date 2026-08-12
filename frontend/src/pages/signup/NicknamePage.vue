@@ -1,18 +1,15 @@
 <template>
-  <main class="nickname-page">
-    <section class="nickname-container">
-      <button
-          class="back-button"
-          type="button"
-          @click="goBack"
-      >
-        &lt;
-      </button>
+  <div class="page-layout nickname-page">
+    <!-- 공통 상단 헤더 -->
+    <PageHeader
+        custom-back
+        @back="goBack"
+    />
 
-      <div
-          class="signup-progress"
-          aria-label="회원가입 진행 단계"
-      >
+    <!-- 콘텐츠 -->
+    <main class="page-content nickname-content">
+      <!-- 회원가입 진행 단계 -->
+      <div class="signup-progress" aria-label="회원가입 진행 단계">
         <span class="progress-step"></span>
         <span class="progress-line"></span>
         <span class="progress-step"></span>
@@ -20,18 +17,40 @@
         <span class="progress-step active"></span>
       </div>
 
-      <div class="title-area">
-        <h1>닉네임 설정</h1>
+      <!-- 제목 -->
+      <header class="nickname-header">
+        <h1 class="text-30-bold">
+          닉네임 설정
+        </h1>
 
-        <p>사용할 닉네임을 입력해주세요.</p>
-      </div>
+        <p class="text-15">
+          사용할 닉네임을 입력해 주세요.
+        </p>
+      </header>
 
-      <NicknameForm
-          :submitting="submitting"
-          @submit="handleSignup"
-      />
-    </section>
-  </main>
+      <!-- 닉네임 입력 -->
+      <section class="nickname-section">
+        <NicknameForm
+            ref="nicknameFormRef"
+            :submitting="submitting"
+            @valid-change="handleValidChange"
+            @submit="handleSignup"
+        />
+      </section>
+    </main>
+
+    <!-- 공통 하단 버튼 -->
+    <div class="bottom-btn-area single">
+      <button
+          class="bottom-btn"
+          type="button"
+          :disabled="!nicknameValid || submitting"
+          @click="handleSubmit"
+      >
+        {{ submitting ? '가입 중' : '회원가입' }}
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -39,17 +58,31 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { signup } from '@/api/userApi';
 import NicknameForm from '@/components/auth/NicknameForm.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useSignupStore } from '@/stores/signup';
 import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const signupStore = useSignupStore();
 const authStore = useAuthStore();
+
 const submitting = ref(false);
+const nicknameValid = ref(false);
+const nicknameFormRef = ref(null);
 
 // 이전 화면
 const goBack = () => {
   router.back();
+};
+
+// 닉네임 사용 가능 여부
+const handleValidChange = (valid) => {
+  nicknameValid.value = valid;
+};
+
+// 회원가입 버튼
+const handleSubmit = () => {
+  nicknameFormRef.value?.submitForm();
 };
 
 // 회원가입
@@ -60,37 +93,25 @@ const handleSignup = async (nickname) => {
     return;
   }
 
-  const phoneNumber =
-      signupStore.phoneAuth.phoneNumber;
-
-  const pinPassword =
-      signupStore.pin;
+  const phoneNumber = signupStore.phoneAuth.phoneNumber;
+  const pinPassword = signupStore.pin;
 
   const signupData = {
-    userName:
-    signupStore.phoneAuth.userName,
-    birthDate:
-    signupStore.phoneAuth.birthDate,
+    userName: signupStore.phoneAuth.userName,
+    birthDate: signupStore.phoneAuth.birthDate,
     phoneNumber,
     pinPassword,
     nickname,
-    agreementIds:
-        signupStore.agreements
-            .filter(
-                (agreement) =>
-                    agreement.agreed,
-            )
-            .map(
-                (agreement) =>
-                    agreement.agreementId,
-            ),
+    agreementIds: signupStore.agreements
+        .filter((agreement) => agreement.agreed)
+        .map((agreement) => agreement.agreementId),
   };
 
   try {
     submitting.value = true;
 
-    const data =
-        await signup(signupData);
+    // 회원가입
+    const data = await signup(signupData);
 
     // 회원가입 완료 후 자동 로그인
     await authStore.login({
@@ -98,24 +119,17 @@ const handleSignup = async (nickname) => {
       pinPassword,
     });
 
-    sessionStorage.setItem(
-        'signupUserId',
-        String(data.userId),
-    );
+    // 회원가입 사용자 ID 임시 저장
+    sessionStorage.setItem('signupUserId', String(data.userId));
 
-    signupStore.reset();
-
+    // 가입 완료 화면 이동
     await router.push({
       path: '/signup/complete',
-      query: {
-        userId: data.userId,
-      },
+      query: { userId: data.userId },
     });
   } catch (error) {
-    alert(
-        error.response?.data?.message
-        || '회원가입에 실패했습니다.',
-    );
+    console.error('회원가입 또는 자동 로그인 실패:', error);
+    alert(error.response?.data?.message || '회원가입에 실패했습니다.');
   } finally {
     submitting.value = false;
   }
@@ -123,36 +137,21 @@ const handleSignup = async (nickname) => {
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
+@import "@/components/common/common/button.css";
+
 .nickname-page {
-  width: 100%;
-  height: 100%;
-  background: #ffffff;
-}
-
-.nickname-container {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  padding: 26px 28px 140px;
-  background: #ffffff;
-  box-sizing: border-box;
+  background: var(--color-bg-page);
 }
 
-.back-button {
-  align-self: flex-start;
-  margin-bottom: 34px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #555555;
-  font-size: 28px;
-  line-height: 1;
-  cursor: pointer;
+.nickname-content {
+  padding-top: 30px;
+  overflow-y: auto;
 }
 
+/* 회원가입 진행 단계 */
 .signup-progress {
   display: flex;
   align-items: center;
@@ -165,40 +164,43 @@ const handleSignup = async (nickname) => {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #dddddd;
+  background: var(--color-border-main);
 }
 
 .progress-step.active {
   width: 44px;
   height: 12px;
   border-radius: 999px;
-  background: #ffbc2e;
+  background: var(--color-primary);
 }
 
 .progress-line {
   width: 38px;
   height: 1px;
   margin: 0 8px;
-  background: #dddddd;
+  background: var(--color-border-main);
 }
 
-.title-area {
-  margin-bottom: 48px;
+/* 제목 */
+.nickname-header {
+  text-align: left;
 }
 
-.title-area h1 {
-  margin: 0 0 20px;
-  color: #111111;
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
-.title-area p {
+.nickname-header h1 {
   margin: 0;
-  color: #777777;
-  font-size: 20px;
-  font-weight: 600;
+  color: var(--color-text-main);
   line-height: 1.35;
+  letter-spacing: -0.7px;
+}
+
+.nickname-header p {
+  margin: 14px 0 0;
+  color: var(--color-text-sub);
+  line-height: 1.6;
+}
+
+/* 닉네임 입력 */
+.nickname-section {
+  margin-top: 52px;
 }
 </style>

@@ -1,56 +1,62 @@
 <template>
-  <div class="page">
-    <!-- 1. 상단 헤더 영역 (PageHeader 사용 또는 기존 구조 유지) -->
+  <div class="page page-layout">
+    <!-- 상단 헤더 -->
     <header class="header-area">
       <PageHeader
-        :title="
-          loading ? '불러오는 중...' : agreement.agreementName || '약관 상세'
-        "
-        :custom-back="true"
-        @back="goBack"
+          :title="loading ? '불러오는 중...' : agreement.agreementName || '약관 상세'"
+          :custom-back="true"
+          @back="goBack"
       />
+
       <div v-if="!loading && !errorMessage" class="badge-wrapper">
         <span
-          :class="[
-            'agreement-type',
-            agreement.requiredYn === 'Y' ? 'required' : 'optional',
-          ]"
+            :class="[
+              'agreement-type',
+              'text-13-bold',
+              agreement.requiredYn === 'Y' ? 'required' : 'optional',
+            ]"
         >
           {{ agreement.requiredYn === 'Y' ? '필수 약관' : '선택 약관' }}
         </span>
       </div>
     </header>
 
-    <!-- 2. 중앙 내용 영역 (카드 에디터처럼 flex: 1 및 내부 스크롤 적용) -->
-    <main class="content-area">
-      <section v-if="loading" class="status-message">
+    <!-- 중앙 내용 영역 -->
+    <main class="content-area page-content">
+      <section v-if="loading" class="status-message text-15">
         약관을 불러오는 중입니다.
       </section>
 
-      <section v-else-if="errorMessage" class="status-message error-message">
+      <section v-else-if="errorMessage" class="status-message error-message text-15">
         {{ errorMessage }}
       </section>
 
       <template v-else>
-        <div class="agreement-scroll">
+        <div class="agreement-scroll text-15">
           {{ agreement.agreementContent }}
         </div>
 
         <label class="consent-label">
           <input
-            :checked="isAgreed"
-            type="checkbox"
-            @change="changeAgreement"
+              :checked="isAgreed"
+              type="checkbox"
+              @change="changeAgreement"
           />
+
           <span class="check-box"></span>
-          <span>위 약관에 동의합니다.</span>
+
+          <span class="text-15-bold">
+            위 약관에 동의합니다.
+          </span>
         </label>
       </template>
     </main>
 
-    <!-- 3. 하단 버튼 영역 (고정형 버튼) -->
-    <div class="bottom-btn-area.single">
-      <button class="bottom-btn" type="button" @click="goBack">확인</button>
+    <!-- 하단 버튼 -->
+    <div class="bottom-btn-area single">
+      <button class="bottom-btn" type="button" @click="goBack">
+        확인
+      </button>
     </div>
   </div>
 </template>
@@ -71,10 +77,7 @@ const loading = ref(false);
 const errorMessage = ref('');
 
 const isAgreed = computed(() => {
-  const item = signupStore.agreements.find(
-    (item) => item.agreementType === route.params.agreementType,
-  );
-
+  const item = signupStore.agreements.find((item) => item.agreementType === route.params.agreementType);
   return item?.agreed ?? false;
 });
 
@@ -82,9 +85,7 @@ const isAgreed = computed(() => {
 const loadAgreement = async () => {
   try {
     loading.value = true;
-    agreement.value = await agreementApi.getAgreementDetail(
-      route.params.agreementType,
-    );
+    agreement.value = await agreementApi.getAgreementDetail(route.params.agreementType);
   } catch (error) {
     console.error(error);
     errorMessage.value = '약관 내용을 불러오지 못했습니다.';
@@ -95,10 +96,7 @@ const loadAgreement = async () => {
 
 // 약관 동의
 const changeAgreement = (event) => {
-  signupStore.setAgreementChecked(
-    route.params.agreementType,
-    event.target.checked,
-  );
+  signupStore.setAgreementChecked(route.params.agreementType, event.target.checked);
 };
 
 // 이전 화면
@@ -110,16 +108,11 @@ onMounted(loadAgreement);
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
+
 .page {
-  width: 100%;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  box-sizing: border-box;
-  overflow: hidden;
-  padding: 12px;
-  background: #ffffff;
+  background: var(--color-bg-page);
 }
 
 .header-area {
@@ -133,8 +126,6 @@ onMounted(loadAgreement);
 
 .agreement-type {
   display: inline-block;
-  font-size: 14px;
-  font-weight: 600;
 }
 
 .required {
@@ -142,16 +133,11 @@ onMounted(loadAgreement);
 }
 
 .optional {
-  color: #777777;
+  color: var(--color-text-sub);
 }
 
-/* 중앙 콘텐츠 영역: 카드 에디터의 .card-editor와 동일한 역할 */
 .content-area {
-  flex: 1;
-  min-height: 0;
   margin-top: 12px;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
 }
 
@@ -159,10 +145,10 @@ onMounted(loadAgreement);
   flex: 1;
   min-height: 0;
   padding: 16px;
-  border: 1px solid #dddddd;
+  border: 1px solid var(--color-border-main);
   border-radius: 12px;
-  color: #333333;
-  font-size: 14px;
+  color: var(--color-text-main);
+  font-weight: 350;
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-y: auto;
@@ -193,13 +179,13 @@ onMounted(loadAgreement);
   margin-right: 12px;
   border: 1px solid #999999;
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--color-bg-page);
   box-sizing: border-box;
 }
 
 .consent-label input:checked + .check-box {
-  border-color: #ffbc2e;
-  background: #ffbc2e;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
 }
 
 .consent-label input:checked + .check-box::after {
@@ -213,45 +199,13 @@ onMounted(loadAgreement);
   transform: rotate(45deg);
 }
 
-.consent-label span:last-child {
-  color: #222222;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-/* 하단 버튼 영역: 카드 에디터와 동일한 구조 및 스타일 적용 */
-.button-area {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 12px 0 8px;
-  background: #ffffff;
-}
-
-.next-btn {
-  width: 85%;
-  height: 46px;
-  border: none;
-  border-radius: 14px;
-  background: #ffc400;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.next-btn:active {
-  background: #f3aa0b;
-}
-
 .status-message {
   padding-top: 100px;
-  color: #777777;
+  color: var(--color-text-sub);
   text-align: center;
 }
 
 .error-message {
-  color: #d32f2f;
+  color: var(--color-error);
 }
 </style>
