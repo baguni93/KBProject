@@ -79,6 +79,15 @@
             <strong class="single-arrow">&gt;</strong>
           </button>
 
+          <button class="menu-item" type="button" @click="goLogout">
+            <div class="menu-label">
+              <span class="item-icon">🚪</span>
+              <span>로그아웃</span>
+            </div>
+
+            <strong class="single-arrow">&gt;</strong>
+          </button>
+
           <button class="menu-item withdraw-item" type="button" @click="goWithdraw">
             <div class="menu-label">
               <span class="item-icon">🚫</span>
@@ -165,6 +174,11 @@ const goPinChange = () => {
   sessionStorage.removeItem('pinChangeCurrentPin');
   sessionStorage.removeItem('pinChangeNewPin');
   router.push('/setting/account-management/pin');
+};
+
+// 로그아웃 화면
+const goLogout = () => {
+  router.push('/setting/account-management/logout');
 };
 
 // 회원탈퇴 화면

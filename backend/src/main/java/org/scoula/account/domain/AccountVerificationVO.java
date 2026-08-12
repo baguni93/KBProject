@@ -21,4 +21,8 @@ public class AccountVerificationVO {
     private String verificationCode;
     private String verifiedYn;
     private LocalDateTime requestedAt;
+
+    private Integer failCount; // 계좌 인증번호 입력 실패 횟수
+    private Integer resendCount; // 계좌 인증번호 재발급 횟수
+    private LocalDateTime lockedUntil; // 계좌 인증 잠금 해제 일시
 }
