@@ -1543,9 +1543,6 @@ DROP TABLE IF EXISTS event_reward_tbl;
 CREATE TABLE event_reward_tbl
 (
     reward_id    INT AUTO_INCREMENT PRIMARY KEY COMMENT '리워드ID',
-    event_id     INT     NOT NULL COMMENT '이벤트ID',
-    reward_point INT     NULL     DEFAULT 0 COMMENT '리워드포인트',
-    reward_exe   INT     NULL COMMENT '리워드경험치',
 
     event_id     INT NOT NULL COMMENT '이벤트ID',
 
@@ -1634,8 +1631,6 @@ CREATE TABLE event_attendance_tbl (
 
 -- 51. 이벤트 리워드 수령이력 테이블
 DROP TABLE IF EXISTS event_reward_receive_tbl;
-
--- 51. 이벤트 리워드 수령이력 테이블 정의서
 -- UNIQUE(event_id, user_id)
 
 -- 유지하면 의미는:
@@ -1649,8 +1644,6 @@ DROP TABLE IF EXISTS event_reward_receive_tbl;
 -- event_id	user_id	reward_id	결과
 -- 1	100	1	가능
 -- 1	100	2	불가능 (이미 해당 이벤트 보상 수령)
-
-DROP TABLE IF EXISTS event_reward_receive_tbl;
 
 CREATE TABLE event_reward_receive_tbl
 (
@@ -1677,7 +1670,6 @@ CREATE TABLE event_reward_receive_tbl
 ) COMMENT ='이벤트 리워드 수령이력';
 
 -- 52. 이벤트 챌린지 테이블
--- 52. 이벤트 챌린지 테이블 정의서
 DROP TABLE IF EXISTS event_challenge_tbl;
 
 CREATE TABLE event_challenge_tbl
