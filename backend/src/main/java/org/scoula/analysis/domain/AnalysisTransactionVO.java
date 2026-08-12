@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 public class AnalysisTransactionVO {
     private Integer transactionId;
     private String merchantName;
+    private String transactionLabel;
     private Integer amount;
     private LocalDateTime createdAt;
     private Integer spendingCategoryId;

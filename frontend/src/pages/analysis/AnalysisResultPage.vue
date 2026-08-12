@@ -182,7 +182,7 @@
                 <i :class="getCategoryIcon(transaction.parentCategoryName || transaction.categoryName)"></i>
               </div>
               <div class="transaction-info">
-                <strong class="text-15-bold">{{ transaction.merchantName || '가맹점 정보 없음' }}</strong>
+                <strong class="text-15-bold">{{ transaction.transactionLabel || transaction.merchantName || '거래 정보 없음' }}</strong>
                 <span class="text-13">{{ formatAnalysisDateTime(transaction.createdAt) }}</span>
               </div>
               <div class="transaction-right">
@@ -457,12 +457,21 @@ const openCardRecommendation = () => {
 
 const openInsuranceRecommendation = () => {
   if (Number(analysis.value?.period) !== 12) {
+    // 12개월 소비분석이 아닌 경우 기존 추천 안내 화면을 그대로 재사용한다.
     openRecommendationGuide('insurance');
     return;
   }
 
-  messageType.value = 'info';
-  message.value = '보험 추천 기능은 아직 준비 중입니다.';
+  // 12개월 소비분석이면 보험 추천 화면으로 이동한다.
+  // 보험 추천 화면 진입 후 비동기 추천 상태 확인 및 추천 생성이 시작된다.
+  // 카드 추천과 동일하게 추천 작업 중에는 대기 화면이 표시되고,
+  // 완료되면 저장된 보험 추천 결과를 조회해 보여준다.
+  router.push({
+    name: 'insurance-recommendation',
+    params: {
+      spendingAnalysisId: analysis.value.spendingAnalysisId,
+    },
+  });
 };
 
 watch(

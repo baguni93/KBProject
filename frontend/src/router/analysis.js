@@ -12,6 +12,11 @@ import RecommendationPeriodGuidePage from '@/pages/analysis/RecommendationPeriod
 import CardRecommendationPage from '@/pages/cardRecommendation/CardRecommendationPage.vue';
 import CardRecommendationDetailPage from '@/pages/cardRecommendation/CardRecommendationDetailPage.vue';
 import analysisAgreementApi from '@/api/analysisAgreementApi';
+import InsuranceRecommendationPage from '@/pages/insuranceRecommendation/InsuranceRecommendationPage.vue';
+import InsuranceRecommendationEvidencePage from '@/pages/insuranceRecommendation/InsuranceRecommendationEvidencePage.vue';
+import InsuranceProductListPage from '@/pages/insuranceRecommendation/InsuranceProductListPage.vue';
+import InsuranceProductDetailPage from '@/pages/insuranceRecommendation/InsuranceProductDetailPage.vue';
+
 
 const requireAnalysisAgreement = async () => {
   try {
@@ -97,6 +102,32 @@ export default [
     path: '/card-recommendations/:cardRecommendationId',
     name: 'card-recommendation-detail',
     component: CardRecommendationDetailPage,
+    beforeEnter: requireAnalysisAgreement,
+  },
+  {
+    // 12개월 소비분석 결과에서 진입하는 보험 추천 메인 화면
+    path: '/analysis/result/:spendingAnalysisId/insurance-recommendations',
+    name: 'insurance-recommendation',
+    component: InsuranceRecommendationPage,
+    beforeEnter: requireAnalysisAgreement,
+  },
+  {
+    // 보험 추천 결과의 근거 거래내역 화면
+    path: '/analysis/result/:spendingAnalysisId/insurance-recommendations/evidence',
+    name: 'insurance-recommendation-evidence',
+    component: InsuranceRecommendationEvidencePage,
+    beforeEnter: requireAnalysisAgreement,
+  },
+  {
+    path: '/analysis/insurance-products',
+    name: 'insurance-product-list',
+    component: InsuranceProductListPage,
+    beforeEnter: requireAnalysisAgreement,
+  },
+  {
+    path: '/insurance-products/:insuranceProductId',
+    name: 'insurance-product-detail',
+    component: InsuranceProductDetailPage,
     beforeEnter: requireAnalysisAgreement,
   },
 ];

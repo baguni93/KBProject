@@ -82,7 +82,7 @@
         LEFT JOIN spending_category_tbl category
                ON ft.spending_category_id = category.spending_category_id
         WHERE ft.user_id = #{userId}
-          AND ft.transaction_type = 'PAYMENT'
+          AND ft.transaction_type IN ('PAYMENT', 'TRANSFER', 'SETTLEMENT')
           AND ft.transaction_status = 'SUCCESS'
           AND ft.created_at <![CDATA[ >= ]]> #{startAt}
           AND ft.created_at <![CDATA[ < ]]> #{endAt}

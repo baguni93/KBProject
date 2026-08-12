@@ -177,7 +177,7 @@
               <i :class="getCategoryIcon(transaction.parentCategoryName || transaction.categoryName)"></i>
             </div>
             <div class="spending-info">
-              <strong class="text-15-bold">{{ transaction.merchantName || '가맹점 정보 없음' }}</strong>
+              <strong class="text-15-bold">{{ transaction.transactionLabel || transaction.merchantName || '거래 정보 없음' }}</strong>
               <span class="text-13">{{ formatShortDate(transaction.createdAt) }}</span>
             </div>
             <div class="spending-right">

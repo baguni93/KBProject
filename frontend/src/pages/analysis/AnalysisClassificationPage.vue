@@ -20,7 +20,7 @@
           <div class="target-info">
             <span class="text-13">어떤 카테고리에 해당할까요?</span>
             <strong class="text-15-bold">
-              {{ currentTransaction.merchantName || '가맹점 정보 없음' }}
+              {{ currentTransaction.transactionLabel || currentTransaction.merchantName || '거래 정보 없음' }}
             </strong>
             <small class="text-13">
               {{ formatAnalysisDateTime(currentTransaction.createdAt) }}
@@ -44,27 +44,16 @@
             <span class="text-13">하나를 선택해 주세요</span>
           </div>
 
-          <div class="category-grid kb-card">
-            <button
-              v-for="category in topCategories"
-              :key="category.spendingCategoryId"
-              type="button"
-              :class="[
-                'category-button',
-                { selected: selectedCategoryId === category.spendingCategoryId },
-              ]"
-              :disabled="classifying"
-              @click="selectedCategoryId = category.spendingCategoryId"
-            >
-              <div class="category-button__icon">
-                <i :class="getCategoryIcon(category.categoryName)"></i>
-              </div>
-              <span class="text-13-bold">{{ category.categoryName }}</span>
-              <small v-if="hasChildren(category.spendingCategoryId)" class="text-13">
-                세부 선택
-              </small>
-            </button>
-          </div>
+          <!--
+            공용 소비 카테고리 선택 UI.
+            실제 거래 분류 PATCH 호출은 기존 Analysis 로직에서 그대로 처리합니다.
+          -->
+          <SpendingCategorySelector
+            v-model="selectedCategoryId"
+            :categories="categories"
+            :disabled="classifying"
+            show-child-hint
+          />
         </section>
 
         <button
@@ -93,12 +82,12 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import PageHeader from '@/components/common/PageHeader.vue';
+import SpendingCategorySelector from '@/components/common/SpendingCategorySelector.vue';
 import analysisApi from '@/api/analysisApi';
 import {
   formatAnalysisDateTime,
   formatAnalysisNumber,
   getAnalysisErrorMessage,
-  getCategoryIcon,
   normalizeAnalysisPeriod,
 } from '@/util/analysis';
 
@@ -116,10 +105,6 @@ const selectedCategoryId = ref(null);
 
 const currentTransaction = computed(
   () => unclassifiedData.value?.transactions?.[0] ?? null,
-);
-
-const topCategories = computed(() =>
-  categories.value.filter((category) => category.parentCategoryId == null),
 );
 
 const periodLabel = computed(
@@ -317,57 +302,6 @@ onMounted(loadData);
   color: var(--color-text-disabled);
 }
 
-.category-grid {
-  padding: 12px;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  border: 1px solid var(--color-divider);
-  background: var(--color-bg-page);
-  box-shadow: none;
-}
-
-.category-button {
-  min-height: 84px;
-  padding: 9px 3px;
-  border: 1px solid transparent;
-  border-radius: 12px;
-  background: var(--color-bg-screen);
-  color: var(--color-text-sub);
-}
-
-.category-button.selected {
-  border-color: var(--color-primary);
-  background: #fff7d7;
-  color: #8c6800;
-  box-shadow: 0 0 0 1px var(--color-primary) inset;
-}
-
-.category-button:disabled {
-  cursor: not-allowed;
-}
-
-.category-button__icon {
-  height: 29px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-}
-
-.category-button span {
-  display: block;
-  margin-top: 3px;
-  line-height: 1.25;
-  word-break: keep-all;
-}
-
-.category-button small {
-  display: block;
-  margin-top: 2px;
-  color: var(--color-text-disabled);
-  line-height: 1.2;
-}
 
 .complete-button {
   margin-top: 16px;
@@ -404,9 +338,4 @@ onMounted(loadData);
   color: var(--color-text-sub);
 }
 
-@media (max-width: 380px) {
-  .category-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
 </style>
