@@ -13,7 +13,7 @@ import org.scoula.card.domain.LinkedCardVO;
 public class CardDTO {
 
     private Long linkedCardId;
-    private Long cardId;
+    private Long cardCode;
     private String cardCompanyCode;
     private String cardCompanyName;
     private String cardName;
@@ -35,7 +35,7 @@ public class CardDTO {
 
         return CardDTO.builder()
                 .linkedCardId(card.getLinkedCardId())
-                .cardId(card.getCardId())
+                .cardCode(card.getCardCode())
                 .cardCompanyCode(card.getCardCompanyCode())
                 .cardCompanyName(card.getCardCompanyName())
                 .cardName(card.getCardName())
