@@ -128,7 +128,7 @@ const verifyPin = async () => {
   loading.value = true;
   errorMessage.value = '';
   try {
-    const res = await authApi.verifyPin(props.userId, pin.value);
+    const res = await authApi.verifyPin(pin.value);
     if (res && res.success) {
       clearPin();
       emit('success');
