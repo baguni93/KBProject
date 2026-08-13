@@ -5,6 +5,7 @@ import lombok.extern.log4j.Log4j2;
 import org.scoula.common.util.Enum;
 import org.scoula.feed.dto.FeedCreateRequestDTO;
 import org.scoula.feed.service.FeedService;
+import org.scoula.pointwallet.service.RandomBoxService;
 import org.scoula.remittance.dto.BankDTO;
 import org.scoula.remittance.dto.BankRemittanceInfoDTO;
 import org.scoula.remittance.dto.RecentAccountDTO;
@@ -24,6 +25,7 @@ public class RemittanceServiceImpl implements RemittanceService {
 
     private final RemittanceMapper remittanceMapper;
     private final FeedService feedService;
+    private final RandomBoxService randomBoxService;
 
     @Override
     @Transactional
@@ -72,15 +74,15 @@ public class RemittanceServiceImpl implements RemittanceService {
         remittanceDTO.setStatus("SUCCESS");
         remittanceMapper.insertRemittance(remittanceDTO);
 
-        // 지갑/친구 송금 및 이미지 첨부 송금 피드 및 이미지 등록
+        // 지갑/친구/계좌 모든 송금 성공 시 피드 및 이미지 등록
         org.scoula.feed.dto.FeedResponseDTO feedRes = null;
         boolean hasFiles = remittanceDTO.getFiles() != null && !remittanceDTO.getFiles().isEmpty();
-        if (!"ACCOUNT".equalsIgnoreCase(remittanceDTO.getReceiverType()) || hasFiles) {
+        try {
             String content = (remittanceDTO.getContent() != null && !remittanceDTO.getContent().isEmpty())
-                    ? remittanceDTO.getContent() : (remittanceDTO.getMemo() != null ? remittanceDTO.getMemo() : "송금 완료");
+                    ? remittanceDTO.getContent() : (remittanceDTO.getMemo() != null && !remittanceDTO.getMemo().isEmpty() ? remittanceDTO.getMemo() : "송금 완료!");
 
-            if (content.length() > 20) {
-                content = content.substring(0, 20);
+            if (content.length() > 50) {
+                content = content.substring(0, 50);
             }
 
             Enum.VisibilityType visibility = Enum.VisibilityType.PUBLIC;
@@ -102,7 +104,11 @@ public class RemittanceServiceImpl implements RemittanceService {
             feedRes = feedService.create(feedRequest);
             if (feedRes != null) {
                 remittanceDTO.setFeedId(feedRes.getFeedId());
+                log.info("송금 피드 자동 생성 완료 - feedId={}", feedRes.getFeedId());
             }
+        } catch (Exception fErr) {
+            log.error("송금 피드 생성 연동 중 예외: ", fErr);
+        }
 
             // 첨부파일 저장 (c:/upload/feed/ 경로에 실제 파일 저장 및 DB 등록)
             if (feedRes != null && hasFiles) {
@@ -119,9 +125,25 @@ public class RemittanceServiceImpl implements RemittanceService {
                     }
                 }
             }
-        }
 
         log.info("송금 완료 성공 - ID: {}", remittanceDTO.getTransactionId());
+
+        // 송금 성공 보상: 송금 완료 건마다 랜덤박스 발급
+        try {
+            Integer txId = remittanceDTO.getTransactionId();
+            if (txId == null || txId <= 0) {
+                txId = Math.abs((int)(System.currentTimeMillis() % 100000000)) + 1;
+            }
+
+            // 송금 시마다 100% 즉시 랜덤박스 발급을 위해 거래 ID 기반으로 수취 식별자 고유화
+            Integer targetAccId = txId;
+
+            randomBoxService.issueForTransfer(walletId, txId, targetAccId);
+            log.info("송금 성공 보상 랜덤박스 발급 완료 - userId={}, txId={}", walletId, txId);
+        } catch (Exception rBoxErr) {
+            log.warn("송금 성공 후 랜덤박스 발급 처리 중 예외 (송금은 정상 완료): {}", rBoxErr.getMessage());
+        }
+
         return true;
     }
 

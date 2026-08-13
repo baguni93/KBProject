@@ -1620,7 +1620,7 @@ const submitRemittance = async () => {
   if (remitType.value === "DUTCH") {
     await executeRealTransfer();
   } else {
-    currentStep.value = 5; // 일반 송금 PIN 6자리 입력 스텝 이동
+    currentStep.value = 4; // 일반 송금 PIN 6자리 입력 스텝(Step 4)으로 정상 이동
   }
 };
 
@@ -1715,16 +1715,6 @@ const executeRealTransfer = async () => {
 
       await remittanceApi.sendMoney(payload);
       myBalance.value = Math.max(0, myBalance.value - (remitAmount.value || 0));
-
-      // 8번 과제: 송금 성공 시 팀원 피드 백엔드로 자동 생성 연동
-      try {
-        await remittanceApi.createReceiptFeed({
-          content: `${(remitAmount.value || 0).toLocaleString()}원 송금 완료! (${memoText.value || '송금'})`,
-          visibility: visibilityScope.value || 'PUBLIC'
-        });
-      } catch (feedErr) {
-        console.warn("피드 자동 생성 연동 중 예외 (송금은 정상 완료):", feedErr);
-      }
     }
 
     currentStep.value = 5;

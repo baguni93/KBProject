@@ -143,11 +143,20 @@ public class CardController {
     // 카드 이미지 서빙 (1차: c:/upload/card/, 2차: c:/upload/customCard/)
     @GetMapping("/api/cards/image/{imageName}")
     public void getCardImage(@PathVariable String imageName, HttpServletResponse response) {
-        File file = new File(UploadPathName.getCardPath() + imageName);
-        if (!file.exists()) {
-            file = new File(UploadPathName.getCustomCardPath() + imageName);
+        try {
+            File file = new File(UploadPathName.getCardPath() + imageName);
+            if (!file.exists()) {
+                file = new File(UploadPathName.getCustomCardPath() + imageName);
+            }
+            if (file.exists()) {
+                UploadFiles.downloadImage(response, file);
+            } else {
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            }
+        } catch (Exception e) {
+            log.warn("카드 이미지 서빙 중 에러 (무시하고 계속): {}", e.getMessage());
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
-        UploadFiles.downloadImage(response, file);
     }
 
     // CARD-001 연결 카드 목록 조회
