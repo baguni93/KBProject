@@ -125,12 +125,11 @@
               @click="selectFriendAndProceed(friend.id)"
             >
               <div class="friend-item-left">
-                <div
-                  class="friend-avatar text-13-bold"
-                  :class="{ active: selectedFriendId === friend.id }"
-                >
-                  {{ friend.initials }}
-                </div>
+                <img
+                  :src="getProfileImageUrl(friend)"
+                  class="friend-avatar-img"
+                  @error="$event.target.style.display='none'"
+                />
                 <div>
                   <p class="friend-name text-15-bold">{{ friend.name }}</p>
                   <p class="friend-sub text-13">@{{ friend.username }}</p>
@@ -149,33 +148,16 @@
           </div>
         </template>
 
-        <!-- 1-C. 더치페이 방 생성 1단계 -->
+        <!-- 1-C. 더치페이 정산 1번 화면: 친구 선택 -->
         <template v-else-if="remitType === 'DUTCH'">
-          <button
-            class="content-add-btn text-15-bold"
-            @click="openTxSelectModal"
-          >
-            <i class="fa-solid fa-list-ul"></i> 내 거래 내역에서 결제 건
-            불러오기
-          </button>
-
-          <div class="form-field-group">
-            <label class="field-label text-13-bold">정산 모임방 명칭</label>
-            <input
-              v-model="dutchRoomTitle"
-              type="text"
-              class="custom-input text-15-bold"
-              placeholder="정산 모임방 명칭을 입력하세요"
-            />
-          </div>
-
+          <!-- 정산 친구 검색 -->
           <div class="search-box-wrap">
             <i class="fa-solid fa-magnifying-glass search-ic"></i>
             <input
               v-model="dutchFriendSearchKeyword"
               type="text"
               class="search-input text-15"
-              placeholder="정산할 친구 이름 또는 프로필 ID 입력..."
+              placeholder="정산할 친구 이름 검색..."
             />
           </div>
 
@@ -185,27 +167,35 @@
               {{ selectedDutchFriends.length + 1 }}명)</label
             >
             <div class="selected-tags-flex">
-              <span class="my-tag-badge text-13-bold"
-                >나 ({{ currentUserName }})</span
-              >
-              <span
+              <div class="my-tag-badge text-13-bold">
+                <img
+                  :src="myProfileImageUrl"
+                  class="tag-avatar-img"
+                  @error="$event.target.style.display='none'"
+                />
+                <span>나</span>
+              </div>
+              <div
                 v-for="fId in selectedDutchFriends"
                 :key="fId"
                 class="friend-tag-badge text-13-bold"
               >
-                {{ getFriendName(fId) }}
+                <img
+                  :src="getProfileImageUrl(getFriendObj(fId))"
+                  class="tag-avatar-img"
+                  @error="$event.target.style.display='none'"
+                />
+                <span>{{ getFriendName(fId) }}</span>
                 <i
                   class="fa-solid fa-xmark del-ic"
                   @click="removeDutchFriend(fId)"
                 ></i>
-              </span>
+              </div>
             </div>
           </div>
 
           <div class="form-field-group">
-            <label class="field-label text-13-bold"
-              >함께 정산할 친구 선택</label
-            >
+            <label class="field-label text-13-bold">함께 정산할 친구 선택</label>
             <div
               v-if="filteredDutchFriends.length === 0"
               class="empty-recent-msg text-13"
@@ -222,14 +212,11 @@
               @click="toggleDutchFriend(friend.id)"
             >
               <div class="friend-item-left">
-                <div
-                  class="friend-avatar text-13-bold"
-                  :class="{
-                    'dutch-active': selectedDutchFriends.includes(friend.id),
-                  }"
-                >
-                  {{ friend.initials }}
-                </div>
+                <img
+                  :src="getProfileImageUrl(friend)"
+                  class="friend-avatar-img"
+                  @error="$event.target.style.display='none'"
+                />
                 <div>
                   <p class="friend-name text-15-bold">{{ friend.name }}</p>
                   <p class="friend-sub text-13">@{{ friend.username }}</p>
@@ -264,7 +251,7 @@
       </div>
 
       <!-- ==========================================
-           [STEP 2] 금액 / 메모 / 피드 설정 / 정산 분배
+           [STEP 2] 금액 입력 & 정산 분배에만 100% 집중
       ========================================== -->
       <div v-else-if="currentStep === 2" class="step-content-wrap">
         <template v-if="remitType !== 'DUTCH'">
@@ -300,7 +287,7 @@
 
           <!-- 송금할 금액 입력 및 빠른 금액 버튼 -->
           <div class="form-field-group">
-            <label class="field-label text-13-bold">송금할 금액</label>
+            <label class="field-label text-13-bold">송금할 금액 입력</label>
             <div class="amount-input-row">
               <input
                 :value="remitAmountDisplay"
@@ -339,143 +326,87 @@
               </button>
             </div>
           </div>
-
-          <div class="form-field-group">
-            <label class="field-label text-13-bold"
-              ><i class="fa-solid fa-message brand-ic"></i> 피드에 남길 내용
-              (메모)</label
-            >
-            <textarea
-              v-model="remitMemo"
-              class="custom-textarea text-15"
-              placeholder="피드에 남길 메시지를 입력하세요 (예: 맛있는 저녁 잘 먹었어! 🎉)"
-            ></textarea>
-          </div>
-
-          <div class="form-field-group">
-            <label class="field-label text-13-bold"
-              ><i class="fa-solid fa-shield-halved brand-ic"></i> 공개 범위
-              선택</label
-            >
-            <div class="vis-grid">
-              <button
-                type="button"
-                class="content-btn secondary text-13-bold"
-                :class="{ active: remitVisibility === 'PUBLIC' }"
-                @click="remitVisibility = 'PUBLIC'"
-              >
-                🌐 전체 공개
-              </button>
-              <button
-                type="button"
-                class="content-btn secondary text-13-bold"
-                :class="{ active: remitVisibility === 'FRIEND' }"
-                @click="remitVisibility = 'FRIEND'"
-              >
-                👥 친구 공개
-              </button>
-              <button
-                type="button"
-                class="content-btn secondary text-13-bold"
-                :class="{ active: remitVisibility === 'PRIVATE' }"
-                @click="remitVisibility = 'PRIVATE'"
-              >
-                🔒 나만 보기
-              </button>
-            </div>
-          </div>
-
-          <!-- 소셜 피드 사진 첨부 (예쁜 카드형 UI) -->
-          <div class="form-field-group">
-            <div class="file-header-line">
-              <label class="field-label text-13-bold"
-                ><i class="fa-solid fa-image brand-ic"></i> 소셜 피드 사진 첨부
-                (선택)</label
-              >
-              <button
-                v-if="selectedFile"
-                type="button"
-                class="cancel-file-btn text-13-bold"
-                @click="removeSelectedFile"
-              >
-                첨부 취소
-              </button>
-            </div>
-
-            <div class="photo-upload-container">
-              <label v-if="!imagePreviewUrl" class="photo-upload-box">
-                <i class="fa-solid fa-camera upload-icon"></i>
-                <span class="upload-text text-13-bold">사진 추가하기</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  class="hidden-file-input"
-                  @change="handleFileChange"
-                />
-              </label>
-              <div v-else class="preview-img-wrap">
-                <img :src="imagePreviewUrl" class="preview-img" />
-                <button
-                  type="button"
-                  class="remove-photo-btn"
-                  @click="removeSelectedFile"
-                >
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
-              </div>
-            </div>
-          </div>
         </template>
 
         <template v-else>
-          <div class="total-dutch-header">
-            <span class="dutch-label text-13-bold">총 청구 정산금</span>
-            <div class="dutch-amount-row">
-              <span class="dutch-amount text-28-bold">{{
-                formatCurrency(remitAmount || 0)
-              }}</span>
-              <span class="dutch-unit text-28-bold">원</span>
+          <!-- 2번 화면: 카테고리 & 정산 금액 선택 및 정산 방식 선택 -->
+          <div class="form-field-group">
+            <div class="category-title-flex">
+              <label class="field-label text-13-bold" style="margin-bottom: 0;"
+                ><i class="fa-solid fa-shapes brand-ic"></i> 소비 카테고리 선택</label
+              >
+              <button
+                type="button"
+                class="category-toggle-sub-btn text-13-bold"
+                @click="isCategoryExpanded = !isCategoryExpanded"
+              >
+                <span>{{ isCategoryExpanded ? '접기 ▲' : '더보기 (' + (categoryList.length - 4) + '개) ▼' }}</span>
+              </button>
+            </div>
+            <SpendingCategorySelector
+              v-model="selectedCategoryId"
+              :categories="displayedCategoryList"
+              compact
+            />
+          </div>
+
+          <div class="form-field-group" style="margin-top: 16px;">
+            <label class="field-label text-13-bold">얼마를 정산할까요?</label>
+            <div class="amount-input-row">
+              <input
+                :value="remitAmountDisplay"
+                @input="onAmountInput"
+                type="text"
+                inputmode="numeric"
+                class="amount-direct-input text-28-bold"
+                placeholder="0"
+              />
+              <span class="krw-unit text-28-bold">원</span>
+            </div>
+            <!-- 3번 내 결제 내역에서 선택 서브 링크 -->
+            <button
+              type="button"
+              class="tx-link-btn text-13-bold"
+              @click="openTxSelectStep"
+            >
+              내 결제 내역에서 선택 <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+
+          <!-- 🌟 정산 방식 선택 (1/N 균등 vs 차등 정산) -->
+          <div class="form-field-group" style="margin-top: 20px;">
+            <label class="field-label text-13-bold">정산 방식 선택</label>
+            <div class="split-tab-bar">
+              <button
+                type="button"
+                class="split-tab text-13-bold"
+                :class="{ active: dutchSplitMode === 'EQUAL' }"
+                @click="dutchSplitMode = 'EQUAL'"
+              >
+                1/N 균등 정산
+              </button>
+              <button
+                type="button"
+                class="split-tab text-13-bold"
+                :class="{ active: dutchSplitMode === 'CUSTOM' }"
+                @click="dutchSplitMode = 'CUSTOM'"
+              >
+                차등 정산 (직접 입력)
+              </button>
             </div>
           </div>
 
-          <div class="split-tab-bar">
-            <button
-              class="split-tab text-13-bold"
-              :class="{ active: dutchSplitMode === 'EQUAL' }"
-              @click="dutchSplitMode = 'EQUAL'"
-            >
-              1/N 균등 정산
-            </button>
-            <button
-              class="split-tab text-13-bold"
-              :class="{ active: dutchSplitMode === 'CUSTOM' }"
-              @click="dutchSplitMode = 'CUSTOM'"
-            >
-              차등 정산 (직접 입력)
-            </button>
-          </div>
-
-          <div class="dutch-calc-box">
+          <!-- 정산 배분 요약 박스 -->
+          <div class="dutch-calc-box" style="margin-top: 16px;">
             <span class="calc-title text-13-bold">
-              {{
-                dutchSplitMode === "EQUAL"
-                  ? `1/N 균등 정산 배분율 (총 ${selectedDutchFriends.length + 1}명)`
-                  : "차등 정산 (멤버별 요청 금액 입력)"
-              }}
+              {{ dutchSplitMode === 'EQUAL' ? `1/N 균등 정산 배분 (총 ${selectedDutchFriends.length + 1}명)` : '멤버별 정산 금액 직접 입력' }}
             </span>
 
             <div v-if="dutchSplitMode === 'EQUAL'" class="calc-list">
               <div class="calc-row text-15-bold">
-                <span class="my-name">나 ({{ currentUserName }}) [결제자]</span>
+                <span class="my-name">나</span>
                 <span class="val-text"
-                  >{{
-                    formatCurrency(
-                      Math.floor(
-                        (remitAmount || 0) / (selectedDutchFriends.length + 1),
-                      ),
-                    )
-                  }}
-                  원</span
+                  >{{ formatCurrency(Math.floor((remitAmount || 0) / (selectedDutchFriends.length + 1))) }} 원</span
                 >
               </div>
               <div
@@ -483,35 +414,20 @@
                 :key="fId"
                 class="calc-row text-15-bold"
               >
-                <span class="friend-name"
-                  >{{ getFriendName(fId) }} (정산 대상)</span
-                >
+                <span class="friend-name">{{ getFriendName(fId) }}</span>
                 <span class="val-text red-val"
-                  >{{
-                    formatCurrency(
-                      Math.floor(
-                        (remitAmount || 0) / (selectedDutchFriends.length + 1),
-                      ),
-                    )
-                  }}
-                  원</span
+                  >{{ formatCurrency(Math.floor((remitAmount || 0) / (selectedDutchFriends.length + 1))) }} 원</span
                 >
               </div>
             </div>
-
             <div v-else class="calc-list">
               <div class="calc-row text-15-bold">
-                <span>나 ({{ currentUserName }})</span>
+                <span>나</span>
                 <input
-                  type="text"
-                  :value="
-                    formatCurrency(
-                      Math.floor(
-                        (remitAmount || 0) / (selectedDutchFriends.length + 1),
-                      ),
-                    )
-                  "
+                  type="number"
+                  v-model.number="customDutchAmounts['my']"
                   class="custom-calc-input text-13-bold"
+                  placeholder="금액 입력"
                 />
               </div>
               <div
@@ -521,31 +437,359 @@
               >
                 <span>{{ getFriendName(fId) }}</span>
                 <input
-                  type="text"
-                  :value="
-                    formatCurrency(
-                      Math.floor(
-                        (remitAmount || 0) / (selectedDutchFriends.length + 1),
-                      ),
-                    )
-                  "
+                  type="number"
+                  v-model.number="customDutchAmounts[fId]"
                   class="custom-calc-input text-13-bold"
+                  placeholder="금액 입력"
                 />
               </div>
             </div>
           </div>
         </template>
 
+        <!-- Step 2 하단 이동 버튼 -->
         <div class="next-btn-wrap">
-          <button class="bottom-btn text-18-bold" @click="proceedFromStep2">
-            {{
-              remitType === "DUTCH" ? "정산 요청 및 모임방 생성" : "다음 단계로"
-            }}
-            <i class="fa-solid fa-arrow-right"></i>
+          <button
+            class="bottom-btn text-18-bold"
+            :disabled="!remitAmount || remitAmount <= 0"
+            @click="proceedFromStep2"
+          >
+            다음 (소비 카테고리 & 피드 작성) <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
       </div>
 
+      <!-- ==========================================
+           [STEP 3 - 송금 전용 (계좌/친구)] 카테고리 / 피드 메시지 / 공개범위 / 사진 첨부
+      ========================================== -->
+      <div v-else-if="remitType !== 'DUTCH' && currentStep === 3" class="step-content-wrap">
+        <!-- 수취인 요약 카드 -->
+        <div class="receiver-summary-box">
+          <div class="summary-main-line">
+            <div class="receiver-info-col">
+              <h4 class="receiver-name text-15-bold">
+                <template v-if="remitType === 'FRIEND'">
+                  {{ selectedFriendObj?.name || "선택한 친구" }}님에게 송금
+                </template>
+                <template v-else>
+                  {{ accountForm.receiverName || "수취인" }}님에게 송금
+                </template>
+              </h4>
+              <span class="text-13" style="color: var(--color-primary-border, #cc9200); font-weight: 700;">
+                송금 금액: {{ formatCurrency(remitAmount) }} 원
+              </span>
+            </div>
+            <span class="summary-type-tag text-13-bold">{{
+              remitType === "FRIEND" ? "친구 송금" : "계좌 송금"
+            }}</span>
+          </div>
+        </div>
+
+        <!-- 1. 소비 카테고리 선택 -->
+        <div class="form-field-group">
+          <div class="category-title-flex">
+            <label class="field-label text-13-bold" style="margin-bottom: 0;"
+              ><i class="fa-solid fa-shapes brand-ic"></i> 소비 카테고리 선택</label
+            >
+            <button
+              type="button"
+              class="category-toggle-sub-btn text-13-bold"
+              @click="isCategoryExpanded = !isCategoryExpanded"
+            >
+              <span>{{ isCategoryExpanded ? '접기 ▲' : '더보기 (' + (categoryList.length - 4) + '개) ▼' }}</span>
+            </button>
+          </div>
+          <SpendingCategorySelector
+            v-model="selectedCategoryId"
+            :categories="displayedCategoryList"
+            compact
+          />
+        </div>
+
+        <!-- 2. 피드 메시지 (메모) -->
+        <div class="form-field-group">
+          <label class="field-label text-13-bold"
+            ><i class="fa-solid fa-message brand-ic"></i> 피드에 남길 내용 (메모)</label
+          >
+          <textarea
+            v-model="remitMemo"
+            class="custom-textarea text-15"
+            placeholder="피드에 남길 메시지를 입력하세요 (예: 축하해! 🎉)"
+          ></textarea>
+        </div>
+
+        <!-- 3. 공개 범위 선택 -->
+        <div class="form-field-group">
+          <label class="field-label text-13-bold"
+            ><i class="fa-solid fa-shield-halved brand-ic"></i> 공개 범위 선택</label
+          >
+          <div class="vis-grid">
+            <button
+              type="button"
+              class="content-btn secondary text-13-bold"
+              :class="{ active: remitVisibility === 'PUBLIC' }"
+              @click="remitVisibility = 'PUBLIC'"
+            >
+              🌐 전체 공개
+            </button>
+            <button
+              type="button"
+              class="content-btn secondary text-13-bold"
+              :class="{ active: remitVisibility === 'FRIEND' }"
+              @click="remitVisibility = 'FRIEND'"
+            >
+              👥 친구 공개
+            </button>
+            <button
+              type="button"
+              class="content-btn secondary text-13-bold"
+              :class="{ active: remitVisibility === 'PRIVATE' }"
+              @click="remitVisibility = 'PRIVATE'"
+            >
+              🔒 나만 보기
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. 사진 첨부 -->
+        <div class="form-field-group">
+          <div class="file-header-line">
+            <label class="field-label text-13-bold"
+              ><i class="fa-solid fa-image brand-ic"></i> 소셜 피드 사진 첨부 (선택)</label
+            >
+            <button
+              v-if="selectedFile"
+              type="button"
+              class="cancel-file-btn text-13-bold"
+              @click="removeSelectedFile"
+            >
+              첨부 취소
+            </button>
+          </div>
+
+          <div class="photo-upload-container">
+            <label v-if="!imagePreviewUrl" class="photo-upload-box">
+              <i class="fa-solid fa-camera upload-icon"></i>
+              <span class="upload-text text-13-bold">사진 추가하기</span>
+              <input
+                type="file"
+                accept="image/*"
+                class="hidden-file-input"
+                @change="handleFileChange"
+              />
+            </label>
+            <div v-else class="preview-img-wrap">
+              <img :src="imagePreviewUrl" class="preview-img" />
+              <button
+                type="button"
+                class="remove-photo-btn"
+                @click="removeSelectedFile"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="next-btn-wrap">
+          <button
+            class="bottom-btn text-18-bold"
+            @click="submitRemittance"
+          >
+            송금하기 <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ==========================================
+           [STEP 3 - 정산 전용 (더치페이)] 내 결제 내역에서 선택 (하단 고정 버튼)
+      ========================================== -->
+      <div v-else-if="remitType === 'DUTCH' && currentStep === 3" class="step-content-wrap">
+        <div class="tx-select-step-head">
+          <h3 class="text-18-bold" style="margin: 0;">정산할 내 결제 건 선택</h3>
+          <p class="text-13" style="color: #777; margin: 4px 0 0 0;">정산에 포함할 내 결제 내역을 클릭 선택하세요.</p>
+        </div>
+
+        <div class="tx-list-container scrollable-tx-area">
+          <div v-if="userTxList.length === 0" class="empty-recent-msg text-13">
+            불러올 수 있는 결제 내역이 없습니다.
+          </div>
+          <div v-else class="date-item-list">
+            <div
+              v-for="tx in userTxList"
+              :key="tx.id"
+              class="tx-item-wrapper"
+              @click="toggleTxSelection(tx.id)"
+            >
+              <div class="tx-item-row-card" :class="{ active: selectedTxIds.includes(tx.id) }">
+                <div class="tx-item-left">
+                  <div class="icon-circle text-15-bold">
+                    <i class="fa-solid fa-store"></i>
+                  </div>
+                  <div class="tx-info-text">
+                    <div class="tx-item-title text-15-bold">{{ tx.title }}</div>
+                    <div class="tx-item-sub text-13">{{ tx.date }}</div>
+                  </div>
+                </div>
+                <div class="tx-item-right" style="display: flex; align-items: center; gap: 10px;">
+                  <div class="tx-amount text-15-bold" style="color: #111;">
+                    -{{ formatCurrency(tx.amount) }}원
+                  </div>
+                  <div class="select-check-ic">
+                    <i
+                      class="fa-circle-check"
+                      :class="selectedTxIds.includes(tx.id) ? 'fa-solid active-kb' : 'fa-regular uncheck'"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fixed-bottom-btn-wrap">
+          <button
+            class="bottom-btn text-18-bold"
+            :disabled="selectedTxIds.length === 0"
+            @click="confirmTxSelection"
+          >
+            {{ selectedTxIds.length }}개 결제 건 적용 (총 {{ formatCurrency(selectedTxTotalAmount) }}원) <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ==========================================
+           [STEP 4 - 정산 전용 (더치페이)] 총 정보 요약 & 정산 제목 입력 & 피드 작성
+      ========================================== -->
+      <div v-else-if="remitType === 'DUTCH' && currentStep === 4" class="step-content-wrap">
+        <!-- 4번 화면: 정산 총 정보 요약 헤더 (카카오페이 스타일) -->
+        <div class="kakaopay-settlement-head">
+          <div class="form-field-group" style="margin-bottom: 12px; text-align: left;">
+            <label class="field-label text-13-bold">정산 제목 (모임방 이름)</label>
+            <input
+              v-model="dutchRoomTitle"
+              type="text"
+              class="custom-input text-15-bold"
+              placeholder="예: 맛있는 저녁 식사 정산"
+            />
+          </div>
+
+          <div class="main-amount-row">
+            <span class="text-13-bold" style="color: #666;">총</span>
+            <h2 class="text-28-bold" style="margin: 0 4px; color: #111;">{{ formatCurrency(remitAmount || 0) }}</h2>
+            <span class="text-20-bold" style="color: #111;">원</span>
+          </div>
+        </div>
+
+        <!-- 카카오페이 대표 정산 요약 카드 -->
+        <div class="kakaopay-item-card">
+          <div class="item-card-left">
+            <div class="item-ic-circle">
+              <i :class="getCategoryIcon(selectedCategoryObj?.categoryName || '식비')"></i>
+            </div>
+            <div class="item-text-col">
+              <h4 class="item-name text-15-bold">{{ selectedCategoryObj?.categoryName || '식사' }}</h4>
+              <p class="item-sub text-13">{{ formatCurrency(remitAmount || 0) }}원 · 나 외 {{ selectedDutchFriends.length }}명</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🌟 피드 관련 입력 추가 (메모, 공개범위, 사진첨부) -->
+        <!-- 1. 피드 메시지 (메모) -->
+        <div class="form-field-group" style="margin-top: 20px;">
+          <label class="field-label text-13-bold"
+            ><i class="fa-solid fa-message brand-ic"></i> 피드에 남길 내용 (메모)</label
+          >
+          <textarea
+            v-model="remitMemo"
+            class="custom-textarea text-15"
+            placeholder="피드에 남길 메시지를 입력하세요 (예: 맛있게 잘 먹었어! 🍕)"
+          ></textarea>
+        </div>
+
+        <!-- 2. 공개 범위 선택 -->
+        <div class="form-field-group">
+          <label class="field-label text-13-bold"
+            ><i class="fa-solid fa-shield-halved brand-ic"></i> 공개 범위 선택</label
+          >
+          <div class="vis-grid">
+            <button
+              type="button"
+              class="content-btn secondary text-13-bold"
+              :class="{ active: remitVisibility === 'PUBLIC' }"
+              @click="remitVisibility = 'PUBLIC'"
+            >
+              🌐 전체 공개
+            </button>
+            <button
+              type="button"
+              class="content-btn secondary text-13-bold"
+              :class="{ active: remitVisibility === 'FRIEND' }"
+              @click="remitVisibility = 'FRIEND'"
+            >
+              👥 친구 공개
+            </button>
+            <button
+              type="button"
+              class="content-btn secondary text-13-bold"
+              :class="{ active: remitVisibility === 'PRIVATE' }"
+              @click="remitVisibility = 'PRIVATE'"
+            >
+              🔒 나만 보기
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. 소셜 피드 사진 첨부 -->
+        <div class="form-field-group">
+          <div class="file-header-line">
+            <label class="field-label text-13-bold"
+              ><i class="fa-solid fa-image brand-ic"></i> 소셜 피드 사진 첨부 (선택)</label
+            >
+            <button
+              v-if="selectedFile"
+              type="button"
+              class="cancel-file-btn text-13-bold"
+              @click="removeSelectedFile"
+            >
+              첨부 취소
+            </button>
+          </div>
+
+          <div class="photo-upload-container">
+            <label v-if="!imagePreviewUrl" class="photo-upload-box">
+              <i class="fa-solid fa-camera upload-icon"></i>
+              <span class="upload-text text-13-bold">사진 추가하기</span>
+              <input
+                type="file"
+                accept="image/*"
+                class="hidden-file-input"
+                @change="handleFileChange"
+              />
+            </label>
+            <div v-else class="preview-img-wrap">
+              <img :src="imagePreviewUrl" class="preview-img" />
+              <button
+                type="button"
+                class="remove-photo-btn"
+                @click="removeSelectedFile"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4번 화면 실행 버튼 -->
+        <div class="next-btn-wrap" style="margin-top: 24px;">
+          <button
+            class="bottom-btn text-18-bold"
+            @click="submitRemittance"
+          >
+            정산 요청하기 <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
       <!-- ==========================================
            [STEP 3] 부족금 자동충전 알림
       ========================================== -->
@@ -811,11 +1055,42 @@ import walletApi from "@/api/walletApi";
 import friendApi from "@/api/friend";
 import transactionApi from "@/api/transactionApi";
 import remittanceApi from "@/api/remittanceApi";
+import analysisApi from "@/api/analysisApi";
+import { getCategoryIcon } from "@/util/analysis";
 import PageHeader from "@/components/common/PageHeader.vue";
 import CommonTabBar from "@/components/common/CommonTabBar.vue";
+import SpendingCategorySelector from "@/components/common/SpendingCategorySelector.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
+
+const selectedCategoryId = ref(null);
+const categoryList = ref([
+  { spendingCategoryId: 1, categoryName: "식비", parentCategoryId: null },
+  { spendingCategoryId: 2, categoryName: "카페", parentCategoryId: null },
+  { spendingCategoryId: 3, categoryName: "생활", parentCategoryId: null },
+  { spendingCategoryId: 4, categoryName: "온라인쇼핑", parentCategoryId: null },
+  { spendingCategoryId: 5, categoryName: "뷰티/미용", parentCategoryId: null },
+  { spendingCategoryId: 6, categoryName: "교통", parentCategoryId: null },
+  { spendingCategoryId: 7, categoryName: "자동차", parentCategoryId: null },
+  { spendingCategoryId: 8, categoryName: "주거/통신", parentCategoryId: null },
+  { spendingCategoryId: 9, categoryName: "금융", parentCategoryId: null },
+  { spendingCategoryId: 10, categoryName: "여행", parentCategoryId: null },
+  { spendingCategoryId: 11, categoryName: "교육", parentCategoryId: null },
+  { spendingCategoryId: 12, categoryName: "반려동물", parentCategoryId: null },
+  { spendingCategoryId: 13, categoryName: "병원", parentCategoryId: null },
+]);
+
+const isCategoryExpanded = ref(false);
+const displayedCategoryList = computed(() => {
+  return isCategoryExpanded.value ? categoryList.value : categoryList.value.slice(0, 4);
+});
+
+const selectedCategoryObj = computed(() => {
+  return categoryList.value.find(
+    (c) => c.spendingCategoryId === selectedCategoryId.value
+  ) || categoryList.value[0];
+});
 
 const headerTitleText = computed(() => {
   if (remitType.value === "ACCOUNT") return "계좌 송금하기";
@@ -863,6 +1138,9 @@ const confirmTxSelection = () => {
 
   remitAmount.value = selectedTxTotalAmount.value;
   showTxSelectModal.value = false;
+  if (remitType.value === "DUTCH") {
+    currentStep.value = 2;
+  }
 };
 
 const formatDate = (dateStr) => {
@@ -897,13 +1175,11 @@ const getStoreTitle = (t) => {
   );
 };
 
-const openTxSelectModal = async () => {
-  showTxSelectModal.value = true;
+const openTxSelectStep = async () => {
+  currentStep.value = 3;
   selectedTxIds.value = [];
   try {
-    const userId = authStore.userId;
-    if (!userId) return;
-
+    const userId = authStore.userId || 1;
     if (transactionApi.getTransactions) {
       const data = await transactionApi.getTransactions(userId);
       if (data && Array.isArray(data)) {
@@ -929,6 +1205,10 @@ const openTxSelectModal = async () => {
   } catch (e) {
     console.log("거래내역 로드 예외", e);
   }
+};
+
+const openTxSelectModal = async () => {
+  await openTxSelectStep();
 };
 
 const currentUserName = computed(
@@ -1094,6 +1374,33 @@ const filteredFriends = computed(() => {
   );
 });
 
+const getProfileImageUrl = (friend) => {
+  if (!friend) return "/api/feeds/profile/default_profile.png";
+  if (friend.avatarUrl) return friend.avatarUrl;
+  const imgName =
+    friend.profileImageName || friend.profileImage || friend.profileImg;
+  if (imgName) {
+    if (imgName.startsWith("http") || imgName.startsWith("/")) return imgName;
+    return `/api/feeds/profile/${imgName}`;
+  }
+  return "/api/feeds/profile/default_profile.png";
+};
+
+const myProfileImageUrl = computed(() => {
+  const pName =
+    authStore.user?.profileImageName ||
+    authStore.user?.profileImage ||
+    authStore.user?.profileImg;
+  if (pName) {
+    if (pName.startsWith("http") || pName.startsWith("/")) return pName;
+    return `/api/feeds/profile/${pName}`;
+  }
+  return "/api/feeds/profile/default_profile.png";
+});
+
+const getFriendObj = (fId) => {
+  return friendList.value.find((f) => f.id === fId);
+};
 const dutchRoomTitle = ref("");
 const selectedDutchFriends = ref([]);
 const dutchFriendSearchKeyword = ref("");
@@ -1108,6 +1415,7 @@ const filteredDutchFriends = computed(() => {
   );
 });
 const dutchSplitMode = ref("EQUAL");
+const customDutchAmounts = ref({});
 
 const remitAmount = ref(0);
 const remitMemo = ref("");
@@ -1127,6 +1435,16 @@ const onAmountInput = (e) => {
 const loadRemitInitData = async () => {
   try {
     const userId = authStore.userId;
+
+    try {
+      const cats = await analysisApi.getCategories();
+      if (cats && Array.isArray(cats)) {
+        categoryList.value = cats;
+      }
+    } catch (catErr) {
+      console.log("카테고리 목록 로드 예외", catErr);
+    }
+
     if (!userId) return;
 
     try {
@@ -1203,12 +1521,27 @@ const loadRemitInitData = async () => {
             f.username ||
             `user_${fId}`;
 
+          const fImgName =
+            receiverObj.profileImageName ||
+            receiverObj.profileImage ||
+            receiverObj.profileImg ||
+            f.profileImageName ||
+            f.profileImage ||
+            f.profileImg ||
+            "";
+
           if (!map.has(fId)) {
             map.set(fId, {
               id: fId,
               name: fNickname,
               username: fUsername,
               initials: (fNickname || "친").slice(0, 2),
+              profileImageName: fImgName,
+              avatarUrl: fImgName
+                ? fImgName.startsWith("http") || fImgName.startsWith("/")
+                  ? fImgName
+                  : `/api/feeds/profile/${fImgName}`
+                : "/api/feeds/profile/default_profile.png",
             });
           }
         });
@@ -1228,12 +1561,12 @@ onMounted(() => {
   loadRemitInitData();
 });
 
-// 계좌 송금 1단계 통과 조건: 계좌번호와 은행이 모두 입력/선택되어야 함
+// 계좌/친구/정산 1단계 통과 조건
 const canProceedStep1 = computed(() => {
   if (remitType.value === "ACCOUNT")
     return !!accountForm.value.accountNumber && !!accountForm.value.bankCode;
   if (remitType.value === "FRIEND") return !!selectedFriendId.value;
-  if (remitType.value === "DUTCH") return !!dutchRoomTitle.value;
+  if (remitType.value === "DUTCH") return selectedDutchFriends.value.length > 0;
   return true;
 });
 
@@ -1275,12 +1608,19 @@ const goToStep2 = () => {
 };
 
 const proceedFromStep2 = () => {
+  if (!remitAmount.value || remitAmount.value <= 0) return;
   if (remitType.value === "DUTCH") {
     currentStep.value = 4;
-  } else if (remitAmount.value > myBalance.value) {
-    currentStep.value = 3;
   } else {
-    currentStep.value = 4;
+    currentStep.value = 3;
+  }
+};
+
+const submitRemittance = async () => {
+  if (remitType.value === "DUTCH") {
+    await executeRealTransfer();
+  } else {
+    currentStep.value = 5; // 일반 송금 PIN 6자리 입력 스텝 이동
   }
 };
 
@@ -1319,15 +1659,21 @@ const executeRealTransfer = async () => {
         const totalCount =
           (selectedDutchFriends.value ? selectedDutchFriends.value.length : 0) +
           1;
-        const perPersonAmt = Math.floor(
+        const defaultPerAmt = Math.floor(
           (remitAmount.value || 0) / (totalCount || 1),
         );
+
         const membersPayload = (selectedDutchFriends.value || []).map(
-          (fId) => ({
-            userId:
-              typeof fId === "object" ? fId.userId || fId.id : Number(fId),
-            amount: perPersonAmt,
-          }),
+          (fId) => {
+            const rawId = typeof fId === "object" ? fId.userId || fId.id : Number(fId);
+            const userCustomAmt = dutchSplitMode.value === "CUSTOM"
+              ? (customDutchAmounts.value[fId] || defaultPerAmt)
+              : defaultPerAmt;
+            return {
+              userId: rawId,
+              amount: Number(userCustomAmt) || 0,
+            };
+          },
         );
 
         await remittanceApi.createSettlement({
@@ -1335,8 +1681,8 @@ const executeRealTransfer = async () => {
           title: dutchRoomTitle.value || "더치페이 정산 모임방",
           content: `${dutchRoomTitle.value || "더치페이"} 정산 청구`,
           totalAmount: remitAmount.value || 0,
-          spendingCategoryId: 1,
-          settlementType: "EQUAL",
+          spendingCategoryId: selectedCategoryId.value || 1,
+          settlementType: dutchSplitMode.value === "CUSTOM" ? "CUSTOM" : "EQUAL",
           members: membersPayload,
         });
       } catch (dErr) {
@@ -1348,6 +1694,7 @@ const executeRealTransfer = async () => {
         walletId: wId,
         receiverType: recType,
         amount: remitAmount.value || 0,
+        spendingCategoryId: selectedCategoryId.value || 1,
         memo:
           remitMemo.value ||
           (remitType.value === "FRIEND" ? "친구 송금" : "계좌 송금"),
@@ -1737,8 +2084,8 @@ textarea {
 }
 
 .friend-card-item.dutch-active {
-  background-color: #fdf2f8;
-  border-color: #f472b6;
+  background-color: #fffbe6;
+  border-color: var(--color-primary-border, #cc9200);
 }
 
 .friend-item-left {
@@ -1747,9 +2094,17 @@ textarea {
   gap: 10px;
 }
 
+.friend-avatar-img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e0e0e0;
+}
+
 .friend-avatar {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background-color: var(--color-bg-screen, #f5f6f8);
   color: var(--color-text-sub, #777777);
@@ -1764,8 +2119,8 @@ textarea {
 }
 
 .friend-avatar.dutch-active {
-  background-color: #ec4899;
-  color: #ffffff;
+  background-color: var(--color-primary, #ffbc2e);
+  color: #111111;
 }
 
 .friend-name {
@@ -1799,15 +2154,15 @@ textarea {
 }
 
 .dutch-tag {
-  background-color: #ec4899;
-  color: #ffffff;
+  background-color: var(--color-primary, #ffbc2e);
+  color: #111111;
   padding: 2px 6px;
   border-radius: 4px;
 }
 
 .dutch-ic {
   font-size: 13px;
-  color: #ec4899;
+  color: var(--color-primary-border, #cc9200);
 }
 
 .unsel-ic {
@@ -1826,19 +2181,30 @@ textarea {
   background-color: #fffbe6;
   border: 1px solid var(--color-primary-border, #cc9200);
   color: var(--color-text-main, #111111);
-  padding: 4px 10px;
-  border-radius: 9999px;
-}
-
-.friend-tag-badge {
-  background-color: #fdf2f8;
-  border: 1px solid #fbcfe8;
-  color: #db2777;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 9999px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+}
+
+.friend-tag-badge {
+  background-color: #fff8e1;
+  border: 1px solid #ffe082;
+  color: #cc9200;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag-avatar-img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .del-ic {
@@ -2159,8 +2525,109 @@ textarea {
   justify-content: center;
 }
 
-.kb-label {
-  color: var(--color-text-main, #111111);
+.scrollable-tx-area {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-top: 14px;
+}
+
+.fixed-bottom-btn-wrap {
+  position: sticky;
+  bottom: 0;
+  background-color: #ffffff;
+  padding-top: 12px;
+  padding-bottom: 6px;
+  margin-top: 10px;
+  border-top: 1px solid #f1f5f9;
+  z-index: 10;
+}
+
+/* 3번 화면 결제 내역 전용 카드 스타일 (TransactionListPage 디자인) */
+.tx-item-row-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.split-tab-bar {
+  display: flex;
+  background-color: #f1f5f9;
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.split-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.split-tab.active {
+  background-color: #ffffff;
+  color: #111111;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.custom-calc-input {
+  width: 110px;
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  text-align: right;
+  outline: none;
+}
+
+.custom-calc-input:focus {
+  border-color: #ffbc00;
+}
+.tx-item-row-card.active {
+  background-color: #fffbe6;
+  border-color: #ffbc00;
+  box-shadow: 0 2px 8px rgba(255, 188, 0, 0.15);
+}
+
+.icon-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: #f1f5f9;
+  color: #cc9200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.select-check-ic {
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.active-kb {
+  color: #ffbc00;
+}
+
+.uncheck {
+  color: #cbd5e1;
 }
 
 .total-need-val {
@@ -2295,8 +2762,77 @@ textarea {
   background-color: var(--color-border-main, #dddddd);
 }
 
-.re-btn {
+/* 카카오페이 스타일 정산 헤더 & 카드 */
+.kakaopay-settlement-head {
+  text-align: center;
+  padding: 12px 0 20px 0;
+}
+
+.main-amount-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.kakaopay-item-card {
+  background: #f8f8fa;
+  border: 1px solid #e8e8ed;
+  border-radius: 16px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.item-card-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.item-ic-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #e2e2e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cc9200;
+  font-size: 18px;
+}
+
+.item-text-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item-name {
+  margin: 0;
+  color: #111;
+}
+
+.item-sub {
+  margin: 0;
+  color: #777;
+}
+
+.tx-link-btn {
+  background: transparent;
+  border: none;
   color: var(--color-primary-border, #cc9200);
+  padding: 8px 0 0 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tx-link-btn:hover {
+  text-decoration: underline;
 }
 
 .del-btn {
@@ -2341,6 +2877,29 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* 카테고리 접기/더보기 헤더 스타일 */
+.category-title-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.category-toggle-sub-btn {
+  background: #f4f4f6;
+  border: 1px solid #e2e2e8;
+  border-radius: 12px;
+  padding: 4px 10px;
+  color: #555555;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.category-toggle-sub-btn:hover {
+  background: #e8e8ed;
+  color: #111111;
 }
 
 /* 모달 */

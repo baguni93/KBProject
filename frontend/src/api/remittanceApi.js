@@ -21,6 +21,7 @@ export default {
     formData.append('walletId', remittanceData.walletId || 1);
     formData.append('receiverId', remittanceData.receiverId || 2);
     formData.append('amount', remittanceData.amount || 0);
+    formData.append('spendingCategoryId', remittanceData.spendingCategoryId || 1);
     formData.append('memo', remittanceData.memo || '송금 완료');
     formData.append('content', remittanceData.content || remittanceData.memo || '송금 완료');
     formData.append('receiverType', remittanceData.receiverType || 'WALLET');

@@ -1,125 +1,71 @@
 <template>
   <div class="card-add-root">
-    <div class="card-add-header">
-      <div class="header-inner">
-        <button class="back-btn text-13-bold" @click="$router.push('/wallet')">
-          <i class="fa-solid fa-chevron-left mr-1"></i> 지갑
-        </button>
-        <h4 class="header-title text-18-bold">KB국민카드 등록</h4>
-        <button
-          class="close-x-btn"
-          @click="$router.push('/wallet')"
-          title="닫기"
-        >
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-    </div>
+    <PageHeader title="카드 등록" />
 
     <div class="card-add-body">
-      <div class="form-card">
-        <div class="card-preview-plate-clean">
-          <img
-            v-if="cardPreviewImg && !isImgError"
-            :src="cardPreviewImg"
-            :alt="cardForm.cardName"
-            class="card-bg-full-img fade-in"
-            referrerpolicy="no-referrer"
-            @error="handleImgError"
-          />
-          <div v-else class="card-img-placeholder-empty"></div>
-        </div>
+      <div class="samsung-pay-head">
+        <h3 class="samsung-head-title text-22-bold">카드 번호를 입력하세요</h3>
+        <p class="samsung-head-sub text-13">본인 명의의 카드만 등록할 수 있습니다.</p>
+      </div>
 
+      <div class="form-card-clean">
         <form id="cardAddForm" @submit.prevent="submitCard">
-          <div class="form-group">
-            <div class="label-with-badge">
-              <label class="form-label text-13-bold">카드 번호 (16자리)</label>
-            </div>
+          <!-- 1. 카드 번호 -->
+          <div class="samsung-pay-form-group">
+            <label class="samsung-label text-13-bold">카드 번호</label>
             <input
               v-model="cardForm.cardNum"
               type="text"
-              class="kb-input text-15-bold"
-              placeholder="'-' 없이 16자리 숫자 입력"
+              class="samsung-input text-16-bold"
+              placeholder="0000 - 0000 - 0000 - 0000"
               maxLength="19"
               required
               @input="onCardNumInput"
             />
           </div>
 
-          <div class="form-group">
-            <label class="form-label text-13-bold">
-              <i class="fa-solid fa-tag brand-ic mr-1"></i>카드 별칭 (선택)
-            </label>
+          <!-- 2. 만료일 -->
+          <div class="samsung-pay-form-group">
+            <label class="samsung-label text-13-bold">만료일 (MM / YY)</label>
             <input
-              v-model="cardForm.cardAlias"
+              v-model="cardForm.expiry"
               type="text"
-              class="kb-input text-15"
-              placeholder="예: 메인 KB 체크카드, 생활비 카드"
-              maxLength="20"
+              class="samsung-input text-16-bold"
+              placeholder="02 / 31"
+              maxLength="5"
+              required
+              @input="formatExpiry"
             />
           </div>
 
-          <div class="auth-fields-grid">
-            <div class="field-item">
-              <label class="form-label text-13-bold">유효기간</label>
-              <input
-                v-model="cardForm.expiry"
-                type="text"
-                class="kb-input text-13-bold text-center"
-                placeholder="MM/YY"
-                maxLength="5"
-                required
-                @input="formatExpiry"
-              />
-            </div>
+          <!-- 3. 보안 코드 (CVC/CVV) -->
+          <div class="samsung-pay-form-group">
+            <label class="samsung-label text-13-bold">보안 코드 (CVC/CVV)</label>
+            <input
+              v-model="cardForm.cvc"
+              type="password"
+              class="samsung-input text-16-bold"
+              placeholder="카드 뒷면 3자리 숫자"
+              maxLength="3"
+              required
+            />
+          </div>
 
-            <div class="field-item">
-              <label class="form-label text-13-bold">CVC 번호</label>
-              <input
-                v-model="cardForm.cvc"
-                type="password"
-                class="kb-input text-13-bold text-center"
-                placeholder="3자리"
-                maxLength="3"
-                required
-              />
-            </div>
-
-            <div class="field-item">
-              <label class="form-label text-13-bold">비밀번호</label>
-              <input
-                v-model="cardForm.cardPassword"
-                type="password"
-                class="kb-input text-13-bold text-center"
-                placeholder="앞 2자리"
-                maxLength="2"
-                required
-              />
-            </div>
+          <!-- 4. 카드 비밀번호 처음 2자리 -->
+          <div class="samsung-pay-form-group">
+            <label class="samsung-label text-13-bold">카드 비밀번호 처음 2자리</label>
+            <input
+              v-model="cardForm.cardPassword"
+              type="password"
+              class="samsung-input text-16-bold"
+              placeholder="비밀번호 앞 2자리 (**)"
+              maxLength="2"
+              required
+              @input="onPasswordInput"
+            />
           </div>
         </form>
       </div>
-    </div>
-
-    <div class="form-btn-row">
-      <button
-        type="button"
-        class="content-btn secondary cancel-btn text-15-bold"
-        @click="$router.push('/wallet')"
-      >
-        취소
-      </button>
-      <button
-        type="submit"
-        form="cardAddForm"
-        class="bottom-btn text-18-bold flex-1"
-        :disabled="!isFormValid || submitting"
-      >
-        <span v-if="submitting" class="spinner-ic mr-1"
-          ><i class="fa-solid fa-circle-notch fa-spin"></i
-        ></span>
-        카드 등록 완료
-      </button>
     </div>
   </div>
 </template>
@@ -127,6 +73,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
+import PageHeader from "@/components/common/PageHeader.vue";
 import api from "@/api";
 import { registerCard } from "@/api/cardApi";
 import { useAuthStore } from "@/stores/auth";
@@ -151,49 +98,22 @@ const handleImgError = () => {
   isImgError.value = true;
 };
 
-// BIN (앞 6자리) 기반 자동 조회 및 수집된 로컬 이미지 매핑 로직
-const onCardNumInput = async (e) => {
+// 카드번호 입력 처리 (하이픈 자동 서식)
+const onCardNumInput = (e) => {
   let val = e.target.value.replace(/\D/g, "");
   if (val.length > 16) val = val.slice(0, 16);
   cardForm.value.cardNum = val.replace(/(\d{4})(?=\d)/g, "$1-");
+};
 
-  if (val.length >= 6) {
-    const bin = val.slice(0, 6);
-    let detectedName = "KB국민 신용/체크카드";
-    let matchedImageFileName = null; // null = 이미지 없음 (인식 안 된 카드)
-
-    try {
-      const { data } = await api.get(`/api/cards/bin/${bin}`);
-      if (data) {
-        if (data.cardName) detectedName = data.cardName;
-        if (data.imageUrl) {
-          matchedImageFileName = data.imageUrl;
-        }
-      }
-    } catch (err) {
-      console.log("BIN API 조회 예외 발생, 로컬 패턴 규칙 매핑 적용");
-      if (bin.startsWith("53")) {
-        matchedImageFileName = "09129_img.png"; // 톡톡MyPoint
-        detectedName = "KB국민 톡톡MyPoint 카드";
-      } else if (bin.startsWith("45")) {
-        matchedImageFileName = "09297_img.png"; // 노리2 체크
-        detectedName = "KB Pay 노리2 체크카드";
-      } else if (bin.startsWith("9")) {
-        matchedImageFileName = "09800_img.png";
-        detectedName = "KB국민 프리미엄 카드";
-      }
-    }
-
-    cardForm.value.cardName = detectedName;
-    // imageUrl이 없으면 이미지 표시 안 함 (인식 안 된 카드)
-    cardPreviewImg.value = matchedImageFileName
-      ? `/api/feeds/cardImage/${matchedImageFileName}`
-      : "";
-    isImgError.value = false;
-  } else {
-    cardForm.value.cardName = "KB국민카드";
-    cardPreviewImg.value = "";
-    isImgError.value = false;
+// 비밀번호 2자리 완성 시 자동 제출
+const onPasswordInput = () => {
+  if (
+    cardForm.value.cardPassword &&
+    cardForm.value.cardPassword.length === 2 &&
+    isFormValid.value &&
+    !submitting.value
+  ) {
+    submitCard();
   }
 };
 
@@ -277,6 +197,74 @@ const submitCard = async () => {
   color: var(--color-text-main, #111111);
   box-sizing: border-box;
   overflow: hidden;
+}
+
+.samsung-pay-head {
+  margin-top: 12px;
+  margin-bottom: 48px;
+}
+
+.samsung-head-title {
+  margin: 0 0 8px 0;
+  color: #111111;
+  letter-spacing: -0.5px;
+}
+
+.samsung-head-sub {
+  margin: 0;
+  color: #777777;
+}
+
+.form-card-clean {
+  display: flex;
+  flex-direction: column;
+}
+
+#cardAddForm {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.samsung-pay-form-group {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #dcdce2;
+  border-radius: 18px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  transition: all 0.2s ease;
+}
+
+.samsung-pay-form-group:last-child {
+  margin-bottom: 0;
+}
+
+.samsung-pay-form-group:focus-within {
+  border-color: #2b7fff;
+  box-shadow: 0 0 0 3px rgba(43, 127, 255, 0.15);
+}
+
+.samsung-label {
+  color: #777777;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.samsung-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 17px;
+  color: #111111;
+  padding: 2px 0;
+}
+
+.samsung-input::placeholder {
+  color: #cccccc;
+  font-weight: 500;
 }
 
 .card-add-header {
