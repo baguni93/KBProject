@@ -58,5 +58,10 @@ public interface CardPaymentMapper {
 
     int addAccountBalanceById(@Param("accountId") Integer accountId, @Param("amount") Integer amount);
 
+    // 지갑(wallet_tbl) 잔액 차감 및 조회
+    int subtractWalletBalance(@Param("userId") Integer userId, @Param("amount") Integer amount);
+
+    Long getWalletBalanceByUserId(@Param("userId") Integer userId);
+
     int insertFinancialTransactionForCard(org.scoula.cardpayment.dto.CardTransactionApproveDTO approveDTO);
 }

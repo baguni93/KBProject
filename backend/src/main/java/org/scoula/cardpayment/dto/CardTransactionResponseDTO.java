@@ -19,5 +19,6 @@ public class CardTransactionResponseDTO {
     private Integer transactionId; // financial_transaction_tbl FK
     private String merchantName;
     private Integer amount;
+    private Long updatedWalletBalance;
     private String message;
 }

@@ -152,16 +152,19 @@
         )
     </insert>
 
-    <!-- card_transaction_detail_tbl 단건 조회 -->
+    <!-- card_transaction_detail_tbl 단건 조회 (financial_transaction_tbl 조인으로 amount, merchant_name 수신) -->
     <select id="getCardTransactionDetailById" resultType="org.scoula.cardpayment.domain.CardTransactionDetailVO">
         SELECT
-            card_transaction_id AS cardTransactionId,
-            linked_card_id      AS linkedCardId,
-            status              AS status,
-            created_at          AS createdAt,
-            transaction_id      AS transactionId
-        FROM card_transaction_detail_tbl
-        WHERE card_transaction_id = #{cardTransactionId}
+            c.card_transaction_id AS cardTransactionId,
+            c.linked_card_id      AS linkedCardId,
+            c.status              AS status,
+            c.created_at          AS createdAt,
+            c.transaction_id      AS transactionId,
+            f.amount              AS amount,
+            f.merchant_name       AS merchantName
+        FROM card_transaction_detail_tbl c
+        LEFT JOIN financial_transaction_tbl f ON c.transaction_id = f.transaction_id
+        WHERE c.card_transaction_id = #{cardTransactionId}
     </select>
 
     <!-- 가장 최근 PENDING 결제건 조회 -->
@@ -250,6 +253,22 @@
         SET balance = balance + #{amount}
         WHERE account_id = #{accountId}
     </update>
+
+    <!-- 전자지갑(wallet_tbl) 잔액 차감 (잔액 부족 검사 포함) -->
+    <update id="subtractWalletBalance">
+        UPDATE wallet_tbl
+        SET balance = balance - #{amount}
+        WHERE user_id = #{userId}
+          AND balance >= #{amount}
+    </update>
+
+    <!-- 전자지갑(wallet_tbl) 잔액 조회 -->
+    <select id="getWalletBalanceByUserId" resultType="java.lang.Long">
+        SELECT balance
+        FROM wallet_tbl
+        WHERE user_id = #{userId}
+        LIMIT 1
+    </select>
 
     <!-- 카드 결제 통합 원장(financial_transaction_tbl) 생성 -->
     <insert id="insertFinancialTransactionForCard" parameterType="org.scoula.cardpayment.dto.CardTransactionApproveDTO" useGeneratedKeys="true" keyProperty="transactionId">

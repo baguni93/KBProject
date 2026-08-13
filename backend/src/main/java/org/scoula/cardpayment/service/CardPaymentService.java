@@ -23,8 +23,11 @@ public interface CardPaymentService {
     // 1단계: 결제 대기(PENDING) 생성
     org.scoula.cardpayment.dto.CardTransactionResponseDTO createPendingTransaction(org.scoula.cardpayment.dto.CardTransactionRequestDTO requestDTO);
 
-    // 2~3단계: 결제 승인 요청 (체크카드 이체 & financial_transaction_tbl 원장 생성)
+    // 카드 결제 승인 요청 (지갑 차감 없이 결제 기록만 생성)
     org.scoula.cardpayment.dto.CardTransactionResponseDTO approveTransaction(org.scoula.cardpayment.dto.CardTransactionApproveDTO approveDTO);
+
+    // 전자지갑 / QR / 바코드 결제 승인 요청 (wallet_tbl 잔액 차감)
+    org.scoula.cardpayment.dto.CardTransactionResponseDTO approveWalletTransaction(org.scoula.cardpayment.dto.CardTransactionApproveDTO approveDTO);
 
     // 결제 상태 조회
     org.scoula.cardpayment.dto.CardTransactionResponseDTO getTransactionStatus(Long cardTransactionId);

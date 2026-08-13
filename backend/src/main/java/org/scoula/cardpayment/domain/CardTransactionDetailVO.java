@@ -17,4 +17,6 @@ public class CardTransactionDetailVO {
     private String status; // PENDING, SUCCESS, FAILED
     private Date createdAt;
     private Integer transactionId;
+    private Integer amount;
+    private String merchantName;
 }

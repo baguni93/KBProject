@@ -29,7 +29,7 @@ public class CardDTO {
             if (imageName.startsWith("http") || imageName.startsWith("/")) {
                 cardImageUrl = imageName;
             } else {
-                cardImageUrl = "/api/feeds/cardImage/" + imageName;
+                cardImageUrl = "/api/cards/image/" + imageName;
             }
         }
 

@@ -232,14 +232,15 @@ public class CardPaymentServiceImpl implements CardPaymentService {
                 .build();
     }
 
+    // 1. 카드 결제 승인 (지갑 잔액 차감 없이 무조건 SUCCESS 기록 보존)
     @Override
     @Transactional
     public org.scoula.cardpayment.dto.CardTransactionResponseDTO approveTransaction(org.scoula.cardpayment.dto.CardTransactionApproveDTO approveDTO) {
-        log.info("2~3단계: 카드 결제 승인 요청 - DTO: {}", approveDTO);
+        log.info("카드 결제 승인 요청 (지갑 잔액 차감 X) - DTO: {}", approveDTO);
 
         Integer targetUserId = approveDTO.getUserId();
         if (targetUserId == null || targetUserId <= 0) {
-            targetUserId = 1; // 기본 유저 ID (또는 토큰 연동 유저)
+            targetUserId = 1;
         }
 
         Long cardTxId = approveDTO.getCardTransactionId();
@@ -248,27 +249,31 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         if (cardTxId != null && cardTxId > 0) {
             detailVO = cardPaymentMapper.getCardTransactionDetailById(cardTxId);
         } else {
-            // cardTransactionId 미지정 시, 해당 회원(userId)의 현재 PENDING 결제건 특정 조회
-            log.info("cardTransactionId 미지정 -> 회원 ID({})의 PENDING 결제건 특정 조회", targetUserId);
             detailVO = cardPaymentMapper.getPendingTransactionByUserId(targetUserId);
-
-            // 해당 회원 PENDING 건이 없으면 전체 최신 PENDING Fallback
             if (detailVO == null) {
                 detailVO = cardPaymentMapper.getLatestPendingTransaction();
             }
         }
 
         if (detailVO == null) {
-            throw new IllegalArgumentException("대기 중인(PENDING) 결제 거래 건을 찾을 수 없습니다. (회원 ID: " + targetUserId + ")");
+            org.scoula.cardpayment.domain.CardTransactionDetailVO newPending = org.scoula.cardpayment.domain.CardTransactionDetailVO.builder()
+                    .linkedCardId(1)
+                    .status("PENDING")
+                    .build();
+            cardPaymentMapper.insertCardTransactionDetail(newPending);
+            detailVO = newPending;
         }
+
         cardTxId = detailVO.getCardTransactionId();
 
         if (!"PENDING".equalsIgnoreCase(detailVO.getStatus())) {
+            Long currentWalletBal = cardPaymentMapper.getWalletBalanceByUserId(targetUserId);
             return org.scoula.cardpayment.dto.CardTransactionResponseDTO.builder()
                     .cardTransactionId(detailVO.getCardTransactionId())
                     .linkedCardId(detailVO.getLinkedCardId())
                     .status(detailVO.getStatus())
                     .transactionId(detailVO.getTransactionId())
+                    .updatedWalletBalance(currentWalletBal)
                     .message("이미 처리된 결제 건입니다. 상태: " + detailVO.getStatus())
                     .build();
         }
@@ -278,57 +283,31 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         Integer amount = (approveDTO.getAmount() != null && approveDTO.getAmount() > 0)
                 ? approveDTO.getAmount() : 10000;
 
-        // 1. 연결 카드의 사용자 ID 조회
-        Integer userId = cardPaymentMapper.getUserIdByLinkedCardId(detailVO.getLinkedCardId());
-        if (userId == null) userId = 1;
-
-        // 2. 사용자의 계좌 ID 조회
-        Integer userAccountId = cardPaymentMapper.getUserAccountId(userId);
-        if (userAccountId == null) userAccountId = 1;
-
-        // 3. 가맹점(스타벅스 등) 계좌 ID 및 수신 회원(receive_id) ID 조회
+        // 가맹점 수신 회원 ID(receive_id) 조회
         Integer merchantAccountId = approveDTO.getMerchantAccountId();
         if (merchantAccountId == null) {
             merchantAccountId = cardPaymentMapper.getMerchantAccountIdByName(merchantName);
-            if (merchantAccountId == null) merchantAccountId = 99; // 기본 스타벅스 더미 계좌
+            if (merchantAccountId == null) merchantAccountId = 99;
         }
         Integer receiveId = cardPaymentMapper.getMerchantUserIdByAccountId(merchantAccountId);
 
-        // 4. 체크카드 계좌 잔액 차감 시도
-        int subtractedRows = cardPaymentMapper.subtractAccountBalance(userAccountId, amount);
-        if (subtractedRows == 0) {
-            log.warn("체크카드 잔액 부족으로 결제 승인 실패 - CardTransactionID: {}, Amount: {}", cardTxId, amount);
-            cardPaymentMapper.updateCardTransactionStatus(cardTxId, "FAILED", null);
-
-            return org.scoula.cardpayment.dto.CardTransactionResponseDTO.builder()
-                    .cardTransactionId(cardTxId)
-                    .linkedCardId(detailVO.getLinkedCardId())
-                    .status("FAILED")
-                    .merchantName(merchantName)
-                    .amount(amount)
-                    .message("계좌 잔액이 부족하여 결제에 실패했습니다.")
-                    .build();
-        }
-
-        // 5. 가맹점 계좌 잔액 증가
-        cardPaymentMapper.addAccountBalanceById(merchantAccountId, amount);
-
-        // 6. 통합 금융 원장(financial_transaction_tbl) 생성 (receiveId 매핑)
+        // 통합 금융 원장(financial_transaction_tbl) 생성
         org.scoula.cardpayment.dto.CardTransactionApproveDTO insertParam = org.scoula.cardpayment.dto.CardTransactionApproveDTO.builder()
-                .userId(userId)
+                .userId(targetUserId)
                 .receiveId(receiveId)
                 .merchantName(merchantName)
                 .amount(amount)
                 .build();
-        
+
         cardPaymentMapper.insertFinancialTransactionForCard(insertParam);
         Integer createdTxId = insertParam.getTransactionId();
 
-        // 7. card_transaction_detail_tbl 상태 SUCCESS 및 transaction_id 업데이트
+        // card_transaction_detail_tbl 상태 SUCCESS 및 transaction_id 업데이트
         cardPaymentMapper.updateCardTransactionStatus(cardTxId, "SUCCESS", createdTxId);
+        Long currentWalletBalance = cardPaymentMapper.getWalletBalanceByUserId(targetUserId);
 
-        log.info("카드 결제 승인 성공 - CardTxID: {}, FinancialTxID: {}, UserID: {}, ReceiveID: {}, Merchant: {}, Amount: {}", 
-                cardTxId, createdTxId, userId, receiveId, merchantName, amount);
+        log.info("카드 결제 승인 성공 (지갑 잔액 차감 없음) - CardTxID: {}, FinancialTxID: {}, UserID: {}, Merchant: {}, Amount: {}",
+                cardTxId, createdTxId, targetUserId, merchantName, amount);
 
         return org.scoula.cardpayment.dto.CardTransactionResponseDTO.builder()
                 .cardTransactionId(cardTxId)
@@ -337,7 +316,113 @@ public class CardPaymentServiceImpl implements CardPaymentService {
                 .transactionId(createdTxId)
                 .merchantName(merchantName)
                 .amount(amount)
-                .message("결제가 성공적으로 승인되었습니다.")
+                .updatedWalletBalance(currentWalletBalance)
+                .message("카드 결제가 성공적으로 승인되었습니다.")
+                .build();
+    }
+
+    // 2. 전자지갑 / QR / 바코드 결제 승인 (wallet_tbl 잔액 직접 차감)
+    @Override
+    @Transactional
+    public org.scoula.cardpayment.dto.CardTransactionResponseDTO approveWalletTransaction(org.scoula.cardpayment.dto.CardTransactionApproveDTO approveDTO) {
+        log.info("전자지갑/QR/바코드 결제 승인 요청 (wallet_tbl 잔액 차감) - DTO: {}", approveDTO);
+
+        Integer targetUserId = approveDTO.getUserId();
+        if (targetUserId == null || targetUserId <= 0) {
+            targetUserId = 1;
+        }
+
+        Long cardTxId = approveDTO.getCardTransactionId();
+        org.scoula.cardpayment.domain.CardTransactionDetailVO detailVO = null;
+
+        if (cardTxId != null && cardTxId > 0) {
+            detailVO = cardPaymentMapper.getCardTransactionDetailById(cardTxId);
+        } else {
+            detailVO = cardPaymentMapper.getPendingTransactionByUserId(targetUserId);
+            if (detailVO == null) {
+                detailVO = cardPaymentMapper.getLatestPendingTransaction();
+            }
+        }
+
+        if (detailVO == null) {
+            org.scoula.cardpayment.domain.CardTransactionDetailVO newPending = org.scoula.cardpayment.domain.CardTransactionDetailVO.builder()
+                    .linkedCardId(1)
+                    .status("PENDING")
+                    .build();
+            cardPaymentMapper.insertCardTransactionDetail(newPending);
+            detailVO = newPending;
+        }
+
+        cardTxId = detailVO.getCardTransactionId();
+
+        if (!"PENDING".equalsIgnoreCase(detailVO.getStatus())) {
+            Long currentWalletBal = cardPaymentMapper.getWalletBalanceByUserId(targetUserId);
+            return org.scoula.cardpayment.dto.CardTransactionResponseDTO.builder()
+                    .cardTransactionId(detailVO.getCardTransactionId())
+                    .linkedCardId(detailVO.getLinkedCardId())
+                    .status(detailVO.getStatus())
+                    .transactionId(detailVO.getTransactionId())
+                    .updatedWalletBalance(currentWalletBal)
+                    .message("이미 처리된 결제 건입니다. 상태: " + detailVO.getStatus())
+                    .build();
+        }
+
+        String merchantName = (approveDTO.getMerchantName() != null && !approveDTO.getMerchantName().isBlank())
+                ? approveDTO.getMerchantName().trim() : "스타벅스";
+        Integer amount = (approveDTO.getAmount() != null && approveDTO.getAmount() > 0)
+                ? approveDTO.getAmount() : 10000;
+
+        // 전자지갑(wallet_tbl) 잔액 차감시도
+        int walletSubtracted = cardPaymentMapper.subtractWalletBalance(targetUserId, amount);
+        if (walletSubtracted == 0) {
+            log.warn("전자지갑(wallet_tbl) 잔액 부족으로 결제 승인 실패 - UserID: {}, Amount: {}", targetUserId, amount);
+            cardPaymentMapper.updateCardTransactionStatus(cardTxId, "FAILED", null);
+            Long currentWalletBal = cardPaymentMapper.getWalletBalanceByUserId(targetUserId);
+
+            return org.scoula.cardpayment.dto.CardTransactionResponseDTO.builder()
+                    .cardTransactionId(cardTxId)
+                    .linkedCardId(detailVO.getLinkedCardId())
+                    .status("FAILED")
+                    .merchantName(merchantName)
+                    .amount(amount)
+                    .updatedWalletBalance(currentWalletBal)
+                    .message("전자지갑(Wallet) 잔액이 부족합니다.")
+                    .build();
+        }
+
+        Long updatedWalletBalance = cardPaymentMapper.getWalletBalanceByUserId(targetUserId);
+
+        Integer merchantAccountId = approveDTO.getMerchantAccountId();
+        if (merchantAccountId == null) {
+            merchantAccountId = cardPaymentMapper.getMerchantAccountIdByName(merchantName);
+            if (merchantAccountId == null) merchantAccountId = 99;
+        }
+        Integer receiveId = cardPaymentMapper.getMerchantUserIdByAccountId(merchantAccountId);
+
+        org.scoula.cardpayment.dto.CardTransactionApproveDTO insertParam = org.scoula.cardpayment.dto.CardTransactionApproveDTO.builder()
+                .userId(targetUserId)
+                .receiveId(receiveId)
+                .merchantName(merchantName)
+                .amount(amount)
+                .build();
+
+        cardPaymentMapper.insertFinancialTransactionForCard(insertParam);
+        Integer createdTxId = insertParam.getTransactionId();
+
+        cardPaymentMapper.updateCardTransactionStatus(cardTxId, "SUCCESS", createdTxId);
+
+        log.info("전자지갑/QR/바코드 결제 승인 성공 - CardTxID: {}, FinancialTxID: {}, UserID: {}, Merchant: {}, Amount: {}, UpdatedWalletBalance: {}",
+                cardTxId, createdTxId, targetUserId, merchantName, amount, updatedWalletBalance);
+
+        return org.scoula.cardpayment.dto.CardTransactionResponseDTO.builder()
+                .cardTransactionId(cardTxId)
+                .linkedCardId(detailVO.getLinkedCardId())
+                .status("SUCCESS")
+                .transactionId(createdTxId)
+                .merchantName(merchantName)
+                .amount(amount)
+                .updatedWalletBalance(updatedWalletBalance)
+                .message("전자지갑 결제가 성공적으로 승인되었습니다.")
                 .build();
     }
 
@@ -354,6 +439,8 @@ public class CardPaymentServiceImpl implements CardPaymentService {
                 .status(detailVO.getStatus())
                 .createdAt(detailVO.getCreatedAt())
                 .transactionId(detailVO.getTransactionId())
+                .amount(detailVO.getAmount())
+                .merchantName(detailVO.getMerchantName())
                 .build();
     }
 

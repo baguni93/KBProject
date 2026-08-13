@@ -86,12 +86,21 @@ public class CardPaymentController {
         return ResponseEntity.ok(response);
     }
 
-    // 2~3단계: 결제 승인 요청 API (Talent API / Postman 테스트용)
+    // 1. 카드 결제 승인 요청 API (지갑 잔액 차감 X, 무조건 SUCCESS 기록 보존)
     @PostMapping("/api/cards/payments/approve")
-    public ResponseEntity<org.scoula.cardpayment.dto.CardTransactionResponseDTO> approveTransaction(
+    public ResponseEntity<org.scoula.cardpayment.dto.CardTransactionResponseDTO> approveCardTransaction(
             @RequestBody org.scoula.cardpayment.dto.CardTransactionApproveDTO approveDTO) {
-        log.info("결제 승인 테스트 요청: {}", approveDTO);
+        log.info("카드 결제 승인 요청: {}", approveDTO);
         org.scoula.cardpayment.dto.CardTransactionResponseDTO response = cardPaymentService.approveTransaction(approveDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2. 전자지갑 / QR / 바코드 결제 승인 요청 API (wallet_tbl 잔액 차감 O)
+    @PostMapping({"/api/wallets/payments/approve", "/api/wallets/payments/qr/approve", "/api/wallets/payments/barcode/approve"})
+    public ResponseEntity<org.scoula.cardpayment.dto.CardTransactionResponseDTO> approveWalletTransaction(
+            @RequestBody org.scoula.cardpayment.dto.CardTransactionApproveDTO approveDTO) {
+        log.info("전자지갑/QR/바코드 결제 승인 요청: {}", approveDTO);
+        org.scoula.cardpayment.dto.CardTransactionResponseDTO response = cardPaymentService.approveWalletTransaction(approveDTO);
         return ResponseEntity.ok(response);
     }
 
