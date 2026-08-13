@@ -8,7 +8,7 @@
 
     <!-- 상단 영역 -->
     <section class="signup-header">
-      <h1 class="text-30-bold">약관 동의</h1>
+      <h1 class="text-28-bold">약관 동의</h1>
       <p class="text-15">가입을 위해 약관에 동의해주세요.</p>
     </section>
 

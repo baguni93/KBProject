@@ -1,16 +1,15 @@
 <template>
   <div class="signup-page page-layout">
     <!-- 공통 상단바 -->
-    <PageHeader
-        custom-back
-        @back="goBack"
-    />
+    <PageHeader custom-back @back="goBack" />
 
     <!-- 페이지 제목 -->
     <header class="signup-header">
-      <h1 class="text-26-bold">
-        {{ stepTitle }}
-      </h1>
+      <Transition name="title-slide" mode="out-in">
+        <h1 :key="currentStep" class="text-26-bold">
+          {{ stepTitle }}
+        </h1>
+      </Transition>
     </header>
 
     <!-- 입력 영역 -->
@@ -30,16 +29,18 @@
     </main>
 
     <!-- 휴대폰번호 입력 완료 시에만 버튼 -->
-    <div v-if="currentStep === 4 && phoneValid" class="bottom-btn-area single">
-      <button
-          class="bottom-btn"
-          :disabled="loading"
-          type="button"
-          @click="handleButtonClick"
-      >
-        인증번호 받기
-      </button>
-    </div>
+    <Transition name="button-fade">
+      <div v-if="currentStep === 4 && phoneValid" class="bottom-btn-area single">
+        <button
+            class="bottom-btn"
+            :disabled="loading"
+            type="button"
+            @click="handleButtonClick"
+        >
+          인증번호 받기
+        </button>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -133,8 +134,10 @@ const goBack = () => {
 }
 
 .signup-header {
+  min-height: 36px;
   flex-shrink: 0;
   margin-top: 24px;
+  overflow: hidden;
 }
 
 .signup-header h1 {
@@ -145,6 +148,7 @@ const goBack = () => {
 
 .content-area {
   margin-top: 36px;
+  overflow-x: hidden;
   overflow-y: auto;
   box-sizing: border-box;
 }
@@ -152,5 +156,42 @@ const goBack = () => {
 .error-message {
   margin: 16px 0 0;
   color: var(--color-error);
+}
+
+/* 제목 단계 전환 */
+.title-slide-enter-active,
+.title-slide-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.title-slide-enter-from {
+  opacity: 0;
+  transform: translateX(16px);
+}
+
+.title-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+/* 하단 버튼 등장 */
+.button-fade-enter-active,
+.button-fade-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.button-fade-enter-from,
+.button-fade-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-slide-enter-active,
+  .title-slide-leave-active,
+  .button-fade-enter-active,
+  .button-fade-leave-active {
+    transition: none;
+  }
 }
 </style>
