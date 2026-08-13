@@ -2,7 +2,6 @@ package org.scoula.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.scoula.account.dto.AccountDTO;
 import org.scoula.login.domain.PhoneAuthVO;
 import org.scoula.login.mapper.LoginMapper;
 import org.scoula.notifsetting.domain.NotificationSettingVO;
@@ -420,13 +419,6 @@ public class UserServiceImpl implements UserService {
 
         // 새 PIN 정책 검사
         validatePinPolicy(pinResetDTO.getNewPinPassword(), user.getBirthDate());
-
-        // 기존 PIN과 동일한 PIN인지 확인
-        if (passwordEncoder.matches(
-                pinResetDTO.getNewPinPassword(),
-                user.getPinPassword())) {
-            throw new IllegalArgumentException("기존 PIN과 다른 PIN을 입력해주세요.");
-        }
 
         // 새로운 PIN 암호화
         String encodedPinPassword = passwordEncoder.encode(pinResetDTO.getNewPinPassword());
