@@ -1,39 +1,71 @@
 <template>
-  <div class="complete-page">
-    <main class="complete-container">
-      <section class="complete-content">
-        <div class="complete-visual">
-          <div class="check-circle">✓</div>
+  <div class="page-layout page-layout-top complete-page">
+    <!-- 배경 장식 -->
+    <div class="background-decoration decoration-left"></div>
+    <div class="background-decoration decoration-right"></div>
 
-          <span class="confetti confetti-one"></span>
-          <span class="confetti confetti-two"></span>
-          <span class="confetti confetti-three"></span>
-          <span class="confetti confetti-four"></span>
-          <span class="confetti confetti-five"></span>
-          <span class="confetti confetti-six"></span>
+    <main class="page-content content-area">
+      <section class="complete-content">
+        <!-- 완료 비주얼 -->
+        <div class="complete-visual">
+          <div class="circle-background"></div>
+
+          <div class="check-circle">
+            <i class="fa-solid fa-check"></i>
+          </div>
+
+          <!-- 작은 장식 -->
+          <span class="deco deco-one"></span>
+          <span class="deco deco-two"></span>
+          <span class="deco deco-three"></span>
+          <span class="deco deco-four"></span>
+
+          <i class="fa-solid fa-star sparkle sparkle-one"></i>
+          <i class="fa-solid fa-star sparkle sparkle-two"></i>
         </div>
 
-        <h1>간편비밀번호가<br />재설정되었어요!</h1>
+        <!-- 완료 메시지 -->
+        <div class="complete-message">
+          <h1 class="text-30-bold">
+            간편비밀번호가<br />
+            재설정되었어요!
+          </h1>
 
-        <p>
-          새로운 간편비밀번호로<br />
-          안전하게 로그인해 주세요.
-        </p>
+          <p class="text-15">
+            새로운 간편비밀번호로<br />
+            안전하게 로그인해 주세요.
+          </p>
+        </div>
 
+        <!-- 안내 카드 -->
         <section class="guide-area">
-          <div class="guide-icon">🔒</div>
+          <div class="guide-icon">
+            <i class="fa-solid fa-lock"></i>
+          </div>
 
-          <div>
-            <strong>새로운 PIN이 적용되었어요</strong>
-            <p>이전 간편비밀번호는 더 이상 사용할 수 없어요.</p>
+          <div class="guide-text">
+            <strong class="text-15-bold">
+              새로운 PIN이 적용되었어요
+            </strong>
+
+            <p class="text-13">
+              이전 간편비밀번호는 더 이상 사용할 수 없어요.
+            </p>
           </div>
         </section>
       </section>
+    </main>
 
-      <button class="login-button" type="button" @click="goLogin">
+    <!-- 공통 하단 버튼 -->
+    <div class="bottom-btn-area single">
+      <button
+          class="bottom-btn login-button"
+          type="button"
+          @click="goLogin"
+      >
         로그인
       </button>
-    </main>
+    </div>
   </div>
 </template>
 
@@ -58,206 +90,465 @@ const goLogin = () => {
   sessionStorage.removeItem('pinResetCompleted');
 
   signupStore.reset();
+
   router.replace('/auth/pin-login');
 };
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
+
 .complete-page {
-  width: 100%;
-  height: 100%;
-  background: #ffffff;
-}
-
-.complete-container {
   position: relative;
-  display: flex;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-  padding: 10px 28px 140px;
-  background: #ffffff;
-  box-sizing: border-box;
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  overflow: hidden;
+  background: linear-gradient(
+      180deg,
+      #fffdf8 0%,
+      var(--color-bg-page) 42%,
+      var(--color-bg-page) 100%
+  );
 }
 
-.complete-container::-webkit-scrollbar {
-  display: none;
+.content-area {
+  position: relative;
+  z-index: 2;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .complete-content {
-  padding-top: 38px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 54px;
   text-align: center;
 }
 
+/* 배경 장식 */
+.background-decoration {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.decoration-left {
+  top: -90px;
+  left: -110px;
+  width: 220px;
+  height: 220px;
+  background: rgba(255, 188, 46, 0.11);
+  animation: background-float-left 6s ease-in-out infinite;
+}
+
+.decoration-right {
+  top: 250px;
+  right: -110px;
+  width: 200px;
+  height: 200px;
+  background: rgba(176, 164, 255, 0.055);
+  animation: background-float-right 7s ease-in-out infinite;
+}
+
+/* 완료 비주얼 */
 .complete-visual {
   position: relative;
-  width: 170px;
-  height: 170px;
-  margin: 0 auto 36px;
+  width: 138px;
+  height: 138px;
+  margin-bottom: 28px;
+}
+
+.circle-background {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: linear-gradient(
+      135deg,
+      rgba(255, 188, 46, 0.17),
+      rgba(255, 225, 155, 0.07)
+  );
+  opacity: 0;
+  transform: scale(0.76);
+  animation:
+      circle-enter 0.5s ease 0.05s forwards,
+      circle-pulse 2.6s ease-in-out 0.9s infinite;
 }
 
 .check-circle {
   position: absolute;
-  top: 34px;
-  left: 50%;
+  top: 24px;
+  left: 24px;
+  z-index: 2;
   display: flex;
-  width: 104px;
-  height: 104px;
+  width: 90px;
+  height: 90px;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #ffbc2e;
-  box-shadow: 0 20px 38px rgba(255, 188, 46, 0.28);
-  color: #ffffff;
-  font-size: 54px;
-  font-weight: 500;
-  transform: translateX(-50%);
+  background: linear-gradient(
+      135deg,
+      #ffca52 0%,
+      var(--color-primary) 65%,
+      #f3a711 100%
+  );
+  box-shadow: 0 14px 30px rgba(255, 188, 46, 0.25);
+  color: var(--color-text-white);
+  opacity: 0;
+  transform: scale(0.55);
+  animation: check-pop 0.58s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s forwards;
 }
 
-.confetti {
+.check-circle i {
+  font-size: 34px;
+  opacity: 0;
+  transform: scale(0.5) rotate(-15deg);
+  animation: check-show 0.3s ease 0.46s forwards;
+}
+
+/* 작은 장식 */
+.deco {
   position: absolute;
+  display: block;
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0);
+}
+
+.deco-one {
+  top: 14px;
+  right: 10px;
+  width: 9px;
+  height: 9px;
+  background: var(--color-primary);
+  animation:
+      deco-pop 0.4s ease 0.4s forwards,
+      deco-float 3.2s ease-in-out 1s infinite;
+}
+
+.deco-two {
+  top: 42px;
+  left: 3px;
   width: 7px;
-  height: 18px;
-  border-radius: 4px;
+  height: 7px;
+  background: #9d90ff;
+  animation:
+      deco-pop 0.4s ease 0.48s forwards,
+      deco-float 3.6s ease-in-out 1.1s infinite reverse;
 }
 
-.confetti-one {
-  top: 16px;
-  left: 22px;
-  background: #ffbc2e;
-  transform: rotate(-35deg);
+.deco-three {
+  right: 4px;
+  bottom: 27px;
+  width: 7px;
+  height: 7px;
+  background: #7bd6c7;
+  animation:
+      deco-pop 0.4s ease 0.56s forwards,
+      deco-float 3.4s ease-in-out 1.15s infinite;
 }
 
-.confetti-two {
-  top: 8px;
-  right: 28px;
-  background: #6e8cff;
-  transform: rotate(38deg);
+.deco-four {
+  bottom: 9px;
+  left: 25px;
+  width: 8px;
+  height: 8px;
+  background: #ff9eaa;
+  animation:
+      deco-pop 0.4s ease 0.62s forwards,
+      deco-float 3.8s ease-in-out 1.2s infinite reverse;
 }
 
-.confetti-three {
-  top: 76px;
-  left: 2px;
-  background: #67ca76;
-  transform: rotate(54deg);
+.sparkle {
+  position: absolute;
+  opacity: 0;
+  transform: scale(0);
 }
 
-.confetti-four {
-  top: 72px;
-  right: 0;
-  background: #f08ebf;
-  transform: rotate(-48deg);
+.sparkle-one {
+  top: 2px;
+  left: 31px;
+  color: var(--color-primary);
+  font-size: 11px;
+  animation:
+      sparkle-pop 0.45s ease 0.5s forwards,
+      sparkle-float 3s ease-in-out 1.1s infinite;
 }
 
-.confetti-five {
-  bottom: 12px;
-  left: 27px;
-  background: #ff8a65;
-  transform: rotate(26deg);
+.sparkle-two {
+  right: 15px;
+  bottom: 6px;
+  color: #a99df7;
+  font-size: 9px;
+  animation:
+      sparkle-pop 0.45s ease 0.66s forwards,
+      sparkle-float 3.5s ease-in-out 1.2s infinite reverse;
 }
 
-.confetti-six {
-  right: 30px;
-  bottom: 8px;
-  background: #ffbc2e;
-  transform: rotate(-26deg);
+/* 완료 메시지 */
+.complete-message {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: content-up 0.48s ease 0.6s forwards;
 }
 
-.complete-content h1 {
+.complete-message h1 {
   margin: 0;
-  color: #111111;
-  font-size: 25px;
-  font-weight: 800;
-  line-height: 1.4;
-  letter-spacing: -0.7px;
+  color: var(--color-text-main);
+  line-height: 1.3;
+  letter-spacing: -0.6px;
 }
 
-.complete-content > p {
+.complete-message p {
   margin: 16px 0 0;
-  color: #777777;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.6;
+  color: var(--color-text-sub);
+  line-height: 1.65;
 }
 
+/* 안내 카드 */
 .guide-area {
   display: flex;
+  width: 100%;
   align-items: center;
-  gap: 15px;
-  margin-top: 42px;
+  gap: 14px;
+  margin-top: 36px;
   padding: 18px;
-  border-radius: 16px;
-  background: #fff9e9;
-  text-align: left;
+  border: 1px solid rgba(255, 188, 46, 0.15);
+  border-radius: 18px;
+  background: linear-gradient(
+      110deg,
+      #fff9ec 0%,
+      #fffdf8 72%,
+      #faf8ff 100%
+  );
   box-sizing: border-box;
+  text-align: left;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: content-up 0.48s ease 0.74s forwards;
 }
 
 .guide-icon {
   display: flex;
+  width: 44px;
+  height: 44px;
   flex: none;
-  width: 48px;
-  height: 48px;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
-  background: #ffecb3;
-  color: #ffbc2e;
-  font-size: 21px;
+  border-radius: 14px;
+  background: var(--color-bg-page);
+  box-shadow: 0 4px 12px rgba(255, 188, 46, 0.12);
+  color: var(--color-primary-border);
+  font-size: 17px;
+  animation: guide-float 2.8s ease-in-out 1.3s infinite;
 }
 
-.guide-area > div:last-child {
+.guide-text {
   min-width: 0;
 }
 
-.guide-area strong {
+.guide-text strong {
   display: block;
-  color: #222222;
-  font-size: 14px;
-  font-weight: 800;
+  color: var(--color-text-main);
 }
 
-.guide-area p {
-  margin: 6px 0 0;
-  color: #888888;
-  font-size: 11px;
-  line-height: 1.5;
+.guide-text p {
+  margin: 5px 0 0;
+  color: var(--color-text-sub);
+  line-height: 1.45;
   word-break: keep-all;
 }
 
+/*
+  중요:
+  bottom-btn-area에는 transform/animation을 주지 않습니다.
+  버튼 자체에 opacity 효과만 적용합니다.
+*/
 .login-button {
-  position: absolute;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
-  width: auto;
-  height: 58px;
-  margin: 0;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
+  opacity: 0;
+  animation: button-show 0.4s ease 0.88s forwards;
 }
 
-.login-button:active {
-  background: #f2aa10;
-}
-
-@media (max-width: 360px) {
-  .complete-container {
-    padding-right: 20px;
-    padding-left: 20px;
+/* 애니메이션 */
+@keyframes circle-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.76);
   }
 
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes circle-pulse {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.07);
+  }
+}
+
+@keyframes check-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes check-show {
+  from {
+    opacity: 0;
+    transform: scale(0.5) rotate(-15deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes deco-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes deco-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes sparkle-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-18deg);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.2) rotate(8deg);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes sparkle-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+
+  50% {
+    transform: translateY(-4px) rotate(8deg);
+  }
+}
+
+@keyframes content-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes guide-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes background-float-left {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(12px, 10px);
+  }
+}
+
+@keyframes background-float-right {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(-10px, -8px);
+  }
+}
+
+@keyframes button-show {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* 모션 최소화 */
+@media (prefers-reduced-motion: reduce) {
+  .background-decoration,
+  .circle-background,
+  .check-circle,
+  .check-circle i,
+  .deco,
+  .sparkle,
+  .complete-message,
+  .guide-area,
+  .guide-icon,
   .login-button {
-    right: 20px;
-    left: 20px;
+    opacity: 1;
+    animation: none;
+    transform: none;
   }
 }
 </style>
