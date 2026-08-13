@@ -95,7 +95,7 @@ const opening = ref(false);
 const openingMode = ref('one');
 const message = ref('');
 const messageType = ref('success');
-const issueReasonLabels = { ATTENDANCE: '출석 체크', EVENT: '이벤트', FEED_SHARE: '피드 공유', TRANSFER: '송금' };
+const issueReasonLabels = { PAYMENT: '결제', ATTENDANCE: '출석 체크', EVENT: '이벤트', FEED_SHARE: '피드 공유', TRANSFER: '송금' };
 const getIssueReasonLabel = (reason) => issueReasonLabels[reason] ?? reason ?? '-';
 const formatDate = (value) => value ? String(value).slice(0, 10) : '-';
 const loadRandomBoxes = async () => { randomBoxes.value = await pointWalletApi.getUnopenedRandomBoxes(); };

@@ -45,6 +45,65 @@ public class RandomBoxServiceImpl implements RandomBoxService {
 
     @Override
     @Transactional
+    public RandomBoxIssueResultDTO issueForPayment(
+            Integer userId,
+            Integer transactionId,
+            Integer paymentAmount
+    ) {
+        validatePositiveId(
+                userId,
+                "유효한 사용자 ID가 필요합니다."
+        );
+
+        validatePositiveId(
+                transactionId,
+                "유효한 결제 거래 ID가 필요합니다."
+        );
+
+        if (paymentAmount == null || paymentAmount <= 0) {
+            throw new CustomException(
+                    ErrorCode.INVALID_REQUEST
+            );
+        }
+
+        /*
+         * 최소 금액 미만 결제도 정상 결제이므로 오류로 처리하지 않는다.
+         * 랜덤박스만 지급하지 않고 issued=false를 반환한다.
+         */
+        if (paymentAmount < RandomBoxIssuePolicy.PAYMENT_MINIMUM_AMOUNT) {
+            log.info(
+                    "결제 랜덤박스 미지급 userId={}, transactionId={}, amount={}, minimumAmount={}",
+                    userId,
+                    transactionId,
+                    paymentAmount,
+                    RandomBoxIssuePolicy.PAYMENT_MINIMUM_AMOUNT
+            );
+
+            return RandomBoxIssueResultDTO.builder()
+                    .issued(false)
+                    .message(
+                            RandomBoxIssuePolicy.PAYMENT_MINIMUM_AMOUNT
+                                    + "원 미만 결제는 랜덤박스 지급 대상이 아닙니다."
+                    )
+                    .userRandomBoxId(null)
+                    .issueReason(RandomBoxIssueReason.PAYMENT.name())
+                    .boxStatus(null)
+                    .issuedAt(null)
+                    .build();
+        }
+
+        // 결제 거래 ID를 source_id로 사용해 같은 결제의 중복 지급을 방지한다.
+        return issueRandomBox(
+                userId,
+                RandomBoxIssueReason.PAYMENT,
+                transactionId,
+                null
+        );
+    }
+
+
+    @Override
+    @Transactional
     public RandomBoxIssueResultDTO issueForFeedShare(
             Integer userId,
             Integer feedId
