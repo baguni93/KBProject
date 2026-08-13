@@ -108,6 +108,12 @@ export default [
         },
     },
     {
+        path: '/setting/card/add/complete',
+        name: 'CardAddComplete',
+        component: () =>
+            import('@/pages/setting/card/CardAddCompletePage.vue'),
+    },
+    {
         path: '/setting/notification',
         name: 'notification-setting',
         component: () =>
@@ -203,7 +209,6 @@ export default [
             showBottomNav: false,
         },
     },
-
     {
         path: '/setting/account-management/withdraw',
         name: 'account-withdraw',
