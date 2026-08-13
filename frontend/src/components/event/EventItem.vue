@@ -38,7 +38,17 @@
 
     <!-- 배지 버튼 -->
     <div class="event-action">
-      <span class="reward-points">+{{ currentEvent.rewardPoint }}P</span>
+      <!-- 리워드-->
+      <div class="reward-info">
+        <!-- 포인트 -->
+        <span v-if="currentEvent.rewardPoint" class="reward-points point-badge">
+          +{{ currentEvent.rewardPoint }}P
+        </span>
+        <!-- 경험치 -->
+        <span v-if="currentEvent.rewardExp" class="reward-exp exp-badge">
+          +{{ currentEvent.rewardExp }}EXP
+        </span>
+      </div>
       <button
         :class="['action-btn', getStatusClass(currentEvent)]"
         :disabled="getEventStatus(currentEvent).disabled"
@@ -76,7 +86,7 @@ const props = defineProps({
   endAt: String,
   rewardId: [Number, String],
   rewardPoint: Number,
-  rewardExe: Number,
+  rewardExp: Number,
   completed: [Boolean, String],
   joined: [Boolean, String],
   rewardReceived: [Boolean, String],
@@ -155,16 +165,16 @@ const getEventStatus = (item) => {
   // 4. 참여하기
   if (isJoined) {
     return {
-      text: '참여',
-      styleClass: 'bg-yellow',
+      text: '참여중',
+      styleClass: 'bg-gray',
       status: 'PROGRESS',
-      disabled: false,
+      disabled: true,
     };
   }
 
   // 5. 기본 참여 가능
   return {
-    text: '시작하기',
+    text: '참여',
     styleClass: 'bg-yellow',
     status: 'READY',
     disabled: false,
@@ -272,9 +282,9 @@ const handleButtonClick = () => {
 
 .progress-segment {
   flex: 1;
-  height: 4px;
+  height: 5px;
   background-color: #e9ecef;
-  border-radius: 2px;
+  border-radius: 5px;
 }
 
 .progress-segment.active {
@@ -292,14 +302,55 @@ const handleButtonClick = () => {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
+  gap: 8px;
   margin-left: 12px;
 }
 
-.reward-points {
+/* .reward-points {
   font-size: 14px;
   font-weight: bold;
   color: #ffbc00;
+}
+
+.reward-exp {
+  font-size: 13px;
+  color: #bdbebd;
+  font-weight: 500;
+  margin-left: 4px;
+} */
+
+.reward-info {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  min-width: 52px;
+  margin-right: 3px;
+}
+
+.reward-points,
+.reward-exp {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 0;
+  border-radius: 6px;
+  line-height: 1.2;
+  display: block;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* 포인트 */
+.point-badge {
+  color: #f1ad00;
+  background-color: rgba(255, 183, 0, 0.158);
+}
+
+/* 경험치  */
+.exp-badge {
+  color: #5bbcec;
+  background-color: rgba(0, 180, 255, 0.08);
 }
 
 .action-btn {

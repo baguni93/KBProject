@@ -14,7 +14,7 @@ public class EventRewardVO {
     private Integer eventId;
     private Integer eventLevel;
     private Integer rewardPoint;
-    private Integer rewardExe;
+    private Integer rewardExp;
     private Integer reqCount;
     private String feedImgName;
     private String useYn;

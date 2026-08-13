@@ -4,10 +4,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.scoula.event.dto.EventGetAttendanceResponseDTO;
-import org.scoula.event.dto.EventGetResponseDTO;
-import org.scoula.event.dto.EventMainDTO;
-import org.scoula.event.dto.EventResponseDTO;
+import org.scoula.event.dto.*;
 import org.scoula.event.service.EventService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -60,32 +57,6 @@ public class EventController {
         return ResponseEntity.ok(joinedEvents);
     }
 
-    // 4. 이벤트 참여 처리 (우측 배지 버튼 클릭 시 처리할)
-//    @ApiOperation("이벤트 참여 처리")
-//    @PostMapping("/join/{eventId}")
-//    public ResponseEntity<Void> joinEvent(
-//            @PathVariable("eventId") Integer eventId,
-//            @RequestBody Map<String, Integer> body) {
-//
-//        Integer userId = body.get("userId");
-//
-//        eventService.participateEvent(userId, eventId);
-//        return ResponseEntity.status(HttpStatus.CREATED).build();
-//    }
-//
-//
-
-    // 6. 챌린지 리워드 수령 처리 (이벤트 상단 챌린지 바 관련 영역)
-    @ApiOperation("챌린지 리워드 수령 처리 (상단 챌린지 게이지 바 리워드 수령)")
-    @PostMapping("/challenges/{challengeId}/reward")
-    public ResponseEntity<HttpStatus> claimChallengeReward(
-            @PathVariable("challengeId") Integer challengeId,
-            @RequestParam(value = "userId") Integer userId) {
-
-        eventService.claimChallengeReward(userId, challengeId);
-        return ResponseEntity.ok(HttpStatus.OK);
-    }
-
     // 이벤트 조회
     @GetMapping("/eventList")
     public ResponseEntity<List<EventGetResponseDTO>> getEventList(
@@ -116,25 +87,43 @@ public class EventController {
         return ResponseEntity.ok(eventService.joinAttendanceEvent(userId, eventId));
     }
 
-    // 이벤트 보상수령 처리
+    // 이벤트 참여이력 생성
+    @PostMapping("/participateEvent/{eventId}")
+    public ResponseEntity<List<EventGetResponseDTO>> createParticipation(
+            @RequestParam(value = "userId") int userId,
+            @PathVariable int eventId) {
+        return ResponseEntity.ok(eventService.createParticipation(userId, eventId));
+    }
+
+    // 이벤트 리워드 수령 처리
     @PostMapping("/receiveEventReward/{eventId}/rewards/{rewardId}")
     public ResponseEntity<List<EventGetResponseDTO>> receiveEventReward(
             @RequestParam(value = "userId") int userId,
             @PathVariable int eventId,
             @PathVariable int rewardId) {
 
-        List<EventGetResponseDTO> updatedList = eventService.receiveEventReward(eventId, userId, rewardId);
+        List<EventGetResponseDTO> updatedList = eventService.receiveEventReward(userId, eventId, rewardId);
         return ResponseEntity.ok(updatedList);
     }
 
-    // 출석체크 보상수령 처리
+    // 출석체크 리워드 수령 처리
     @PostMapping("/receiveAttendanceEventReward/{eventId}/rewards/{rewardId}")
     public ResponseEntity<List<EventGetAttendanceResponseDTO>> receiveAttendanceReward(
             @RequestParam(value = "userId") int userId,
             @PathVariable int eventId,
             @PathVariable int rewardId) {
 
-        List<EventGetAttendanceResponseDTO> updatedList = eventService.receiveAttendanceEventReward(eventId, userId, rewardId);
+        List<EventGetAttendanceResponseDTO> updatedList = eventService.receiveAttendanceEventReward(userId, eventId, rewardId);
         return ResponseEntity.ok(updatedList);
+    }
+
+    // 이벤트 챌린지 보상 수령 처리
+    @PostMapping("/challenge/claim/{challengeId}")
+    public ResponseEntity<List<EventChallengeResponseDTO>> receiveChallengeReward(
+            @RequestParam(value = "userId") int userId,
+            @PathVariable int challengeId) {
+
+        List<EventChallengeResponseDTO> challengeList = eventService.receiveChallengeReward(userId, challengeId);
+        return ResponseEntity.ok(challengeList);
     }
 }

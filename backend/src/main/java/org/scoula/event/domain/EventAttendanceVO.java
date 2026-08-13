@@ -28,7 +28,7 @@ public class EventAttendanceVO {
 
     private int rewardId;
     private int rewardPoint;
-    private int rewardExe;
+    private int rewardExp;
 
     private boolean completed;
     private boolean rewardReceived;
