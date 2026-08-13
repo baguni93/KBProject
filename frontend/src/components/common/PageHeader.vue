@@ -98,7 +98,7 @@ const handleBack = () => {
 
   width: 100%;
   height: 64px;
-  padding: 10px 24px 0;
+  padding: 0 24px;
 
   background: var(--color-bg-page);
   box-sizing: border-box;
@@ -115,12 +115,12 @@ const handleBack = () => {
 
 .header-left {
   justify-content: flex-start;
-  margin-left: -35px;
+  margin-left: 0;
 }
 
 .header-right {
   justify-content: flex-end;
-  margin-right: -35px;
+  margin-right: 0;
 }
 
 /* ========================================

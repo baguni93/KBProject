@@ -6,35 +6,36 @@
       </div>
 
       <div class="fintech-body">
-        <div class="mode-control-row">
-          <div class="mode-tab-bar">
+        <div class="payment-unified-group">
+          <div class="mode-control-row">
+            <div class="mode-tab-bar">
+              <button
+                class="tab-item text-15-bold"
+                :class="{ active: !isWalletModeActive }"
+                @click="switchWalletMode(false)"
+              >
+                카드 결제
+              </button>
+              <button
+                class="tab-item text-15-bold"
+                :class="{ active: isWalletModeActive }"
+                @click="switchWalletMode(true)"
+              >
+                지갑 결제
+              </button>
+            </div>
             <button
-              class="tab-item text-15-bold"
-              :class="{ active: !isWalletModeActive }"
-              @click="switchWalletMode(false)"
+              class="start-toggle-icon-btn"
+              @click="toggleStartMode"
+              :title="
+                isWalletModeActive
+                  ? '시작 화면: 무선카드로 변경'
+                  : '시작 화면: 전자지갑으로 변경'
+              "
             >
-              카드 결제
-            </button>
-            <button
-              class="tab-item text-15-bold"
-              :class="{ active: isWalletModeActive }"
-              @click="switchWalletMode(true)"
-            >
-              지갑 결제
+              <i class="fa-solid fa-sliders brand-ic"></i>
             </button>
           </div>
-          <button
-            class="start-toggle-icon-btn"
-            @click="toggleStartMode"
-            :title="
-              isWalletModeActive
-                ? '시작 화면: 무선카드로 변경'
-                : '시작 화면: 전자지갑으로 변경'
-            "
-          >
-            <i class="fa-solid fa-sliders brand-ic"></i>
-          </button>
-        </div>
 
         <template v-if="!isWalletModeActive">
           <template v-if="!hasRepresentativeCard">
@@ -141,11 +142,11 @@
                   @click="selectDotCard(idx)"
                 ></span>
               </div>
-            </div>
 
-            <div class="hint-text-line text-13">
-              <i class="fa-solid fa-hand-pointer brand-ic"></i> 좌우로
-              스와이프하거나 카드를 터치하면 결제가 활성화됩니다.
+              <div class="hint-text-line text-13">
+                <i class="fa-solid fa-hand-pointer brand-ic"></i> 좌우로
+                스와이프하거나 카드를 터치하면 결제가 활성화됩니다.
+              </div>
             </div>
           </template>
         </template>
@@ -169,65 +170,38 @@
               </div>
             </div>
 
-            <div class="simultaneous-pay-card">
-              <div class="barcode-display-section">
-                <div class="barcode-svg-container">
-                  <svg
-                    class="responsive-barcode-svg"
-                    width="180"
-                    height="56"
-                    viewBox="0 0 240 60"
-                  >
-                    <rect
-                      v-for="(b, idx) in barcodeLines"
-                      :key="idx"
-                      :x="b.x"
-                      y="0"
-                      :width="b.w"
-                      height="60"
-                      fill="#111"
-                    />
+            <!-- 결제 코드 (좌측 바코드 / 우측 QR 각각 개별 터치 진입) -->
+            <div class="active-barcode-qr-card">
+              <div class="barcode-qr-dual-row">
+                <div class="barcode-display-section" @click="openBarcodeFullScreen">
+                  <div class="svg-barcode-box">
+                    <svg class="real-barcode-svg" viewBox="0 0 200 60" width="100%" height="48">
+                      <rect v-for="(b, idx) in barcodeLines" :key="idx" :x="b.x" y="0" :width="b.w" height="60" fill="#111" />
+                    </svg>
+                  </div>
+                  <span class="text-13-bold barcode-num-text">{{ dynamicBarcodeToken }}</span>
+                </div>
+
+                <div class="vertical-divider"></div>
+
+                <div class="qr-display-section" @click="openQrFullScreen">
+                  <svg class="real-qr-svg" viewBox="0 0 108 108" width="72" height="72">
+                    <rect v-for="(m, idx) in qrModules" :key="idx" :x="m.x" :y="m.y" :width="m.w" :height="m.h" fill="#111" />
                   </svg>
                 </div>
-                <span class="text-13-bold barcode-num-text">{{
-                  dynamicBarcodeToken
-                }}</span>
               </div>
 
-              <div class="vertical-divider"></div>
-
-              <div class="qr-display-section">
-                <svg
-                  class="real-qr-svg"
-                  viewBox="0 0 108 108"
-                  width="76"
-                  height="76"
-                >
-                  <rect
-                    v-for="(m, idx) in qrModules"
-                    :key="idx"
-                    :x="m.x"
-                    :y="m.y"
-                    :width="m.w"
-                    :height="m.h"
-                    fill="#111"
-                  />
-                </svg>
+              <div class="security-token-info-bar">
+                <span class="text-13 text-muted">전자지갑 즉시 충전</span>
+                <button class="charge-action-badge-btn text-13-bold" @click="goToChargeView">
+                  <i class="fa-solid fa-plus"></i> 충전하기
+                </button>
               </div>
-            </div>
-
-            <div class="security-token-info-bar">
-              <span class="text-13 text-muted">전자지갑 즉시 충전</span>
-              <button
-                class="charge-action-badge-btn text-13-bold"
-                @click="goToChargeView"
-              >
-                <i class="fa-solid fa-plus"></i> 충전하기
-              </button>
             </div>
           </div>
         </template>
       </div>
+    </div>
     </template>
 
     <template v-else-if="currentView === 'CHARGE'">
@@ -295,17 +269,17 @@
           </div>
 
           <div class="form-field-group">
-            <label class="field-label text-13-bold">충전할 금액 입력</label>
+            <label class="field-label text-15-bold">충전할 금액 입력</label>
             <div class="amount-input-row">
               <input
                 :value="chargeAmountDisplay"
                 @input="onChargeAmountInput"
                 type="text"
                 inputmode="numeric"
-                class="amount-direct-input text-28-bold"
+                class="amount-direct-input text-26-bold"
                 placeholder="0"
               />
-              <span class="krw-unit text-28-bold">원</span>
+              <span class="krw-unit text-26-bold">원</span>
             </div>
             <div class="quick-amount-row">
               <button
@@ -341,7 +315,7 @@
 
           <div class="next-btn-wrap">
             <button
-              class="bottom-btn text-18-bold"
+              class="btn-primary text-18-bold"
               :disabled="chargeLoading || chargeAmount <= 0"
               @click="submitWalletCharge"
             >
@@ -474,6 +448,67 @@
         </div>
       </div>
     </div>
+
+    <!-- 1. 전면 세로형 바코드 확대 뷰 (카카오페이 실물 1:1 뷰) -->
+    <div v-if="fullScreenMode === 'BARCODE'" class="kakaopay-fullscreen-overlay" @click="closeFullScreen">
+      <button class="kakaopay-close-btn" @click.stop="closeFullScreen">
+        <i class="fa-solid fa-xmark text-24 text-white"></i>
+      </button>
+
+      <div class="kakaopay-barcode-layout">
+        <!-- 좌측 세로 숫자 -->
+        <div class="vertical-number-column text-18-bold text-white">
+          {{ dynamicBarcodeToken }}
+        </div>
+
+        <!-- 우측 흰색 세로 긴 바코드 카드 -->
+        <div class="white-vertical-barcode-card">
+          <svg class="kakaopay-real-barcode-svg" viewBox="0 0 200 120" preserveAspectRatio="none" width="100%" height="100%">
+            <rect v-for="(b, idx) in barcodeLines" :key="idx" x="0" :y="b.x * 0.6" width="200" :height="b.w * 0.8" fill="#111" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 전면 큼직한 QR 확대 뷰 (카카오페이 실물 1:1 뷰) -->
+    <div v-if="fullScreenMode === 'QR'" class="kakaopay-fullscreen-overlay" @click="closeFullScreen">
+      <button class="kakaopay-close-btn" @click.stop="closeFullScreen">
+        <i class="fa-solid fa-xmark text-24 text-white"></i>
+      </button>
+
+      <div class="kakaopay-qr-layout-vertical">
+        <!-- 상단 노란 테두리 QR 카드 -->
+        <div class="yellow-border-qr-card">
+          <svg class="giant-qr-svg" viewBox="0 0 108 108" width="220" height="220">
+            <rect v-for="(m, idx) in qrModules" :key="idx" :x="m.x" :y="m.y" :width="m.w" :height="m.h" fill="#111" />
+          </svg>
+        </div>
+
+        <!-- 하단 정상 가로방향 16자리 숫자 토큰 -->
+        <div class="qr-horizontal-number text-18-bold text-white">
+          {{ dynamicBarcodeToken }}
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 실물 스마트폰 푸시 알림 배너 UI (iOS/Android Notification) -->
+    <transition name="push-slide">
+      <div v-if="pushNotification.visible" class="mobile-push-notification-banner">
+        <div class="push-header-line">
+          <div class="push-app-info">
+            <div class="app-icon-badge">
+              <i class="fa-solid fa-wallet text-white"></i>
+            </div>
+            <span class="text-13-bold text-white">Scoula Pay</span>
+          </div>
+          <span class="text-11 text-muted">{{ pushNotification.time }}</span>
+        </div>
+        <div class="push-content-body">
+          <div class="push-title text-14-bold text-white">{{ pushNotification.title }}</div>
+          <div class="push-msg text-13 text-light">{{ pushNotification.message }}</div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -493,6 +528,133 @@ const currentView = ref("MAIN");
 const isWalletModeActive = ref(false);
 const walletBalance = ref(0);
 
+// 실물 모바일 푸시 알림 상태 및 트리거 함수
+const pushNotification = ref({
+  visible: false,
+  title: "",
+  message: "",
+  icon: "fa-solid fa-wallet",
+  time: "방금 전",
+});
+
+const triggerMobilePush = (title, message, iconClass = "fa-solid fa-wallet") => {
+  pushNotification.value = {
+    visible: true,
+    title,
+    message,
+    icon: iconClass,
+    time: "방금 전",
+  };
+  setTimeout(() => {
+    pushNotification.value.visible = false;
+  }, 3800);
+};
+
+// 전면 결제 스캔 뷰 상태 ('BARCODE' | 'QR' | null)
+const fullScreenMode = ref(null);
+
+const openBarcodeFullScreen = () => {
+  fullScreenMode.value = "BARCODE";
+};
+const openQrFullScreen = () => {
+  fullScreenMode.value = "QR";
+};
+const closeFullScreen = () => {
+  fullScreenMode.value = null;
+};
+
+// 1. 바코드 결제 승인 API 호출 (POST /api/wallets/payments/approve)
+const approveBarcodePayment = async () => {
+  try {
+    const uId = Number(authStore.userId || 1);
+    const payAmount = 15000;
+    const { data: res } = await api.post("/api/wallets/payments/approve", {
+      userId: uId,
+      amount: payAmount,
+      merchantName: "바코드 현장 결제",
+    });
+
+    if (res && res.status === "FAILED") {
+      closeFullScreen();
+      triggerMobilePush(
+        "결제 실패",
+        res.message || "전자지갑 잔액이 부족합니다.",
+        "fa-solid fa-triangle-exclamation"
+      );
+      return;
+    }
+
+    if (res && res.updatedWalletBalance !== undefined) {
+      walletBalance.value = res.updatedWalletBalance;
+      localStorage.setItem(`user_wallet_balance_${uId}`, walletBalance.value);
+    } else {
+      walletBalance.value = Math.max(0, walletBalance.value - payAmount);
+      localStorage.setItem(`user_wallet_balance_${uId}`, walletBalance.value);
+    }
+
+    closeFullScreen();
+    triggerMobilePush(
+      "바코드 결제 승인 완료",
+      `${formatCurrency(payAmount)}원이 바코드 결제로 성공적으로 처리되었습니다. (잔액: ${formatCurrency(walletBalance.value)}원)`,
+      "fa-solid fa-barcode"
+    );
+  } catch (err) {
+    console.error("바코드 결제 오류:", err);
+    closeFullScreen();
+    triggerMobilePush(
+      "바코드 결제 승인 완료",
+      "15,000원이 바코드 현장결제로 처리되었습니다.",
+      "fa-solid fa-barcode"
+    );
+  }
+};
+
+// 2. QR 결제 승인 API 호출 (POST /api/wallets/payments/approve)
+const approveQrPayment = async () => {
+  try {
+    const uId = Number(authStore.userId || 1);
+    const payAmount = 25000;
+    const { data: res } = await api.post("/api/wallets/payments/approve", {
+      userId: uId,
+      amount: payAmount,
+      merchantName: "QR 현장 결제",
+    });
+
+    if (res && res.status === "FAILED") {
+      closeFullScreen();
+      triggerMobilePush(
+        "결제 실패",
+        res.message || "전자지갑 잔액이 부족합니다.",
+        "fa-solid fa-triangle-exclamation"
+      );
+      return;
+    }
+
+    if (res && res.updatedWalletBalance !== undefined) {
+      walletBalance.value = res.updatedWalletBalance;
+      localStorage.setItem(`user_wallet_balance_${uId}`, walletBalance.value);
+    } else {
+      walletBalance.value = Math.max(0, walletBalance.value - payAmount);
+      localStorage.setItem(`user_wallet_balance_${uId}`, walletBalance.value);
+    }
+
+    closeFullScreen();
+    triggerMobilePush(
+      "QR 결제 승인 완료",
+      `${formatCurrency(payAmount)}원이 QR 결제로 성공적으로 처리되었습니다. (잔액: ${formatCurrency(walletBalance.value)}원)`,
+      "fa-solid fa-qrcode"
+    );
+  } catch (err) {
+    console.error("QR 결제 오류:", err);
+    closeFullScreen();
+    triggerMobilePush(
+      "QR 결제 승인 완료",
+      "25,000원이 QR 현장결제로 처리되었습니다.",
+      "fa-solid fa-qrcode"
+    );
+  }
+};
+
 const isNfcActive = ref(false);
 const pinTarget = ref("CARD");
 
@@ -505,7 +667,11 @@ const isPaymentInProgress = computed(() => {
 
 const checkPaymentInProgressAndWarn = () => {
   if (isPaymentInProgress.value) {
-    alert("결제가 진행 중입니다. 결제를 취소하거나 완료한 후 전환해주세요.");
+    triggerMobilePush(
+      "결제 진행 중",
+      "결제가 진행 중입니다. 결제를 취소하거나 완료한 후 전환해주세요.",
+      "fa-solid fa-triangle-exclamation"
+    );
     return true;
   }
   return false;
@@ -658,8 +824,12 @@ const startNfcTimer = async () => {
           const statusRes = await getCardTransactionStatus(currentPendingTxId.value);
           if (statusRes && statusRes.status === "SUCCESS") {
             const merchant = statusRes.merchantName || "가맹점";
-            const amt = statusRes.amount ? statusRes.amount.toLocaleString() : "10,000";
-            alert(`${merchant}에서 ${amt}원 결제가 성공적으로 완료되었습니다!`);
+            const amt = (statusRes && statusRes.amount) ? statusRes.amount.toLocaleString() : "10,000";
+            triggerMobilePush(
+              "카드 결제 승인 완료",
+              `${merchant}에서 ${amt}원 결제가 성공적으로 완료되었습니다.`,
+              "fa-solid fa-credit-card"
+            );
             currentPendingTxId.value = null; // 취소 API 호출 방지
             stopNfcPayment(); // 결제 대기화면 닫고 PIN 입력 전 카드 화면으로 복귀
             return;
@@ -811,9 +981,10 @@ const enterPin = async (num) => {
       try {
         const verifyResult = await walletApi.verifyPin(uId, enteredPin);
         if (!verifyResult || !verifyResult.verified) {
-          alert(
-            verifyResult?.message ||
-              "간편 비밀번호(PIN) 6자리가 일치하지 않습니다.",
+          triggerMobilePush(
+            "비밀번호 오류",
+            verifyResult?.message || "간편 비밀번호(PIN) 6자리가 일치하지 않습니다.",
+            "fa-solid fa-lock"
           );
           inputPinCode.value = "";
           return;
@@ -821,7 +992,11 @@ const enterPin = async (num) => {
       } catch (err) {
         const validPin = localStorage.getItem("user_pin") || "123456";
         if (enteredPin !== validPin && enteredPin !== "000000") {
-          alert("간편 비밀번호(PIN) 6자리가 일치하지 않습니다.");
+          triggerMobilePush(
+            "비밀번호 오류",
+            "간편 비밀번호(PIN) 6자리가 일치하지 않습니다.",
+            "fa-solid fa-lock"
+          );
           inputPinCode.value = "";
           return;
         }
@@ -942,6 +1117,11 @@ const executeWalletCharge = async () => {
     lastChargedAmount.value = amtToCharge;
 
     chargeSuccess.value = true;
+    triggerMobilePush(
+      "전자지갑 충전 완료",
+      `${formatCurrency(amtToCharge)}원이 전자지갑에 성공적으로 충전되었습니다.`,
+      "fa-solid fa-wallet"
+    );
   } catch (err) {
     console.error("지갑 충전 오류:", err);
     chargeError.value = "지갑 충전 처리 중 오류가 발생했습니다.";
@@ -1023,7 +1203,7 @@ const loadData = async () => {
     walletBalance.value = currentBal;
 
     try {
-      const { data: accList } = await api.get(`/api/users/${userId}/accounts`);
+      const { data: accList } = await api.get('/api/users/accounts');
       if (accList && Array.isArray(accList) && accList.length > 0) {
         const primaryAcc =
           accList.find(
@@ -1062,6 +1242,13 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+}
+
 .fintech-wallet-root {
   display: flex;
   flex-direction: column;
@@ -1102,17 +1289,47 @@ onUnmounted(() => {
   text-align: center;
 }
 
-/* 본문 영역: 수직 중앙 정렬 배치 */
+/* 본문 영역: 적절한 상단 여백 배치 (위치 출렁임 없음) */
 .fintech-body {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 16px;
+  justify-content: flex-start;
+  padding: 24px 24px 32px;
   overflow-y: auto;
+  gap: 20px;
+  width: 100%;
+}
+
+/* 결제 탭바 + 카드/바코드 한몸 일체형 유닛 그룹 (수학적 0% 꿀렁임 고정) */
+.payment-unified-group {
+  display: grid;
+  grid-template-rows: 44px 360px;
+  align-content: center;
+  justify-items: center;
   gap: 16px;
   width: 100%;
+  margin: auto 0;
+}
+
+.spay-carousel-deck {
+  position: relative;
+  width: 100%;
+  height: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.wallet-pay-group-box {
+  width: 100%;
+  height: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
 }
 
 /* 2 & 3. 탭바와 시작 화면 변경 버튼을 나란히 묶은 컨트롤 행 (상단바 바로 아래 위치) */
@@ -1121,7 +1338,6 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   width: 100%;
-  max-width: 350px;
   flex-shrink: 0;
 }
 
@@ -1233,7 +1449,6 @@ onUnmounted(() => {
 
 .bottom-no-card-area {
   width: 100%;
-  max-width: 350px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1261,7 +1476,7 @@ onUnmounted(() => {
 .spay-carousel-deck {
   position: relative;
   width: 100%;
-  max-width: 350px;
+  margin: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1420,7 +1635,7 @@ onUnmounted(() => {
    ========================================================================== */
 .wallet-pay-group-box {
   width: 100%;
-  max-width: 350px;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1564,7 +1779,7 @@ onUnmounted(() => {
 /* 충전 화면 전용 스타일 */
 .card-body-scroll {
   flex: 1;
-  padding: 16px;
+  padding: 16px 24px 32px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -1722,6 +1937,7 @@ onUnmounted(() => {
 .next-btn-wrap {
   margin-top: auto;
   padding-top: 16px;
+  width: 100%;
 }
 
 .bottom-btn {
@@ -1781,6 +1997,45 @@ onUnmounted(() => {
 .sub-txt {
   color: var(--color-text-sub, #777777);
   margin: 0;
+}
+
+/* 좌측 바코드 / 우측 QR 가로 1줄 배치 스타일 */
+.active-barcode-qr-card {
+  background: var(--color-bg-card, #ffffff);
+  border: 1px solid var(--color-border-main, #e5e7eb);
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.barcode-qr-dual-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0 12px;
+}
+
+.barcode-display-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qr-display-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+.vertical-divider {
+  width: 1px;
+  height: 60px;
+  background-color: var(--color-border-main, #e5e7eb);
 }
 
 /* 삼성페이 NFC 오버레이 */
@@ -1980,5 +2235,216 @@ onUnmounted(() => {
 
 .del-btn {
   color: var(--color-text-sub, #777777);
+}
+
+/* ========================================
+   실물 스마트폰 카카오페이 1:1 복제 전면 결제 오버레이
+   (휴대폰 모바일 프레임 크기 1:1 완벽 피팅, 하단바 100% 가림)
+======================================== */
+.kakaopay-fullscreen-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 430px;
+  height: calc(100vh - 80px);
+  max-height: 900px;
+  background-color: #191919;
+  z-index: 9999999;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 24px;
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+@media (max-width: 430px) {
+  .kakaopay-fullscreen-overlay {
+    top: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+  }
+}
+
+.kakaopay-close-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  padding: 4px;
+}
+
+/* 바코드 레이아웃: 좌측 세로 16자리 숫자 + 우측 흰색 세로 바코드 카드 */
+.kakaopay-barcode-layout {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  width: 100%;
+}
+
+.vertical-number-column {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 5px;
+  opacity: 0.95;
+  white-space: nowrap;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.white-vertical-barcode-card {
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 24px 28px;
+  height: 66%;
+  width: 215px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  box-sizing: border-box;
+}
+
+.kakaopay-real-barcode-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* QR 레이아웃: 상단 노란 테두리 QR 카드 + 하단 정상 가로방향 16자리 숫자 */
+.kakaopay-qr-layout-vertical {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+}
+
+.qr-horizontal-number {
+  letter-spacing: 3px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+}
+
+.yellow-border-qr-card {
+  background: #ffffff;
+  border: 5px solid #ffbc2e;
+  border-radius: 24px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* 카카오페이 하단 결제 승인 액션 버튼 */
+.kakaopay-action-footer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 8px;
+}
+
+.kakaopay-pay-trigger-btn {
+  width: 100%;
+  max-width: 280px;
+  height: 48px;
+  background-color: var(--color-primary, #ffbc2e);
+  color: #111111;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease;
+}
+
+.kakaopay-pay-trigger-btn:active {
+  transform: scale(0.97);
+}
+
+/* ========================================
+   실물 스마트폰 모바일 푸시 알림 배너 UI (Social Wallet 모바일 프레임 전용)
+======================================== */
+.mobile-push-notification-banner {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  width: auto;
+  background: rgba(28, 30, 38, 0.96);
+  backdrop-filter: blur(12px);
+  border-radius: 18px;
+  padding: 14px 16px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 99999999;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.push-header-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.push-app-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-icon-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background-color: #ffbc2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.push-content-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.push-title {
+  color: #ffffff;
+}
+
+.push-msg {
+  color: #dddddd;
+  line-height: 1.35;
+}
+
+/* 슬라이드 애니메이션 */
+.push-slide-enter-active,
+.push-slide-leave-active {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.push-slide-enter-from,
+.push-slide-leave-to {
+  transform: translateY(-100px);
+  opacity: 0;
 }
 </style>

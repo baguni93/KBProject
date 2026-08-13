@@ -52,5 +52,17 @@ export default {
   async cancelSettlement(settlementId, userId = 1) {
     const { data } = await api.patch(`/api/settlements/${settlementId}/cancel`, null, { params: { userId } });
     return data;
+  },
+
+  // 송금 완료 후 피드 자동 생성을 위한 영수증 피드 API 연동
+  async createReceiptFeed(feedData) {
+    try {
+      const { data } = await api.post('/api/feeds/receipt', feedData);
+      console.log('RECEIPT FEED AUTO CREATE RESULT:', data);
+      return data;
+    } catch (e) {
+      console.warn('영수증 피드 생성 실패:', e);
+      return null;
+    }
   }
 };

@@ -1368,6 +1368,16 @@ const executeRealTransfer = async () => {
 
       await remittanceApi.sendMoney(payload);
       myBalance.value = Math.max(0, myBalance.value - (remitAmount.value || 0));
+
+      // 8번 과제: 송금 성공 시 팀원 피드 백엔드로 자동 생성 연동
+      try {
+        await remittanceApi.createReceiptFeed({
+          content: `${(remitAmount.value || 0).toLocaleString()}원 송금 완료! (${memoText.value || '송금'})`,
+          visibility: visibilityScope.value || 'PUBLIC'
+        });
+      } catch (feedErr) {
+        console.warn("피드 자동 생성 연동 중 예외 (송금은 정상 완료):", feedErr);
+      }
     }
 
     currentStep.value = 5;
@@ -1420,6 +1430,13 @@ const deletePin = () => {
    디자인 시스템 명세서(common.css) 100% 반영 스타일링
    ========================================================================== */
 
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+}
+
 /* 전체 루트 레이아웃 (부모 높이에 100% 밀착) */
 .remit-container {
   display: flex;
@@ -1443,7 +1460,7 @@ const deletePin = () => {
 /* 스크롤 본문 (남은 전체 높이 차지) */
 .card-body-scroll {
   flex: 1;
-  padding: 16px;
+  padding: 16px 24px 32px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;

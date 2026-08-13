@@ -440,6 +440,13 @@ watch(
    디자인 시스템 명세서(common.css) 100% 반영 스타일링
    ========================================================================== */
 
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+}
+
 .receipt-modal-root {
   position: fixed;
   top: 0;
