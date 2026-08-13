@@ -25,6 +25,7 @@ public class RemittanceDTO {
     private String accountNumber;
 
     private Integer transactionId;
+    private Integer spendingCategoryId;
 
     // 피드 연동용 필드
     private String feedType;    // REMITTANCE

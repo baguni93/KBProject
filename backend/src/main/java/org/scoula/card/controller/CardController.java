@@ -10,8 +10,12 @@ import org.scoula.card.service.CardService;
 import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.scoula.common.util.UploadFiles;
+import org.scoula.common.util.UploadPathName;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -134,6 +138,25 @@ public class CardController {
         }
 
         return ResponseEntity.ok(info);
+    }
+
+    // 카드 이미지 서빙 (1차: c:/upload/card/, 2차: c:/upload/customCard/)
+    @GetMapping("/api/cards/image/{imageName}")
+    public void getCardImage(@PathVariable String imageName, HttpServletResponse response) {
+        try {
+            File file = new File(UploadPathName.getCardPath() + imageName);
+            if (!file.exists()) {
+                file = new File(UploadPathName.getCustomCardPath() + imageName);
+            }
+            if (file.exists()) {
+                UploadFiles.downloadImage(response, file);
+            } else {
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            }
+        } catch (Exception e) {
+            log.warn("카드 이미지 서빙 중 에러 (무시하고 계속): {}", e.getMessage());
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        }
     }
 
     // CARD-001 연결 카드 목록 조회
