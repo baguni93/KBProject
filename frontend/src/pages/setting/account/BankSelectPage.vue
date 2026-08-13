@@ -1,57 +1,70 @@
 <template>
-  <div class="account-page">
-    <main class="account-container">
-      <button class="back-button" type="button" @click="goBack">&lt;</button>
+  <main class="page-layout account-page">
+    <PageHeader
+        title="계좌 연결"
+        custom-back
+        @back="goBack"
+    />
 
-      <header class="page-header">
-        <h1>은행을 선택해 주세요</h1>
-        <p>연결할 계좌의 은행을 선택해 주세요.</p>
+    <div class="page-content">
+      <header class="title-section">
+        <h1 class="text-26-bold">은행을 선택해 주세요</h1>
+        <p class="text-15">연결할 계좌의 은행을 선택해 주세요.</p>
       </header>
 
       <section class="bank-section">
-        <p v-if="loading" class="state-message">은행 목록을 불러오고 있어요.</p>
+        <p v-if="loading" class="state-message text-13">
+          은행 목록을 불러오고 있어요.
+        </p>
 
-        <p v-else-if="errorMessage" class="error-message">
+        <p v-else-if="errorMessage" class="error-message text-13">
           {{ errorMessage }}
         </p>
 
         <div v-else class="bank-grid">
           <button
-            v-for="bank in accountStore.banks"
-            :key="bank.bankCode"
-            :class="{
-              selected: accountStore.accountForm.bankCode === bank.bankCode,
-            }"
-            class="bank-item"
-            type="button"
-            @click="selectBank(bank)"
+              v-for="bank in accountStore.banks"
+              :key="bank.bankCode"
+              :class="{ selected: accountStore.accountForm.bankCode === bank.bankCode }"
+              class="bank-item"
+              type="button"
+              @click="selectBank(bank)"
           >
             <img
-              v-if="bank.bankLogoUrl"
-              :alt="bank.bankName"
-              :src="bank.bankLogoUrl"
-              class="bank-logo"
+                v-if="bank.bankLogoUrl"
+                :alt="bank.bankName"
+                :src="bank.bankLogoUrl"
+                class="bank-logo"
             />
 
-            <div v-else class="bank-logo fallback-logo">
+            <div v-else class="bank-logo fallback-logo text-15-bold">
               {{ bank.bankName.slice(0, 1) }}
             </div>
 
-            <span>{{ bank.bankName }}</span>
+            <span class="text-13-bold">{{ bank.bankName }}</span>
+
+            <span
+                v-if="accountStore.accountForm.bankCode === bank.bankCode"
+                class="selected-icon"
+            >
+              <i class="fa-solid fa-check"></i>
+            </span>
           </button>
         </div>
       </section>
 
-      <button
-        class="next-button"
-        :disabled="!accountStore.accountForm.bankCode"
-        type="button"
-        @click="next"
-      >
-        다음
-      </button>
-    </main>
-  </div>
+      <div class="bottom-btn-area single">
+        <button
+            class="bottom-btn"
+            :disabled="!accountStore.accountForm.bankCode"
+            type="button"
+            @click="next"
+        >
+          다음
+        </button>
+      </div>
+    </div>
+  </main>
 </template>
 
 <script setup>
@@ -59,6 +72,7 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { getBanks } from '@/api/bankApi';
 import { useAccountStore } from '@/stores/account';
+import PageHeader from '@/components/common/PageHeader.vue';
 
 const router = useRouter();
 const accountStore = useAccountStore();
@@ -76,8 +90,7 @@ const loadBanks = async () => {
     accountStore.setBanks(banks);
   } catch (error) {
     console.error(error);
-    errorMessage.value =
-      error.response?.data?.message || '은행 목록을 불러오지 못했습니다.';
+    errorMessage.value = error.response?.data?.message || '은행 목록을 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -91,6 +104,7 @@ const selectBank = (bank) => {
 // 계좌정보 입력 화면 이동
 const next = () => {
   if (!accountStore.accountForm.bankCode) return;
+
   router.push('/setting/account/info');
 };
 
@@ -107,54 +121,31 @@ onMounted(() => {
 
 <style scoped>
 .account-page {
-  width: 100%;
-  height: 100%;
-  background: #ffffff;
+  background: var(--color-bg-page);
 }
 
-.account-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  padding: 26px 28px 140px;
-  background: #ffffff;
-  box-sizing: border-box;
+.title-section {
+  flex-shrink: 0;
+  margin-top: 38px;
 }
 
-.back-button {
-  align-self: flex-start;
-  margin-bottom: 28px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #555555;
-  font-size: 28px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.page-header h1 {
-  margin: 0 0 28px;
-  color: #111111;
-  font-size: 30px;
-  font-weight: 700;
-}
-
-.page-header p {
+.title-section h1 {
   margin: 0;
-  color: #777777;
-  font-size: 20px;
-  font-weight: 400;
+  color: var(--color-text-main);
   line-height: 1.35;
+  letter-spacing: -0.7px;
+}
+
+.title-section p {
+  margin: 14px 0 0;
+  color: var(--color-text-sub);
+  line-height: 1.5;
 }
 
 .bank-section {
   flex: 1;
   min-height: 0;
-  margin-top: 54px;
+  margin-top: 38px;
   padding-bottom: 8px;
   overflow-y: auto;
   scrollbar-width: none;
@@ -172,6 +163,7 @@ onMounted(() => {
 }
 
 .bank-item {
+  position: relative;
   display: flex;
   min-width: 0;
   height: 105px;
@@ -180,22 +172,20 @@ onMounted(() => {
   justify-content: center;
   gap: 10px;
   padding: 10px 6px;
-  border: 1px solid #eeeeee;
+  border: 1px solid var(--color-divider);
   border-radius: 16px;
-  background: #ffffff;
-  color: #333333;
-  font-size: 13px;
-  font-weight: 600;
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
   cursor: pointer;
   box-sizing: border-box;
 }
 
 .bank-item:active {
-  background: #fafafa;
+  background: var(--color-bg-screen);
 }
 
 .bank-item.selected {
-  border-color: #ffbc2e;
+  border-color: var(--color-primary);
   background: #fff9e9;
   box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
 }
@@ -212,9 +202,8 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #ffbc2e;
-  color: #111111;
-  font-weight: 800;
+  background: var(--color-primary);
+  color: var(--color-text-main);
 }
 
 .bank-item span {
@@ -226,47 +215,33 @@ onMounted(() => {
   white-space: nowrap;
 }
 
+.selected-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex !important;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-text-main);
+  font-size: 9px;
+}
+
 .state-message,
 .error-message {
   margin: 30px 0;
-  font-size: 14px;
   line-height: 1.5;
   text-align: center;
 }
 
 .state-message {
-  color: #777777;
+  color: var(--color-text-sub);
 }
 
 .error-message {
-  color: #e53935;
-}
-
-.next-button {
-  position: absolute;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
-  width: auto;
-  height: 58px;
-  margin: 0;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.next-button:active:not(:disabled) {
-  background: #f2aa10;
-}
-
-.next-button:disabled {
-  border-color: #dddddd;
-  background: #eeeeee;
-  color: #999999;
-  cursor: not-allowed;
+  color: var(--color-error);
 }
 </style>
