@@ -501,6 +501,7 @@ CREATE TABLE user_random_box_tbl
             issue_reason IN (
                              'ATTENDANCE',
                              'FEED_SHARE',
+                             'PAYMENT',
                              'TRANSFER',
                              'EVENT'
                 )

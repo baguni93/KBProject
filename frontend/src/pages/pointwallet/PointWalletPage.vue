@@ -1,7 +1,8 @@
 <template>
-  <div class="kb-mobile-page point-wallet-page">
+  <div class="page-layout point-wallet-page">
     <PageHeader title="포인트 지갑" :showBack="false" />
 
+    <main class="page-content">
     <section class="balance-card kb-card">
       <div>
         <div class="balance-label text-13-bold">내 포인트</div>
@@ -193,6 +194,7 @@
         </div>
       </div>
     </section>
+    </main>
   </div>
 </template>
 
@@ -346,7 +348,6 @@ onMounted(loadPage);
 <style scoped>
 .point-wallet-page {
   background: var(--color-bg-screen);
-  padding-bottom: 30px;
 }
 
 /* =========================
@@ -354,7 +355,7 @@ onMounted(loadPage);
 ========================= */
 
 .balance-card {
-  margin-top: 14px;
+  margin-top: 0;
   min-height: 126px;
   padding: 22px;
   display: flex;

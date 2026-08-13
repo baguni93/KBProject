@@ -517,6 +517,7 @@ CREATE TABLE user_random_box_tbl
                              'ATTENDANCE',
                              'FEED_SHARE',
                              'TRANSFER',
+                             'PAYMENT',
                              'EVENT'
                 )
             ),

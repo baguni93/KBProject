@@ -1,7 +1,8 @@
 <template>
-  <div class="kb-mobile-page finance-page">
+  <div class="page-layout finance-page">
     <PageHeader title="금융" :showBack="false" />
 
+    <main class="page-content">
     <section class="finance-intro">
       <p class="intro-eyebrow text-13-bold">나의 맞춤형 금융 생활</p>
       <h1 class="intro-title text-20-bold">
@@ -97,6 +98,7 @@
     <p v-if="errorMessage" class="finance-message text-13">
       {{ errorMessage }}
     </p>
+    </main>
   </div>
 </template>
 
@@ -183,7 +185,6 @@ onMounted(loadFinanceSummary);
 
 <style scoped>
 .finance-page {
-  padding-bottom: 28px;
   background: var(--color-bg-screen);
   color: var(--color-text-main);
 }
