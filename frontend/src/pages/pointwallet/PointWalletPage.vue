@@ -52,7 +52,7 @@
 
     <section class="kb-section">
       <div class="kb-section-title-row">
-        <h2 class="kb-section-title text-18-bold">출석 체크</h2>
+        <h2 class="kb-section-title text-20-bold">출석 체크</h2>
 
         <span class="calendar-month text-13">
           {{ currentYear }}.{{ String(currentMonth).padStart(2, '0') }}
@@ -119,7 +119,7 @@
 
     <section class="kb-section">
       <div class="kb-section-title-row">
-        <h2 class="kb-section-title text-18-bold">최근 이용내역</h2>
+        <h2 class="kb-section-title text-20-bold">최근 이용내역</h2>
 
         <router-link
           class="kb-section-link text-13"
@@ -130,69 +130,12 @@
         </router-link>
       </div>
 
-      <div class="transaction-card kb-card">
-        <!-- 로딩 -->
-        <div v-if="loading" class="kb-loading">
-          <div class="spinner-border kb-spinner" role="status"></div>
-
-          <div class="text-13">포인트 정보를 불러오는 중이에요.</div>
-        </div>
-
-        <!-- 최근 이용내역 -->
-        <div v-else-if="recentTransactions.length" class="transaction-list">
-          <div
-            v-for="transaction in recentTransactions"
-            :key="transaction.pointTransactionId"
-            class="transaction-row"
-          >
-            <!-- 아이콘 -->
-            <div
-              :class="[
-                'transaction-icon',
-                transaction.transactionType === 'EARN' ? 'earn' : 'use',
-              ]"
-            >
-              <i :class="getTransactionIcon(transaction.reasonType)"></i>
-            </div>
-
-            <!-- 거래 정보 -->
-            <div class="transaction-content">
-              <strong class="text-15-bold">
-                {{ getReasonTypeLabel(transaction.reasonType) }}
-              </strong>
-
-              <span class="text-13">
-                {{ formatDate(transaction.createdAt) }}
-                ·
-                {{ getTransactionTypeLabel(transaction.transactionType) }}
-              </span>
-            </div>
-
-            <!-- 포인트 금액 -->
-            <div
-              :class="[
-                'transaction-amount',
-                'text-15-bold',
-                transaction.transactionType === 'EARN'
-                  ? 'kb-amount-positive'
-                  : 'kb-amount-negative',
-              ]"
-            >
-              {{ getPointSign(transaction.transactionType)
-              }}{{ formatNumber(transaction.pointAmount) }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 빈 상태 -->
-        <div v-else class="kb-empty-state">
-          <div class="kb-empty-state__icon">
-            <i class="fa-solid fa-receipt"></i>
-          </div>
-
-          <strong class="text-15-bold"> 최근 포인트 이용내역이 없어요. </strong>
-        </div>
-      </div>
+      <PointTransactionList
+        :transactions="recentTransactions"
+        :loading="loading"
+        loading-text="포인트 정보를 불러오는 중이에요."
+        empty-text="최근 포인트 이용내역이 없어요."
+      />
     </section>
     </main>
   </div>
@@ -201,13 +144,11 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import PageHeader from '@/components/common/PageHeader.vue';
+import PointTransactionList from '@/components/common/PointTransactionList.vue';
 import pointWalletApi from '@/api/pointWalletApi';
 import {
   formatNumber,
   getApiErrorMessage,
-  getPointSign,
-  getReasonTypeLabel,
-  getTransactionTypeLabel,
 } from '@/util/pointWallet';
 
 const wallet = ref(null);
@@ -272,21 +213,6 @@ const getCalendarDayClass = (day) => {
     'today-attended': isToday && isAttended,
   };
 };
-
-const formatDate = (value) => {
-  if (!value) return '-';
-  const date = new Date(String(value).replace(' ', 'T'));
-  if (Number.isNaN(date.getTime())) return value;
-  return `${date.getMonth() + 1}.${String(date.getDate()).padStart(2, '0')}`;
-};
-
-const getTransactionIcon = (reasonType) =>
-  ({
-    ATTENDANCE: 'fa-solid fa-calendar-check',
-    RANDOM_BOX: 'fa-solid fa-gift',
-    CONVERSION: 'fa-solid fa-arrow-right-arrow-left',
-    EVENT: 'fa-solid fa-star',
-  })[reasonType] ?? 'fa-solid fa-coins';
 
 const loadPage = async () => {
   loading.value = true;
@@ -416,7 +342,6 @@ onMounted(loadPage);
 
   padding: 13px 12px;
 
-  box-shadow: 0 2px 12px rgba(30, 30, 30, 0.05);
 }
 
 .quick-item {
@@ -590,69 +515,4 @@ onMounted(loadPage);
   color: #999;
 }
 
-/* =========================
-   최근 이용내역
-========================= */
-
-.transaction-card {
-  overflow: hidden;
-}
-
-.transaction-row {
-  min-height: 68px;
-  padding: 12px 15px;
-
-  display: flex;
-  align-items: center;
-  gap: 11px;
-
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.transaction-row:last-child {
-  border-bottom: 0;
-}
-
-.transaction-icon {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 12px;
-
-  font-size: 15px;
-}
-
-.transaction-icon.earn {
-  background: var(--kb-yellow-soft);
-  color: #e39a00;
-}
-
-.transaction-icon.use {
-  background: #f1f2f4;
-  color: #555;
-}
-
-.transaction-content {
-  min-width: 0;
-  flex: 1;
-}
-
-.transaction-content strong,
-.transaction-content span {
-  display: block;
-}
-
-.transaction-content span {
-  margin-top: 3px;
-  color: var(--kb-subtext);
-}
-
-.transaction-amount {
-  white-space: nowrap;
-}
 </style>
