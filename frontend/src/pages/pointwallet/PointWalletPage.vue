@@ -2,7 +2,7 @@
   <div class="page-layout point-wallet-page">
     <PageHeader title="포인트 지갑" :showBack="false" />
 
-    <main class="page-content point-wallet-content">
+    <main class="page-content">
     <section class="balance-card kb-card">
       <div>
         <div class="balance-label text-13-bold">내 포인트</div>
@@ -347,24 +347,7 @@ onMounted(loadPage);
 
 <style scoped>
 .point-wallet-page {
-  /*
-   * DefaultLayout의 app-content 안에서 BottomNav와 함께 사용되므로
-   * 공통 page-layout의 100dvh 대신 부모 높이를 사용한다.
-   *
-   * 좌우 24px / 하단 32px / flex column / overflow hidden 등
-   * 나머지 레이아웃 규칙은 공통 page-layout을 그대로 따른다.
-   */
-  //height: 100%;
   background: var(--color-bg-screen);
-}
-
-.point-wallet-content {
-  /*
-   * 공통 page-content를 실제 스크롤 영역으로 사용한다.
-   * page-layout 바깥(app-content)이 아니라 이 영역만 스크롤된다.
-   */
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 /* =========================

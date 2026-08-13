@@ -2,7 +2,7 @@
   <div class="page-layout finance-page">
     <PageHeader title="금융" :showBack="false" />
 
-    <main class="page-content finance-content">
+    <main class="page-content">
     <section class="finance-intro">
       <p class="intro-eyebrow text-13-bold">나의 맞춤형 금융 생활</p>
       <h1 class="intro-title text-20-bold">
@@ -185,23 +185,8 @@ onMounted(loadFinanceSummary);
 
 <style scoped>
 .finance-page {
-  /*
-   * 공통 page-layout의 좌우 24px / 하단 32px 레이아웃을 사용합니다.
-   * DefaultLayout의 app-content + BottomNav 안에서 렌더링되므로
-   * 100dvh 대신 부모 영역 높이에 맞춥니다.
-   */
-  height: 100%;
   background: var(--color-bg-screen);
   color: var(--color-text-main);
-}
-
-.finance-content {
-  /*
-   * page-layout은 overflow: hidden이므로
-   * 실제 페이지 콘텐츠 영역만 세로 스크롤되도록 처리합니다.
-   */
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 .finance-intro {
