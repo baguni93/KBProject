@@ -1,9 +1,7 @@
 package org.scoula.event.service;
 
-import org.scoula.event.dto.EventGetAttendanceResponseDTO;
-import org.scoula.event.dto.EventGetResponseDTO;
-import org.scoula.event.dto.EventMainDTO;
-import org.scoula.event.dto.EventResponseDTO;
+import org.scoula.event.dto.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,14 +16,8 @@ public interface EventService {
     // 3. 참여확인 탭 리스트 조회(참여완료 탭)
     List<EventResponseDTO> getJoinedEventsProgress(Integer userId, String yearMonth);
 
-    // 4. 일반 이벤트 참여 처리
-//    boolean participateEvent(Integer userId,  Integer eventId);
-//
-//    // 5. 이벤트 리워드 수령 처리
-//    boolean receiveEventReward(Integer userId,  Integer eventId);
-
     // 6. 챌린지 참여 처리 및 리워드 수령 처리
-    boolean claimChallengeReward(Integer userId,  Integer eventId);
+    //boolean claimChallengeReward(Integer userId,  Integer eventId);
 
     List<EventGetAttendanceResponseDTO> joinAttendanceEvent(int userId, int eventId);
     List<EventGetResponseDTO> joinEvent(int userId, int eventId);
@@ -33,7 +25,9 @@ public interface EventService {
     List<EventGetResponseDTO> getEventList(int userId);
 
     List<EventGetResponseDTO> receiveEventReward(int userId, int eventId, int rewardId);
+    List<EventGetAttendanceResponseDTO> receiveAttendanceEventReward(int userId, int eventId, int rewardId);
 
-    List<EventGetAttendanceResponseDTO> receiveAttendanceEventReward(int eventId, int userId, int rewardId);
+    List<EventGetResponseDTO> createParticipation(int userId, int eventId);
 
+    List<EventChallengeResponseDTO> receiveChallengeReward(int userId, int challengeId);
 }

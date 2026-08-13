@@ -29,7 +29,7 @@ public class EventGetResponseDTO {
 
     private int rewardId;
     private int rewardPoint;
-    private int rewardExe;
+    private int rewardExp;
 
     private boolean completed;
     private boolean joined;
@@ -51,7 +51,7 @@ public class EventGetResponseDTO {
                 .endAt(eventNormalVO.getEndAt())
                 .rewardId(eventNormalVO.getRewardId())
                 .rewardPoint(eventNormalVO.getRewardPoint())
-                .rewardExe(eventNormalVO.getRewardExe())
+                .rewardExp(eventNormalVO.getRewardExp())
                 .completed(eventNormalVO.isCompleted())
                 .joined(eventNormalVO.isJoined())
                 .rewardReceived(eventNormalVO.isRewardReceived())

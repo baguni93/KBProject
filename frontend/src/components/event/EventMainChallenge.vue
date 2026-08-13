@@ -1,12 +1,18 @@
 <template>
   <div class="challenge-card" v-if="challenge">
-    <!-- 이벤트 챌린지 배경 추가 예정-->
+    <!-- 이벤트 챌린지 상단 타이틀 -->
     <div class="challenge-background">
       <div class="level-label">
-        <i class="fa-solid fa-bolt zap-icon"></i>
-        <span class="label-text">이벤트 챌린지</span>
+        <div class="level-title-group">
+          <i class="fa-solid fa-bolt zap-icon"></i>
+          <span class="label-text">이벤트 챌린지</span>
+        </div>
+
+        <!-- 우측 상단 포인트 배지 -->
+        <span class="reward-point-badge">+{{ challenge.rewardPoint }}P</span>
       </div>
     </div>
+
     <!-- 이벤트 챌린지 대시보드 -->
     <div class="challenge-status">
       <div class="status-row-top">
@@ -18,71 +24,103 @@
         </div>
         <div class="percentage-info">
           <span class="percent-num">{{ progressPercent }}%</span>
-          <span class="lv-text"
-            >/ Lv.{{ challenge.userChallengeLevel || 1 }}</span
-          >
         </div>
       </div>
 
       <div class="status-row-bottom">
+        <span class="lv-text">Lv.{{ challenge.currentLevel || 1 }}</span>
         <span class="xp-counter">
-          {{ challenge.userChallengeExe || 0 }} /
-          {{ challenge.userChallengeMaxExe || 1000 }} XP
+          {{ challenge.exp || 0 }} / {{ challenge.requiredExp || 1000 }} EXP
         </span>
 
-        <span v-if="progressPercent >= 100" class="success-tag">
+        <!-- 목표 달성 (보상 미수령 및 완료 상태) -->
+        <span
+          v-if="challenge.status === 'COMPLETE' || progressPercent >= 100"
+          class="success-tag"
+        >
           🎉 목표 달성!
         </span>
       </div>
 
-      <!-- 보상 받기 버튼 -->
+      <!-- 보상받기 버튼(COMPLETE 상태) -->
       <button
-        v-if="progressPercent >= 100"
+        v-if="challenge.status === 'COMPLETE' || progressPercent >= 100"
         class="level-reward-btn"
-        @click="claimReward"
+        :disabled="challenge.status === 'REWARDED'"
+        @click="handleclaimReward"
       >
-        <i class="fa-solid fa-gift gift-icon"></i> 보상 받기
+        <i class="fa-solid fa-gift gift-icon"></i>
+        {{ challenge.status === 'REWARDED' ? '수령완료' : '보상받기' }}
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { defineProps, computed } from 'vue';
+import { defineProps, computed, defineEmits, ref } from 'vue';
+import eventApi from '@/api/eventApi';
+
+// 유저 아이디
+import { useAuthStore } from '@/stores/auth';
+const authStore = useAuthStore();
+const userId = authStore.userId ?? 1;
 
 const props = defineProps({
   challenge: {
     type: Object,
     required: true,
     default: () => ({
-      userChallengeLevel: 1,
-      userChallengeExe: 0,
-      userChallengeMaxExe: 1000,
-      status: 'PROCESS',
+      challengeId: 0,
+      userChallengeId: 0,
+      currentLevel: 1,
+      currentTarget: 0,
+      requiredExp: 1000,
+      exp: 0,
+      startDate: '',
+      endDate: '',
+      dDay: '',
     }),
   },
 });
 
+const emit = defineEmits(['claim-reward']);
+
+// 진행률 (%) 계산
 const progressPercent = computed(() => {
   if (
     !props.challenge ||
-    !props.challenge.userChallengeMaxExe ||
-    props.challenge.userChallengeMaxExe === 0
+    !props.challenge.requiredExp ||
+    props.challenge.requiredExp === 0
   ) {
     return 0;
   }
 
-  const percent =
-    (props.challenge.userChallengeExe / props.challenge.userChallengeMaxExe) *
-    100;
-
+  const percent = (props.challenge.exp / props.challenge.requiredExp) * 100;
   return Math.min(Math.floor(percent), 100);
 });
 
-const claimReward = () => {
-  alert('보상 수령');
+const isSubmitting = ref(false);
+
+const handleclaimReward = async () => {
+  // 수령한 상태에서 클릭 방지
+  if (props.challenge.status === 'REWARDED' || isSubmitting.value) return;
+
+  if (props.challenge.status !== 'COMPLETE' && progressPercent.value < 100) {
+    alert('아직 목표를 달성하지 못했습니다.');
+    return;
+  }
+
+  try {
+    isSubmitting.value = true;
+    emit('claim-reward', props.challenge.challengeId);
+  } finally {
+    setTimeout(() => {
+      isSubmitting.value = false;
+    }, 500);
+  }
 };
 </script>
+
 <style scoped>
 .challenge-card {
   width: 100%;
@@ -94,7 +132,6 @@ const claimReward = () => {
   flex-direction: column;
 }
 
-/* 상단 배경 영역 (차후 구현 예정) */
 .challenge-background {
   position: relative;
   padding: 16px 16px 10px 16px;
@@ -104,7 +141,23 @@ const claimReward = () => {
 .level-label {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.level-title-group {
+  display: flex;
+  align-items: center;
   gap: 6px;
+}
+
+.reward-point-badge {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffb703;
+  background-color: rgba(255, 183, 3, 0.12);
+  padding: 3px 8px;
+  border-radius: 10px;
 }
 
 .zap-icon {
@@ -118,7 +171,6 @@ const claimReward = () => {
   color: #ffffff;
 }
 
-/* 챌린지 대시보드 */
 .challenge-status {
   padding: 0 16px 16px 16px;
   display: flex;
@@ -178,13 +230,18 @@ const claimReward = () => {
   font-weight: 500;
 }
 
+.lv-text {
+  font-size: 12px;
+  color: #a3abb6;
+  font-weight: 800;
+}
+
 .success-tag {
   font-size: 12px;
   color: #00cc99;
   font-weight: bold;
 }
 
-/* 보상받기 버튼 */
 .level-reward-btn {
   width: 100%;
   background-color: #ffb703;

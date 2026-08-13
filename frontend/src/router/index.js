@@ -99,11 +99,10 @@ const router = createRouter({
       },
     },
     {
-      // path: '/event/list',
-      path: '/event/eventList',
+      path: '/event/list',
       name: 'EventList',
       component: EventListPage,
-      alias: '/event/eventList/joined',
+      alias: '/event/list/joined',
       meta: {
         showBottomNav: true,
       },

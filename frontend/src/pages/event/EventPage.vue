@@ -6,22 +6,26 @@
       </header>
 
       <!-- 1. 사용자 포인트 조회 -->
-      <PointView :point="userPoint" />
+      <PointView :userPoint="userPoint" @reload="fetchMainData" />
 
       <!-- 2. 커스텀 카드 발급 바로가기 -->
       <EventMainCardBanner />
 
       <!-- 3. 이벤트 챌린지 -->
-      <EventMainChallenge v-if="challengeData" :challenge="challengeData" />
+      <EventMainChallenge
+        v-if="challengeData"
+        :challenge="challengeData"
+        @claim-reward="handleClaimReward"
+      />
 
       <!-- 4. 현재 참여 가능 이벤트  -->
-      <template v-if="activeEvents && activeEvents.length > 0">
+      <template v-if="eventLists && eventLists.length > 0">
         <div class="section-title-group">
           <i class="fa-regular fa-star header-icon"></i>
           <span class="sub-section-title">현재 참여 가능 이벤트</span>
         </div>
         <EventItem
-          v-for="event in activeEvents.slice(0, 3)"
+          v-for="event in eventLists.slice(0, 3)"
           :key="event.eventId"
           v-bind="event"
           @clickAction="(payload) => onEventAction(payload)"
@@ -44,16 +48,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { storeToRefs } from 'pinia';
 import eventApi from '@/api/eventApi';
+import pointwallet from '@/api/pointwallet';
 import PointView from '@/components/finance/PointView.vue';
 import EventMainCardBanner from '@/components/event/EventMainCardBanner.vue';
 import EventMainChallenge from '@/components/event/EventMainChallenge.vue';
 import EventItem from '@/components/event/EventItem.vue';
 
-/// 유저 아이디
+// 유저 아이디
 import { useAuthStore } from '@/stores/auth';
 const authStore = useAuthStore();
 const userId = authStore.userId ?? 1;
@@ -62,47 +66,35 @@ const router = useRouter();
 
 const userPoint = ref(0);
 const challengeData = ref(null);
-const activeEvents = ref([]);
+const eventLists = ref([]);
 
 // 메인 페이지 데이터 로드
 const fetchMainData = async () => {
   if (!userId) return;
 
   try {
-    //const dataOrigin = await eventApi.getEventMain(userId);
+    const mainData = await eventApi.getEventMain(userId);
+    const eventData = await eventApi.getEventList(userId);
 
-    const data = await eventApi.getEventList(userId);
+    userPoint.value = mainData.currentPoint || 0;
+    eventLists.value = eventData || [];
 
-    //console.log(' Origin : ', dataOrigin);
-    console.log('참여 가능한 이벤트 리스트 조회 : ', data);
-    activeEvents.value = data;
-
-    userPoint.value = data.currentPoint || 0;
-
-    challengeData.value = data.userChallenge || {
-      // 이벤트 챌린지 default
-      userChallengeLevel: 1,
-      userChallengeExe: 0,
-      userChallengeMaxExe: 1000,
-    };
-
-    const rawEvents = data.eventLists || [];
-
-    console.log(rawEvents);
-
-    // if (Array.isArray(rawEvents)) {
-    //   activeEvents.value = rawEvents.filter((item) => {
-    //     if (!item) return false;
-    //     const eventStatus = item.buttonStatus;
-
-    //     return (
-    //       !eventStatus ||
-    //       (eventStatus !== 'COMPLETE' && eventStatus !== 'ATTENDANCE')
-    //     );
-    //   });
-    // } else {
-    //   activeEvents.value = [];
-    // }
+    if (mainData?.userChallengeData?.length > 0) {
+      challengeData.value = mainData.userChallengeData[0];
+    } else {
+      // default
+      challengeData.value = {
+        challengeId: 0,
+        userChallengeId: 0,
+        currentLevel: 1,
+        currentTarget: 0,
+        requiredExp: 1000,
+        exp: 0,
+        startDate: '',
+        endDate: '',
+        dDay: '',
+      };
+    }
   } catch (err) {
     console.error('데이터 로드 실패', err);
   }
@@ -112,7 +104,31 @@ onMounted(() => {
   fetchMainData();
 });
 
-// 이벤트 참여/보상 수령 처리
+watch(
+  () => authStore.userId,
+  (userId) => {
+    if (userId) {
+      fetchMainData();
+    }
+  },
+);
+
+// 이벤트 챌린지 보상 수령 처리
+const handleClaimReward = async (challengeId) => {
+  try {
+    // API 호출
+    const response = await eventApi.receiveChallengeReward(userId, challengeId);
+
+    if (response) {
+      alert('보상 수령이 완료되었습니다.');
+      await fetchMainData(); // 화면 데이터 갱신
+    }
+  } catch (error) {
+    console.error('보상 수령 오류:', error);
+    alert('보상 수령에 실패했습니다.');
+  }
+};
+
 // 이벤트 참여/보상 수령 처리
 const onEventAction = async ({
   eventId,
@@ -122,7 +138,7 @@ const onEventAction = async ({
 }) => {
   if (!eventId) return;
 
-  if (!userId.value) {
+  if (!userId) {
     alert('올바른 사용자 정보가 아닙니다.');
     return;
   }
@@ -137,26 +153,37 @@ const onEventAction = async ({
   const actionMap = {
     // 1. 이벤트 참여 시작 / 출석체크
     READY: {
-      action: () =>
-        isAttendance
-          ? eventApi.joinAttendanceEvent(eventId, userId.value)
-          : eventApi.joinEvent(eventId, userId.value),
+      action: async () => {
+        // 이벤트 시작 / 출석체크 시작 내역 생성 API 먼저 실행
+        try {
+          if (isAttendance) {
+            await eventApi.joinAttendanceEvent(userId, eventId);
+          } else {
+            await eventApi.joinEvent(userId, eventId);
+          }
+        } catch (err) {
+          console.warn('이미 참가 등록된 이벤트입니다.', err);
+        }
+
+        // 이벤트 참여이력 바로 생성되도록
+        return await eventApi.createParticipation(userId, eventId);
+      },
       msg: `[${eventName}] 이벤트 참여를 시작합니다.`,
     },
 
     // 2. 출석체크
     ATTENDANCE: {
-      action: () => eventApi.joinAttendanceEvent(eventId, userId.value),
+      action: () => eventApi.joinAttendanceEvent(userId, eventId),
       msg: `[${eventName}] 출석체크가 완료되었습니다.`,
     },
     ATTENDANCE_READY: {
-      action: () => eventApi.joinAttendanceEvent(eventId, userId.value),
+      action: () => eventApi.joinAttendanceEvent(userId, eventId),
       msg: `[${eventName}] 출석체크가 완료되었습니다.`,
     },
 
     // 3. 진행 중 이벤트
     PROGRESS: {
-      action: () => eventApi.joinEvent(eventId, userId.value),
+      action: () => eventApi.createParticipation(userId, eventId),
       msg: `[${eventName}] 이벤트 참여가 완료되었습니다.`,
     },
 
@@ -172,12 +199,8 @@ const onEventAction = async ({
     REWARD_CLAIM: {
       action: () =>
         isAttendance
-          ? eventApi.receiveAttendanceEventReward(
-              eventId,
-              userId.value,
-              rewardId,
-            )
-          : eventApi.receiveEventReward(eventId, userId.value, rewardId),
+          ? eventApi.receiveAttendanceEventReward(eventId, userId, rewardId)
+          : eventApi.receiveEventReward(eventId, userId, rewardId),
       msg: `[${eventName}] 보상 수령이 완료되었습니다!`,
     },
   };
@@ -197,9 +220,7 @@ const onEventAction = async ({
     }
 
     // 메인 데이터 갱신
-    if (typeof fetchMainData === 'function') {
-      await fetchMainData();
-    }
+    await fetchMainData();
   } catch (error) {
     console.error('이벤트 처리 실패:', error);
     const errorMsg =

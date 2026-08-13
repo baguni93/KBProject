@@ -1,52 +1,35 @@
 <template>
-  <div class="point-card" @click="goToPointWallet">
+  <div class="point-card clickable" @click="goToPointWallet">
     <div class="point-info">
       <span class="point-label">내 포인트</span>
       <div class="point-value">
-        <b>{{ localPoint }}</b> <span class="unit">P</span>
+        <b>{{ userPoint?.toLocaleString() ?? 0 }}</b>
+        <span class="unit">P</span>
       </div>
     </div>
 
-    <!-- 포인트 새로고침 -->
-    <button class="reload-btn" @click="reloadPoint">
+    <button class="reload-btn" @click.stop="onReload">
       <i class="fa-solid fa-rotate-right"></i>
     </button>
   </div>
 </template>
+
 <script setup>
-import { ref, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import pointWalletApi from '@/api/pointWalletApi';
 
 const props = defineProps({
-  point: {
+  userPoint: {
     type: Number,
     default: 0,
   },
 });
 
+const emit = defineEmits(['reload']);
+
 const router = useRouter();
 
-const localPoint = ref(props.point);
-
-watch(
-  () => props.point,
-  (newVal) => {
-    localPoint.value = newVal;
-  },
-);
-
-onMounted(() => {
-  reloadPoint();
-});
-
-const reloadPoint = async () => {
-  try {
-    const resData = await pointWalletApi.getWallet();
-    localPoint.value = resData.point;
-  } catch (error) {
-    // 예외 처리
-  }
+const onReload = () => {
+  emit('reload');
 };
 
 // 포인트 지갑 페이지로 이동

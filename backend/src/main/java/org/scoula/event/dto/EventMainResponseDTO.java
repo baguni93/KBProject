@@ -15,7 +15,7 @@ public class EventMainResponseDTO {
     private Integer userId;
     private int currentPoint;
 
-    private UserChallengeDTO userChallenge;
+    private EventChallengeDTO userChallenge;
 
 //    private List<EventResponseDTO> activeEvents;
     private  List<EventGetResponseDTO> activeEvents;

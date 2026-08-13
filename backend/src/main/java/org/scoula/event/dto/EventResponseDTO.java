@@ -23,7 +23,7 @@ public class EventResponseDTO {
     // 이벤트 리워드
     private Integer rewardId;
     private Integer rewardPoint;
-    private Integer rewardExe;
+    private Integer rewardExp;
     private Integer reqCount;
     private String useYn;
     private Integer currentLevel;

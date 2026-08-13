@@ -30,7 +30,7 @@ public class EventGetAttendanceResponseDTO {
 
     private int rewardId;
     private int rewardPoint;
-    private int rewardExe;
+    private int rewardExp;
 
     private boolean completed;
     private boolean rewardReceived;
@@ -52,7 +52,7 @@ public class EventGetAttendanceResponseDTO {
                 .endAt(eventAttendanceVO.getEndAt())
                 .rewardId(eventAttendanceVO.getRewardId())
                 .rewardPoint(eventAttendanceVO.getRewardPoint())
-                .rewardExe(eventAttendanceVO.getRewardExe())
+                .rewardExp(eventAttendanceVO.getRewardExp())
                 .completed(eventAttendanceVO.isCompleted())
                 .rewardReceived(eventAttendanceVO.isRewardReceived())
                 .todayAttendanceCompleted(eventAttendanceVO.isTodayAttendanceCompleted())
