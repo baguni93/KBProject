@@ -1,30 +1,56 @@
 <template>
-  <div class="withdraw-page">
-    <main class="withdraw-container">
-      <header class="page-header">
-        <button class="back-button" type="button" aria-label="이전 화면" @click="goBack">
-          &lt;
-        </button>
+  <div class="page-layout withdraw-page">
+    <PageHeader title="" custom-back @back="goBack" />
 
-        <h1>회원탈퇴</h1>
-        <div class="header-empty"></div>
-      </header>
-
+    <main class="page-content withdraw-container">
       <section class="withdraw-content">
-        <div class="warning-icon">!</div>
+        <section class="intro-section">
+          <div class="warning-icon">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
 
-        <h2>
-          정말 회원탈퇴를<br />
-          진행하시겠어요?
-        </h2>
+          <h2 class="text-26-bold">
+            정말 회원탈퇴를<br />
+            진행하시겠어요?
+          </h2>
 
-        <p class="description">
-          회원탈퇴 후에는 서비스를 이용할 수 없으며<br />
-          일부 정보는 복구할 수 없어요.
-        </p>
+          <p class="description text-13">
+            탈퇴 후에는 서비스를 이용할 수 없으며<br />
+            일부 정보는 복구할 수 없어요.
+          </p>
+        </section>
 
+        <!-- 탈퇴 사유 -->
+        <section class="reason-area">
+          <label class="section-label text-15-bold">탈퇴 사유</label>
+
+          <button
+              class="reason-select"
+              :disabled="loading"
+              type="button"
+              @click="openReasonSheet"
+          >
+            <span v-if="withdrawalReason" class="reason-value">
+              {{ withdrawalReason }}
+            </span>
+
+            <span v-else class="reason-placeholder">
+              탈퇴 사유를 선택해 주세요
+            </span>
+
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
+        </section>
+
+        <!-- 탈퇴 안내 -->
         <section class="warning-area">
-          <strong>탈퇴 전 확인해 주세요</strong>
+          <div class="warning-title">
+            <span>
+              <i class="fa-solid fa-circle-exclamation"></i>
+            </span>
+
+            <strong class="text-15-bold">탈퇴 전 확인해 주세요</strong>
+          </div>
 
           <ul>
             <li>연결된 계좌와 카드 정보 이용이 종료돼요.</li>
@@ -33,26 +59,95 @@
           </ul>
         </section>
 
-        <section class="reason-area">
-          <label for="withdrawalReason">탈퇴 사유</label>
+        <!-- 동의 -->
+        <label class="agreement-check" :class="{ checked: agreed }">
+          <input v-model="agreed" :disabled="loading" type="checkbox" />
 
-          <select id="withdrawalReason" v-model="withdrawalReason" :disabled="loading">
-            <option value="">탈퇴 사유를 선택해 주세요</option>
-            <option value="LOW_USAGE">서비스를 자주 이용하지 않아요</option>
-            <option value="INCONVENIENT">서비스 이용이 불편해요</option>
-            <option value="PRIVACY">개인정보가 걱정돼요</option>
-            <option value="REJOIN">새로운 계정으로 다시 가입하고 싶어요</option>
-            <option value="OTHER">기타</option>
-          </select>
+          <span class="custom-checkbox">
+            <i v-if="agreed" class="fa-solid fa-check"></i>
+          </span>
+
+          <span class="agreement-text">
+            <strong class="text-13-bold">
+              탈퇴 안내사항을 확인했으며 이에 동의합니다
+            </strong>
+
+            <span>위 내용을 모두 확인했어요.</span>
+          </span>
+        </label>
+      </section>
+    </main>
+
+    <!-- 하단 버튼 -->
+    <div class="bottom-btn-area single withdraw-bottom-area">
+      <button
+          class="withdraw-main-button"
+          :disabled="!canStartWithdraw || loading"
+          type="button"
+          @click="openPinModal"
+      >
+        회원탈퇴
+      </button>
+    </div>
+
+    <!-- 탈퇴 사유 Bottom Sheet -->
+    <Transition name="sheet">
+      <div
+          v-if="showReasonSheet"
+          class="overlay sheet-overlay"
+          @click.self="closeReasonSheet"
+      >
+        <section class="reason-sheet">
+          <div class="sheet-handle"></div>
+
+          <header class="reason-sheet-header">
+            <h3 class="text-20-bold">탈퇴 사유</h3>
+            <p class="text-13">탈퇴하시는 이유를 선택해 주세요.</p>
+          </header>
+
+          <div class="reason-list">
+            <button
+                v-for="reason in withdrawalReasons"
+                :key="reason"
+                class="reason-item"
+                :class="{ selected: withdrawalReason === reason }"
+                type="button"
+                @click="selectReason(reason)"
+            >
+              <span>{{ reason }}</span>
+
+              <i
+                  v-if="withdrawalReason === reason"
+                  class="fa-solid fa-check"
+              ></i>
+            </button>
+          </div>
         </section>
+      </div>
+    </Transition>
 
-        <section class="pin-area">
-          <label for="pinPassword">간편비밀번호 확인</label>
-          <p>본인 확인을 위해 현재 간편비밀번호를 입력해 주세요.</p>
+    <!-- PIN 중앙 Modal -->
+    <Transition name="modal">
+      <div
+          v-if="showPinModal"
+          class="overlay modal-overlay"
+          @click.self="closePinModal"
+      >
+        <section class="pin-modal">
+          <div class="pin-icon">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+
+          <h3 class="text-20-bold">간편비밀번호 확인</h3>
+
+          <p class="pin-description text-13">
+            본인 확인을 위해 현재 간편비밀번호<br />
+            6자리를 입력해 주세요.
+          </p>
 
           <div
-              :class="{ error: !!errorMessage }"
               class="pin-boxes"
+              :class="{ error: !!pinErrorMessage }"
               role="button"
               tabindex="0"
               @click="focusPinInput"
@@ -61,17 +156,16 @@
             <div
                 v-for="index in 6"
                 :key="index"
-                :class="{
-                  filled: pinPassword.length >= index,
-                  active: pinPassword.length === index - 1 && !errorMessage,
-                }"
                 class="pin-box"
+                :class="{
+                filled: pinPassword.length >= index,
+                active: pinPassword.length === index - 1 && !pinErrorMessage,
+              }"
             >
               <span v-if="pinPassword.length >= index" class="pin-dot"></span>
             </div>
 
             <input
-                id="pinPassword"
                 ref="pinInput"
                 :value="pinPassword"
                 class="hidden-pin-input"
@@ -84,91 +178,164 @@
             />
           </div>
 
-          <p v-if="errorMessage" class="error-message">
-            {{ errorMessage }}
-          </p>
-        </section>
+          <div class="pin-message-area">
+            <p v-if="pinErrorMessage" class="pin-error-message text-13">
+              {{ pinErrorMessage }}
+            </p>
 
-        <label class="agreement-check">
-          <input v-model="agreed" :disabled="loading" type="checkbox" />
-          <span>탈퇴 시 안내사항을 확인했으며 이에 동의합니다.</span>
-        </label>
-      </section>
-
-      <button class="withdraw-button" :disabled="!canWithdraw || loading" type="button" @click="openWithdrawModal">
-        {{ loading ? '탈퇴 처리 중...' : '회원탈퇴' }}
-      </button>
-
-      <div v-if="showWithdrawModal" class="modal-overlay" @click.self="closeWithdrawModal">
-        <div class="withdraw-modal">
-          <div class="modal-warning-icon">!</div>
-
-          <h3>회원탈퇴를 진행할까요?</h3>
-
-          <p>
-            탈퇴 후에는 일부 정보를 복구할 수 없으며<br />
-            서비스 이용이 제한돼요.
-          </p>
-
-          <div class="modal-info">
-            <strong>탈퇴 사유</strong>
-            <span>{{ withdrawalReasonLabel }}</span>
+            <p v-else class="pin-helper-message">
+              입력한 비밀번호는 본인 확인에만 사용돼요.
+            </p>
           </div>
 
-          <div class="modal-buttons">
-            <button class="modal-cancel-button" type="button" @click="closeWithdrawModal">
+          <button
+              class="pin-confirm-button"
+              :disabled="pinPassword.length !== 6 || pinVerifying"
+              type="button"
+              @click="verifyPinPassword"
+          >
+            {{ pinVerifying ? '확인 중...' : '확인' }}
+          </button>
+        </section>
+      </div>
+    </Transition>
+
+    <!-- 최종 탈퇴 확인 Modal -->
+    <Transition name="modal">
+      <div
+          v-if="showFinalModal"
+          class="overlay modal-overlay"
+          @click.self="closeFinalModal"
+      >
+        <section class="final-modal">
+          <div class="final-warning-icon">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+
+          <h3 class="text-20-bold">
+            정말 회원탈퇴하시겠어요?
+          </h3>
+
+          <p class="final-description text-13">
+            탈퇴 후에는 서비스를 이용할 수 없으며<br />
+            일부 정보는 복구할 수 없어요.
+          </p>
+
+          <div class="final-reason">
+            <span>탈퇴 사유</span>
+            <strong>{{ withdrawalReason }}</strong>
+          </div>
+
+          <p v-if="withdrawErrorMessage" class="withdraw-error-message text-13">
+            {{ withdrawErrorMessage }}
+          </p>
+
+          <div class="final-buttons">
+            <button
+                class="final-cancel-button"
+                :disabled="loading"
+                type="button"
+                @click="closeFinalModal"
+            >
               취소
             </button>
 
-            <button class="modal-withdraw-button" type="button" @click="withdraw">
-              회원탈퇴
+            <button
+                class="final-withdraw-button"
+                :disabled="loading"
+                type="button"
+                @click="withdraw"
+            >
+              {{ loading ? '처리 중...' : '회원탈퇴' }}
             </button>
           </div>
-        </div>
+        </section>
       </div>
+    </Transition>
 
-      <div v-if="loading" class="loading-overlay">
-        <div class="loading-spinner"></div>
-        <span>회원탈퇴를 처리하고 있어요.</span>
-      </div>
-    </main>
+    <!-- 전체 로딩 -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <span class="text-13-bold">회원탈퇴를 처리하고 있어요.</span>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { withdrawUser } from '@/api/userApi';
+import { verifyPin, withdrawUser } from '@/api/userApi';
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const authStore = useAuthStore();
 
 const pinInput = ref(null);
-const pinPassword = ref('');
 const withdrawalReason = ref('');
+const pinPassword = ref('');
 const agreed = ref(false);
 const loading = ref(false);
-const errorMessage = ref('');
-const showWithdrawModal = ref(false);
+const pinVerifying = ref(false);
+const pinErrorMessage = ref('');
+const withdrawErrorMessage = ref('');
+const showReasonSheet = ref(false);
+const showPinModal = ref(false);
+const showFinalModal = ref(false);
 
-const withdrawalReasonMap = {
-  LOW_USAGE: '서비스를 자주 이용하지 않아요',
-  INCONVENIENT: '서비스 이용이 불편해요',
-  PRIVACY: '개인정보가 걱정돼요',
-  REJOIN: '새로운 계정으로 다시 가입하고 싶어요',
-  OTHER: '기타',
+// 기존 select의 value가 따로 있었다면 이 값만 기존 value에 맞춰 유지
+const withdrawalReasons = [
+  '서비스를 자주 이용하지 않아요',
+  '서비스 이용이 불편해요',
+  '개인정보가 걱정돼요',
+  '새로운 계정으로 다시 가입하고 싶어요',
+  '기타',
+];
+
+// 회원탈퇴 시작 가능 여부
+const canStartWithdraw = computed(() => !!withdrawalReason.value && agreed.value);
+
+// 탈퇴 사유 Bottom Sheet 열기
+const openReasonSheet = () => {
+  if (loading.value) return;
+  showReasonSheet.value = true;
 };
 
-// 탈퇴 가능 여부
-const canWithdraw = computed(() => withdrawalReason.value.length > 0 && pinPassword.value.length === 6 && agreed.value);
+// 탈퇴 사유 Bottom Sheet 닫기
+const closeReasonSheet = () => {
+  showReasonSheet.value = false;
+};
 
-// 탈퇴 사유 표시
-const withdrawalReasonLabel = computed(() => withdrawalReasonMap[withdrawalReason.value] || '-');
+// 탈퇴 사유 선택
+const selectReason = (reason) => {
+  withdrawalReason.value = reason;
+  showReasonSheet.value = false;
+};
+
+// PIN Modal 열기
+const openPinModal = async () => {
+  if (!canStartWithdraw.value || loading.value) return;
+
+  pinPassword.value = '';
+  pinErrorMessage.value = '';
+  withdrawErrorMessage.value = '';
+  showPinModal.value = true;
+
+  await focusPinInput();
+};
+
+// PIN Modal 닫기
+const closePinModal = () => {
+  if (pinVerifying.value) return;
+
+  showPinModal.value = false;
+  pinPassword.value = '';
+  pinErrorMessage.value = '';
+};
 
 // PIN 입력창 포커스
 const focusPinInput = async () => {
-  if (loading.value) return;
+  if (pinVerifying.value) return;
 
   await nextTick();
   pinInput.value?.focus();
@@ -179,25 +346,53 @@ const changePin = (event) => {
   const value = event.target.value.replace(/[^0-9]/g, '').slice(0, 6);
 
   pinPassword.value = value;
-  errorMessage.value = '';
+  pinErrorMessage.value = '';
 
   if (event.target.value !== value) event.target.value = value;
 };
 
-// 탈퇴 확인 모달 열기
-const openWithdrawModal = () => {
-  if (!canWithdraw.value || loading.value) return;
-  showWithdrawModal.value = true;
+// PIN 검증
+const verifyPinPassword = async () => {
+  if (pinPassword.value.length !== 6 || pinVerifying.value) return;
+
+  try {
+    pinVerifying.value = true;
+    pinErrorMessage.value = '';
+
+    const response = await verifyPin(pinPassword.value);
+
+    if (!response.verified) {
+      pinPassword.value = '';
+      pinErrorMessage.value = response.message || '간편비밀번호가 일치하지 않습니다.';
+      await focusPinInput();
+      return;
+    }
+
+    showPinModal.value = false;
+    showFinalModal.value = true;
+  } catch (error) {
+    console.error(error);
+
+    pinPassword.value = '';
+    pinErrorMessage.value = error.response?.data?.message || '간편비밀번호가 일치하지 않습니다.';
+
+    await focusPinInput();
+  } finally {
+    pinVerifying.value = false;
+  }
 };
 
-// 탈퇴 확인 모달 닫기
-const closeWithdrawModal = () => {
-  showWithdrawModal.value = false;
+// 최종 확인 Modal 닫기
+const closeFinalModal = () => {
+  if (loading.value) return;
+
+  showFinalModal.value = false;
+  withdrawErrorMessage.value = '';
 };
 
 // 회원탈퇴
 const withdraw = async () => {
-  if (!canWithdraw.value || loading.value) return;
+  if (!canStartWithdraw.value || pinPassword.value.length !== 6 || loading.value) return;
 
   if (!authStore.userId) {
     await router.replace('/intro');
@@ -206,10 +401,9 @@ const withdraw = async () => {
 
   try {
     loading.value = true;
-    errorMessage.value = '';
-    showWithdrawModal.value = false;
+    withdrawErrorMessage.value = '';
 
-    await withdrawUser(authStore.userId, {
+    await withdrawUser({
       pinPassword: pinPassword.value,
       withdrawalReason: withdrawalReason.value,
     });
@@ -222,18 +416,7 @@ const withdraw = async () => {
     });
   } catch (error) {
     console.error(error);
-
-    pinPassword.value = '';
-
-    const serverMessage = error.response?.data?.message || '';
-
-    if (serverMessage.includes('간편비밀번호') || serverMessage.includes('비밀번호')) {
-      errorMessage.value = '간편비밀번호가 일치하지 않습니다.';
-    } else {
-      errorMessage.value = serverMessage || '회원탈퇴에 실패했습니다. 다시 시도해주세요.';
-    }
-
-    await focusPinInput();
+    withdrawErrorMessage.value = error.response?.data?.message || '회원탈퇴에 실패했습니다. 다시 시도해주세요.';
   } finally {
     loading.value = false;
   }
@@ -243,27 +426,18 @@ const withdraw = async () => {
 const goBack = () => {
   router.back();
 };
-
-onMounted(focusPinInput);
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+
 .withdraw-page {
-  width: 100%;
-  height: 100%;
-  background: #ffffff;
+  position: relative;
+  background: var(--color-bg-page);
 }
 
 .withdraw-container {
-  position: relative;
-  display: flex;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-  padding: 10px 28px 140px;
-  background: #ffffff;
-  box-sizing: border-box;
+  overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -273,175 +447,428 @@ onMounted(focusPinInput);
   display: none;
 }
 
-.page-header {
-  display: grid;
-  grid-template-columns: 38px 1fr 38px;
-  min-height: 44px;
-  flex-shrink: 0;
-  align-items: center;
-}
-
-.page-header h1 {
-  margin: 0;
-  color: #222222;
-  font-size: 17px;
-  font-weight: 700;
-  text-align: center;
-}
-
-.back-button {
-  justify-self: start;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #555555;
-  font-size: 27px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.header-empty {
-  width: 38px;
-}
-
 .withdraw-content {
-  margin-top: 34px;
+  width: 100%;
+  padding: 26px 0 24px;
+  box-sizing: border-box;
+}
+
+/* 상단 안내 */
+.intro-section {
   text-align: center;
 }
 
 .warning-icon {
   display: flex;
-  width: 68px;
-  height: 68px;
+  width: 56px;
+  height: 56px;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 22px;
-  border-radius: 50%;
-  background: #fff0f0;
-  color: #e53935;
-  font-size: 34px;
-  font-weight: 800;
+  margin: 0 auto 18px;
+  border-radius: 19px;
+  background: rgba(229, 57, 53, 0.08);
+  color: var(--color-error);
+  font-size: 23px;
 }
 
-.withdraw-content h2 {
+.intro-section h2 {
   margin: 0;
-  color: #111111;
-  font-size: 25px;
-  font-weight: 800;
+  color: var(--color-text-main);
   line-height: 1.4;
-  letter-spacing: -0.7px;
+  letter-spacing: -0.6px;
 }
 
 .description {
-  margin: 16px 0 0;
-  color: #777777;
-  font-size: 14px;
+  margin: 12px 0 0;
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 
-.warning-area {
-  margin-top: 26px;
-  padding: 18px;
-  border-radius: 14px;
-  background: #fff6f6;
-  text-align: left;
+/* 탈퇴 사유 */
+.reason-area {
+  margin-top: 30px;
 }
 
-.warning-area strong {
-  color: #e53935;
+.section-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--color-text-main);
+}
+
+.reason-select {
+  display: flex;
+  width: 100%;
+  height: 54px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+  border: 1px solid var(--color-border-main);
+  border-radius: 13px;
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.reason-select.selected {
+  border-color: var(--color-text-sub);
+}
+
+.reason-select {
+  display: flex;
+  width: 100%;
+  height: 54px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+  border: 1px solid var(--color-border-main);
+  border-radius: 13px;
+  background: var(--color-bg-page);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.reason-value,
+.reason-placeholder {
+  min-width: 0;
+  flex: 1;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reason-value {
+  color: var(--color-text-main);
+}
+
+.reason-placeholder {
+  color: var(--color-text-muted);
+}
+
+.reason-select i {
+  flex: none;
+  color: var(--color-text-sub);
   font-size: 13px;
-  font-weight: 800;
+}
+
+.reason-select i {
+  flex: none;
+  color: var(--color-text-sub);
+  font-size: 13px;
+}
+
+/* 탈퇴 경고 */
+.warning-area {
+  margin-top: 22px;
+  padding: 17px 16px;
+  border: 1px solid rgba(229, 57, 53, 0.18);
+  border-radius: 16px;
+  background: rgba(229, 57, 53, 0.035);
+}
+
+.warning-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--color-error);
+}
+
+.warning-title > span {
+  display: flex;
+  width: 25px;
+  height: 25px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(229, 57, 53, 0.1);
+  font-size: 13px;
 }
 
 .warning-area ul {
   margin: 12px 0 0;
-  padding-left: 17px;
-  color: #777777;
-  font-size: 11px;
-  line-height: 1.8;
+  padding-left: 20px;
+  color: var(--color-text-sub);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
-.reason-area,
-.pin-area {
-  margin-top: 24px;
-  text-align: left;
+.warning-area li + li {
+  margin-top: 3px;
 }
 
-.reason-area label,
-.pin-area label {
-  display: block;
-  margin-bottom: 9px;
-  color: #333333;
-  font-size: 14px;
-  font-weight: 700;
+/* 동의 */
+.agreement-check {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid var(--color-divider);
+  border-radius: 14px;
+  background: var(--color-bg-screen);
+  box-sizing: border-box;
+  cursor: pointer;
 }
 
-.reason-area select {
+.agreement-check.checked {
+  border-color: rgba(229, 57, 53, 0.2);
+  background: rgba(229, 57, 53, 0.035);
+}
+
+.agreement-check input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.custom-checkbox {
+  display: flex;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--color-border-main);
+  border-radius: 6px;
+  background: var(--color-bg-page);
+  color: var(--color-text-white);
+  font-size: 12px;
+}
+
+.agreement-check.checked .custom-checkbox {
+  border-color: var(--color-error);
+  background: var(--color-error);
+}
+
+.agreement-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agreement-text strong {
+  color: var(--color-text-main);
+  line-height: 1.45;
+}
+
+.agreement-text > span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* 하단 버튼 */
+.withdraw-bottom-area {
+  position: relative;
+  z-index: 5;
+  flex-shrink: 0;
+  background: var(--color-bg-page);
+}
+
+.withdraw-main-button {
   width: 100%;
   height: 52px;
-  padding: 0 14px;
-  border: 1px solid #dddddd;
-  border-radius: 10px;
-  background: #ffffff;
-  color: #333333;
-  font-size: 14px;
-  outline: none;
+  border: 0;
+  border-radius: 14px;
+  background: var(--color-error);
+  color: var(--color-text-white);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.withdraw-main-button:disabled {
+  background: var(--color-bg-disabled);
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+/* Overlay */
+.overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  background: rgba(17, 17, 17, 0.44);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* 탈퇴 사유 Bottom Sheet */
+.sheet-overlay {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.reason-sheet {
+  width: calc(100% - 32px);
+  max-width: 430px;
+  max-height: 72dvh;
+  padding: 10px 24px calc(24px + env(safe-area-inset-bottom));
+  border-radius: 26px 26px 0 0;
+  background: var(--color-bg-page);
+  box-sizing: border-box;
+  box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.13);
+  overflow-y: auto;
+}
+
+.sheet-handle {
+  width: 42px;
+  height: 4px;
+  margin: 0 auto 22px;
+  border-radius: 999px;
+  background: var(--color-border-main);
+}
+
+.reason-sheet-header h3 {
+  margin: 0;
+  color: var(--color-text-main);
+}
+
+.reason-sheet-header p {
+  margin: 7px 0 0;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.reason-list {
+  margin-top: 20px;
+}
+
+.reason-item {
+  display: flex;
+  width: 100%;
+  min-height: 54px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--color-divider);
+  background: transparent;
+  color: var(--color-text-main);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reason-item:last-child {
+  border-bottom: 0;
+}
+
+.reason-item.selected {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+.reason-item i {
+  color: var(--color-error);
+  font-size: 13px;
+}
+
+/* 중앙 Modal */
+.modal-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
   box-sizing: border-box;
 }
 
-.reason-area select:focus {
-  border-color: #e53935;
-  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.08);
+.pin-modal,
+.final-modal {
+  width: 100%;
+  max-width: 360px;
+  padding: 26px 22px 22px;
+  border-radius: 22px;
+  background: var(--color-bg-page);
+  box-sizing: border-box;
+  text-align: center;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.2);
 }
 
-.pin-area > p {
-  margin: 0 0 12px;
-  color: #888888;
-  font-size: 11px;
-  line-height: 1.5;
+/* PIN Modal */
+.pin-icon {
+  display: flex;
+  width: 52px;
+  height: 52px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 17px;
+  border-radius: 17px;
+  background: #fff4d7;
+  color: var(--color-primary-active);
+  font-size: 20px;
+}
+
+.pin-modal h3 {
+  margin: 0;
+  color: var(--color-text-main);
+}
+
+.pin-description {
+  margin: 9px 0 0;
+  color: var(--color-text-muted);
+  font-weight: 400;
+  line-height: 1.55;
 }
 
 .pin-boxes {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 9px;
   width: 100%;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 25px;
   cursor: text;
-  outline: none;
 }
 
 .pin-box {
   display: flex;
-  height: 54px;
+  height: 48px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #dddddd;
-  border-radius: 12px;
-  background: #ffffff;
+  border: 1px solid var(--color-border-main);
+  border-radius: 11px;
+  background: var(--color-bg-screen);
   box-sizing: border-box;
 }
 
 .pin-box.active {
-  border-color: #e53935;
-  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.08);
+  border-color: var(--color-primary);
+  background: #fffaf0;
+  box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.1);
 }
 
 .pin-box.filled {
-  border-color: #cccccc;
-  background: #fafafa;
+  border-color: var(--color-primary);
+  background: #fff8e5;
 }
 
 .pin-boxes.error .pin-box {
-  border-color: #e53935;
-  background: #fff7f7;
+  border-color: var(--color-error);
+  background: var(--color-bg-page);
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.07);
 }
 
 .pin-dot {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: #222222;
+  background: var(--color-text-main);
 }
 
 .hidden-pin-input {
@@ -453,200 +880,227 @@ onMounted(focusPinInput);
   pointer-events: none;
 }
 
-.error-message {
-  margin: 10px 0 0;
-  color: #e53935;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.5;
+.pin-message-area {
+  min-height: 40px;
+  margin-top: 10px;
 }
 
-.agreement-check {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.agreement-check input {
-  flex: none;
-  width: 18px;
-  height: 18px;
+.pin-error-message,
+.pin-helper-message {
   margin: 0;
-  accent-color: #e53935;
-}
-
-.agreement-check span {
-  color: #555555;
-  font-size: 11px;
-  line-height: 1.5;
-}
-
-.withdraw-button {
-  position: absolute;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
-  width: auto;
-  height: 58px;
-  margin: 0;
-  border: 1px solid #d32f2f;
-  border-radius: 10px;
-  background: #e53935;
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.withdraw-button:disabled {
-  border-color: #dddddd;
-  background: #eeeeee;
-  color: #aaaaaa;
-  cursor: not-allowed;
-}
-
-.modal-overlay {
-  position: fixed;
-  z-index: 100;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(0, 0, 0, 0.46);
-  box-sizing: border-box;
-}
-
-.withdraw-modal {
-  width: 100%;
-  max-width: 340px;
-  padding: 28px 22px 20px;
-  border-radius: 18px;
-  background: #ffffff;
-  text-align: center;
-  box-sizing: border-box;
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
-}
-
-.modal-warning-icon {
-  display: flex;
-  width: 58px;
-  height: 58px;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 18px;
-  border-radius: 50%;
-  background: #fff0f0;
-  color: #e53935;
-  font-size: 30px;
-  font-weight: 800;
-}
-
-.withdraw-modal h3 {
-  margin: 0;
-  color: #111111;
-  font-size: 20px;
-  font-weight: 800;
-}
-
-.withdraw-modal > p {
-  margin: 14px 0 0;
-  color: #777777;
   font-size: 13px;
-  line-height: 1.6;
+  font-weight: 400;
+  line-height: 1.45;
 }
 
-.modal-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 22px;
-  padding: 15px 16px;
-  border: 1px solid #eeeeee;
+.pin-error-message {
+  color: var(--color-error);
+}
+
+.pin-helper-message {
+  color: var(--color-text-muted);
+}
+
+.pin-confirm-button {
+  width: 100%;
+  height: 48px;
+  border: 0;
   border-radius: 12px;
-  background: #fafafa;
-  text-align: left;
-}
-
-.modal-info strong {
-  color: #555555;
-  font-size: 12px;
-}
-
-.modal-info span {
-  color: #222222;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.modal-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 24px;
-}
-
-.modal-cancel-button,
-.modal-withdraw-button {
-  height: 50px;
-  border-radius: 10px;
+  background: var(--color-primary);
+  color: var(--color-text-main);
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
 }
 
-.modal-cancel-button {
-  border: 1px solid #dddddd;
-  background: #ffffff;
-  color: #333333;
+.pin-confirm-button:disabled {
+  background: var(--color-bg-disabled);
+  color: var(--color-text-disabled);
 }
 
-.modal-withdraw-button {
-  border: 1px solid #ffcaca;
-  background: #ffe7e7;
-  color: #e53935;
+/* 최종 확인 */
+.final-warning-icon {
+  display: flex;
+  width: 54px;
+  height: 54px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  border-radius: 18px;
+  background: rgba(229, 57, 53, 0.08);
+  color: var(--color-error);
+  font-size: 22px;
 }
 
+.final-modal h3 {
+  margin: 0;
+  color: var(--color-text-main);
+}
+
+.final-description {
+  margin: 10px 0 0;
+  color: var(--color-text-muted);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.final-reason {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 19px;
+  padding: 13px;
+  border-radius: 12px;
+  background: var(--color-bg-screen);
+  text-align: left;
+}
+
+.final-reason span {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.final-reason strong {
+  color: var(--color-text-main);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.withdraw-error-message {
+  margin: 12px 0 0;
+  color: var(--color-error);
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.final-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.final-cancel-button,
+.final-withdraw-button {
+  height: 46px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.final-cancel-button {
+  border: 1px solid var(--color-border-main);
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
+}
+
+.final-withdraw-button {
+  border: 1px solid var(--color-error);
+  background: var(--color-error);
+  color: var(--color-text-white);
+}
+
+/* 로딩 */
 .loading-overlay {
-  position: absolute;
-  z-index: 110;
+  position: fixed;
+  z-index: 120;
   inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: rgba(255, 255, 255, 0.88);
-  color: #333333;
-  font-size: 14px;
-  font-weight: 700;
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .loading-spinner {
-  width: 36px;
-  height: 36px;
-  border: 4px solid #eeeeee;
-  border-top-color: #e53935;
+  width: 34px;
+  height: 34px;
+  border: 4px solid var(--color-bg-disabled);
+  border-top-color: var(--color-error);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
+/* Bottom Sheet Transition */
+.sheet-enter-active,
+.sheet-leave-active {
+  transition: opacity 0.22s ease;
+}
+
+.sheet-enter-active .reason-sheet,
+.sheet-leave-active .reason-sheet {
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sheet-enter-from,
+.sheet-leave-to {
+  opacity: 0;
+}
+
+.sheet-enter-from .reason-sheet,
+.sheet-leave-to .reason-sheet {
+  transform: translateY(100%);
+}
+
+/* Modal Transition */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-enter-active .pin-modal,
+.modal-leave-active .pin-modal,
+.modal-enter-active .final-modal,
+.modal-leave-active .final-modal {
+  transition: opacity 0.2s ease, transform 0.22s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-from .pin-modal,
+.modal-leave-to .pin-modal,
+.modal-enter-from .final-modal,
+.modal-leave-to .final-modal {
+  opacity: 0;
+  transform: scale(0.94) translateY(8px);
+}
+
 @media (max-width: 360px) {
-  .withdraw-container {
+  .reason-sheet {
     padding-right: 20px;
     padding-left: 20px;
   }
 
-  .withdraw-button {
-    right: 20px;
-    left: 20px;
+  .pin-boxes {
+    gap: 5px;
   }
 
-  .pin-boxes {
-    gap: 7px;
+  .pin-box {
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-enter-active,
+  .sheet-leave-active,
+  .sheet-enter-active .reason-sheet,
+  .sheet-leave-active .reason-sheet,
+  .modal-enter-active,
+  .modal-leave-active,
+  .modal-enter-active .pin-modal,
+  .modal-leave-active .pin-modal,
+  .modal-enter-active .final-modal,
+  .modal-leave-active .final-modal {
+    transition: none;
   }
 }
 
