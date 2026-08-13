@@ -59,7 +59,7 @@
 
       <section class="kb-section">
       <div class="kb-section-title-row">
-        <h2 class="kb-section-title text-18-bold">랜덤박스 안내</h2>
+        <h2 class="kb-section-title text-20-bold">랜덤박스 안내</h2>
         <span class="box-count text-13-bold">{{ randomBoxes.length }}개 보유</span>
       </div>
       <div class="guide-card kb-card">
@@ -174,7 +174,7 @@ onMounted(initialize);
 
 
 .random-box-page { background: var(--color-bg-screen); }
-.box-stage { margin-top: 14px; min-height: 365px; padding: 34px 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: linear-gradient(180deg, var(--color-bg-page) 0%, #fffaf0 100%); box-shadow: none; border: 1px solid var(--color-divider); }
+.box-stage { min-height: 365px; padding: 34px 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: linear-gradient(180deg, var(--color-bg-page) 0%, #fffaf0 100%); box-shadow: none; border: 1px solid var(--color-divider); }
 .gift-visual { position: relative; width: 126px; height: 126px; margin-bottom: 18px; display: flex; align-items: center; justify-content: center; border-radius: 40px; background: #fff4c9; color: #f4aa00; font-size: 66px; transform: rotate(-2deg); }
 .gift-visual.opened { background: #fff1b9; transform: none; }
 .gift-visual.opening {
@@ -299,7 +299,7 @@ onMounted(initialize);
 .reward-value { margin: 2px 0 5px; }
 .box-actions { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .box-count { color: var(--color-primary-border); }
-.guide-card { padding: 6px 16px 14px; box-shadow: none; border: 1px solid var(--color-divider); }
+.guide-card { padding: 6px 16px 14px; }
 .guide-row { padding: 13px 0; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--color-divider); }
 .guide-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: color-mix(in srgb, var(--color-primary) 18%, var(--color-bg-page)); color: var(--color-primary-border); }
 .guide-row strong,.guide-row span { display: block; }.guide-row span { margin-top: 2px; color: var(--color-text-sub); }
