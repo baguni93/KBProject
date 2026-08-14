@@ -715,7 +715,7 @@ onMounted(() => {
   gap: 5px;
   margin: 0;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
   line-height: 1.4;
   letter-spacing: -0.3px;
