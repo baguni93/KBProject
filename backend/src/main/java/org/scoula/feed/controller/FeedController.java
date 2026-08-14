@@ -10,8 +10,10 @@ import org.scoula.feed.dto.FeedImageDTO;
 import org.scoula.feed.dto.FeedResponseDTO;
 import org.scoula.feed.dto.FeedUpdateRequestDTO;
 import org.scoula.feed.service.FeedService;
+import org.scoula.security.account.domain.CustomUser;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -28,8 +30,13 @@ public class FeedController {
 
     //전체 피드
     @GetMapping
-    public ResponseEntity<List<FeedResponseDTO>>getFeedList(@RequestParam int userId) {
-        return ResponseEntity.ok(feedService.getList(userId));
+    public ResponseEntity<List<FeedResponseDTO>>getFeedList(
+            @AuthenticationPrincipal CustomUser customUser,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "3") int size
+    ) {
+        int userId = customUser.getUser().getUserId().intValue();
+        return ResponseEntity.ok(feedService.getList(userId, page , size));
     }
 
     // 친구 피드 , 사용 x  추후 피드탭에서 필터 시 사용

@@ -70,9 +70,10 @@ public class FeedServiceImpl implements FeedService {
 
     @Transactional
     @Override
-    public List<FeedResponseDTO> getList(int userId){
+    public List<FeedResponseDTO> getList(int userId, int page, int size){
+        int offset = page * size;
 
-       List<FeedVO> list = feedMapper.getList(userId);
+       List<FeedVO> list = feedMapper.getList(userId,offset,size);
         return getFeedRespoonseDTOList(list);
     }
 

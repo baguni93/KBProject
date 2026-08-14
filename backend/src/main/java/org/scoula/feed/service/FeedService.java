@@ -11,7 +11,7 @@ public interface FeedService {
 
      FeedResponseDTO create(FeedCreateRequestDTO request);
      FeedResponseDTO get(int feedId);
-     List<FeedResponseDTO> getList(int userId);
+     List<FeedResponseDTO> getList(int userId ,int page, int size);
      List<FeedResponseDTO> getFriendList(int userId);
      List<FeedResponseDTO> getMyList(int userId);
      FeedResponseDTO delete(int feedId);

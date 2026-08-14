@@ -8,7 +8,9 @@ import java.util.List;
 
 public interface FeedMapper {
 
-    List<FeedVO> getList(int userId);
+    List<FeedVO> getList(@Param("userId") int userId,
+                         @Param("offset")int offset,
+                         @Param("size")int size);
     List<FeedVO> getMyList(int userId);
     List<FeedVO> getFriendList(int userId);
 
