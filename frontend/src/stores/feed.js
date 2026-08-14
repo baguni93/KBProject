@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import feedApi from '@/api/feedApi';
 import { useAuthStore } from './auth';
+import commentApi from '@/api/commentApi';
 
 export const useFeedStore = defineStore('feed', () => {
   const authStore = useAuthStore();
@@ -15,7 +16,11 @@ export const useFeedStore = defineStore('feed', () => {
   //맴버 피드
   const memberFeeds = ref([]);
 
+  const comments = ref([]);
+
   const feed = ref({});
+
+  const isRefreshing = ref(false);
 
   const createRequestDTO = ({ feedType, visibility, content, targetId }) => {
     {
@@ -55,6 +60,9 @@ export const useFeedStore = defineStore('feed', () => {
   const deleteFeed = async (feedId) => {
     try {
       await feedApi.delete(feedId);
+      publicFeeds.value = publicFeeds.value.filter(
+        (feed) => feed.feedId !== feedId,
+      );
     } catch (e) {
       console.log(e);
     }
@@ -63,9 +71,57 @@ export const useFeedStore = defineStore('feed', () => {
   // 공개 피드 조회
   const getList = async (params) => {
     try {
-      publicFeeds.value = await feedApi.getList(params);
+      const result = await feedApi.getList(params);
+
+      if (params.page === 0) {
+        publicFeeds.value = result;
+      } else {
+        publicFeeds.value.push(...result);
+      }
+      console.log(result);
+      return result;
     } catch (e) {
       console.log(e);
+      throw e;
+    }
+  };
+
+  // 공개 피드 새로고침
+  const refreshList = async (params) => {
+    if (isRefreshing.value) {
+      return;
+    }
+
+    isRefreshing.value = true;
+    const startTime = Date.now();
+    try {
+      const result = await feedApi.getList(params);
+
+      // API가 너무 빨리 끝나도 최소 800ms 동안 로딩 표시
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, 800 - elapsedTime);
+
+      if (remainingTime > 0) {
+        await new Promise((resolve) => {
+          setTimeout(resolve, remainingTime);
+        });
+      }
+
+      const mergedFeeds = [...result, ...publicFeeds.value];
+
+      // feedId 기준 중복 제거
+      publicFeeds.value = Array.from(
+        new Map(mergedFeeds.map((feed) => [feed.feedId, feed])).values(),
+      );
+
+      console.log('새로 추가된 피드:', result);
+
+      return result;
+    } catch (e) {
+      console.log(e);
+      throw e;
+    } finally {
+      isRefreshing.value = false;
     }
   };
 
@@ -129,21 +185,89 @@ export const useFeedStore = defineStore('feed', () => {
     return liked;
   };
 
+  const getComments = async (feedId) => {
+    if (feedId == null) {
+      return [];
+    }
+
+    try {
+      const data = await commentApi.getList(feedId);
+
+      comments.value = data ?? [];
+
+      return comments.value;
+    } catch (e) {
+      console.error('댓글 조회 실패:', e);
+      throw e;
+    }
+  };
+
+  const createComment = async (params) => {
+    try {
+      const data = await commentApi.create(params);
+
+      // 댓글 목록에 바로 추가
+      comments.value.push(data);
+
+      // 피드 댓글 수 증가
+      const targetFeed = publicFeeds.value.find(
+        (feed) => feed.feedId === params.feedId,
+      );
+
+      if (targetFeed) {
+        targetFeed.commentCount++;
+      }
+
+      return data;
+    } catch (e) {
+      console.error('댓글 등록 실패:', e);
+      throw e;
+    }
+  };
+
+  const deleteComment = async (commentId, feedId) => {
+    try {
+      await commentApi.delete(commentId);
+
+      // Pinia 댓글 목록에서 제거
+      comments.value = comments.value.filter(
+        (comment) => comment.commentId !== commentId,
+      );
+
+      // 피드 댓글 수 감소
+      const targetFeed = publicFeeds.value.find(
+        (feed) => feed.feedId === feedId,
+      );
+
+      if (targetFeed && targetFeed.commentCount > 0) {
+        targetFeed.commentCount--;
+      }
+    } catch (e) {
+      console.error('댓글 삭제 실패:', e);
+      throw e;
+    }
+  };
+
   return {
     publicFeeds,
     friendFeeds,
     myFeeds,
     memberFeeds,
+    comments,
+    isRefreshing,
     createRequestDTO,
     createFeed,
     deleteFeed,
     getFeed,
     getList,
+    refreshList,
     getMyList,
     getFriendList,
     getMemberList,
-
+    getComments,
     updateLike,
     toggleLike,
+    createComment,
+    deleteComment,
   };
 });

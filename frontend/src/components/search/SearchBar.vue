@@ -4,30 +4,16 @@
     :class="{ clickable: !editable }"
     @click="handleClick"
   >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="18"
-      height="18"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"
-      />
-    </svg>
+    <i class="fa-solid fa-magnifying-glass search-icon"></i>
 
     <input
       v-if="editable"
       v-model="model"
-      :placeholder="placeholder"
+      placeholder="사용자 검색"
       @keyup.enter="$emit('search', model)"
     />
 
-    <span v-else>
+    <span v-else class="placeholder-text">
       {{ placeholder }}
     </span>
   </div>
@@ -35,6 +21,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
+
 const model = defineModel();
 
 const props = defineProps({
@@ -42,7 +29,6 @@ const props = defineProps({
     type: String,
     default: '사용자 검색',
   },
-
   editable: {
     type: Boolean,
     default: false,
@@ -64,36 +50,46 @@ const handleClick = () => {
 .search-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-
-  width: 100%;
+  gap: 12px;
   height: 48px;
-
   padding: 0 16px;
 
-  background: #f5f5f5;
+  background: #e2edf6;
+  border-radius: 24px;
 
-  border-radius: 14px;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
-.search-bar svg {
-  color: #888;
+.search-icon {
+  color: #555;
+  font-size: 16px;
   flex-shrink: 0;
 }
 
-input {
+.search-bar input {
   flex: 1;
+  height: 100%;
 
   border: none;
   outline: none;
-
   background: transparent;
 
   font-size: 15px;
+  padding: 0;
+  margin: 0;
 }
 
-span {
-  color: #999;
+.search-bar span {
+  color: #888;
   font-size: 15px;
+  margin: 0;
+  padding: 0;
+}
+
+.placeholder-text {
+  color: #667085;
+  font-size: 15px;
+  font-weight: 500;
 }
 </style>

@@ -4,7 +4,7 @@ export default [
   {
     path: '/feed',
     name: 'feed',
-    component: () => import('../pages/feed/FeedMain.vue'),
+    component: () => import('../pages/feed/FeedMainPage.vue'),
     meta: {
       showBottomNav: true,
     },

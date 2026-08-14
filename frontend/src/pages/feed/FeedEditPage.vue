@@ -69,19 +69,20 @@
       수정 완료
     </button>
 
-    <button class="delete-btn">피드 삭제</button>
+    <button class="delete-btn" @click="handleDelete">피드 삭제</button>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-
 import PageHeader from '@/components/common/PageHeader.vue';
-
 import { useFeedStore } from '@/stores/feed';
-
 import feedApi from '@/api/feedApi';
+
+import { useModalStore } from '@/stores/userModalStore.js';
+const modalStore = useModalStore();
+
 const router = useRouter();
 const route = useRoute();
 
@@ -180,6 +181,12 @@ const removeImage = (index) => {
 
 // 수정 요청
 const submit = async () => {
+  const isConfirm = await modalStore.showConfirm('피드를 수정하시겠습니까?');
+
+  if (!isConfirm) {
+    return;
+  }
+
   const formData = new FormData();
 
   formData.append('feedId', feedId);
@@ -198,9 +205,27 @@ const submit = async () => {
     formData.append('deleteFiles', id);
   });
 
-  await feedApi.updateFeed(formData);
-
+  try {
+    await feedApi.updateFeed(formData);
+  } catch (e) {
+    console.log(e);
+  }
   router.push('/feed');
+};
+
+const handleDelete = async () => {
+  const isConfirm = await modalStore.showConfirm('피드를 삭제하시겠습니까?');
+
+  if (!isConfirm) {
+    return;
+  }
+
+  try {
+    await feedStore.deleteFeed(feedId);
+    router.push('/feed');
+  } catch (e) {
+    console.log(e);
+  }
 };
 
 onMounted(async () => {

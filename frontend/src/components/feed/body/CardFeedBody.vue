@@ -24,10 +24,11 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
 import { useCardEditorStore } from '@/stores/cardEditorStore';
 const cardEditorStore = useCardEditorStore();
+import { useRouter } from 'vue-router';
 const router = useRouter();
+
 const props = defineProps({
   feed: {
     type: Object,

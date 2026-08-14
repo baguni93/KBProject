@@ -36,19 +36,22 @@ const modalStore = useModalStore();
 <style scoped>
 /* 앱 모달 백드롭 (어두운 배경) */
 .modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100dvh;
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
   background-color: rgba(0, 0, 0, 0.5);
+
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+
+  z-index: 10000;
 }
 
-/* 모달 박스 (모바일 화면에 맞는 둥근 카드 형태) */
+/* 모달 박스 (모바일 화면에 맞는 둥근 카드 형태s) */
 .modal-box {
   width: 85%;
   max-width: 320px;
