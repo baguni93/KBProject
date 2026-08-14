@@ -713,11 +713,11 @@ const goBack = () => {
 }
 
 .reason-sheet {
-  width: calc(100% - 32px);
+  width: 100%;
   max-width: 430px;
   max-height: 72dvh;
-  padding: 10px 24px calc(24px + env(safe-area-inset-bottom));
-  border-radius: 26px 26px 0 0;
+  padding: 10px 24px 30px;
+  border-radius: 28px 28px 0 0;
   background: var(--color-bg-page);
   box-sizing: border-box;
   box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.13);
