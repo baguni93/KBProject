@@ -91,7 +91,7 @@ const router = createRouter({
       },
     },
     {
-      path: '/event/main',
+      path: '/event',
       name: 'EventMain',
       component: EventPage,
       meta: {

@@ -20,6 +20,7 @@ public class EventGetAttendanceResponseDTO {
     private String eventDesc;
     private String eventType;
     private String eventStatus;
+    private String eventCategory;
     private String eventImgName;
     private int eventTarget; // 이벤트 목표
     private int currentTargetCount; // 현재 진행 중인 달성 횟수

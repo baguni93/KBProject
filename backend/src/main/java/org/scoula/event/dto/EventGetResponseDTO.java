@@ -19,6 +19,7 @@ public class EventGetResponseDTO {
     private String eventDesc;
     private String eventType;
     private String eventStatus;
+    private String eventCategory;
     private String eventImgName;
     private int eventTarget; // 이벤트 목표
     private int currentTargetCount; // 현재 진행 중인 달성 횟수
@@ -41,6 +42,7 @@ public class EventGetResponseDTO {
                 .eventName(eventNormalVO.getEventName())
                 .eventDesc(eventNormalVO.getEventDesc())
                 .eventType(eventNormalVO.getEventType())
+                .eventCategory(eventNormalVO.getEventCategory())
                 .eventStatus(eventNormalVO.getEventStatus())
                 .eventImgName(eventNormalVO.getEventImgName())// gpt 만들어서
                 .eventTarget(eventNormalVO.getEventTarget())

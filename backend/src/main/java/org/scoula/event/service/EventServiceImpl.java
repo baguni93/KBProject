@@ -238,6 +238,15 @@ public class EventServiceImpl implements EventService{
 
         log.info("출석 제외 이벤트 상태:" + eventNormalVOList);
 
+//        List<EventGetResponseDTO> eventList = eventNormalVOList.stream()
+//                .map(EventGetResponseDTO::of)
+//                .toList();
+//
+//        for (EventGetResponseDTO dto : eventList) {
+//            updateEventProgress(userId, dto);
+//        }
+//
+//        return eventList;
         return eventNormalVOList.stream().map(EventGetResponseDTO::of).toList();
     }
 
@@ -280,6 +289,9 @@ public class EventServiceImpl implements EventService{
         //리펙토링 할 때
         //일반 이벤트 get return  EventGetResponseDTO
         //출석 이벤트 get return  EventGetAttendanceResponseDTO
+
+
+
 
         return getEventList(userId);
     }
@@ -341,10 +353,17 @@ public class EventServiceImpl implements EventService{
     @Override
     @Transactional
     public List<EventGetResponseDTO> createParticipation(int userId, int eventId){
-
+        // 참여이력 생성
         eventMapper.createParticipation(userId, eventId);
 
         return getEventList(userId);
     }
+
+
+//    @Override
+//    @Transactional
+//    public createEventFeed(int userId, int eventId) {
+//
+//    }
 
 }

@@ -16,6 +16,7 @@ public class EventRewardReceiveVO {
     private Integer eventId;
     private String eventName;
     private String eventType;
+    private String eventCategory;
     private String eventImgName;
     private Integer rewardId;
     private Integer userId;

@@ -52,6 +52,8 @@ import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import eventApi from '@/api/eventApi';
 import pointwallet from '@/api/pointwallet';
+import feedApi from '@/api/feedApi';
+import customCardApi from '@/api/customCard.Api';
 import PointView from '@/components/finance/PointView.vue';
 import EventMainCardBanner from '@/components/event/EventMainCardBanner.vue';
 import EventMainChallenge from '@/components/event/EventMainChallenge.vue';
@@ -67,6 +69,9 @@ const router = useRouter();
 const userPoint = ref(0);
 const challengeData = ref(null);
 const eventLists = ref([]);
+
+const content = ref('');
+const visibility = ref('');
 
 // 메인 페이지 데이터 로드
 const fetchMainData = async () => {
@@ -133,6 +138,8 @@ const handleClaimReward = async (challengeId) => {
 const onEventAction = async ({
   eventId,
   eventName,
+  eventType,
+  eventCategory,
   rewardId,
   buttonStatus,
 }) => {
@@ -165,7 +172,28 @@ const onEventAction = async ({
           console.warn('이미 참가 등록된 이벤트입니다.', err);
         }
 
-        // 이벤트 참여이력 바로 생성되도록
+        // 피드 관련 이벤트일 경우, 일단 테스트...
+        if (eventCategory === 'FEED') {
+          const formData = new FormData();
+
+          formData.append('userId', userId);
+          formData.append('targetId', eventId);
+          formData.append('feedType', 'EVENT');
+          formData.append('content', `피드 작성하기`);
+          formData.append('visibility', 'PUBLIC');
+
+          await feedApi.createFeed(formData);
+          await eventApi.createParticipation(userId, eventId);
+          return;
+        }
+
+        // 카드는
+        if (eventCategory === 'CARD') {
+          // 커스텀 카드 관련 로직 처리
+          return router.push('/customcard');
+        }
+
+        // 페이지 이동 없는 즉시 참여 이벤트일 경우만
         return await eventApi.createParticipation(userId, eventId);
       },
       msg: `[${eventName}] 이벤트 참여를 시작합니다.`,
@@ -183,8 +211,26 @@ const onEventAction = async ({
 
     // 3. 진행 중 이벤트
     PROGRESS: {
-      action: () => eventApi.createParticipation(userId, eventId),
-      msg: `[${eventName}] 이벤트 참여가 완료되었습니다.`,
+      action: async () => {
+        // // 피드
+        // if (eventCategory === 'FEED') {
+        //   router.push('/feed');
+        //   return;
+        // }
+
+        // // 카드
+        // if (eventCategory === 'CARD') {
+        //   router.push('/custom-card');
+        //   return;
+        // }
+
+        // 페이지 이동 없는 즉시 참여 이벤트일 경우만
+        await eventApi.createParticipation(userId, eventId);
+      },
+      // 메세지 제어
+      msg: ['FEED', 'CARD', 'REMITTANCE'].includes(eventCategory)
+        ? null
+        : `[${eventName}] 이벤트 참여가 완료되었습니다.`,
     },
 
     // 4. 오늘자 참여 완료

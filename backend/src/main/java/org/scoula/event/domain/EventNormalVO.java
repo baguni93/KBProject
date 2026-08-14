@@ -18,6 +18,7 @@ public class EventNormalVO {
     private String eventDesc;
     private String eventType;
     private String eventStatus;
+    private String eventCategory;
     private String eventImgName;
     private int eventTarget; // 이벤트 목표
     private int eventLevel;

@@ -162,6 +162,7 @@
                a.event_name,
                a.event_desc,
                a.event_type,
+               a.event_category,
                a.event_status,
                a.event_img_name,
                a.event_target,
@@ -169,25 +170,61 @@
                a.event_daily_limit_count,
                a.start_at,
                a.end_at,
-
-
                b.reward_id,
                b.reward_point,
                b.reward_exp,
 
-               (
-                   SELECT COUNT(*)
-                   FROM event_participation_tbl ep
-                   WHERE ep.user_id = #{userId}
-                     AND ep.event_id = a.event_id
-               ) AS currentTargetCount,
+               (a.event_daily_limit_count > 0 AND
+                (
+                    SELECT COUNT(*)
+                      FROM event_participation_tbl ep
+                     WHERE ep.user_id = #{userId}
+                       AND ep.event_id = a.event_id
+                       AND DATE(ep.participated_at) = CURDATE()
+                ) >= a.event_daily_limit_count
+                   ) AS isDailyLimitReached,
+
+               CASE
+                   WHEN a.event_category = 'FEED' THEN (
+                    SELECT COUNT(*)
+                      FROM feed_tbl f
+                     WHERE f.user_id = #{userId}
+                       AND f.target_id = a.event_id
+                   )
+                   WHEN a.event_category = 'CARD' THEN (
+                    SELECT COUNT(*)
+                      FROM registered_card_tbl c
+                     WHERE c.user_id = #{userId}
+                   )
+                   ELSE (
+                       SELECT COUNT(*)
+                       FROM event_participation_tbl ep
+                       WHERE ep.user_id = #{userId}
+                         AND ep.event_id = a.event_id
+                   )
+                   END AS currentTargetCount,
 
                (
-                   SELECT COUNT(*)
-                   FROM event_participation_tbl ep
-                   WHERE ep.user_id = #{userId}
-                     AND ep.event_id = a.event_id
-               ) >= a.event_target AS completed,
+                   CASE
+                       WHEN a.event_category = 'FEED' THEN (
+                        SELECT COUNT(*)
+                          FROM feed_tbl f
+                         WHERE f.user_id = #{userId}
+                           AND f.target_id = a.event_id
+                       )
+                       WHEN a.event_category = 'CARD' THEN (
+                        SELECT COUNT(*)
+                          FROM registered_card_tbl c
+                         WHERE c.user_id = #{userId}
+                       )
+                       ELSE (
+                           SELECT COUNT(*)
+                           FROM event_participation_tbl ep
+                           WHERE ep.user_id = #{userId}
+                             AND ep.event_id = a.event_id
+                       )
+                       END
+                   ) >= a.event_target AS completed,
 
                EXISTS (
                    SELECT 1
