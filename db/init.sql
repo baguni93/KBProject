@@ -1708,6 +1708,8 @@ CREATE TABLE event_tbl
     event_desc     TEXT         NULL COMMENT '이벤트상세설명',
 
     event_type     VARCHAR(20)  NULL COMMENT '이벤트유형',
+    
+    event_category	VARCHAR(20) NULL COMMENT '이벤트 카테고리',
 
     event_status   VARCHAR(10)  NOT NULL DEFAULT 'OPEN' COMMENT '이벤트 진행 토글',
 
@@ -1730,6 +1732,11 @@ CREATE TABLE event_tbl
             event_type IN ('ATTENDANCE', 'PERMANENT', 'LIMITED', 'SEASON', 'PROMOTION', 'LUCKYDRAW' )
             ),
 
+	CONSTRAINT chk_event_category
+        CHECK (
+            event_category IN ('ATTENDANCE', 'FEED', 'CARD', 'REMITTANCE', 'WALLET', 'ANALYSIS', 'RANDOMBOX', 'ETC')
+            ),
+            
     CONSTRAINT chk_event_status
         CHECK (
             event_status IN ('OPEN', 'CLOSE')
