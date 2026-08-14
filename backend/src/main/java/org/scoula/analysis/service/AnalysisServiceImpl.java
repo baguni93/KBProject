@@ -8,6 +8,7 @@ import org.scoula.analysis.mapper.AnalysisMapper;
 import org.scoula.analysis.mapper.MerchantCategoryMappingMapper;
 import org.scoula.exception.CustomException;
 import org.scoula.exception.ErrorCode;
+import org.scoula.event.service.EventService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +39,7 @@ public class AnalysisServiceImpl implements AnalysisService {
 
     private final AnalysisSaveService analysisSaveService;
     private final AnalysisNarrativeService analysisNarrativeService;
+    private final EventService eventService;
 
 
     @Override
@@ -800,6 +802,8 @@ public class AnalysisServiceImpl implements AnalysisService {
                         spendingAnalysis,
                         saveCategories
                 );
+
+        eventService.recordMissionProgress(userId, "ANALYSIS");
 
         log.info(
                 "소비분석 실행 완료 userId={}, period={}, "
