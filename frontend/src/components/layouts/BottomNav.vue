@@ -6,6 +6,7 @@
       :to="menu.url"
       class="nav-item"
       :class="{ active: isActive(menu.url) }"
+      @click="handleTabClick(menu.url)"
     >
       <div class="icon-box" :class="{ center: menu.title === '결제' }">
         <i :class="menu.icon"></i>
@@ -19,6 +20,8 @@
 <script setup>
 import { useRoute } from 'vue-router';
 import config from '@/config';
+import { useFeedStore } from '@/stores/feed';
+const feedStore = useFeedStore();
 
 const route = useRoute();
 
@@ -30,6 +33,23 @@ const isActive = (url) => {
 
   // 하위 경로까지 활성화
   return route.path.startsWith(url);
+};
+
+const emit = defineEmits(['tab-click']);
+
+const handleTabClick = async (url) => {
+  // 현재 활성화된 탭을 다시 클릭한 경우
+  if (!isActive(url)) {
+    return;
+  }
+  emit('tab-click', url);
+  // 피드 탭을 다시 클릭
+  if (url === '/feed') {
+    await feedStore.refreshList({
+      page: 0,
+      size: 3,
+    });
+  }
 };
 </script>
 
@@ -47,7 +67,7 @@ const isActive = (url) => {
   border-top: 1px solid #eee;
 
   flex-shrink: 0;
-  z-index: 9999;
+  z-index: 9998;
 }
 
 .nav-item {

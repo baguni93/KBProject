@@ -2,12 +2,17 @@
   <div class="app-wrapper">
     <div class="app">
       <!-- 페이지 -->
-      <main class="app-content">
+      <main ref="contentRef" class="app-content">
         <slot />
       </main>
 
       <!-- 공통 Bottom -->
-      <BottomNav v-if="showBottomNav" />
+      <BottomNav v-if="showBottomNav" @tab-click="handleTabClick" />
+
+      <!-- 앱 내부 Overlay -->
+      <div class="overlay-root">
+        <CommonModal />
+      </div>
     </div>
   </div>
 </template>
@@ -16,7 +21,7 @@
 import { ref, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import BottomNav from './BottomNav.vue';
-
+import CommonModal from '@/components/common/CommonModal.vue';
 defineProps({
   showBottomNav: {
     type: Boolean,
@@ -32,18 +37,30 @@ const contentRef = ref(null);
  * 페이지 이동 시 스크롤 최상단 이동
  */
 watch(
-    () => route.path,
-    async () => {
-      try {
-        await nextTick();
-        if (contentRef.value) {
-          contentRef.value.scrollTop = 0;
-        }
-      } catch (e) {
-        console.log('Scroll top bypass', e);
+  () => route.path,
+  async () => {
+    try {
+      await nextTick();
+
+      if (contentRef.value) {
+        contentRef.value.scrollTop = 0;
       }
-    },
+    } catch (e) {
+      console.log('Scroll top bypass', e);
+    }
+  },
 );
+
+const handleTabClick = () => {
+  if (!contentRef.value) {
+    return;
+  }
+
+  contentRef.value.scrollTo({
+    top: 0,
+    behavior: 'smooth',
+  });
+};
 </script>
 
 <style scoped>
@@ -57,11 +74,13 @@ watch(
 
   padding: 40px;
 
-  background: #EEEEEE;
+  background: #eeeeee;
   box-sizing: border-box;
 }
 
 .app {
+  position: relative;
+
   width: 430px;
   height: calc(100vh - 80px);
   max-height: 900px;
@@ -82,6 +101,27 @@ watch(
 
   overflow-y: auto;
   overflow-x: hidden;
+
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.app-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* Teleport 목적지 */
+#overlay-root {
+  position: absolute;
+  inset: 0;
+
+  z-index: 10000;
+
+  pointer-events: none;
+}
+
+#overlay-root > * {
+  pointer-events: auto;
 }
 
 @media (max-width: 430px) {

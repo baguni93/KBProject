@@ -1,155 +1,109 @@
 <template>
-  <Teleport to="body">
-    <Transition name="bottom-sheet">
-      <div v-if="modelValue" class="overlay" @click.self="close">
-        <div class="sheet">
-          <div class="handle"></div>
+  <Transition name="bottom-sheet">
+    <div v-if="modelValue" class="overlay" @click.self="close">
+      <div class="sheet">
+        <div class="handle"></div>
 
-          <div class="header">
-            <span>댓글</span>
-          </div>
+        <div class="header">
+          <span>댓글</span>
+        </div>
 
-          <div class="content">
-            <div
-              v-for="comment in comments"
-              :key="comment.commentId"
-              class="comment"
-            >
-              <img
-                class="profile-image"
-                :src="`/api/feeds/profile/${comment.writer.profileImageName}`"
-                alt=""
-              />
-
-              <div class="comment-body">
-                <div class="comment-header">
-                  <span class="nickname">
-                    {{ comment.writer.nickname }}
-                  </span>
-
-                  <span class="date">
-                    {{ formatDate(comment.createdAt) }}
-                  </span>
-
-                  <button
-                    v-if="comment.userId === userId"
-                    class="delete-btn"
-                    @click="deleteComment(comment.commentId)"
-                  >
-                    삭제
-                  </button>
-                </div>
-
-                <div class="text">
-                  {{ comment.content }}
-                </div>
-              </div>
-            </div>
-
-            <div v-if="comments.length === 0" class="empty">
-              아직 댓글이 없습니다.
-            </div>
-          </div>
-
-          <div class="input-area">
-            <input
-              v-model="content"
-              type="text"
-              placeholder="댓글을 입력하세요."
-              @keyup.enter="createComment"
+        <div class="content">
+          <div
+            v-for="comment in comments"
+            :key="comment.commentId"
+            class="comment"
+          >
+            <img
+              class="profile-image"
+              :src="`/api/feeds/profile/${comment.writer.profileImageName}`"
+              alt=""
             />
 
-            <button @click="createComment">등록</button>
+            <div class="comment-body">
+              <div class="comment-header">
+                <span class="nickname">
+                  {{ comment.writer.nickname }}
+                </span>
+
+                <span class="date">
+                  {{ formatRelativeDate(comment.createdAt) }}
+                </span>
+
+                <button
+                  v-if="comment.userId === userId"
+                  class="delete-btn"
+                  @click="deleteComment(comment.commentId)"
+                >
+                  삭제
+                </button>
+              </div>
+
+              <div class="text">
+                {{ comment.content }}
+              </div>
+            </div>
+          </div>
+
+          <div v-if="comments.length === 0" class="empty">
+            아직 댓글이 없습니다.
           </div>
         </div>
+
+        <div class="input-area">
+          <input
+            v-model="content"
+            type="text"
+            placeholder="댓글을 입력하세요."
+            @keyup.enter="createComment"
+          />
+
+          <button @click="createComment">등록</button>
+        </div>
       </div>
-    </Transition>
-  </Teleport>
+    </div>
+  </Transition>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import commentApi from '@/api/commentApi';
+import { computed } from 'vue';
+import { formatRelativeDate } from '@/util/data';
 import { useAuthStore } from '@/stores/auth.js';
 const authStore = useAuthStore();
-const userId = authStore.userId;
+const userId = computed(() => authStore.userId);
 
 const props = defineProps({
-  modelValue: Boolean,
-  feedId: Number,
+  modelValue: {
+    type: Boolean,
+    default: false,
+  },
+
+  comments: {
+    type: Array,
+    default: () => [],
+  },
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'create', 'delete']);
 
-const comments = ref([]);
-const content = ref('');
-
-const getList = async () => {
-  try {
-    const data = await commentApi.getList(props.feedId);
-
-    comments.value = data ?? [];
-
-    console.log(comments.value);
-  } catch (e) {
-    console.error('댓글 조회 실패', e);
-  }
-};
-
-const createComment = async () => {
-  if (!content.value.trim()) return;
-
-  try {
-    await commentApi.create({
-      feedId: props.feedId,
-      userId,
-      content: content.value,
-    });
-
-    content.value = '';
-
-    await getList();
-  } catch (e) {
-    console.error('댓글 등록 실패', e);
-  }
-};
-
-watch(
-  () => props.modelValue,
-  (opened) => {
-    if (opened) {
-      getList();
-    }
-  },
-);
-
-const deleteComment = async (commentId) => {
-  if (!confirm('댓글을 삭제하시겠습니까?')) return;
-
-  try {
-    await commentApi.delete(commentId);
-
-    await getList();
-  } catch (e) {
-    console.error('댓글 삭제 실패', e);
-  }
-};
-
-const formatDate = (date) => {
-  const created = new Date(date);
-  const now = new Date();
-
-  const diff = Math.floor((now - created) / 1000);
-
-  if (diff < 60) return '방금 전';
-  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-
-  return created.toLocaleDateString();
-};
+const content = defineModel('content', {
+  default: '',
+});
 
 const close = () => {
   emit('update:modelValue', false);
+};
+
+const createComment = () => {
+  if (!content.value.trim()) return;
+
+  emit('create', content.value);
+
+  content.value = '';
+};
+
+const deleteComment = (commentId) => {
+  emit('delete', commentId);
 };
 </script>
 
@@ -204,7 +158,7 @@ const close = () => {
 }
 
 .overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
 
   background: rgba(0, 0, 0, 0.35);
@@ -212,8 +166,7 @@ const close = () => {
   display: flex;
   justify-content: center;
   align-items: flex-end;
-
-  z-index: 9999;
+  z-index: 10000; /* 추가 */
 }
 
 .sheet {
@@ -244,10 +197,6 @@ const close = () => {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-}
-
-.comment {
-  margin-bottom: 18px;
 }
 
 .nickname {
@@ -290,9 +239,17 @@ const close = () => {
   cursor: pointer;
 }
 
-.bottom-sheet-enter-active,
+.bottom-sheet-enter-active {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+/* 나갈 때 */
 .bottom-sheet-leave-active {
-  transition: all 0.25s;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .bottom-sheet-enter-from,
