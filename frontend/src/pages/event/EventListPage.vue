@@ -80,7 +80,7 @@ const eventList = ref([]);
 const isLoading = ref(false);
 
 const goToEventPage = () => {
-  router.push('/event/main');
+  router.push('/event');
 };
 
 // 날짜 관련 헬퍼 함수
@@ -205,6 +205,7 @@ const onEventAction = async ({
           console.warn('이미 참가 등록된 이벤트입니다.', err);
         }
 
+        // 페이지 이동 없는 즉시 참여 이벤트일 경우만
         // 이벤트 참여이력 바로 생성되도록
         return await eventApi.createParticipation(userId, eventId);
       },

@@ -30,4 +30,6 @@ public interface EventService {
     List<EventGetResponseDTO> createParticipation(int userId, int eventId);
 
     List<EventChallengeResponseDTO> receiveChallengeReward(int userId, int challengeId);
+
+
 }

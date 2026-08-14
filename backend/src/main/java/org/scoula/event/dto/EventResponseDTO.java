@@ -17,6 +17,7 @@ public class EventResponseDTO {
     private String eventName;
     private String eventDesc;
     private String eventType;
+    private String eventCategory;
     private String eventImgName;
     private Integer eventDailyLimitCount;
     private Integer eventTarget;

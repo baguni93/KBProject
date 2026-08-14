@@ -17,6 +17,7 @@ public class EventVO {
     private String eventDesc;   //이벤트설명
     private String eventType;   //이벤트종류
     private String eventStatus; //이벤트상태(OPEN/CLOSE)
+    private String eventCategory;
     private String eventImgName;    //이미지로고파일명
     private Integer eventTarget;    //이벤트최종목표
     private Integer eventLevel;     //이벤트최총난이도

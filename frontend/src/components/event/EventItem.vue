@@ -98,7 +98,7 @@ const currentEvent = computed(() => {
   return props;
 });
 
-// 이벤트 배너 이미지 아이콘 처리
+// 이벤트 배너 이미지 아이콘 처리(임시)
 const getEventImg = (eventName) => {
   const name = eventName || '';
 
@@ -168,7 +168,7 @@ const getEventStatus = (item) => {
       text: '참여중',
       styleClass: 'bg-gray',
       status: 'PROGRESS',
-      disabled: true,
+      disabled: false,
     };
   }
 

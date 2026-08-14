@@ -5,7 +5,7 @@ const BASE_URL = '/api/event';
 export default {
   // 이벤트 메인화면 조회
   async getEventMain(userId) {
-    const { data } = await api.get(`${BASE_URL}/main`, { params: { userId } });
+    const { data } = await api.get(`${BASE_URL}`, { params: { userId } });
     return data;
   },
 

@@ -56,7 +56,11 @@
 
     <!-- 공통 하단 버튼 -->
     <div class="bottom-btn-area single">
-      <button class="bottom-btn" type="button" @click="goLogin">
+      <button
+          class="bottom-btn next-button"
+          type="button"
+          @click="goLogin"
+      >
         다음
       </button>
     </div>
@@ -339,6 +343,12 @@ const goLogin = () => {
   line-height: 1.45;
 }
 
+/* 하단 버튼 등장 효과 */
+.next-button {
+  opacity: 0;
+  animation: button-show 0.4s ease 0.9s forwards;
+}
+
 /* 애니메이션 */
 @keyframes circle-enter {
   from {
@@ -495,6 +505,17 @@ const goLogin = () => {
   }
 }
 
+/* 버튼 등장 */
+@keyframes button-show {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 /* 모션 최소화 설정 대응 */
 @media (prefers-reduced-motion: reduce) {
   .background-decoration,
@@ -505,7 +526,8 @@ const goLogin = () => {
   .sparkle,
   .member-message,
   .guide-card,
-  .guide-icon {
+  .guide-icon,
+  .next-button {
     opacity: 1;
     animation: none;
     transform: none;

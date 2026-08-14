@@ -63,4 +63,10 @@ public interface EventMapper {
     int updateEventChallengeUserPoint(@Param("userId") int userId, @Param("challengeId") int challengeId);
 
     void createEventChallengeUserPointTransaction(@Param("userId") int userId, @Param("challengeId") int challengeId);
+
+    int checkFeedExists(@Param("userId") int userId, @Param("eventId") int eventId);
+
+    int checkCustomCardExists(@Param("userId") int userId);
+
+    int insertFeed(@Param("userId") int userId, @Param("eventId") int eventId, @Param("content") String content, @Param("visibility") String visibility);
 }

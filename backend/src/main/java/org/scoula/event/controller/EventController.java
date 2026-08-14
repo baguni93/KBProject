@@ -25,7 +25,7 @@ public class EventController {
 
     // 1. 이벤트 메인
     @ApiOperation("이벤트 메인화면 조회")
-    @GetMapping("/main")
+    @GetMapping("")
     public ResponseEntity<EventMainDTO> getEventMainPage(@RequestParam(value = "userId") int userId) {
         EventMainDTO mainData = eventService.getEventMainPageData(userId);
         return ResponseEntity.ok(mainData);
@@ -126,4 +126,6 @@ public class EventController {
         List<EventChallengeResponseDTO> challengeList = eventService.receiveChallengeReward(userId, challengeId);
         return ResponseEntity.ok(challengeList);
     }
+
+    // 이벤트 - 피드 작성
 }

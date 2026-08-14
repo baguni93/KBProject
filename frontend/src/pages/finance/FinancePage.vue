@@ -6,17 +6,14 @@
     <section class="finance-intro">
       <p class="intro-eyebrow text-13-bold">나의 맞춤형 금융 생활</p>
       <h1 class="intro-title text-20-bold">
-        이벤트부터 소비분석까지 <br/> 한눈에 확인해요
+        이벤트부터 소비분석까지 <br />
+        한눈에 확인해요
       </h1>
     </section>
 
     <!-- 이벤트 -->
     <section class="event-section">
-      <button
-        type="button"
-        class="event-banner"
-        @click="goTo('/event/main')"
-      >
+      <button type="button" class="event-banner" @click="goTo('/event')">
         <div class="event-banner__content">
           <span class="event-chip text-13-bold">EVENT</span>
           <strong class="text-15-bold">이벤트 참여하고 혜택 받아보세요</strong>
@@ -75,10 +72,7 @@
               <i :class="service.icon"></i>
             </div>
 
-            <span
-              v-if="service.badge"
-              class="service-badge text-13-bold"
-            >
+            <span v-if="service.badge" class="service-badge text-13-bold">
               {{ service.badge }}
             </span>
           </div>
