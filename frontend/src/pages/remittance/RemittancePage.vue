@@ -3,16 +3,34 @@
     <!-- 공통 서브 화면 헤더 -->
     <PageHeader
       :title="headerTitleText"
-      :show-back="currentStep > 1"
+      :show-back="!remitSuccess"
       @back="handleBack"
     />
 
     <!-- 공통 탭 바 (STEP 1) -->
     <CommonTabBar
-      v-if="currentStep === 1"
+      v-if="currentStep === 1 && !remitSuccess"
       v-model="remitType"
       :tabs="tabOptions"
     />
+
+    <!-- 진행 단계 Step 인디케이터 (STEP 2 이상일 때 표시) -->
+    <div v-else-if="currentStep > 1 && !remitSuccess" class="step-progress-bar-wrap">
+      <div class="step-progress-track">
+        <div
+          class="step-progress-fill"
+          :style="{
+            width: remitType === 'DUTCH'
+              ? `${((currentStep - 1) / 3) * 100}%`
+              : `${((currentStep - 1) / 2) * 100}%`
+          }"
+        ></div>
+      </div>
+      <div class="step-label-text text-12-bold">
+        <span>STEP {{ currentStep - 1 }}</span>
+        <span>/ {{ remitType === 'DUTCH' ? '3' : '2' }}</span>
+      </div>
+    </div>
 
     <!-- 본문 가변 스크롤 영역 -->
     <div class="card-body-scroll">
@@ -320,7 +338,7 @@ const remitType = ref("ACCOUNT");
 const tabOptions = [
   { label: "계좌 송금", value: "ACCOUNT" },
   { label: "친구 송금", value: "FRIEND" },
-  { label: "N빵 정산", value: "DUTCH" },
+  { label: "정산 (더치페이)", value: "DUTCH" },
 ];
 
 const headerTitleText = computed(() => {
@@ -333,6 +351,8 @@ const headerTitleText = computed(() => {
 const handleBack = () => {
   if (currentStep.value > 1) {
     currentStep.value--;
+  } else {
+    router.back();
   }
 };
 
@@ -911,6 +931,54 @@ textarea {
 
 .uncheck {
   color: #cccccc;
+}
+
+/* ========================================
+   Step 진행 단계 인디케이터 바
+======================================== */
+.step-progress-bar-wrap {
+  padding: 12px 20px 8px 20px;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.step-progress-track {
+  flex: 1;
+  height: 6px;
+  background-color: #f1f3f5;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.step-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd15c, #ffbc00);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.step-label-text {
+  color: #ffbc00;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.step-label-text span:last-child {
+  color: #999999;
+  margin-left: 2px;
+}
+
+/* ========================================
+   송금 화면 전용 헤더 여백 보정 (공용 PageHeader.vue 원본 100% 보존)
+======================================== */
+.remit-container :deep(.page-header) {
+  padding: 0 16px;
+}
+
+.remit-container :deep(.header-left .header-icon-btn) {
+  transform: none;
 }
 
 .kakaopay-settlement-head {

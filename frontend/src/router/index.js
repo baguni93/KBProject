@@ -57,7 +57,7 @@ const router = createRouter({
       component: RemittancePage,
       meta: {
         requiresAuth: true,
-        showBottomNav: true,
+        showBottomNav: false,
       },
     },
     {

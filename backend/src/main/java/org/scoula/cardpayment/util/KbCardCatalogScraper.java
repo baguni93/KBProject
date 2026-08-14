@@ -72,8 +72,11 @@ public class KbCardCatalogScraper implements InitializingBean {
                     }
 
                     if (imgUrl.contains("crd") || imgUrl.contains("card") || imgUrl.contains("img")) {
+                        if (imgUrl.contains("logo-") || imgUrl.contains("heritage") || imgUrl.contains("logo")) {
+                            continue; // 순수 브랜드 로고 이미지는 카드 상품에서 제외
+                        }
                         String savedFileName = downloadAndSaveImage(imgUrl);
-                        if (savedFileName != null) {
+                        if (savedFileName != null && !savedFileName.contains("logo-")) {
                             // 카드 1개 단위 내에서 정밀 카드명 추출
                             String cardName = resolveCardNameFromFile(savedFileName, item);
 
