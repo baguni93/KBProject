@@ -169,7 +169,24 @@ public class NotificationServiceImpl implements NotificationService{
         NotificationVO notificationVO = request.toVo();
 
         notificationMapper.create(notificationVO);
-        return get(notificationVO.getNotificationId());
+        NotificationResponseDTO responseDTO = get(notificationVO.getNotificationId());
+
+        // 실시간 웹소켓 STOMP 알림 전송 (/user/queue/notifications & /sub/notifications/{receiverId})
+        try {
+            if (responseDTO != null) {
+                messagingTemplate.convertAndSendToUser(
+                        String.valueOf(request.getReceiverId()),
+                        "/queue/notifications",
+                        responseDTO
+                );
+                messagingTemplate.convertAndSend("/sub/notifications/" + request.getReceiverId(), responseDTO);
+                log.info("실시간 웹소켓 알림 전송 완료 - receiverId: {}, type: {}", request.getReceiverId(), request.getNotificationType());
+            }
+        } catch (Exception wsErr) {
+            log.warn("실시간 웹소켓 알림 전송 예외 (무시): {}", wsErr.getMessage());
+        }
+
+        return responseDTO;
     }
 
 

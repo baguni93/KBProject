@@ -143,7 +143,7 @@ public class CardServiceImpl implements CardService {
                 .expiryDate(expiry)
                 .cvv(cvv)
                 .cardPassword(password)
-                .cardImgFileName(foundImageFileName)
+                .cardImgFileName(foundImageFileName != null ? foundImageFileName.replace(".jpg", ".png") : "card_default.png")
                 .cardName(dto.getCardName())
                 .build();
 

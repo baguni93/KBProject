@@ -48,7 +48,7 @@ public class CardController {
         BIN_MAPPING_MAP.put("536652", new CardInfo("KB국민 첵첵 체크카드", "01914_img.png"));
         BIN_MAPPING_MAP.put("949133", new CardInfo("KB국민 가온 올포인트 체크카드", "01998_img.png"));
         BIN_MAPPING_MAP.put("946044", new CardInfo("LG헬로비전 KB국민카드 II", "02083_img.png"));
-        BIN_MAPPING_MAP.put("946045", new CardInfo("두산베어스 KB국민카드", "02219_img.jpg"));
+        BIN_MAPPING_MAP.put("946045", new CardInfo("두산베어스 KB국민카드", "02219_img.png"));
         BIN_MAPPING_MAP.put("427239", new CardInfo("KB Youth Club 체크카드", "04124_img.png"));
 
         // [2] KB국민 신용/체크 BIN (36개)
@@ -56,8 +56,8 @@ public class CardController {
         BIN_MAPPING_MAP.put("379541", new CardInfo("스카이패스 티타늄 카드", "04285_img.png"));
         BIN_MAPPING_MAP.put("466721", new CardInfo("T-economy KB국민카드", "04288_img.png"));
         BIN_MAPPING_MAP.put("493003", new CardInfo("SK 7mobile Ⅱ 카드", "04366_img.png"));
-        BIN_MAPPING_MAP.put("421431", new CardInfo("가온플래티늄카드", "07964_img.jpg"));
-        BIN_MAPPING_MAP.put("944541", new CardInfo("노리2 체크카드 (Play)", "07986_img.jpg"));
+        BIN_MAPPING_MAP.put("421431", new CardInfo("가온플래티늄카드", "07964_img.png"));
+        BIN_MAPPING_MAP.put("944541", new CardInfo("노리2 체크카드 (Play)", "07986_img.png"));
         BIN_MAPPING_MAP.put("944542", new CardInfo("노리2 체크카드 (Global)", "07998_img.png"));
         BIN_MAPPING_MAP.put("944543", new CardInfo("KB국민 다담카드", "09106_img.png"));
         BIN_MAPPING_MAP.put("944557", new CardInfo("KB국민 청춘대로 톡톡카드", "09123_img.png"));
@@ -65,10 +65,10 @@ public class CardController {
         BIN_MAPPING_MAP.put("426504", new CardInfo("KB국민 청춘대로 카드", "09126_img.png"));
         BIN_MAPPING_MAP.put("544643", new CardInfo("KB국민 이지픽(Easy Pick) 카드", "09127_img.png"));
         BIN_MAPPING_MAP.put("444350", new CardInfo("KB국민 알파원(Alpha One) 카드", "09128_img.png"));
-        BIN_MAPPING_MAP.put("457972", new CardInfo("KB국민 탄탄대로 올쇼핑 카드", "09129_img.jpg"));
-        BIN_MAPPING_MAP.put("457973", new CardInfo("KB국민 마이 위시(My WE:SH) 카드", "09137_img.jpg"));
-        BIN_MAPPING_MAP.put("540926", new CardInfo("KB국민 위시 올(WE:SH All) 카드", "09138_img.jpg"));
-        BIN_MAPPING_MAP.put("540947", new CardInfo("KB국민 위시 디어(WE:SH Dear) 카드", "09139_img.jpg"));
+        BIN_MAPPING_MAP.put("457972", new CardInfo("KB국민 탄탄대로 올쇼핑 카드", "09129_img.png"));
+        BIN_MAPPING_MAP.put("457973", new CardInfo("KB국민 마이 위시(My WE:SH) 카드", "09137_img.png"));
+        BIN_MAPPING_MAP.put("540926", new CardInfo("KB국민 위시 올(WE:SH All) 카드", "09138_img.png"));
+        BIN_MAPPING_MAP.put("540947", new CardInfo("KB국민 위시 디어(WE:SH Dear) 카드", "09139_img.png"));
         BIN_MAPPING_MAP.put("554959", new CardInfo("KB국민 탄탄대로 Biz 카드", "09152_img.png"));
         BIN_MAPPING_MAP.put("433290", new CardInfo("KB국민 청춘대로 티타늄 카드", "09162_img.png"));
         BIN_MAPPING_MAP.put("356910", new CardInfo("KB국민 이지온(Easy On) 카드", "09292_img.png"));
@@ -82,7 +82,7 @@ public class CardController {
         BIN_MAPPING_MAP.put("949101", new CardInfo("KB국민 가온누리 카드", "09561_img.png"));
         BIN_MAPPING_MAP.put("943646", new CardInfo("KB국민 가온누리 체크카드", "09563_img.png"));
         BIN_MAPPING_MAP.put("544822", new CardInfo("KB국민 가온누리 쇼핑 카드", "09570_img.png"));
-        BIN_MAPPING_MAP.put("546198", new CardInfo("KB국민 가온누리 비즈 카드", "09659_img.jpg"));
+        BIN_MAPPING_MAP.put("546198", new CardInfo("KB국민 가온누리 비즈 카드", "09659_img.png"));
         BIN_MAPPING_MAP.put("545355", new CardInfo("KB국민 가온누리 플러스 카드", "09701_img.png"));
         BIN_MAPPING_MAP.put("554382", new CardInfo("KB국민 가온누리 트래블 카드", "09771_img.png"));
         BIN_MAPPING_MAP.put("623489", new CardInfo("KB국민 가온누리 스마트 카드", "09780_img.png"));

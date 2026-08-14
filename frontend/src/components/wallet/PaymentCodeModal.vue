@@ -151,11 +151,22 @@
             </div>
           </div>
 
-          <!-- 하단 안내 문구 -->
-          <p class="notice-text text-13">
+          <!-- 하단 안내 문구 & 결제 승인 시뮬레이션 버튼 -->
+          <p class="notice-text text-13" style="margin-bottom: 12px;">
             <i class="fa-solid fa-shield-halved brand-ic"></i> 1회용 결제 코드는
             1분 후 자동 소멸됩니다.
           </p>
+
+          <button
+            type="button"
+            class="bottom-btn text-15-bold"
+            style="width: 100%; background: var(--color-primary, #ffbc00); color: #111; border: none; padding: 12px; border-radius: 12px;"
+            :disabled="isApproving"
+            @click="handleApprovePayment"
+          >
+            <i class="fa-solid fa-qrcode mr-1"></i>
+            {{ isApproving ? "결제 승인 처리 중..." : "가맹점 현장 결제 시뮬레이션 (승인)" }}
+          </button>
         </div>
       </div>
     </div>
@@ -165,6 +176,7 @@
 <script setup>
 import { ref, computed, onUnmounted } from "vue";
 import walletApi from "@/api/walletApi";
+import cardPaymentApi from "@/api/cardPaymentApi";
 import PinAuthModal from "@/components/auth/PinAuthModal.vue";
 
 const props = defineProps({
@@ -172,12 +184,34 @@ const props = defineProps({
   initialTab: { type: String, default: "barcode" },
 });
 
-defineEmits(["close"]);
+const emit = defineEmits(["close", "approved"]);
 
 const isPinVerified = ref(false);
 const activeTab = ref(props.initialTab || "barcode");
 const rawCode = ref("");
 const timeLeft = ref(60);
+const isApproving = ref(false);
+
+const handleApprovePayment = async () => {
+  if (isApproving.value) return;
+  isApproving.value = true;
+  try {
+    const payload = {
+      userId: props.userId || 1,
+      merchantName: activeTab.value === "qr" ? "스타벅스 (QR 결제)" : "CU 편의점 (바코드 결제)",
+      amount: 4500,
+    };
+    const res = await cardPaymentApi.approveWalletTransaction(payload);
+    alert(`[결제 승인 완료] ${payload.merchantName}\n결제 금액: 4,500원\n남은 잔액: ${(res.updatedWalletBalance || 0).toLocaleString()}원`);
+    emit("approved", res.updatedWalletBalance);
+    emit("close");
+  } catch (err) {
+    console.error("결제 승인 오류:", err);
+    alert("결제 승인 처리 중 오류가 발생했습니다.");
+  } finally {
+    isApproving.value = false;
+  }
+};
 
 let timerInterval = null;
 

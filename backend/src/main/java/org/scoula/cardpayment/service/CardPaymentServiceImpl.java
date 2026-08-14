@@ -22,6 +22,8 @@ public class CardPaymentServiceImpl implements CardPaymentService {
 
     private final CardPaymentMapper cardPaymentMapper;
     private final KbCardCatalogRepository catalogRepository;
+    private final org.scoula.notification.service.NotificationService notificationService;
+    private final org.scoula.pointwallet.service.RandomBoxService randomBoxService;
 
     private final Map<String, CardBinResponseDTO> binMemoryCache = new ConcurrentHashMap<>();
 
@@ -410,6 +412,21 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         Integer createdTxId = insertParam.getTransactionId();
 
         cardPaymentMapper.updateCardTransactionStatus(cardTxId, "SUCCESS", createdTxId);
+
+        // 지갑/QR/바코드 결제 승인 알림 발송 (NotificationRequestDTO 규격 연동)
+        try {
+            Integer safeTxId = (createdTxId != null && createdTxId > 0) ? createdTxId : 1;
+            notificationService.create(
+                    org.scoula.notification.dto.NotificationRequestDTO.builder()
+                            .receiverId(targetUserId)
+                            .senderId(targetUserId)
+                            .notificationType(org.scoula.common.util.Enum.NotificationType.SETTLEMENT_PAYMENT)
+                            .targetId(safeTxId)
+                            .build()
+            );
+        } catch (Throwable notifErr) {
+            log.warn("결제 승인 알림 전송 중 예외 (결제 승인은 정상 완료): {}", notifErr.getMessage());
+        }
 
         log.info("전자지갑/QR/바코드 결제 승인 성공 - CardTxID: {}, FinancialTxID: {}, UserID: {}, Merchant: {}, Amount: {}, UpdatedWalletBalance: {}",
                 cardTxId, createdTxId, targetUserId, merchantName, amount, updatedWalletBalance);

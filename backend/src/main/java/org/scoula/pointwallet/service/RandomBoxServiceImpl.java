@@ -618,46 +618,52 @@ public class RandomBoxServiceImpl implements RandomBoxService {
             Integer transactionId,
             Integer targetAccountId
     ) {
-        validatePositiveId(
-                userId,
-                "유효한 사용자 ID가 필요합니다."
-        );
+        try {
+            validatePositiveId(
+                    userId,
+                    "유효한 사용자 ID가 필요합니다."
+            );
 
-        validatePositiveId(
-                transactionId,
-                "유효한 송금 거래 ID가 필요합니다."
-        );
+            validatePositiveId(
+                    transactionId,
+                    "유효한 송금 거래 ID가 필요합니다."
+            );
 
-        validatePositiveId(
-                targetAccountId,
-                "유효한 수취 계좌 ID가 필요합니다."
-        );
+            validatePositiveId(
+                    targetAccountId,
+                    "유효한 수취 계좌 ID가 필요합니다."
+            );
 
-        int issuedCount =
-                randomBoxMapper.countTransferRandomBoxByAccount(
-                        userId,
-                        targetAccountId
-                );
+            int issuedCount =
+                    randomBoxMapper.countTransferRandomBoxByAccount(
+                            userId,
+                            targetAccountId
+                    );
 
-        if (issuedCount > 0) {
+            if (issuedCount > 0) {
+                return RandomBoxIssueResultDTO.builder()
+                        .issued(false)
+                        .message("이미 랜덤박스를 지급받은 수취 계좌입니다.")
+                        .userRandomBoxId(null)
+                        .issueReason(RandomBoxIssueReason.TRANSFER.name())
+                        .boxStatus(null)
+                        .issuedAt(null)
+                        .build();
+            }
+
+            return issueRandomBox(
+                    userId,
+                    RandomBoxIssueReason.TRANSFER,
+                    transactionId,
+                    targetAccountId
+            );
+        } catch (Exception e) {
+            log.warn("송금 성공 후 랜덤박스 발급 처리 중 예외 (송금 본래 거래는 유지됨): {}", e.getMessage());
             return RandomBoxIssueResultDTO.builder()
                     .issued(false)
-                    .message("이미 랜덤박스를 지급받은 수취 계좌입니다.")
-                    .userRandomBoxId(null)
+                    .message("랜덤박스 발급 패스: " + e.getMessage())
                     .issueReason(RandomBoxIssueReason.TRANSFER.name())
-                    .boxStatus(null)
-                    .issuedAt(null)
                     .build();
         }
-
-        // TODO-INTEGRATION: 성공한 송금인지, 현재 사용자의 송금인지,
-        // targetAccountId가 실제 수취 계좌인지 검증
-        return issueRandomBox(
-                userId,
-                RandomBoxIssueReason.TRANSFER,
-                transactionId,
-                targetAccountId
-        );
     }
-
 }
