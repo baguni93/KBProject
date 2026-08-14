@@ -48,12 +48,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import eventApi from '@/api/eventApi';
-import pointwallet from '@/api/pointwallet';
-import feedApi from '@/api/feedApi';
-import customCardApi from '@/api/customCard.Api';
 import PointView from '@/components/finance/PointView.vue';
 import EventMainCardBanner from '@/components/event/EventMainCardBanner.vue';
 import EventMainChallenge from '@/components/event/EventMainChallenge.vue';
@@ -62,7 +59,7 @@ import EventItem from '@/components/event/EventItem.vue';
 // 유저 아이디
 import { useAuthStore } from '@/stores/auth';
 const authStore = useAuthStore();
-const userId = authStore.userId ?? 1;
+const userId = computed(() => authStore.userId);
 
 const router = useRouter();
 
@@ -70,36 +67,25 @@ const userPoint = ref(0);
 const challengeData = ref(null);
 const eventLists = ref([]);
 
-const content = ref('');
-const visibility = ref('');
-
 // 메인 페이지 데이터 로드
 const fetchMainData = async () => {
-  if (!userId) return;
+  if (!userId.value) return;
 
   try {
-    const mainData = await eventApi.getEventMain(userId);
-    const eventData = await eventApi.getEventList(userId);
+    const [mainData, attendanceData] = await Promise.all([
+      eventApi.getEventMain(userId.value),
+      eventApi.getAttendanceEventList(userId.value),
+    ]);
 
     userPoint.value = mainData.currentPoint || 0;
-    eventLists.value = eventData || [];
+    eventLists.value = [
+      ...(mainData.eventLists || []),
+      ...(attendanceData || []),
+    ];
 
     if (mainData?.userChallengeData?.length > 0) {
       challengeData.value = mainData.userChallengeData[0];
-    } else {
-      // default
-      challengeData.value = {
-        challengeId: 0,
-        userChallengeId: 0,
-        currentLevel: 1,
-        currentTarget: 0,
-        requiredExp: 1000,
-        exp: 0,
-        startDate: '',
-        endDate: '',
-        dDay: '',
-      };
-    }
+    } else challengeData.value = null;
   } catch (err) {
     console.error('데이터 로드 실패', err);
   }
@@ -122,7 +108,10 @@ watch(
 const handleClaimReward = async (challengeId) => {
   try {
     // API 호출
-    const response = await eventApi.receiveChallengeReward(userId, challengeId);
+    const response = await eventApi.receiveChallengeReward(
+      userId.value,
+      challengeId,
+    );
 
     if (response) {
       alert('보상 수령이 완료되었습니다.');
@@ -145,7 +134,7 @@ const onEventAction = async ({
 }) => {
   if (!eventId) return;
 
-  if (!userId) {
+  if (!userId.value) {
     alert('올바른 사용자 정보가 아닙니다.');
     return;
   }
@@ -155,82 +144,48 @@ const onEventAction = async ({
     return;
   }
 
-  const isAttendance = eventName?.includes('출석');
+  const isAttendance = eventType === 'ATTENDANCE';
+
+  const missionRoutes = {
+    FEED: '/feed',
+    CARD: '/card/create/intro',
+    WALLET: '/wallet',
+    SETTLEMENT: '/settlement',
+    RANDOMBOX: '/point-wallet/random-box',
+    ANALYSIS: '/analysis',
+  };
 
   const actionMap = {
     // 1. 이벤트 참여 시작 / 출석체크
     READY: {
       action: async () => {
-        // 이벤트 시작 / 출석체크 시작 내역 생성 API 먼저 실행
-        try {
-          if (isAttendance) {
-            await eventApi.joinAttendanceEvent(userId, eventId);
-          } else {
-            await eventApi.joinEvent(userId, eventId);
-          }
-        } catch (err) {
-          console.warn('이미 참가 등록된 이벤트입니다.', err);
-        }
-
-        // 피드 관련 이벤트일 경우, 일단 테스트...
-        if (eventCategory === 'FEED') {
-          const formData = new FormData();
-
-          formData.append('userId', userId);
-          formData.append('targetId', eventId);
-          formData.append('feedType', 'EVENT');
-          formData.append('content', `피드 작성하기`);
-          formData.append('visibility', 'PUBLIC');
-
-          await feedApi.createFeed(formData);
-          await eventApi.createParticipation(userId, eventId);
-          return;
-        }
-
-        // 카드는
-        if (eventCategory === 'CARD') {
-          // 커스텀 카드 관련 로직 처리
-          return router.push('/customcard');
-        }
-
-        // 페이지 이동 없는 즉시 참여 이벤트일 경우만
-        return await eventApi.createParticipation(userId, eventId);
+        return isAttendance
+          ? eventApi.joinAttendanceEvent(userId.value, eventId)
+          : eventApi.joinEvent(userId.value, eventId);
       },
-      msg: `[${eventName}] 이벤트 참여를 시작합니다.`,
+      msg: isAttendance
+        ? `[${eventName}] 출석체크가 완료되었습니다.`
+        : `[${eventName}] 이벤트 참여를 시작합니다.`,
     },
 
     // 2. 출석체크
     ATTENDANCE: {
-      action: () => eventApi.joinAttendanceEvent(userId, eventId),
+      action: () => eventApi.joinAttendanceEvent(userId.value, eventId),
       msg: `[${eventName}] 출석체크가 완료되었습니다.`,
     },
     ATTENDANCE_READY: {
-      action: () => eventApi.joinAttendanceEvent(userId, eventId),
+      action: () => eventApi.joinAttendanceEvent(userId.value, eventId),
       msg: `[${eventName}] 출석체크가 완료되었습니다.`,
     },
 
     // 3. 진행 중 이벤트
     PROGRESS: {
       action: async () => {
-        // // 피드
-        // if (eventCategory === 'FEED') {
-        //   router.push('/feed');
-        //   return;
-        // }
-
-        // // 카드
-        // if (eventCategory === 'CARD') {
-        //   router.push('/custom-card');
-        //   return;
-        // }
-
-        // 페이지 이동 없는 즉시 참여 이벤트일 경우만
-        await eventApi.createParticipation(userId, eventId);
+        const targetRoute = missionRoutes[eventCategory];
+        if (!targetRoute) throw new Error('이벤트 이동 경로가 없습니다.');
+        await router.push(targetRoute);
       },
-      // 메세지 제어
-      msg: ['FEED', 'CARD', 'REMITTANCE'].includes(eventCategory)
-        ? null
-        : `[${eventName}] 이벤트 참여가 완료되었습니다.`,
+      msg: null,
     },
 
     // 4. 오늘자 참여 완료
@@ -245,8 +200,12 @@ const onEventAction = async ({
     REWARD_CLAIM: {
       action: () =>
         isAttendance
-          ? eventApi.receiveAttendanceEventReward(eventId, userId, rewardId)
-          : eventApi.receiveEventReward(eventId, userId, rewardId),
+          ? eventApi.receiveAttendanceEventReward(
+              userId.value,
+              eventId,
+              rewardId,
+            )
+          : eventApi.receiveEventReward(userId.value, eventId, rewardId),
       msg: `[${eventName}] 보상 수령이 완료되었습니다!`,
     },
   };

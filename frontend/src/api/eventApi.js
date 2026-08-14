@@ -52,18 +52,6 @@ export default {
     return data;
   },
 
-  // 이벤트 참여이력 생성
-  async createParticipation(userId, eventId) {
-    const { data } = await api.post(
-      `${BASE_URL}/participateEvent/${eventId}`,
-      null,
-      {
-        params: { userId },
-      },
-    );
-    return data;
-  },
-
   // 이벤트 리워드 수령 처리
   async receiveEventReward(userId, eventId, rewardId) {
     const { data } = await api.post(

@@ -35,22 +35,22 @@
 
         <!-- 목표 달성 (보상 미수령 및 완료 상태) -->
         <span
-          v-if="challenge.status === 'COMPLETE' || progressPercent >= 100"
+          v-if="isFinished || progressPercent >= 100"
           class="success-tag"
         >
-          🎉 목표 달성!
+          {{ isFinished ? '🎉 챌린지 완료!' : '🎉 목표 달성!' }}
         </span>
       </div>
 
       <!-- 보상받기 버튼(COMPLETE 상태) -->
       <button
-        v-if="challenge.status === 'COMPLETE' || progressPercent >= 100"
+        v-if="isFinished || progressPercent >= 100"
         class="level-reward-btn"
-        :disabled="challenge.status === 'REWARDED'"
+        :disabled="isFinished || isSubmitting"
         @click="handleclaimReward"
       >
         <i class="fa-solid fa-gift gift-icon"></i>
-        {{ challenge.status === 'REWARDED' ? '수령완료' : '보상받기' }}
+        {{ isFinished ? '챌린지 완료' : '보상받기' }}
       </button>
     </div>
   </div>
@@ -58,12 +58,6 @@
 
 <script setup>
 import { defineProps, computed, defineEmits, ref } from 'vue';
-import eventApi from '@/api/eventApi';
-
-// 유저 아이디
-import { useAuthStore } from '@/stores/auth';
-const authStore = useAuthStore();
-const userId = authStore.userId ?? 1;
 
 const props = defineProps({
   challenge: {
@@ -84,6 +78,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['claim-reward']);
+const isFinished = computed(() => props.challenge.status === 'REWARDED');
 
 // 진행률 (%) 계산
 const progressPercent = computed(() => {
@@ -92,8 +87,10 @@ const progressPercent = computed(() => {
     !props.challenge.requiredExp ||
     props.challenge.requiredExp === 0
   ) {
-    return 0;
+    return isFinished.value ? 100 : 0;
   }
+
+  if (isFinished.value) return 100;
 
   const percent = (props.challenge.exp / props.challenge.requiredExp) * 100;
   return Math.min(Math.floor(percent), 100);
@@ -103,7 +100,7 @@ const isSubmitting = ref(false);
 
 const handleclaimReward = async () => {
   // 수령한 상태에서 클릭 방지
-  if (props.challenge.status === 'REWARDED' || isSubmitting.value) return;
+  if (isFinished.value || isSubmitting.value) return;
 
   if (props.challenge.status !== 'COMPLETE' && progressPercent.value < 100) {
     alert('아직 목표를 달성하지 못했습니다.');

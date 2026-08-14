@@ -18,6 +18,13 @@ public enum ErrorCode {
     // Feed
     FEED_NOT_FOUND(HttpStatus.NOT_FOUND, "F001", "피드를 찾을 수 없습니다."),
 
+    // Event
+    EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "EV001", "이벤트 또는 보상 정보를 찾을 수 없습니다."),
+    EVENT_NOT_JOINED(HttpStatus.BAD_REQUEST, "EV002", "참여하지 않은 이벤트입니다."),
+    EVENT_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "EV003", "이벤트 달성 조건을 충족하지 못했습니다."),
+    EVENT_REWARD_ALREADY_RECEIVED(HttpStatus.CONFLICT, "EV004", "이미 수령한 이벤트 보상입니다."),
+    EVENT_CHALLENGE_NOT_READY(HttpStatus.BAD_REQUEST, "EV005", "레벨 보상을 받을 수 있는 상태가 아닙니다."),
+
     //Settlement
     SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "S001", "정산 요청을 찾을 수 없습니다."),
     SETTLEMENT_CAN_NOT_CANCEL(HttpStatus.NOT_FOUND, "S002", "정산 요청을 취소할 수 없습니다."),

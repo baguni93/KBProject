@@ -1,8 +1,6 @@
 package org.scoula.event.service;
 
 import org.scoula.event.dto.*;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 
 public interface EventService {
@@ -27,9 +25,8 @@ public interface EventService {
     List<EventGetResponseDTO> receiveEventReward(int userId, int eventId, int rewardId);
     List<EventGetAttendanceResponseDTO> receiveAttendanceEventReward(int userId, int eventId, int rewardId);
 
-    List<EventGetResponseDTO> createParticipation(int userId, int eventId);
-
     List<EventChallengeResponseDTO> receiveChallengeReward(int userId, int challengeId);
 
+    int recordMissionProgress(int userId, String eventCategory);
 
 }

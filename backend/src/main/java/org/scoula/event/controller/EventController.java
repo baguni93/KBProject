@@ -6,12 +6,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.event.dto.*;
 import org.scoula.event.service.EventService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 
 @Log4j2
@@ -87,14 +85,6 @@ public class EventController {
         return ResponseEntity.ok(eventService.joinAttendanceEvent(userId, eventId));
     }
 
-    // 이벤트 참여이력 생성
-    @PostMapping("/participateEvent/{eventId}")
-    public ResponseEntity<List<EventGetResponseDTO>> createParticipation(
-            @RequestParam(value = "userId") int userId,
-            @PathVariable int eventId) {
-        return ResponseEntity.ok(eventService.createParticipation(userId, eventId));
-    }
-
     // 이벤트 리워드 수령 처리
     @PostMapping("/receiveEventReward/{eventId}/rewards/{rewardId}")
     public ResponseEntity<List<EventGetResponseDTO>> receiveEventReward(
@@ -102,7 +92,11 @@ public class EventController {
             @PathVariable int eventId,
             @PathVariable int rewardId) {
 
-        List<EventGetResponseDTO> updatedList = eventService.receiveEventReward(userId, eventId, rewardId);
+        List<EventGetResponseDTO> updatedList = eventService.receiveEventReward(
+                userId,
+                eventId,
+                rewardId
+        );
         return ResponseEntity.ok(updatedList);
     }
 
@@ -113,7 +107,11 @@ public class EventController {
             @PathVariable int eventId,
             @PathVariable int rewardId) {
 
-        List<EventGetAttendanceResponseDTO> updatedList = eventService.receiveAttendanceEventReward(userId, eventId, rewardId);
+        List<EventGetAttendanceResponseDTO> updatedList = eventService.receiveAttendanceEventReward(
+                userId,
+                eventId,
+                rewardId
+        );
         return ResponseEntity.ok(updatedList);
     }
 
@@ -126,6 +124,4 @@ public class EventController {
         List<EventChallengeResponseDTO> challengeList = eventService.receiveChallengeReward(userId, challengeId);
         return ResponseEntity.ok(challengeList);
     }
-
-    // 이벤트 - 피드 작성
 }

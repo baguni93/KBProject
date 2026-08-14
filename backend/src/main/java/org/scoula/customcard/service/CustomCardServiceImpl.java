@@ -13,6 +13,7 @@ import org.scoula.customcard.dto.*;
 import org.scoula.customcard.mapper.CustomCardMapper;
 import org.scoula.exception.CustomException;
 import org.scoula.exception.ErrorCode;
+import org.scoula.event.service.EventService;
 import org.scoula.feed.domain.FeedImageVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,7 @@ public class CustomCardServiceImpl implements CustomCardService {
     private final AccountMapper accountMapper;
     private final SecureRandom secureRandom = new SecureRandom();
     private final CardService cardService;
+    private final EventService eventService;
 
     @Override
     public List<CustomCardAgreementDTO> getAgreements() {
@@ -152,6 +154,8 @@ public class CustomCardServiceImpl implements CustomCardService {
                 .cardImgFileName(dto.getCardImageName())
                 .cardPassword("1234")
                 .build());
+        // 박준우: 커스텀 카드 발급 이벤트 기록
+        eventService.recordMissionProgress(dto.getUserId(), "CARD");
 
         return customCardId;
     }

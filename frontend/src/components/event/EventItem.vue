@@ -75,6 +75,7 @@ const props = defineProps({
   eventName: String,
   eventDesc: String,
   eventType: String,
+  eventCategory: String,
   eventStatus: String,
   eventImgName: String,
   eventTarget: Number,
@@ -82,6 +83,7 @@ const props = defineProps({
   eventLevel: Number,
   eventDailyLimitCount: Number,
   isDailyLimitReached: [Boolean, String, Number],
+  todayAttendanceCompleted: [Boolean, String, Number],
   startAt: String,
   endAt: String,
   rewardId: [Number, String],
@@ -127,6 +129,11 @@ const getEventStatus = (item) => {
     item.rewardReceived === true || item.rewardReceived === 'true';
   const isCompleted = item.completed === true || item.completed === 'true';
   const isJoined = item.joined === true || item.joined === 'true';
+  const isAttendance = item.eventType === 'ATTENDANCE';
+  const isTodayAttendanceCompleted =
+    item.todayAttendanceCompleted === true ||
+    item.todayAttendanceCompleted === 'true' ||
+    item.todayAttendanceCompleted === 1;
   const isDailyLimitReached =
     item.isDailyLimitReached === true ||
     item.isDailyLimitReached === 'true' ||
@@ -153,12 +160,21 @@ const getEventStatus = (item) => {
   }
 
   // 3. 일일 제한 달성
-  if (isDailyLimitReached) {
+  if (isAttendance && (isTodayAttendanceCompleted || isDailyLimitReached)) {
     return {
-      text: '참여완료',
+      text: '오늘 출석완료',
       styleClass: 'bg-gray',
       status: 'DAILY_LIMIT',
       disabled: true,
+    };
+  }
+
+  if (isAttendance && isJoined) {
+    return {
+      text: '출석',
+      styleClass: 'bg-yellow',
+      status: 'ATTENDANCE_READY',
+      disabled: false,
     };
   }
 
@@ -192,6 +208,8 @@ const handleButtonClick = () => {
   emit('clickAction', {
     eventId: currentEvent.value.eventId,
     eventName: currentEvent.value.eventName,
+    eventType: currentEvent.value.eventType,
+    eventCategory: currentEvent.value.eventCategory,
     rewardId: currentEvent.value.rewardId,
     buttonStatus: statusInfo.status,
   });

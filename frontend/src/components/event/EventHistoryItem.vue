@@ -7,7 +7,7 @@
 
       <div class="event-info">
         <h4 class="event-title">{{ event.eventName }}</h4>
-        <p class="event-date">{{ formatToFullDate(event.joinedDate) }}</p>
+        <p class="event-date">{{ formatToFullDate(event.receivedAt) }}</p>
       </div>
 
       <div class="complete-tag">
