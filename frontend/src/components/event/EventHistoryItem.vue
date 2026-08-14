@@ -18,8 +18,11 @@
     </div>
 
     <div class="card-bottom">
-      <span class="bottom-label">획득 포인트</span>
-      <span class="bottom-value">+{{ event.rewardPoint }} P</span>
+      <span class="bottom-label">획득 보상</span>
+      <span class="bottom-value">
+        +{{ event.rewardPoint }} P
+        <span class="exp-text">| +{{ event.rewardExp }} exp</span>
+      </span>
     </div>
   </div>
 </template>
@@ -39,7 +42,7 @@ defineProps({
       rewardId: 0,
       recvId: 0,
       rewardPoint: 0,
-      rewardExe: 0,
+      rewardExp: 0,
       receivedAt: '',
     }),
   },
@@ -187,5 +190,12 @@ const getEventImg = (eventName) => {
   font-size: 15px;
   font-weight: 800;
   color: #ffbc00;
+}
+
+.exp-text {
+  font-size: 13px;
+  color: #bdbebd;
+  font-weight: 500;
+  margin-left: 4px;
 }
 </style>

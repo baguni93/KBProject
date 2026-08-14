@@ -361,9 +361,9 @@
             c.category_name
 
         FROM financial_transaction_tbl a
-                 join profile_tbl b
+                 LEFT JOIN profile_tbl b
                       on a.receive_id = b.user_id
-                 join spending_category_tbl c
+                 LEFT JOIN spending_category_tbl c
                       on a.spending_category_id = c.spending_category_id
         WHERE transaction_id = #{targetId}
     </select>

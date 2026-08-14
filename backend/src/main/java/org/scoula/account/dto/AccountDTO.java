@@ -20,6 +20,7 @@ public class AccountDTO {
     private String accountHolder;
     private String primaryYn;
     private String connectionStatus;
+    private Long balance;
 
     public static AccountDTO of(LinkedAccountVO account) {
         String bankLogoUrl = account.getBankLogoName() == null ? null : "/api/banks/logo/" + account.getBankLogoName();
@@ -33,6 +34,7 @@ public class AccountDTO {
                 .accountHolder(account.getAccountHolder())
                 .primaryYn(account.getPrimaryYn())
                 .connectionStatus(account.getConnectionStatus())
+                .balance(account.getBalance())
                 .build();
     }
 }

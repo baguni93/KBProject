@@ -1,83 +1,103 @@
 <template>
-  <div class="account-page">
-    <main class="account-container">
-      <button class="back-button" type="button" @click="goBack">&lt;</button>
+  <div class="page-layout account-page">
+    <!-- 공통 상단 헤더 -->
+    <PageHeader
+        title="계좌 인증"
+        custom-back
+        @back="goBack"
+    />
 
-      <header class="page-header">
-        <h1>계좌 인증번호 입력</h1>
+    <!-- 콘텐츠 -->
+    <main class="page-content account-content">
+      <!-- 페이지 제목 -->
+      <header class="verification-header">
+        <h1 class="text-26-bold">
+          계좌 인증번호 입력
+        </h1>
 
-        <p>
+        <p class="text-15">
           계좌 거래내역에 표시된<br />
           인증번호 4자리를 입력해 주세요.
         </p>
       </header>
 
+      <!-- 인증번호 입력 -->
       <section class="verification-section">
-        <div class="verification-boxes" @click="focusInput">
-          <div
-            v-for="index in 4"
-            :key="index"
+        <div
             :class="{
-              filled: verificationCode.length >= index,
-              active: verificationCode.length === index - 1 && !errorMessage,
               error: !!errorMessage,
+              disabled: resendRequired || verificationLocked,
             }"
-            class="verification-box"
-          >
-            {{ verificationCode[index - 1] || '' }}
-          </div>
-
+            class="verification-input-area"
+        >
           <input
               ref="verificationInput"
               :value="verificationCode"
-              :disabled="resendRequired || verificationLocked"
-              class="hidden-input"
+              :disabled="resendRequired || verificationLocked || loading"
+              class="verification-input"
               inputmode="numeric"
               maxlength="4"
+              placeholder="인증번호 4자리"
               type="text"
               @input="changeVerificationCode"
           />
+
+          <button
+              v-if="verificationCode"
+              class="clear-button"
+              :disabled="resendRequired || verificationLocked || loading"
+              type="button"
+              aria-label="인증번호 전체 삭제"
+              @click="clearVerificationCode"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
 
         <p
-          v-if="accountStore.accountForm.developmentCode"
-          class="development-code"
+            v-if="accountStore.accountForm.developmentCode"
+            class="development-code text-13"
         >
           개발용 인증번호: {{ accountStore.accountForm.developmentCode }}
         </p>
 
-        <p v-if="errorMessage" class="error-message">
+        <p v-if="errorMessage" class="error-message text-13">
           {{ errorMessage }}
         </p>
       </section>
+    </main>
 
+    <!-- 인증번호 재발급이 필요한 경우에만 하단 버튼 표시 -->
+    <div
+        v-if="resendRequired"
+        class="bottom-btn-area single"
+    >
       <button
-          v-if="resendRequired"
-          class="confirm-button"
+          class="bottom-btn"
           :disabled="loading"
           type="button"
           @click="resendVerification"
       >
         {{ loading ? '인증번호 재발급 중...' : '인증번호 다시 받기' }}
       </button>
-
-      <button
-          v-else
-          class="confirm-button"
-          :disabled="verificationCode.length !== 4 || loading || verificationLocked"
-          type="button"
-          @click="confirmAndConnect"
-      >
-        {{ loading ? '계좌 연결 중...' : '확인' }}
-      </button>
-    </main>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref } from 'vue';
+import {
+  nextTick,
+  onMounted,
+  ref,
+  watch,
+} from 'vue';
 import { useRouter } from 'vue-router';
-import { confirmAccountVerification, connectAccount, resendAccountVerification } from '@/api/accountApi';
+import {
+  confirmAccountVerification,
+  connectAccount,
+  resendAccountVerification,
+} from '@/api/accountApi';
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useAccountStore } from '@/stores/account';
 
 const router = useRouter();
@@ -92,7 +112,13 @@ const verificationLocked = ref(false);
 
 // 입력창 포커스
 const focusInput = async () => {
-  if (resendRequired.value || verificationLocked.value) return;
+  if (
+      resendRequired.value ||
+      verificationLocked.value ||
+      loading.value
+  ) {
+    return;
+  }
 
   await nextTick();
   verificationInput.value?.focus();
@@ -100,22 +126,49 @@ const focusInput = async () => {
 
 // 인증번호 입력
 const changeVerificationCode = (event) => {
-  const value = event.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+  const value = event.target.value
+      .replace(/[^0-9]/g, '')
+      .slice(0, 4);
 
   verificationCode.value = value;
   errorMessage.value = '';
+
   accountStore.setVerificationCode(value);
 
-  if (event.target.value !== value) event.target.value = value;
+  if (event.target.value !== value) {
+    event.target.value = value;
+  }
+};
+
+// 인증번호 전체 삭제
+const clearVerificationCode = async () => {
+  if (loading.value) return;
+
+  verificationCode.value = '';
+  errorMessage.value = '';
+
+  accountStore.setVerificationCode('');
+
+  await focusInput();
 };
 
 // 계좌 인증 및 연결
 const confirmAndConnect = async () => {
+  if (
+      loading.value ||
+      verificationCode.value.length !== 4 ||
+      resendRequired.value ||
+      verificationLocked.value
+  ) {
+    return;
+  }
+
   const userId = accountStore.userId;
-  const verificationId = accountStore.accountForm.verificationId;
+  const verificationId =
+      accountStore.accountForm.verificationId;
 
   if (!userId || !verificationId) {
-    router.replace('/setting/account/connect');
+    await router.replace('/setting/account/connect');
     return;
   }
 
@@ -123,72 +176,136 @@ const confirmAndConnect = async () => {
     loading.value = true;
     errorMessage.value = '';
 
+    // 인증번호 확인
     await confirmAccountVerification({
       verificationId,
       verificationCode: verificationCode.value,
     });
 
-    await connectAccount({ verificationId });
+    // 계좌 연결
+    await connectAccount({
+      verificationId,
+    });
 
-    router.replace('/setting/account/complete');
+    // 성공 시 완료 화면으로 자동 이동
+    await router.replace('/setting/account/complete');
   } catch (error) {
     console.error(error);
 
     verificationCode.value = '';
     accountStore.setVerificationCode('');
 
-    const message = error.response?.data?.message || '인증번호가 일치하지 않습니다.';
+    const message =
+        error.response?.data?.message ||
+        '인증번호가 일치하지 않습니다.';
+
     errorMessage.value = message;
 
     // 최초 인증번호 5회 실패
-    if (message.includes('인증번호를 다시 받아주세요')) {
+    if (
+        message.includes(
+            '인증번호를 다시 받아주세요',
+        )
+    ) {
       resendRequired.value = true;
     }
 
     // 재발급 후 5회 실패
-    if (message.includes('5분 후 다시 시도해주세요')) {
+    if (
+        message.includes(
+            '5분 후 다시 시도해주세요',
+        )
+    ) {
       resendRequired.value = false;
       verificationLocked.value = true;
     }
 
-    if (!resendRequired.value && !verificationLocked.value) await focusInput();
+    if (
+        !resendRequired.value &&
+        !verificationLocked.value
+    ) {
+      await focusInput();
+    }
   } finally {
     loading.value = false;
   }
 };
 
+// 4자리 입력 완료 시 자동 인증
+watch(
+    verificationCode,
+    async (code) => {
+      if (
+          code.length !== 4 ||
+          loading.value ||
+          resendRequired.value ||
+          verificationLocked.value
+      ) {
+        return;
+      }
+
+      await confirmAndConnect();
+    },
+);
+
 // 계좌 인증번호 재발급
 const resendVerification = async () => {
   const userId = accountStore.userId;
-  const verificationId = accountStore.accountForm.verificationId;
+  const verificationId =
+      accountStore.accountForm.verificationId;
 
-  if (!userId || !verificationId) return;
+  if (
+      !userId ||
+      !verificationId ||
+      loading.value
+  ) {
+    return;
+  }
 
   try {
     loading.value = true;
     errorMessage.value = '';
 
-    const response = await resendAccountVerification(verificationId);
+    const response =
+        await resendAccountVerification(
+            verificationId,
+        );
 
-    accountStore.accountForm.developmentCode = response.verificationCode;
+    accountStore.accountForm.developmentCode =
+        response.verificationCode;
 
     verificationCode.value = '';
     accountStore.setVerificationCode('');
+
     resendRequired.value = false;
 
-    await focusInput();
+    await nextTick();
   } catch (error) {
     console.error(error);
 
-    const message = error.response?.data?.message || '인증번호 재발급에 실패했습니다.';
+    const message =
+        error.response?.data?.message ||
+        '인증번호 재발급에 실패했습니다.';
+
     errorMessage.value = message;
 
-    if (message.includes('5분 후 다시 시도해주세요')) {
+    if (
+        message.includes(
+            '5분 후 다시 시도해주세요',
+        )
+    ) {
       resendRequired.value = false;
       verificationLocked.value = true;
     }
   } finally {
     loading.value = false;
+
+    if (
+        !resendRequired.value &&
+        !verificationLocked.value
+    ) {
+      await focusInput();
+    }
   }
 };
 
@@ -198,7 +315,9 @@ const goBack = () => {
 };
 
 onMounted(() => {
-  if (!accountStore.accountForm.verificationId) {
+  if (
+      !accountStore.accountForm.verificationId
+  ) {
     router.replace('/setting/account/connect');
     return;
   }
@@ -208,154 +327,135 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
+
 .account-page {
-  width: 100%;
-  height: 100%;
-  background: #ffffff;
+  background: var(--color-bg-page);
 }
 
-.account-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  padding: 26px 28px 140px;
-  background: #ffffff;
+/* 콘텐츠 */
+.account-content {
+  overflow-y: auto;
   box-sizing: border-box;
 }
 
-.back-button {
-  align-self: flex-start;
-  margin-bottom: 28px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #555555;
-  font-size: 28px;
-  line-height: 1;
-  cursor: pointer;
+/* 페이지 제목 */
+.verification-header {
+  flex-shrink: 0;
+  margin-top: 24px;
 }
 
-.page-header {
+.verification-header h1 {
   margin: 0;
-}
-
-.page-header h1 {
-  margin: 0 0 28px;
-  color: #111111;
-  font-size: 30px;
-  font-weight: 700;
+  color: var(--color-text-main);
   line-height: 1.35;
+  letter-spacing: -0.7px;
 }
 
-.page-header p {
-  margin: 0;
-  color: #777777;
-  font-size: 20px;
-  font-weight: 400;
-  line-height: 1.35;
+.verification-header p {
+  margin: 14px 0 0;
+  color: var(--color-text-sub);
+  line-height: 1.6;
 }
 
+/* 인증번호 입력 */
 .verification-section {
-  margin-top: 64px;
-  text-align: center;
+  margin-top: 52px;
 }
 
-.verification-boxes {
+/* 한 줄 인증번호 입력 영역 */
+.verification-input-area {
   position: relative;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  display: flex;
   width: 100%;
-  cursor: text;
+  height: 58px;
+  align-items: center;
+  border-bottom: 2px solid var(--color-border-main);
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
 }
 
-.verification-box {
+.verification-input-area:focus-within {
+  border-color: var(--color-primary);
+}
+
+.verification-input-area.error {
+  border-color: var(--color-error);
+}
+
+.verification-input-area.disabled {
+  border-color: var(--color-border-main);
+  opacity: 0.6;
+}
+
+.verification-input {
+  width: 100%;
+  height: 100%;
+  padding: 0 48px 0 2px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--color-text-main);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  box-sizing: border-box;
+}
+
+.verification-input::placeholder {
+  color: var(--color-text-muted);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: -0.2px;
+}
+
+.verification-input:disabled {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+/* 전체 삭제 버튼 */
+.clear-button {
+  position: absolute;
+  top: 50%;
+  right: 4px;
   display: flex;
-  aspect-ratio: 1 / 1;
-  max-height: 72px;
+  width: 30px;
+  height: 30px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #dddddd;
-  border-radius: 14px;
-  background: #fafafa;
-  color: #222222;
-  font-size: 24px;
-  font-weight: 700;
-  transition:
-    border-color 0.2s,
-    background 0.2s,
-    box-shadow 0.2s;
-}
-
-.verification-box.active {
-  border-color: #ffbc2e;
-  background: #fffaf0;
-  box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
-}
-
-.verification-box.filled {
-  border-color: #ffbc2e;
-  background: #fff8e5;
-}
-
-.verification-box.error {
-  border-color: #e53935;
-  background: #fff7f7;
-  box-shadow: none;
-}
-
-.hidden-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
+  padding: 0;
   border: 0;
-  opacity: 0;
-  pointer-events: none;
+  border-radius: 50%;
+  background: var(--color-bg-screen);
+  color: var(--color-text-sub);
+  font-size: 14px;
+  cursor: pointer;
+  transform: translateY(-50%);
 }
 
+.clear-button:active:not(:disabled) {
+  background: var(--color-bg-disabled);
+}
+
+.clear-button:disabled {
+  cursor: not-allowed;
+}
+
+/* 개발용 인증번호 */
 .development-code {
-  margin: 18px 0 0;
-  color: #777777;
-  font-size: 13px;
+  margin: 16px 0 0;
+  color: var(--color-text-sub);
   line-height: 1.5;
   text-align: left;
 }
 
+/* 오류 메시지 */
 .error-message {
-  margin: 18px 0 0;
-  color: #e53935;
-  font-size: 14px;
+  margin: 10px 0 0;
+  color: var(--color-error);
   line-height: 1.5;
-}
-
-.confirm-button {
-  position: absolute;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
-  width: auto;
-  height: 58px;
-  margin: 0;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.confirm-button:active:not(:disabled) {
-  background: #f2aa10;
-}
-
-.confirm-button:disabled {
-  border-color: #dddddd;
-  background: #eeeeee;
-  color: #999999;
-  cursor: not-allowed;
+  text-align: left;
 }
 </style>

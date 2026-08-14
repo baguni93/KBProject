@@ -10,6 +10,8 @@ DROP TABLE IF EXISTS `event_challenge_user_tbl`;
 
 DROP TABLE IF EXISTS `event_challenge_tbl`;
 
+DROP TABLE IF EXISTS `event_challenge_level_tbl`;
+
 DROP TABLE IF EXISTS `event_reward_receive_tbl`;
 
 DROP TABLE IF EXISTS `event_participation_tbl`;
@@ -18,7 +20,7 @@ DROP TABLE IF EXISTS `event_reward_tbl`;
 
 DROP TABLE IF EXISTS `event_tbl`;
 
-DROP TABLE IF EXISTS `event_user_tb`;
+DROP TABLE IF EXISTS `event_user_tbl`;
 
 DROP TABLE IF EXISTS `card_application_history_tbl`;
 
@@ -515,6 +517,7 @@ CREATE TABLE user_random_box_tbl
                              'ATTENDANCE',
                              'FEED_SHARE',
                              'TRANSFER',
+                             'PAYMENT',
                              'EVENT'
                 )
             ),
@@ -1921,6 +1924,27 @@ CREATE TABLE event_challenge_tbl
 
 
 ) COMMENT ='이벤트 챌린지';
+
+-- 이벤트 챌린지 레벨 관리 테이블 정의서
+DROP TABLE IF EXISTS event_challenge_level_tbl;
+
+CREATE TABLE event_challenge_level_tbl
+(
+	challenge_level_id   INT 	AUTO_INCREMENT PRIMARY KEY COMMENT '챌린지 레벨 ID',
+    
+	challenge_id   		 INT	NOT NULL COMMENT '챌린지 ID',
+
+    level		 		 INT    NOT NULL COMMENT '챌린지 목표 난이도',
+
+    required_exp     	 INT    NOT NULL COMMENT '챌린지 요구 경험치',
+    
+    reward_point     	 INT    NOT NULL COMMENT '레벨 보상 포인트',
+    
+     CONSTRAINT fk_event_challenge_level_challenge
+		FOREIGN KEY (challenge_id)
+			REFERENCES event_challenge_tbl (challenge_id)
+
+) COMMENT ='이벤트 챌린지 레벨 관리';
 
 -- 53. 이벤트 챌린지 참여이력 테이블 정의서
 CREATE TABLE event_challenge_user_tbl

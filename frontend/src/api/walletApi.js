@@ -47,7 +47,7 @@ export default {
 
   // PIN-001: 백엔드 DB 유저 간편비밀번호(PIN) 검증 API
   async verifyPin(userId, pinPassword) {
-    const { data } = await api.post(`/api/users/${userId}/pin/verify`, {
+    const { data } = await api.post('/api/users/pin/verify', {
       pinPassword: pinPassword,
     });
     return data;

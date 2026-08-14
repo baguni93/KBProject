@@ -28,8 +28,9 @@ export const connectStomp = (userId) => {
 
     client.subscribe('/user/queue/notifications', (message) => {
       const notification = JSON.parse(message.body);
-      console.log(notification);
+      console.log('웹소켓 알림 수신:', notification);
       notificationStore.addNotification(notification);
+      window.dispatchEvent(new CustomEvent('notification-received', { detail: notification }));
     });
 
     client.subscribe('/user/queue/settlements', (message) => {

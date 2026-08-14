@@ -36,6 +36,7 @@ public class Enum {
     }
 
     public enum NotificationType{
+        PAYMENT,
         LIKE,
         COMMENT,
         FRIEND_REQUEST,

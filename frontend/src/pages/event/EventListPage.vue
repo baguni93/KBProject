@@ -2,9 +2,7 @@
   <div class="event-list-container">
     <div class="list-content-wrapper">
       <header class="list-header">
-        <button class="back-btn" @click="$router.back()">
-          ← 이벤트 리스트
-        </button>
+        <button class="back-btn" @click="goToEventPage">← 이벤트 리스트</button>
       </header>
 
       <!-- 이벤트 리스트 탭 (진행 중 / 참여 완료) -->
@@ -43,7 +41,7 @@
         </div>
       </div>
 
-      <!-- 진행 중 / 참여내역 -->
+      <!-- 진행 중 / 참여 완료 -->
       <main class="list-content">
         <template
           v-for="eventItem in eventList"
@@ -64,14 +62,15 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { storeToRefs } from 'pinia';
+import { useEventStore } from '@/stores/event';
 import eventApi from '@/api/eventApi';
 import EventItem from '@/components/event/EventItem.vue';
 import EventHistoryItem from '@/components/event/EventHistoryItem.vue';
+
+// 유저 아이디
 import { useAuthStore } from '@/stores/auth';
-// 1. 유저 정보
-const userStore = useAuthStore();
-const { userId } = storeToRefs(userStore);
+const authStore = useAuthStore();
+const userId = authStore.userId ?? 1;
 
 const router = useRouter();
 const route = useRoute();
@@ -79,6 +78,10 @@ const route = useRoute();
 const currentTab = ref('active');
 const eventList = ref([]);
 const isLoading = ref(false);
+
+const goToEventPage = () => {
+  router.push('/event/main');
+};
 
 // 날짜 관련 헬퍼 함수
 const formatDisplayYearMonth = (yearMonthStr) => {
@@ -97,11 +100,11 @@ const selectedYearMonth = ref(getTodayYearMonth());
 
 // 2. 이벤트 리스트 조회 (진행 중)
 const loadEventList = async () => {
-  if (!userId.value) return;
+  if (!userId) return;
 
   isLoading.value = true;
   try {
-    const data = await eventApi.getEventList(userId.value);
+    const data = await eventApi.getEventList(userId);
     eventList.value = data;
   } catch (error) {
     console.error('이벤트 리스트 조회 실패:', error);
@@ -112,12 +115,12 @@ const loadEventList = async () => {
 
 // 3. 참여완료 내역 조회
 const loadJoinedEventList = async (targetMonth) => {
-  if (!userId.value) return;
+  if (!userId) return;
 
   isLoading.value = true;
   const monthToFetch = targetMonth || selectedYearMonth.value;
   try {
-    const data = await eventApi.getJoinedEventList(userId.value, monthToFetch);
+    const data = await eventApi.getJoinedEventList(userId, monthToFetch);
     eventList.value = data;
   } catch (error) {
     console.error('참여 내역 데이터 조회 실패:', error);
@@ -130,10 +133,10 @@ const loadJoinedEventList = async (targetMonth) => {
 const switchTab = (tab) => {
   currentTab.value = tab;
   if (tab === 'active') {
-    router.push({ path: '/event/eventList' });
+    router.push({ path: '/event/list' });
   } else {
     router.push({
-      path: '/event/eventList/joined',
+      path: '/event/list/joined',
       query: { yearMonth: selectedYearMonth.value },
     });
   }
@@ -150,7 +153,7 @@ const changeMonth = (direction) => {
 
   if (currentTab.value === 'joined') {
     router.push({
-      path: '/event/eventList/joined',
+      path: '/event/list/joined',
       query: { yearMonth: newYearMonth },
     });
   } else {
@@ -159,7 +162,7 @@ const changeMonth = (direction) => {
 };
 
 watch(
-  () => [route.path, route.query.yearMonth, userId.value],
+  () => [route.path, route.query.yearMonth, userId],
   ([path, queryMonth, currentUserId]) => {
     if (!currentUserId) return;
 
@@ -180,7 +183,7 @@ const onEventAction = async ({
 }) => {
   if (!eventId) return;
 
-  if (!userId.value) {
+  if (!userId) {
     alert('올바른 사용자 정보가 아닙니다.');
     return;
   }
@@ -188,40 +191,56 @@ const onEventAction = async ({
   const isAttendance = eventName?.includes('출석');
 
   const actionMap = {
+    // 1. 이벤트 참여 시작 / 출석체크
     READY: {
-      action: () =>
-        isAttendance
-          ? eventApi.joinAttendanceEvent(eventId, userId.value)
-          : eventApi.joinEvent(eventId, userId.value),
+      action: async () => {
+        // 이벤트 시작 / 출석체크 시작 내역 생성 API 먼저 실행
+        try {
+          if (isAttendance) {
+            await eventApi.joinAttendanceEvent(userId, eventId);
+          } else {
+            await eventApi.joinEvent(userId, eventId);
+          }
+        } catch (err) {
+          console.warn('이미 참가 등록된 이벤트입니다.', err);
+        }
+
+        // 이벤트 참여이력 바로 생성되도록
+        return await eventApi.createParticipation(userId, eventId);
+      },
       msg: `[${eventName}] 이벤트 참여를 시작합니다.`,
     },
+
+    // 2. 출석체크
     ATTENDANCE: {
-      action: () => eventApi.joinAttendanceEvent(eventId, userId.value),
+      action: () => eventApi.joinAttendanceEvent(userId, eventId),
       msg: `[${eventName}] 출석체크가 완료되었습니다.`,
     },
     ATTENDANCE_READY: {
-      action: () => eventApi.joinAttendanceEvent(eventId, userId.value),
+      action: () => eventApi.joinAttendanceEvent(userId, eventId),
       msg: `[${eventName}] 출석체크가 완료되었습니다.`,
     },
+
+    // 3. 진행 중 이벤트
     PROGRESS: {
-      action: () => eventApi.joinEvent(eventId, userId.value),
+      action: () => eventApi.createParticipation(userId, eventId),
       msg: `[${eventName}] 이벤트 참여가 완료되었습니다.`,
     },
+
+    // 4. 오늘자 참여 완료
     DAILY_LIMIT: {
       action: async () => {
         alert('이미 참여한 이벤트입니다.');
       },
       msg: null,
     },
+
+    // 5. 목표 달성 후 보상 수령 (rewardId 전달 추가)
     REWARD_CLAIM: {
       action: () =>
         isAttendance
-          ? eventApi.receiveAttendanceEventReward(
-              eventId,
-              userId.value,
-              rewardId,
-            )
-          : eventApi.receiveEventReward(eventId, userId.value, rewardId),
+          ? eventApi.receiveAttendanceEventReward(eventId, userId, rewardId)
+          : eventApi.receiveEventReward(eventId, userId, rewardId),
       msg: `[${eventName}] 보상 수령이 완료되었습니다!`,
     },
   };

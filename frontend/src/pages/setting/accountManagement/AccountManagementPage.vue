@@ -1,100 +1,116 @@
 <template>
-  <div class="management-page">
-    <main class="management-container">
-      <header class="page-header">
-        <button class="back-button" type="button" @click="goBack">
-          &lt;
-        </button>
+  <div class="page-layout management-page">
+    <PageHeader title="계정 관리" custom-back @back="goBack" />
 
-        <h1>계정 관리</h1>
-
-        <div class="header-empty"></div>
-      </header>
-
+    <main class="page-content management-container">
+      <!-- 상단 안내 -->
       <section class="title-section">
-        <div class="title-icon">🔐</div>
+        <div class="title-icon">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
 
-        <div>
-          <h2>
-            보안과 계정을<br />
-            편하게 관리해 보세요
+        <div class="title-content">
+          <h2 class="text-26-bold">
+            계정을 관리해 보세요
           </h2>
 
-          <p>안전한 서비스 이용을 위해 계정 정보를 관리할 수 있어요.</p>
+          <p class="text-13">
+            안전한 서비스 이용을 위해<br/>
+            계정 정보를 관리할 수 있어요.
+          </p>
         </div>
       </section>
 
-      <p v-if="loading" class="state-message">
+      <!-- 로딩 -->
+      <p v-if="loading" class="state-message text-13">
         회원정보를 불러오고 있어요.
       </p>
 
-      <p v-else-if="errorMessage" class="error-message">
+      <!-- 오류 -->
+      <p v-else-if="errorMessage" class="error-message text-13">
         {{ errorMessage }}
       </p>
 
       <template v-else>
+        <!-- 내 정보 -->
         <section class="menu-group">
           <div class="group-title">
-            <span>👤</span>
-            <strong>내 정보</strong>
+            <i class="fa-regular fa-user"></i>
+            <strong class="text-13-bold">내 정보</strong>
           </div>
 
           <button class="menu-item" type="button" @click="goNameChange">
             <div class="menu-label">
-              <span class="item-icon">🪪</span>
-              <span>이름</span>
+              <span class="item-icon">
+                <i class="fa-regular fa-id-card"></i>
+              </span>
+
+              <span class="text-15-bold">이름</span>
             </div>
 
             <div class="menu-value">
-              <span>{{ userInfo.userName || '-' }}</span>
-              <strong>&gt;</strong>
+              <span class="text-13">{{ userInfo.userName || '-' }}</span>
+              <i class="fa-solid fa-chevron-right arrow-icon"></i>
             </div>
           </button>
 
           <button class="menu-item" type="button" @click="goPhoneChange">
             <div class="menu-label">
-              <span class="item-icon">📱</span>
-              <span>휴대폰 번호</span>
+              <span class="item-icon">
+                <i class="fa-solid fa-mobile-screen-button"></i>
+              </span>
+
+              <span class="text-15-bold">휴대폰 번호</span>
             </div>
 
             <div class="menu-value">
-              <span>{{ formattedPhoneNumber }}</span>
-              <strong>&gt;</strong>
+              <span class="text-13">{{ formattedPhoneNumber }}</span>
+              <i class="fa-solid fa-chevron-right arrow-icon"></i>
             </div>
           </button>
         </section>
 
+        <!-- 보안 및 계정 -->
         <section class="menu-group security-group">
           <div class="group-title">
-            <span>🔒</span>
-            <strong>보안 및 계정</strong>
+            <i class="fa-solid fa-lock"></i>
+            <strong class="text-13-bold">보안 및 계정</strong>
           </div>
 
           <button class="menu-item" type="button" @click="goPinChange">
             <div class="menu-label">
-              <span class="item-icon">🔑</span>
-              <span>간편비밀번호 변경</span>
+              <span class="item-icon">
+                <i class="fa-solid fa-key"></i>
+              </span>
+
+              <span class="text-15-bold">간편비밀번호 변경</span>
             </div>
 
-            <strong class="single-arrow">&gt;</strong>
+            <i class="fa-solid fa-chevron-right arrow-icon"></i>
           </button>
 
           <button class="menu-item" type="button" @click="goLogout">
             <div class="menu-label">
-              <span class="item-icon">🚪</span>
-              <span>로그아웃</span>
+              <span class="item-icon">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              </span>
+
+              <span class="text-15-bold">로그아웃</span>
             </div>
 
-            <strong class="single-arrow">&gt;</strong>
+            <i class="fa-solid fa-chevron-right arrow-icon"></i>
           </button>
 
           <button class="menu-item withdraw-item" type="button" @click="goWithdraw">
             <div class="menu-label">
-              <span class="item-icon">🚫</span>
-              <span>회원탈퇴</span>
+              <span class="item-icon">
+                <i class="fa-regular fa-circle-xmark"></i>
+              </span>
+
+              <span class="text-15-bold">회원탈퇴</span>
             </div>
 
-            <strong class="single-arrow">&gt;</strong>
+            <i class="fa-solid fa-chevron-right arrow-icon"></i>
           </button>
         </section>
       </template>
@@ -106,16 +122,13 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { getUserInfo } from '@/api/userApi';
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const authStore = useAuthStore();
 
-const userInfo = reactive({
-  userName: '',
-  phoneNumber: '',
-});
-
+const userInfo = reactive({ userName: '', phoneNumber: '' });
 const loading = ref(false);
 const errorMessage = ref('');
 
@@ -123,13 +136,8 @@ const errorMessage = ref('');
 const formattedPhoneNumber = computed(() => {
   const phoneNumber = userInfo.phoneNumber.replace(/[^0-9]/g, '');
 
-  if (phoneNumber.length === 11) {
-    return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 7)}-${phoneNumber.slice(7)}`;
-  }
-
-  if (phoneNumber.length === 10) {
-    return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6)}`;
-  }
+  if (phoneNumber.length === 11) return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 7)}-${phoneNumber.slice(7)}`;
+  if (phoneNumber.length === 10) return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6)}`;
 
   return phoneNumber || '-';
 });
@@ -195,21 +203,13 @@ onMounted(loadUserInfo);
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+
 .management-page {
-  width: 100%;
-  height: 100%;
-  background: #ffffff;
+  background: var(--color-bg-page);
 }
 
 .management-container {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-  padding: 10px 28px 30px;
-  background: #ffffff;
-  box-sizing: border-box;
   overflow-y: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -219,37 +219,7 @@ onMounted(loadUserInfo);
   display: none;
 }
 
-.page-header {
-  display: grid;
-  grid-template-columns: 38px 1fr 38px;
-  min-height: 44px;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.page-header h1 {
-  margin: 0;
-  color: #222222;
-  font-size: 17px;
-  font-weight: 700;
-  text-align: center;
-}
-
-.back-button {
-  justify-self: start;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #555555;
-  font-size: 27px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.header-empty {
-  width: 38px;
-}
-
+/* 상단 안내 */
 .title-section {
   display: flex;
   flex-shrink: 0;
@@ -267,35 +237,34 @@ onMounted(loadUserInfo);
   justify-content: center;
   border-radius: 18px;
   background: #fff5d8;
-  font-size: 26px;
+  color: var(--color-primary-active);
+  font-size: 24px;
 }
 
-.title-section > div:last-child {
+.title-content {
   min-width: 0;
 }
 
-.title-section h2 {
+.title-content h2 {
   margin: 0;
-  color: #111111;
-  font-size: 25px;
-  font-weight: 800;
+  color: var(--color-text-main);
   line-height: 1.35;
   letter-spacing: -0.7px;
 }
 
-.title-section p {
+.title-content p {
   margin: 10px 0 0;
-  color: #999999;
-  font-size: 11px;
+  color: var(--color-text-muted);
   line-height: 1.5;
 }
 
+/* 메뉴 그룹 */
 .menu-group {
   flex-shrink: 0;
   margin-top: 42px;
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--color-divider);
   border-radius: 15px;
-  background: #ffffff;
+  background: var(--color-bg-page);
   box-shadow: 0 7px 20px rgba(0, 0, 0, 0.04);
   overflow: hidden;
 }
@@ -308,22 +277,24 @@ onMounted(loadUserInfo);
   display: flex;
   height: 45px;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   padding: 0 15px;
-  border-bottom: 1px solid #eeeeee;
+  border-bottom: 1px solid var(--color-divider);
   background: #fffdf8;
+  color: var(--color-text-sub);
 }
 
-.group-title span {
-  font-size: 13px;
+.group-title i {
+  width: 16px;
+  color: var(--color-primary-active);
+  text-align: center;
 }
 
 .group-title strong {
-  color: #555555;
-  font-size: 12px;
-  font-weight: 800;
+  color: var(--color-text-sub);
 }
 
+/* 메뉴 */
 .menu-item {
   display: flex;
   width: 100%;
@@ -332,8 +303,8 @@ onMounted(loadUserInfo);
   justify-content: space-between;
   padding: 0 15px;
   border: 0;
-  border-bottom: 1px solid #eeeeee;
-  background: #ffffff;
+  border-bottom: 1px solid var(--color-divider);
+  background: var(--color-bg-page);
   cursor: pointer;
 }
 
@@ -341,12 +312,8 @@ onMounted(loadUserInfo);
   border-bottom: 0;
 }
 
-.menu-item:hover {
-  background: #fafafa;
-}
-
 .menu-item:active {
-  background: #f5f5f5;
+  background: var(--color-bg-screen);
 }
 
 .menu-label {
@@ -354,17 +321,16 @@ onMounted(loadUserInfo);
   min-width: 0;
   align-items: center;
   gap: 10px;
-  color: #333333;
-  font-size: 14px;
-  font-weight: 700;
+  color: var(--color-text-main);
 }
 
 .item-icon {
   display: flex;
   flex: none;
-  width: 21px;
+  width: 22px;
+  align-items: center;
   justify-content: center;
-  color: #777777;
+  color: var(--color-text-sub);
   font-size: 15px;
 }
 
@@ -372,58 +338,44 @@ onMounted(loadUserInfo);
   display: flex;
   flex: none;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin-left: 12px;
 }
 
 .menu-value span {
-  color: #777777;
-  font-size: 12px;
+  color: var(--color-text-sub);
   white-space: nowrap;
 }
 
-.menu-value strong,
-.single-arrow {
-  color: #999999;
-  font-size: 18px;
-  font-weight: 400;
-}
-
-.single-arrow {
+.arrow-icon {
   flex: none;
-  margin-left: 12px;
+  color: var(--color-text-disabled);
+  font-size: 12px;
 }
 
-.withdraw-item .menu-label {
-  color: #ef4444;
-}
-
+/* 회원탈퇴 */
+.withdraw-item .menu-label,
 .withdraw-item .item-icon {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
+/* 상태 */
 .state-message,
 .error-message {
   margin: 100px 0 0;
-  font-size: 13px;
   line-height: 1.5;
   text-align: center;
 }
 
 .state-message {
-  color: #777777;
+  color: var(--color-text-sub);
 }
 
 .error-message {
-  color: #e53935;
+  color: var(--color-error);
 }
 
 @media (max-width: 360px) {
-  .management-container {
-    padding-right: 20px;
-    padding-left: 20px;
-  }
-
   .title-section {
     gap: 12px;
   }
@@ -432,11 +384,7 @@ onMounted(loadUserInfo);
     width: 48px;
     height: 48px;
     border-radius: 16px;
-    font-size: 23px;
-  }
-
-  .title-section h2 {
-    font-size: 23px;
+    font-size: 21px;
   }
 }
 </style>

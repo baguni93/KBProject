@@ -9,6 +9,7 @@ import org.scoula.feed.dto.FeedCreateRequestDTO;
 import org.scoula.feed.service.FeedService;
 import org.scoula.notification.dto.NotificationRequestDTO;
 import org.scoula.notification.service.NotificationService;
+import org.scoula.remittance.service.RemittanceService;
 import org.scoula.settlement.domain.SettlementMemberVO;
 import org.scoula.settlement.domain.SettlementVO;
 import org.scoula.settlement.dto.SettlementCreateRequestDTO;
@@ -30,6 +31,7 @@ public class SettlementServiceImpl implements SettlementService{
     private final FeedService feedService;
     private final NotificationService notificationService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final RemittanceService remittanceService;
 
     @Transactional
     @Override
@@ -266,6 +268,12 @@ public class SettlementServiceImpl implements SettlementService{
         for(var member :settlementVO.getMembers()) {
 
             if(member.getStatus() == Enum.SettlementStatus.COMPLETE){
+                // 3-2. 지불을 완료했던 참여자에게 방장 지갑에서 자동 환불 입금 이체 실행
+                try {
+                    remittanceService.refundSettlement(settlementVO.getRequesterId(), member.getUserId(), member.getAmount());
+                } catch (Exception e) {
+                    log.error("정산 취소 환불 실행 실패 - memberUserId: {}, error: {}", member.getUserId(), e.getMessage());
+                }
 
                 //지불한 요청자에게 환불 알림
                 notificationService.createSettlementNotification(

@@ -20,4 +20,5 @@ public class LinkedAccountVO {
     private String accountHolder;
     private String primaryYn;
     private String connectionStatus;
+    private Long balance;
 }

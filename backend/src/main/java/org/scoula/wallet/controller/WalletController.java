@@ -8,6 +8,8 @@ import org.scoula.wallet.dto.WalletDTO;
 import org.scoula.wallet.service.PaymentTokenStore;
 import org.scoula.wallet.service.WalletService;
 import org.scoula.security.util.JwtProcessor;
+import org.scoula.security.account.domain.CustomUser;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,7 +41,19 @@ public class WalletController {
         return (paramUserId != null && paramUserId > 0) ? paramUserId : 1;
     }
 
-    // 회원 지갑 조회
+    // 회원 지갑 조회 (JWT 전용)
+    @GetMapping("/me")
+    public ResponseEntity<WalletDTO> getMyWallet(@AuthenticationPrincipal CustomUser customUser) {
+        Long userId = (customUser != null) ? customUser.getUser().getUserId() : 1L;
+        log.info("JWT 내 지갑 잔액 조회 요청 - 회원 ID: {}", userId);
+        WalletDTO walletDTO = walletService.getWalletByUserId(userId.intValue());
+        if (walletDTO == null) {
+            walletDTO = walletService.getWalletByUserId(1);
+        }
+        return ResponseEntity.ok(walletDTO);
+    }
+
+    // 회원 지갑 조회 (기존)
     @GetMapping("/user/{userId}")
     public ResponseEntity<WalletDTO> getWalletByUserId(
             HttpServletRequest request,

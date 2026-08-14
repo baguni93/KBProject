@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.sql.Date;
 import java.time.LocalDateTime;
 
 @Data
@@ -17,7 +18,7 @@ public class EventChallengeVO {
     private Integer rewardPoint;
     private Integer maxLevel;
     private Integer maxTarget;
-    private LocalDateTime startAt;
-    private LocalDateTime endAt;
-    private LocalDateTime createdAt;
+    private Date startDate;
+    private Date endDate;
+    private Date createdAt;
 }

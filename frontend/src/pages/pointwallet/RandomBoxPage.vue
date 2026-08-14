@@ -1,8 +1,9 @@
 <template>
-  <div class="kb-mobile-page random-box-page">
+  <div class="page-layout random-box-page">
     <PageHeader title="랜덤박스" />
 
-    <section class="box-stage kb-card">
+    <main class="page-content">
+      <section class="box-stage kb-card">
       <div
         :class="[
           'gift-visual',
@@ -30,22 +31,22 @@
       </div>
 
       <template v-if="lastOpenResult && !opening">
-        <div class="eyebrow">보유 랜덤박스 {{ randomBoxes.length }}개</div>
-        <h2>축하해요!</h2>
-        <div class="reward-value">{{ formatNumber(lastOpenResult.totalRewardPoint ?? lastOpenResult.rewardPoint) }}P</div>
-        <p>포인트가 바로 적립되었어요.</p>
+        <div class="eyebrow text-13-bold">보유 랜덤박스 {{ randomBoxes.length }}개</div>
+        <h2 class="text-20-bold">축하해요!</h2>
+        <div class="reward-value text-28-bold">{{ formatNumber(lastOpenResult.totalRewardPoint ?? lastOpenResult.rewardPoint) }}P</div>
+        <p class="text-13">포인트가 바로 적립되었어요.</p>
       </template>
       <template v-else>
-        <div class="eyebrow">보유 랜덤박스 {{ randomBoxes.length }}개</div>
-        <h2>랜덤박스를 열어보세요</h2>
-        <p>두근두근, 어떤 포인트가 나올까요?</p>
+        <div class="eyebrow text-13-bold">보유 랜덤박스 {{ randomBoxes.length }}개</div>
+        <h2 class="text-20-bold">랜덤박스를 열어보세요</h2>
+        <p class="text-13">두근두근, 어떤 포인트가 나올까요?</p>
       </template>
-    </section>
+      </section>
 
-    <div class="box-actions">
+      <div class="box-actions">
       <button
         type="button"
-        :class="['content-btn', 'primary', 'open-one-button', { 'open-one-button--empty': randomBoxes.length === 0 }]"
+        class="content-btn primary"
         :disabled="loading || randomBoxes.length === 0"
         @click="openOne"
       >
@@ -54,11 +55,11 @@
       <button type="button" class="content-btn secondary" :disabled="loading || randomBoxes.length === 0" @click="openAll">
         모두 열기
       </button>
-    </div>
+      </div>
 
-    <section class="kb-section">
+      <section class="kb-section">
       <div class="kb-section-title-row">
-        <h2 class="kb-section-title text-18-bold">랜덤박스 안내</h2>
+        <h2 class="kb-section-title text-20-bold">랜덤박스 안내</h2>
         <span class="box-count text-13-bold">{{ randomBoxes.length }}개 보유</span>
       </div>
       <div class="guide-card kb-card">
@@ -77,8 +78,9 @@
           </div>
         </div>
 
-      </div>
-    </section>
+        </div>
+      </section>
+    </main>
   </div>
 </template>
 
@@ -95,7 +97,7 @@ const opening = ref(false);
 const openingMode = ref('one');
 const message = ref('');
 const messageType = ref('success');
-const issueReasonLabels = { ATTENDANCE: '출석 체크', EVENT: '이벤트', FEED_SHARE: '피드 공유', TRANSFER: '송금' };
+const issueReasonLabels = { PAYMENT: '결제', ATTENDANCE: '출석 체크', EVENT: '이벤트', FEED_SHARE: '피드 공유', TRANSFER: '송금' };
 const getIssueReasonLabel = (reason) => issueReasonLabels[reason] ?? reason ?? '-';
 const formatDate = (value) => value ? String(value).slice(0, 10) : '-';
 const loadRandomBoxes = async () => { randomBoxes.value = await pointWalletApi.getUnopenedRandomBoxes(); };
@@ -168,8 +170,11 @@ onMounted(initialize);
 </script>
 
 <style scoped>
+
+
+
 .random-box-page { background: var(--color-bg-screen); }
-.box-stage { margin-top: 14px; min-height: 365px; padding: 34px 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: linear-gradient(180deg, #fff 0%, #fffaf0 100%); box-shadow: none; border: 1px solid #f2f2f2; }
+.box-stage { min-height: 365px; padding: 34px 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: linear-gradient(180deg, var(--color-bg-page) 0%, #fffaf0 100%); box-shadow: none; border: 1px solid var(--color-divider); }
 .gift-visual { position: relative; width: 126px; height: 126px; margin-bottom: 18px; display: flex; align-items: center; justify-content: center; border-radius: 40px; background: #fff4c9; color: #f4aa00; font-size: 66px; transform: rotate(-2deg); }
 .gift-visual.opened { background: #fff1b9; transform: none; }
 .gift-visual.opening {
@@ -285,27 +290,22 @@ onMounted(initialize);
     animation-delay: 0ms !important;
   }
 }
-.spark { position: absolute; color: var(--kb-yellow); font-size: 18px; animation: twinkle 1.4s infinite alternate; }
+.spark { position: absolute; color: var(--color-primary); font-size: 18px; animation: twinkle 1.4s infinite alternate; }
 .spark-1 { top: 9px; right: 8px; }.spark-2 { left: 0; bottom: 18px; animation-delay: .4s; }
 @keyframes twinkle { to { transform: scale(1.4); opacity: .45; } }
-.eyebrow { color: #a87900; font-size: 12px; font-weight: 800; }
-.result-eyebrow { margin-top: 7px; color: var(--kb-subtext); font-size: 11px; font-weight: 700; }
-.open-one-button.open-one-button--empty,
-.open-one-button.open-one-button--empty:disabled {
-  background: #d9d9d9;
-  border-color: #d9d9d9;
-  color: #8a8a8a;
-  opacity: 1;
-  cursor: not-allowed;
-}
-.box-stage h2 { margin: 7px 0 6px; font-size: 22px; font-weight: 900; letter-spacing: -.7px; }
-.box-stage p { margin: 0; color: var(--kb-subtext); font-size: 12px; }
-.reward-value { margin: 2px 0 5px; font-size: 34px; font-weight: 900; }
+.eyebrow { color: var(--color-primary-border); }
+.box-stage h2 { margin: 7px 0 6px; letter-spacing: -.7px; }
+.box-stage p { margin: 0; color: var(--color-text-sub); }
+.reward-value { margin: 2px 0 5px; }
 .box-actions { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.box-count { color: #a87900; }
-.guide-card { padding: 6px 16px 14px; box-shadow: none; border: 1px solid #f0f0f0; }
-.guide-row { padding: 13px 0; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f2f2f2; }
-.guide-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--kb-yellow-soft); color: #d89400; }
-.guide-row strong,.guide-row span { display: block; }.guide-row span { margin-top: 2px; color: var(--kb-subtext); }
-.next-box { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: #f7f7f7; color: #777; }
+.box-count { color: var(--color-primary-border); }
+.guide-card { padding: 6px 16px 14px; }
+.guide-row { padding: 13px 0; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--color-divider); }
+.guide-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: color-mix(in srgb, var(--color-primary) 18%, var(--color-bg-page)); color: var(--color-primary-border); }
+.guide-row strong,.guide-row span { display: block; }.guide-row span { margin-top: 2px; color: var(--color-text-sub); }
+
+
+
+
+
 </style>

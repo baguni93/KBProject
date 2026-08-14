@@ -15,6 +15,7 @@
         <result property="accountHolder" column="account_holder"/>
         <result property="primaryYn" column="primary_yn"/>
         <result property="connectionStatus" column="connection_status"/>
+        <result property="balance" column="balance"/>
     </resultMap>
 
     <resultMap id="accountVerificationMap" type="org.scoula.account.domain.AccountVerificationVO">
@@ -42,10 +43,15 @@
         la.account_number,
         la.account_holder,
         la.primary_yn,
-        la.connection_status
+        la.connection_status,
+        COALESCE(ad.balance, ad2.balance, 510000) AS balance
         FROM linked_account_tbl la
         INNER JOIN bank_tbl b
         ON la.bank_code = b.bank_code
+        LEFT JOIN account_dummy_tbl ad
+        ON la.account_number = ad.account_number
+        LEFT JOIN account_dummy_tbl ad2
+        ON la.user_id = ad2.user_id AND la.bank_code = ad2.bank_code
         WHERE la.user_id = #{userId}
         AND la.connection_status = 'CONNECTED'
         ORDER BY

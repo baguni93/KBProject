@@ -14,6 +14,16 @@ public interface RandomBoxService {
             Integer attendanceId
     );
 
+    /*
+     * 성공한 결제가 정책 금액 이상일 때 랜덤박스 1개 지급.
+     * transactionId를 source_id로 사용하므로 동일 결제 거래 중복 지급은 차단된다.
+     */
+    RandomBoxIssueResultDTO issueForPayment(
+            Integer userId,
+            Integer transactionId,
+            Integer paymentAmount
+    );
+
 
     // 피드(친구/공개) 송신 완료 보상
     RandomBoxIssueResultDTO issueForFeedShare(

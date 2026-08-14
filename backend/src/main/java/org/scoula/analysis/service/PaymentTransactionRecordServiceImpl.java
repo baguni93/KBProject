@@ -3,6 +3,7 @@ package org.scoula.analysis.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.analysis.dto.MerchantCategoryClassificationResultDTO;
+import org.scoula.pointwallet.service.RandomBoxService;
 import org.scoula.wallet.dto.PaymentTokenDTO;
 import org.scoula.wallet.mapper.WalletMapper;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,9 @@ public class PaymentTransactionRecordServiceImpl
 
     // financial_transaction_tbl 결제 거래 저장 담당
     private final WalletMapper walletMapper;
+
+    // 랜덤박스 공통 발급 서비스
+    private final RandomBoxService randomBoxService;
 
     @Override
     @Transactional
@@ -91,6 +95,15 @@ public class PaymentTransactionRecordServiceImpl
                 spendingCategoryId,
                 classificationSource
         );
+
+        // 카드 / QR / 바코드 결제 성공 보상: 1,000원 이상 시 랜덤박스 발급
+        try {
+            int txId = Math.abs((int)(System.currentTimeMillis() % 100000000)) + 1;
+            randomBoxService.issueForPayment(tokenDTO.getUserId(), txId, amount);
+            log.info("결제 성공 보상 랜덤박스 발급 성공 - userId={}, amount={}", tokenDTO.getUserId(), amount);
+        } catch (Exception rBoxErr) {
+            log.warn("결제 성공 후 랜덤박스 발급 예외 처리 (결제는 승인 완료): {}", rBoxErr.getMessage());
+        }
     }
 
     private String normalizeMerchantName(

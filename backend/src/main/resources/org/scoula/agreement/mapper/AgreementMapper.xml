@@ -42,7 +42,7 @@
     </sql>
 
 
-    <!-- 사용 중인 약관 목록 조회 -->
+    <!-- 회원가입 약관 목록 조회 -->
     <select
             id="findAllActive"
             resultMap="agreementResultMap">
@@ -50,7 +50,13 @@
         SELECT
         <include refid="agreementColumns"/>
         FROM agreement_tbl
-        WHERE use_yn = 'Y'
+        WHERE agreement_type IN (
+        'SERVICE',
+        'PRIVACY',
+        'ELECTRONIC_FINANCE',
+        'MARKETING'
+        )
+        AND use_yn = 'Y'
         ORDER BY agreement_id
 
     </select>

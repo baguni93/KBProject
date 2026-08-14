@@ -1,18 +1,21 @@
 <template>
-  <div class="kb-mobile-page conversion-page">
+  <div class="page-layout conversion-page">
     <PageHeader title="포인트 지갑 전환" />
 
-    <section class="balance-card kb-card">
-      <div>
-        <div class="balance-label text-13-bold">내 포인트</div>
-        <div class="balance-value text-28-bold">{{ formatNumber(pointWallet?.pointBalance) }}<span>P</span></div>
-        <div class="balance-sub text-13">현금처럼 전환해서 사용할 수 있어요</div>
-        <div class="balance-guide text-13">최소 100P부터 전자지갑으로 전환할 수 있어요.</div>
-      </div>
-      <div class="point-symbol">P</div>
-    </section>
+    <main class="page-content">
+      <section class="balance-card kb-card">
+        <div>
+          <div class="balance-label text-13-bold">내 포인트</div>
+          <div class="balance-value text-28-bold">
+            {{ formatNumber(pointWallet?.pointBalance) }}<span class="text-18-bold">P</span>
+          </div>
+          <div class="balance-sub text-13">현금처럼 전환해서 사용할 수 있어요</div>
+          <div class="balance-guide text-13">최소 100P부터 전자지갑으로 전환할 수 있어요.</div>
+        </div>
+        <div class="point-symbol text-28-bold">P</div>
+      </section>
 
-    <section class="kb-section">
+      <section class="kb-section">
       <div class="kb-section-title-row"><h2 class="kb-section-title text-20-bold">전환할 포인트</h2><span class="rate-label text-13-bold">1P = 1원</span></div>
       <form class="conversion-card kb-card" @submit.prevent="submitConversion">
         <div class="amount-input-wrap">
@@ -35,10 +38,9 @@
           <div><span class="text-13">전자지갑 예상 잔액</span><strong class="text-13-bold">{{ formatNumber(expectedWalletBalance) }}원</strong></div>
         </div>
         <button type="submit" class="content-btn primary" :disabled="loading">{{ loading ? '전환 중...' : '지갑에 전환' }}</button>
-      </form>
-    </section>
-
-
+        </form>
+      </section>
+    </main>
   </div>
 </template>
 
@@ -94,7 +96,6 @@ onMounted(initialize);
 ========================= */
 
 .balance-card {
-  //margin-top: 14px;
   min-height: 126px;
   padding: 22px;
   display: flex;
@@ -115,8 +116,6 @@ onMounted(initialize);
 
 .balance-value span {
   margin-left: 3px;
-  font-size: 17px;
-  font-weight: 800;
 }
 
 .balance-sub {
@@ -137,10 +136,8 @@ onMounted(initialize);
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: var(--kb-yellow);
-  color: #fff;
-  font-size: 28px;
-  font-weight: 900;
+  background: var(--color-primary);
+  color: var(--color-text-white);
   box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08);
 }
 
@@ -149,7 +146,7 @@ onMounted(initialize);
 ========================= */
 
 .rate-label {
-  color: #9d7600;
+  color: var(--color-primary-border);
 }
 
 .conversion-card {

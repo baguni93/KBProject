@@ -73,4 +73,56 @@ public class CardPaymentController {
         boolean result = cardPaymentService.setPrimaryCard(cardId, userId);
         return ResponseEntity.ok(result);
     }
+
+    // 1단계: 결제 대기(PENDING) 생성 API
+    @PostMapping("/api/cards/payments/request")
+    public ResponseEntity<org.scoula.cardpayment.dto.CardTransactionResponseDTO> createPendingTransaction(
+            @RequestBody(required = false) org.scoula.cardpayment.dto.CardTransactionRequestDTO requestDTO) {
+        if (requestDTO == null) {
+            requestDTO = org.scoula.cardpayment.dto.CardTransactionRequestDTO.builder().linkedCardId(1).build();
+        }
+        log.info("결제 대기(PENDING) 레코드 생성 요청 - LinkedCardID: {}", requestDTO.getLinkedCardId());
+        org.scoula.cardpayment.dto.CardTransactionResponseDTO response = cardPaymentService.createPendingTransaction(requestDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    // 1. 카드 결제 승인 요청 API (지갑 잔액 차감 X, 무조건 SUCCESS 기록 보존)
+    @PostMapping("/api/cards/payments/approve")
+    public ResponseEntity<org.scoula.cardpayment.dto.CardTransactionResponseDTO> approveCardTransaction(
+            @RequestBody org.scoula.cardpayment.dto.CardTransactionApproveDTO approveDTO) {
+        log.info("카드 결제 승인 요청: {}", approveDTO);
+        org.scoula.cardpayment.dto.CardTransactionResponseDTO response = cardPaymentService.approveTransaction(approveDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2. 전자지갑 / QR / 바코드 결제 승인 요청 API (wallet_tbl 잔액 차감 O)
+    @PostMapping({"/api/wallets/payments/approve", "/api/wallets/payments/qr/approve", "/api/wallets/payments/barcode/approve"})
+    public ResponseEntity<org.scoula.cardpayment.dto.CardTransactionResponseDTO> approveWalletTransaction(
+            @RequestBody org.scoula.cardpayment.dto.CardTransactionApproveDTO approveDTO) {
+        log.info("전자지갑/QR/바코드 결제 승인 요청: {}", approveDTO);
+        org.scoula.cardpayment.dto.CardTransactionResponseDTO response = cardPaymentService.approveWalletTransaction(approveDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    // 결제 상태 단건 조회 API
+    @GetMapping("/api/cards/payments/transactions/{cardTransactionId}")
+    public ResponseEntity<org.scoula.cardpayment.dto.CardTransactionResponseDTO> getTransactionStatus(
+            @PathVariable("cardTransactionId") Long cardTransactionId) {
+        log.info("결제 상태 조회 요청 - ID: {}", cardTransactionId);
+        org.scoula.cardpayment.dto.CardTransactionResponseDTO response = cardPaymentService.getTransactionStatus(cardTransactionId);
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    // 결제 취소/만료 FAILED 처리 API
+    @PostMapping("/api/cards/payments/cancel")
+    public ResponseEntity<Boolean> cancelTransaction(
+            @RequestBody org.scoula.cardpayment.dto.CardTransactionApproveDTO approveDTO) {
+        Long cardTxId = approveDTO.getCardTransactionId();
+        log.info("결제 취소/만료 FAILED 요청 - ID: {}", cardTxId);
+        boolean result = cardPaymentService.cancelTransaction(cardTxId);
+        return ResponseEntity.ok(result);
+    }
 }
