@@ -38,6 +38,28 @@ public class UploadFiles {
         return dest.getPath();
     }
 
+    public static String uploadSameFileName(String baseDir, MultipartFile part, String fileName) throws IOException {
+        // 업로드 디렉토리 생성
+        File base = new File(baseDir);
+
+        if (!base.exists()) {
+            base.mkdirs();
+        }
+
+        // 고유 파일명 생성
+
+        // 저장 파일 객체 생성
+        File dest = new File(baseDir, fileName);
+
+        // 실제 파일 저장 (Files.copy로 톰캣 상대경로 이슈 방지)
+        try (java.io.InputStream is = part.getInputStream()) {
+            java.nio.file.Files.copy(is, dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        // 저장된 파일 경로 반환
+        return dest.getPath();
+    }
+
     public static String getFormatSize(Long size) {
         // 파일 크기가 없으면 0 반환
         if (size == null || size <= 0) {
