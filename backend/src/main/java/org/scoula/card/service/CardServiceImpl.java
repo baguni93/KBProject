@@ -112,18 +112,54 @@ public class CardServiceImpl implements CardService {
     @Override
     @Transactional
     public CardVO createCardMaster(CardMasterCreateDTO dto) {
-        // 1. 카드명 정규화: 모든 공백(일반, 비표준) 을 단일 스페이스로 변환
-        String normalizedInput = dto.getCardName().replaceAll("[\\p{Z}\\s]+", " ").trim();
+        if (dto == null || dto.getCardName() == null) {
+            throw new IllegalArgumentException("카드 이름이 입력되지 않았습니다.");
+        }
+        // 1. 카드명 정규화: 모든 특수공백, 괄호, 콜론 제거 후 비교 (Fuzzy Match)
+        String rawInput = dto.getCardName();
+        String normalizedInput = rawInput.replaceAll("[\\p{Z}\\s]+", " ").trim();
+        String strippedInput = rawInput.replaceAll("[\\p{Z}\\s\\(\\):\\-_]+", "").toLowerCase();
+
         String foundBin = null;
         String foundImageFileName = null;
+
+        // 1차: 정밀 매칭
         for (Map.Entry<String, CardController.CardInfo> entry : CardController.BIN_MAPPING_MAP.entrySet()) {
             String normalizedStored = entry.getValue().getCardName().replaceAll("[\\p{Z}\\s]+", " ").trim();
-            if (normalizedStored.equals(normalizedInput)) {
+            if (normalizedStored.equalsIgnoreCase(normalizedInput)) {
                 foundBin = entry.getKey();
                 foundImageFileName = entry.getValue().getImageUrl();
                 break;
             }
         }
+
+        // 2차: 괄호/콜론/공백 무시 유연 매칭 (WE:SH All, nori(노리) 등)
+        if (foundBin == null) {
+            for (Map.Entry<String, CardController.CardInfo> entry : CardController.BIN_MAPPING_MAP.entrySet()) {
+                String strippedStored = entry.getValue().getCardName().replaceAll("[\\p{Z}\\s\\(\\):\\-_]+", "").toLowerCase();
+                if (strippedStored.equals(strippedInput) || strippedStored.contains(strippedInput) || strippedInput.contains(strippedStored)) {
+                    foundBin = entry.getKey();
+                    foundImageFileName = entry.getValue().getImageUrl();
+                    break;
+                }
+            }
+        }
+
+        // 3차: 괄호 주석문(예: (선불/기타))을 지운 순수 카드명만 추출하여 스마트 매칭
+        if (foundBin == null && rawInput.contains("(")) {
+            String baseTitle = rawInput.replaceAll("\\(.*\\)", "").replaceAll("[\\p{Z}\\s\\-_]+", "").toLowerCase();
+            if (!baseTitle.isEmpty()) {
+                for (Map.Entry<String, CardController.CardInfo> entry : CardController.BIN_MAPPING_MAP.entrySet()) {
+                    String strippedStored = entry.getValue().getCardName().replaceAll("[\\p{Z}\\s\\(\\):\\-_]+", "").toLowerCase();
+                    if (strippedStored.equals(baseTitle) || strippedStored.contains(baseTitle) || baseTitle.contains(strippedStored)) {
+                        foundBin = entry.getKey();
+                        foundImageFileName = entry.getValue().getImageUrl();
+                        break;
+                    }
+                }
+            }
+        }
+
         if (foundBin == null) {
             throw new IllegalArgumentException(
                     "BIN 매핑에서 찾을 수 없는 카드명입니다: " + dto.getCardName());
