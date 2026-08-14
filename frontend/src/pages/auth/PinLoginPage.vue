@@ -23,7 +23,7 @@
 
       <!-- 제목 -->
       <header class="login-header">
-        <h1 class="text-30-bold">
+        <h1 class="text-28-bold">
           간편비밀번호 로그인
         </h1>
 
@@ -199,7 +199,7 @@ const login = async () => {
       pinPassword: pinPassword.value,
     });
 
-    const userInfo = await getUserInfo(authStore.userId);
+    const userInfo = await getUserInfo();
 
     authStore.setUserName(userInfo.userName);
 
@@ -285,6 +285,12 @@ watch(pinPassword, (value) => {
   inset: 0;
   border-radius: 50%;
   background: rgba(255, 188, 46, 0.11);
+
+  opacity: 0;
+  transform: scale(0.78);
+  animation:
+      glow-enter 0.5s ease 0.05s forwards,
+      glow-breathe 3s ease-in-out 1s infinite;
 }
 
 .visual-icon {
@@ -303,10 +309,18 @@ watch(pinPassword, (value) => {
   );
   box-shadow: 0 12px 26px rgba(255, 188, 46, 0.22);
   color: #ffffff;
+
+  opacity: 0;
+  transform: scale(0.62);
+  animation: icon-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s forwards;
 }
 
 .visual-icon i {
   font-size: 27px;
+
+  opacity: 0;
+  transform: scale(0.6);
+  animation: lock-enter 0.28s ease 0.4s forwards;
 }
 
 /* 작은 장식 */
@@ -314,6 +328,9 @@ watch(pinPassword, (value) => {
   position: absolute;
   z-index: 3;
   border-radius: 50%;
+
+  opacity: 0;
+  transform: scale(0);
 }
 
 .dot-one {
@@ -322,6 +339,10 @@ watch(pinPassword, (value) => {
   width: 8px;
   height: 8px;
   background: #8f81f5;
+
+  animation:
+      dot-pop 0.35s ease 0.42s forwards,
+      dot-float 3.2s ease-in-out 1s infinite;
 }
 
 .dot-two {
@@ -330,6 +351,10 @@ watch(pinPassword, (value) => {
   width: 7px;
   height: 7px;
   background: #6fd0bd;
+
+  animation:
+      dot-pop 0.35s ease 0.5s forwards,
+      dot-float 3.6s ease-in-out 1.1s infinite reverse;
 }
 
 .dot-three {
@@ -338,6 +363,10 @@ watch(pinPassword, (value) => {
   width: 6px;
   height: 6px;
   background: #ff9aa7;
+
+  animation:
+      dot-pop 0.35s ease 0.58s forwards,
+      dot-float 3.4s ease-in-out 1.15s infinite;
 }
 
 /* 제목 */
@@ -525,6 +554,99 @@ watch(pinPassword, (value) => {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes glow-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.78);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes glow-breathe {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.72;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes icon-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.62);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.07);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes lock-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dot-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dot-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .visual-glow,
+  .visual-icon,
+  .visual-icon i,
+  .visual-dot {
+    opacity: 1;
+    transform: none;
+    animation: none;
   }
 }
 </style>

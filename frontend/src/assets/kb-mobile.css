@@ -1,82 +1,165 @@
+/* 사용 기능
+ * - 프로젝트의 기존 KB 스타일 포인트 색상/보조 색상/텍스트/구분선/모서리 값
+ * - 금융 허브의 기능 카드, 포인트 지갑 잔액/출석/메뉴 아이콘,
+ *   포인트 전환의 포인트 심볼, 랜덤박스 장식/안내 아이콘 등에 사용
+ *
+ * 사용 위치
+ * --kb-yellow
+ *   - frontend/src/pages/finance/FinancePage.vue
+ *   - frontend/src/pages/pointwallet/PointConversionPage.vue
+ *   - frontend/src/pages/pointwallet/PointWalletPage.vue
+ *   - frontend/src/pages/pointwallet/RandomBoxPage.vue
+ *
+ * --kb-yellow-soft
+ *   - frontend/src/pages/pointwallet/PointTransactionPage.vue
+ *   - frontend/src/pages/pointwallet/PointWalletPage.vue
+ *   - frontend/src/pages/pointwallet/RandomBoxPage.vue
+ *
+ * --kb-ink
+ *   - frontend/src/pages/pointwallet/PointWalletPage.vue
+ *
+ * --kb-subtext
+ *   - frontend/src/pages/pointwallet/PointWalletPage.vue
+ *   - frontend/src/pages/pointwallet/RandomBoxPage.vue
+ *
+ * --kb-line
+ *   - frontend/src/pages/pointwallet/PointWalletPage.vue
+ *
+ * --kb-radius-lg
+ *   - frontend/src/pages/finance/FinancePage.vue
+ */
+
+/*:root 공용 CSS를 변수로써 삽입하는 역할.
+ * kb-yellow : 금융 탭 -> 내 포인트의 P 배경색
+ * kb-yellow-soft: 포인트지갑-> 최근 이용내역 -> 아이콘 배경색
+ * kb-ink: 포인트 지갑 -> (랜덤박스 / 포인트 전환) 바로가기 영역의 기본 글자색
+ * kb-line: 포인트 지갑 -> 랜덤박스와 포인트 전환 바로가기 사이의 세로 구분선
+ * kb-radius-lg: 금융 탭-> 기능 이동 카드 4개의 둥근 모서리
+*/
 :root {
-    --kb-yellow: #ffbc00;
-    --kb-yellow-strong: #ffb300;
+    --kb-yellow: var(--color-primary);
     --kb-yellow-soft: #fff7d6;
-    --kb-ink: #222222;
-    --kb-subtext: #737373;
-    --kb-line: #ececec;
-    --kb-bg: #f6f7f9;
-    --kb-white: #ffffff;
-    --kb-success: #1f9d62;
-    --kb-danger: #e34a4a;
-    --kb-radius-sm: 10px;
-    --kb-radius-md: 14px;
+    --kb-ink: var(--color-text-main);
+    --kb-subtext: var(--color-text-sub);
+    --kb-line: var(--color-divider);
     --kb-radius-lg: 18px;
-    --kb-shadow: 0 4px 16px rgba(30, 30, 30, 0.07);
 }
 
-.kb-mobile-page {
-    min-height: 100%;
-    padding: 0 16px 28px;
-    color: var(--kb-ink);
-    background: var(--kb-bg);
-}
+/*  .kb-card : 여러 화면에서 사용하는 카드형 컨테이너의 기본 외형
+ * 금융 탭 -> 각 기능으로 이동하는 카드 영역
+ * 포인트 지갑 -> 포인트 정보 / 바로가기 등의 카드 영역
+ * 포인트 전환 -> 보유 포인트 및 전환 기능의 카드 영역
+ * 랜덤박스 -> 랜덤박스 기능의 카드 영역
+ * 소비분석 -> 소비 분석 결과 / 카테고리 / 거래내역 등의 카드 영역
+ * 카드추천 -> 추천 결과 및 카드 상세정보 영역
+ * 보험추천 -> 보험 상품 / 추천 결과 / 상세정보 영역 등등
+ *
+ * 흰색 배경 + 둥근 모서리 + 연한 그림자를 가진 기본 카드 디자인 스타일 **
+ *
+ * 사용 위치
+ * - frontend/src/components/common/SpendingCategorySelector.vue
+ * - frontend/src/pages/analysis/AnalysisCategoryEditPage.vue
+ * - frontend/src/pages/analysis/AnalysisCategorySummaryPage.vue
+ * - frontend/src/pages/analysis/AnalysisCheckPage.vue
+ * - frontend/src/pages/analysis/AnalysisClassificationPage.vue
+ * - frontend/src/pages/analysis/AnalysisEntryPage.vue
+ * - frontend/src/pages/analysis/AnalysisMainPage.vue
+ * - frontend/src/pages/analysis/AnalysisResultPage.vue
+ * - frontend/src/pages/analysis/AnalysisSubcategoryPage.vue
+ * - frontend/src/pages/analysis/AnalysisTransactionListPage.vue
+ * - frontend/src/pages/analysis/RecommendationPeriodGuidePage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationDetailPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationPage.vue
+ * - frontend/src/pages/finance/FinancePage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductDetailPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductListPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationEvidencePage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationPage.vue
+ * - frontend/src/pages/pointwallet/PointConversionPage.vue
+ * - frontend/src/pages/pointwallet/PointTransactionPage.vue
+ * - frontend/src/pages/pointwallet/PointWalletPage.vue
+ * - frontend/src/pages/pointwallet/RandomBoxPage.vue
+ *
 
-.kb-app-header {
-    height: 58px;
-    margin: 0 -16px 14px;
-    padding: 0 16px;
-    display: grid;
-    grid-template-columns: 38px 1fr 38px;
-    align-items: center;
-    background: var(--kb-white);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
-    position: sticky;
-
-    /* 1. top 위치를 0에서 부모의 마진값만큼 위로 올려줍니다 */
-    top: -16px;
-
-    /* 2. z-index를 20에서 100으로 넉넉하게 올려 차트가 위로 올라오지 못하게 막습니다 */
-    z-index: 100;
-}
-
-.kb-app-header__title {
-    margin: 0;
-    text-align: center;
-    font-size: 17px;
-    font-weight: 800;
-    letter-spacing: -0.4px;
-}
-
-.kb-icon-button {
-    width: 38px;
-    height: 38px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--kb-ink);
-    text-decoration: none;
-}
-
-.kb-icon-button:hover {
-    background: #f3f3f3;
-    color: var(--kb-ink);
-}
+ */
 
 .kb-card {
-    background: var(--kb-white);
+    background: var(--color-bg-page);
     border: 0;
-    border-radius: var(--kb-radius-lg);
-    box-shadow: var(--kb-shadow);
+    border-radius: 18px;
+    box-shadow: 0 4px 16px rgba(30, 30, 30, 0.07);
 }
 
+/* 사용 기능
+ * - 화면 안에서 기능 단위를 세로로 구분하는 섹션 영역
+ * - 예: 카테고리 선택, 카테고리별 소비, 최근 소비내역,
+ *   카드추천 TOP 3, 보험 보장/추천 근거, 포인트 이용내역,
+ *   포인트 전환, 랜덤박스 안내 등의 영역 간 간격 처리
+ 사용 예시)
+[내 포인트 카드]
+
+18px 여백
+
+[출석체크 영역]
+
+18px 여백
+
+[최근 이용내역 영역]
+ *
+ * 사용 위치
+ * - frontend/src/pages/analysis/AnalysisCategoryEditPage.vue
+ * - frontend/src/pages/analysis/AnalysisCategorySummaryPage.vue
+ * - frontend/src/pages/analysis/AnalysisClassificationPage.vue
+ * - frontend/src/pages/analysis/AnalysisMainPage.vue
+ * - frontend/src/pages/analysis/AnalysisResultPage.vue
+ * - frontend/src/pages/analysis/AnalysisSubcategoryPage.vue
+ * - frontend/src/pages/analysis/AnalysisTransactionListPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationDetailPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationPage.vue
+ * - frontend/src/pages/finance/FinancePage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductDetailPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductListPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationEvidencePage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationPage.vue
+ * - frontend/src/pages/pointwallet/PointConversionPage.vue
+ * - frontend/src/pages/pointwallet/PointTransactionPage.vue
+ * - frontend/src/pages/pointwallet/PointWalletPage.vue
+ * - frontend/src/pages/pointwallet/RandomBoxPage.vue
+ */
 .kb-section {
     margin-top: 18px;
 }
 
+/* .kb-section-title-row : 섹션의 제목과 우측 요소를 한 줄에 배치하는 역할
+ * 포인트 지갑 -> 최근 이용내역 제목 / 우측요소(전체보기) 링크를 좌우로 배치
+ * 포인트 지갑 -> 랜덤박스 등 각 섹션의 제목과 우측 보조정보 배치
+ * 소비분석 -> 각 분석 영역의 제목과 우측 정보/기능을 좌우로 배치
+ * 카드추천 -> 추천 결과 등의 섹션 제목과 우측 요소 배치
+ * 보험추천 -> 보험 상품/추천 근거 등의 제목과 우측 요소 배치
+ *
+ * 역할 : 왼쪽에는 섹션 제목, 오른쪽에는 링크·보조정보 등을 배치하고
+ *        아래 콘텐츠와 10px 간격을 둠
+ */
+/*
+ * 사용 위치
+ * - frontend/src/pages/analysis/AnalysisCategoryEditPage.vue
+ * - frontend/src/pages/analysis/AnalysisCategorySummaryPage.vue
+ * - frontend/src/pages/analysis/AnalysisClassificationPage.vue
+ * - frontend/src/pages/analysis/AnalysisMainPage.vue
+ * - frontend/src/pages/analysis/AnalysisResultPage.vue
+ * - frontend/src/pages/analysis/AnalysisSubcategoryPage.vue
+ * - frontend/src/pages/analysis/AnalysisTransactionListPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationDetailPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductDetailPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductListPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationEvidencePage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationPage.vue
+ * - frontend/src/pages/pointwallet/PointConversionPage.vue
+ * - frontend/src/pages/pointwallet/PointTransactionPage.vue
+ * - frontend/src/pages/pointwallet/PointWalletPage.vue
+ * - frontend/src/pages/pointwallet/RandomBoxPage.vue
+ */
 .kb-section-title-row {
     display: flex;
     align-items: center;
@@ -84,65 +167,94 @@
     margin: 0 2px 10px;
 }
 
+/* 사용 위치
+ * - frontend/src/pages/analysis/AnalysisCategoryEditPage.vue
+ * - frontend/src/pages/analysis/AnalysisCategorySummaryPage.vue
+ * - frontend/src/pages/analysis/AnalysisClassificationPage.vue
+ * - frontend/src/pages/analysis/AnalysisMainPage.vue
+ * - frontend/src/pages/analysis/AnalysisResultPage.vue
+ * - frontend/src/pages/analysis/AnalysisSubcategoryPage.vue
+ * - frontend/src/pages/analysis/AnalysisTransactionListPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationDetailPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductDetailPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductListPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationEvidencePage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationPage.vue
+ * - frontend/src/pages/pointwallet/PointConversionPage.vue
+ * - frontend/src/pages/pointwallet/PointTransactionPage.vue
+ * - frontend/src/pages/pointwallet/PointWalletPage.vue
+ * - frontend/src/pages/pointwallet/RandomBoxPage.vue
+ */
 .kb-section-title {
     margin: 0;
-    font-size: 16px;
-    font-weight: 800;
     letter-spacing: -0.35px;
 }
 
+/* .kb-section-link : 섹션 제목 오른쪽의 보조 이동 링크 스타일
+ * 포인트 지갑 -> 최근 이용내역 -> 우측 '전체보기' 링크
+ * padding: 링크 안쪽 여백 제거
+ * border: 테두리 제거
+ * background: 상자 배경색 제거
+ * text-decoration: 밑줄 제거
+ * 사용 위치
+ * - frontend/src/pages/pointwallet/PointWalletPage.vue
+ */
 .kb-section-link {
     padding: 0;
     border: 0;
     background: transparent;
-    color: #777;
-    font-size: 12px;
+    color: var(--color-text-sub);
     text-decoration: none;
 }
 
-.kb-primary-button,
-.kb-secondary-button,
-.kb-outline-button {
-    min-height: 48px;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 800;
-}
-
-.kb-primary-button {
-    border: 1px solid var(--kb-yellow);
-    background: var(--kb-yellow);
-    color: #161616;
-}
-
-.kb-primary-button:hover,
-.kb-primary-button:focus {
-    border-color: var(--kb-yellow-strong);
-    background: var(--kb-yellow-strong);
-    color: #161616;
-}
-
-.kb-secondary-button {
-    border: 1px solid #242424;
-    background: #242424;
-    color: #fff;
-}
-
-.kb-outline-button {
-    border: 1px solid #dedede;
-    background: #fff;
-    color: #333;
-}
-
-.kb-muted {
-    color: var(--kb-subtext);
-}
-
+/* .kb-empty-state : 조회/분석/추천 결과가 없을 때 표시되는 빈 상태 영역
+ * 소비분석 -> 분석 결과나 거래내역이 없는 경우의 안내 영역
+ * 카드추천 -> 추천할 카드가 없는 경우의 안내 영역
+ * 보험추천 -> 추천 결과나 상품 정보가 없는 경우의 안내 영역
+ * 포인트 지갑 -> 포인트 이용내역이 없는 경우의 안내 영역
+ *
+ * 사용 위치
+ * - frontend/src/pages/analysis/AnalysisCategoryEditPage.vue
+ * - frontend/src/pages/analysis/AnalysisMainPage.vue
+ * - frontend/src/pages/analysis/AnalysisResultPage.vue
+ * - frontend/src/pages/analysis/AnalysisSubcategoryPage.vue
+ * - frontend/src/pages/analysis/AnalysisTransactionListPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationDetailPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductDetailPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductListPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationEvidencePage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationPage.vue
+ * - frontend/src/pages/pointwallet/PointTransactionPage.vue
+ * - frontend/src/pages/pointwallet/PointWalletPage.vue
+ */
 .kb-empty-state {
     padding: 38px 20px;
     text-align: center;
 }
 
+/*  .kb-empty-state__icon : 빈 상태 안내 영역의 아이콘 박스 스타일
+ * 소비분석 -> 거래내역/분석 결과가 없을 때 표시되는 안내 아이콘
+ * 카드추천 -> 추천할 카드가 없을 때 표시되는 안내 아이콘
+ * 보험추천 -> 추천 결과/상품이 없을 때 표시되는 안내 아이콘
+ * 포인트 이용내역 -> 거래내역이 없을 때 표시되는 안내 아이콘
+ *
+ * 역할 : 빈 상태 아이콘을 72x72 크기의 연한 노란색 박스 안에
+ *        가운데 배치하고, 둥근 모서리와 아이콘 크기/색상을 지정
+
+ * 사용 위치
+ * - frontend/src/pages/analysis/AnalysisCategoryEditPage.vue
+ * - frontend/src/pages/analysis/AnalysisSubcategoryPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationDetailPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductDetailPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductListPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationEvidencePage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationPage.vue
+ * - frontend/src/pages/pointwallet/PointTransactionPage.vue
+ * - frontend/src/pages/pointwallet/PointWalletPage.vue
+ */
 .kb-empty-state__icon {
     width: 72px;
     height: 72px;
@@ -152,66 +264,99 @@
     justify-content: center;
     border-radius: 24px;
     background: var(--kb-yellow-soft);
-    color: var(--kb-yellow-strong);
+    color: var(--color-primary-active);
     font-size: 34px;
 }
 
-.kb-toast {
-    margin-bottom: 12px;
-    padding: 12px 14px;
-    border: 0;
-    border-radius: 12px;
-    font-size: 13px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.kb-toast--success {
-    background: #eaf8f1;
-    color: #147648;
-}
-
-.kb-toast--info {
-    background: #eef6ff;
-    color: #2d6091;
-}
-
-.kb-toast--error {
-    background: #fff0f0;
-    color: #b63838;
-}
-
+/* .kb-loading : 데이터를 불러오는 동안 표시되는 로딩 영역
+ * 소비분석 -> 거래내역 / 분석 결과 등을 조회하는 동안의 로딩 영역
+ * 카드추천 -> 추천 결과를 불러오는 동안의 로딩 영역
+ * 보험추천 -> 보험 상품 / 추천 결과를 불러오는 동안의 로딩 영역
+ * 포인트 지갑 -> 포인트 정보 / 이용내역을 불러오는 동안의 로딩 영역
+ *
+ * 역할 : 로딩 스피너와 안내 문구가 들어가는 영역에 여백을 주고,
+ *        문구를 가운데 정렬하며 보조 텍스트 색상을 적용
+ * 사용 위치
+ * - frontend/src/pages/analysis/AnalysisCategoryEditPage.vue
+ * - frontend/src/pages/analysis/AnalysisCategorySummaryPage.vue
+ * - frontend/src/pages/analysis/AnalysisCheckPage.vue
+ * - frontend/src/pages/analysis/AnalysisClassificationPage.vue
+ * - frontend/src/pages/analysis/AnalysisEntryPage.vue
+ * - frontend/src/pages/analysis/AnalysisMainPage.vue
+ * - frontend/src/pages/analysis/AnalysisResultPage.vue
+ * - frontend/src/pages/analysis/AnalysisSubcategoryPage.vue
+ * - frontend/src/pages/analysis/AnalysisTransactionListPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationDetailPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductDetailPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductListPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationEvidencePage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationPage.vue
+ * - frontend/src/pages/pointwallet/PointTransactionPage.vue
+ * - frontend/src/pages/pointwallet/PointWalletPage.vue
+ */
 .kb-loading {
     padding: 42px 16px;
     text-align: center;
-    color: var(--kb-subtext);
+    color: var(--color-text-sub);
 }
 
+/* .kb-spinner : 데이터를 불러오는 동안 표시되는 원형 로딩 스피너
+ * 소비분석 -> 거래내역 / 분석 결과 조회 중 원형 로딩 표시
+ * 카드추천 -> 추천 결과 조회 중 원형 로딩 표시
+ * 보험추천 -> 보험 상품 / 추천 결과 조회 중 원형 로딩 표시
+ * 포인트 지갑 -> 포인트 정보 / 이용내역 조회 중 원형 로딩 표시
+ *
+ * 역할 : 로딩 스피너의 크기, 테두리 두께, 아래 문구와의 간격,
+ *        강조 색상을 지정
+ * - frontend/src/pages/analysis/AnalysisCategoryEditPage.vue
+ * - frontend/src/pages/analysis/AnalysisCategorySummaryPage.vue
+ * - frontend/src/pages/analysis/AnalysisCheckPage.vue
+ * - frontend/src/pages/analysis/AnalysisClassificationPage.vue
+ * - frontend/src/pages/analysis/AnalysisEntryPage.vue
+ * - frontend/src/pages/analysis/AnalysisMainPage.vue
+ * - frontend/src/pages/analysis/AnalysisResultPage.vue
+ * - frontend/src/pages/analysis/AnalysisSubcategoryPage.vue
+ * - frontend/src/pages/analysis/AnalysisTransactionListPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationDetailPage.vue
+ * - frontend/src/pages/cardRecommendation/CardRecommendationPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductDetailPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceProductListPage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationEvidencePage.vue
+ * - frontend/src/pages/insuranceRecommendation/InsuranceRecommendationPage.vue
+ * - frontend/src/pages/pointwallet/PointTransactionPage.vue
+ * - frontend/src/pages/pointwallet/PointWalletPage.vue
+ */
 .kb-spinner {
     width: 30px;
     height: 30px;
     margin-bottom: 10px;
     border-width: 3px;
-    color: var(--kb-yellow-strong);
+    color: var(--color-primary-active);
 }
 
+/* 사용 기능
+ * - 포인트 거래 금액의 증감 상태 표시
+ * - .kb-amount-positive: 포인트 적립(EARN) 금액
+ * - .kb-amount-negative: 포인트 사용/차감 금액
+ *
+ * 사용 위치
+ * - frontend/src/pages/pointwallet/PointTransactionPage.vue
+ * - frontend/src/pages/pointwallet/PointWalletPage.vue
+ */
 .kb-amount-positive {
     color: #ef9f00;
 }
 
+/* 사용 기능
+ * - 포인트 거래 금액의 증감 상태 표시
+ * - .kb-amount-positive: 포인트 적립(EARN) 금액
+ * - .kb-amount-negative: 포인트 사용/차감 금액
+ *
+ * 사용 위치
+ * - frontend/src/pages/pointwallet/PointTransactionPage.vue
+ * - frontend/src/pages/pointwallet/PointWalletPage.vue
+ */
 .kb-amount-negative {
-    color: #222;
-}
-
-@media (min-width: 540px) {
-    .kb-mobile-page {
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-
-    .kb-app-header {
-        margin-left: -20px;
-        margin-right: -20px;
-        padding-left: 20px;
-        padding-right: 20px;
-    }
+    color: var(--color-text-main);
 }

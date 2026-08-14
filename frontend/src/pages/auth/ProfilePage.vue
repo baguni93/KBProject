@@ -83,7 +83,7 @@ const loadUserInfo = async () => {
     loading.value = true;
     errorMessage.value = '';
 
-    const data = await getUserInfo(authStore.userId);
+    const data = await getUserInfo();
 
     Object.assign(userInfo, data);
 

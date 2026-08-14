@@ -1,22 +1,18 @@
 <template>
-  <div class="account-page">
-    <main class="account-container" @click="closeMenu">
-      <header class="page-header">
-        <button class="back-button" type="button" aria-label="이전 화면" @click="goBack">
-          &lt;
-        </button>
+  <main class="page-layout account-page" @click="closeMenu">
+    <PageHeader
+        title="연결 계좌 관리"
+        custom-back
+        @back="goBack"
+    />
 
-        <h1>연결 계좌 관리</h1>
-        <div class="header-empty"></div>
-      </header>
-
+    <div class="page-content">
       <section class="title-section">
-        <h2>
-          연결된 계좌를<br />
-          확인하고 관리해 보세요
+        <h2 class="text-26-bold">
+          연결된 계좌를 관리해 보세요
         </h2>
 
-        <p>
+        <p class="text-15">
           연결 계좌는 송금, 출금, 자산 조회 등에<br />
           사용할 수 있어요.
         </p>
@@ -25,8 +21,8 @@
       <section class="account-section">
         <div class="account-summary">
           <div class="account-count">
-            <span>연결 계좌</span>
-            <strong>{{ accountStore.accountCount }}</strong>
+            <span class="text-13-bold">연결 계좌</span>
+            <strong class="text-15-bold">{{ accountStore.accountCount }}</strong>
           </div>
 
           <button
@@ -36,29 +32,31 @@
               aria-label="계좌 목록 새로고침"
               @click.stop="loadAccounts"
           >
-            <span :class="{ rotating: loading }">↻</span>
+            <i class="fa-solid fa-rotate-right" :class="{ rotating: loading }"></i>
           </button>
         </div>
 
         <div class="account-list-area">
-          <p v-if="loading" class="state-message">
+          <p v-if="loading" class="state-message text-13">
             계좌 목록을 불러오고 있어요.
           </p>
 
           <div v-else-if="errorMessage" class="error-area">
-            <p>{{ errorMessage }}</p>
+            <p class="text-13">{{ errorMessage }}</p>
 
-            <button type="button" @click="loadAccounts">
+            <button class="retry-button text-13-bold" type="button" @click="loadAccounts">
               다시 불러오기
             </button>
           </div>
 
           <div v-else-if="accountStore.accounts.length === 0" class="empty-area">
-            <div class="empty-icon">🏦</div>
+            <div class="empty-icon">
+              <i class="fa-solid fa-building-columns"></i>
+            </div>
 
-            <strong>연결된 계좌가 없어요</strong>
+            <strong class="text-18-bold">연결된 계좌가 없어요</strong>
 
-            <p>
+            <p class="text-13">
               계좌를 연결하면 송금과 자산 조회 서비스를<br />
               편리하게 이용할 수 있어요.
             </p>
@@ -78,21 +76,21 @@
                     class="bank-logo"
                 />
 
-                <div v-else class="bank-logo-fallback">
+                <div v-else class="bank-logo-fallback text-15-bold">
                   {{ getBankInitial(account.bankName) }}
                 </div>
               </div>
 
               <div class="account-info">
                 <div class="account-title">
-                  <strong>{{ account.bankName }}</strong>
+                  <strong class="text-15-bold">{{ account.bankName }}</strong>
 
                   <span v-if="account.primaryYn === 'Y'" class="primary-badge">
                     대표계좌
                   </span>
                 </div>
 
-                <p>{{ maskAccountNumber(account.accountNumber) }}</p>
+                <p class="text-13">{{ maskAccountNumber(account.accountNumber) }}</p>
               </div>
 
               <button
@@ -102,7 +100,7 @@
                   aria-label="계좌 관리 메뉴"
                   @click.stop="toggleMenu(account.linkedAccountId)"
               >
-                ⋮
+                <i class="fa-solid fa-ellipsis-vertical"></i>
               </button>
 
               <div
@@ -112,19 +110,24 @@
               >
                 <button
                     v-if="account.primaryYn !== 'Y'"
+                    class="text-13"
                     type="button"
                     @click="changePrimary(account)"
                 >
-                  <span class="menu-icon">☆</span>
+                  <span class="menu-icon">
+                    <i class="fa-regular fa-star"></i>
+                  </span>
                   대표계좌 설정
                 </button>
 
                 <button
-                    class="delete-button"
+                    class="delete-button text-13"
                     type="button"
                     @click="openDisconnectModal(account)"
                 >
-                  <span class="menu-icon">♲</span>
+                  <span class="menu-icon">
+                    <i class="fa-solid fa-link-slash"></i>
+                  </span>
                   계좌 연결 해제
                 </button>
               </div>
@@ -133,13 +136,15 @@
         </div>
       </section>
 
-      <p v-if="toastMessage" class="toast-message">
-        <span class="toast-icon">✓</span>
+      <p v-if="toastMessage" class="toast-message text-13-bold">
+        <span class="toast-icon">
+          <i class="fa-solid fa-check"></i>
+        </span>
         {{ toastMessage }}
       </p>
 
-      <button class="connect-button" type="button" @click="goConnect">
-        <span>＋</span>
+      <button class="content-add-btn connect-button" type="button" @click="goConnect">
+        <i class="fa-solid fa-plus"></i>
         계좌 연결하기
       </button>
 
@@ -149,9 +154,11 @@
           @click.self="closeDisconnectModal"
       >
         <section class="disconnect-modal">
-          <div class="warning-icon">!</div>
+          <div class="warning-icon">
+            <i class="fa-solid fa-exclamation"></i>
+          </div>
 
-          <h3>계좌 연결을 해제할까요?</h3>
+          <h3 class="text-20-bold">계좌 연결을 해제할까요?</h3>
 
           <article class="selected-account">
             <div class="selected-bank-logo">
@@ -161,25 +168,25 @@
                   :src="disconnectTarget.bankLogoUrl"
               />
 
-              <span v-else>
+              <span v-else class="text-15-bold">
                 {{ getBankInitial(disconnectTarget.bankName) }}
               </span>
             </div>
 
             <div class="selected-account-info">
-              <strong>{{ disconnectTarget.bankName }}</strong>
-              <p>{{ maskAccountNumber(disconnectTarget.accountNumber) }}</p>
+              <strong class="text-15-bold">{{ disconnectTarget.bankName }}</strong>
+              <p class="text-13">{{ maskAccountNumber(disconnectTarget.accountNumber) }}</p>
             </div>
           </article>
 
-          <p class="modal-guide">
+          <p class="modal-guide text-13">
             연결을 해제하면 송금, 자동이체,<br />
             자산조회에 사용할 수 없어요.
           </p>
 
           <div class="modal-button-area">
             <button
-                class="modal-cancel-button"
+                class="modal-cancel-button text-15-bold"
                 type="button"
                 @click="closeDisconnectModal"
             >
@@ -187,7 +194,7 @@
             </button>
 
             <button
-                class="modal-delete-button"
+                class="modal-delete-button text-15-bold"
                 type="button"
                 @click="removeAccount"
             >
@@ -196,8 +203,8 @@
           </div>
         </section>
       </div>
-    </main>
-  </div>
+    </div>
+  </main>
 </template>
 
 <script setup>
@@ -205,6 +212,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { disconnectAccount, getAccounts, setPrimaryAccount } from '@/api/accountApi';
 import { useAccountStore } from '@/stores/account';
+import PageHeader from '@/components/common/PageHeader.vue';
 
 const router = useRouter();
 const accountStore = useAccountStore();
@@ -231,17 +239,17 @@ const maskAccountNumber = (accountNumber) => {
 // 은행명 첫 글자
 const getBankInitial = (bankName) => {
   if (!bankName) return 'B';
+
   return bankName.charAt(0);
 };
 
-// 계좌 목록 조회 (userId 인자 제거)
+// 계좌 목록 조회
 const loadAccounts = async () => {
   try {
     loading.value = true;
     errorMessage.value = '';
     openedAccountId.value = null;
 
-    // 💡 수정: userId를 넘기지 않고 호출
     const data = await getAccounts();
     const accounts = Array.isArray(data) ? data : data.accounts || [];
 
@@ -264,12 +272,11 @@ const closeMenu = () => {
   openedAccountId.value = null;
 };
 
-// 대표계좌 변경 (userId 인자 제거)
+// 대표계좌 변경
 const changePrimary = async (account) => {
   try {
     errorMessage.value = '';
 
-    // 💡 수정: linkedAccountId만 전달
     await setPrimaryAccount(account.linkedAccountId);
 
     openedAccountId.value = null;
@@ -279,7 +286,10 @@ const changePrimary = async (account) => {
     showToast('대표계좌가 변경되었습니다.');
   } catch (error) {
     console.error(error);
-    errorMessage.value = error.response?.data?.message || '대표계좌 변경에 실패했습니다.';
+
+    showToast(
+        error.response?.data?.message || '대표계좌 변경에 실패했습니다.'
+    );
   }
 };
 
@@ -294,14 +304,13 @@ const closeDisconnectModal = () => {
   disconnectTarget.value = null;
 };
 
-// 계좌 연결 해제 (userId 인자 제거)
+// 계좌 연결 해제
 const removeAccount = async () => {
   if (!disconnectTarget.value) return;
 
   try {
     errorMessage.value = '';
 
-    // 💡 수정: linkedAccountId만 전달
     await disconnectAccount(disconnectTarget.value.linkedAccountId);
 
     disconnectTarget.value = null;
@@ -311,7 +320,10 @@ const removeAccount = async () => {
     showToast('계좌 연결이 해제되었습니다.');
   } catch (error) {
     console.error(error);
-    errorMessage.value = error.response?.data?.message || '계좌 연결 해제에 실패했습니다.';
+
+    showToast(
+        error.response?.data?.message || '계좌 연결 해제에 실패했습니다.'
+    );
   }
 };
 
@@ -347,53 +359,9 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .account-page {
-  width: 100%;
-  height: 100%;
-  background: #ffffff;
-}
-
-.account-container {
   position: relative;
-  display: flex;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-  padding: 10px 28px 140px;
-  background: #ffffff;
-  box-sizing: border-box;
+  background: var(--color-bg-page);
   overflow: visible;
-}
-
-.page-header {
-  display: grid;
-  grid-template-columns: 38px 1fr 38px;
-  min-height: 44px;
-  flex-shrink: 0;
-  align-items: center;
-}
-
-.page-header h1 {
-  margin: 0;
-  color: #222222;
-  font-size: 17px;
-  font-weight: 700;
-  text-align: center;
-}
-
-.back-button {
-  justify-self: start;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #555555;
-  font-size: 27px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.header-empty {
-  width: 38px;
 }
 
 .title-section {
@@ -403,17 +371,14 @@ onBeforeUnmount(() => {
 
 .title-section h2 {
   margin: 0;
-  color: #111111;
-  font-size: 25px;
-  font-weight: 800;
+  color: var(--color-text-main);
   line-height: 1.35;
   letter-spacing: -0.7px;
 }
 
 .title-section p {
   margin: 14px 0 0;
-  color: #999999;
-  font-size: 12px;
+  color: var(--color-text-muted);
   line-height: 1.55;
 }
 
@@ -430,10 +395,10 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0 15px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--color-divider);
   border-bottom: 0;
   border-radius: 14px 14px 0 0;
-  background: #ffffff;
+  background: var(--color-bg-page);
   box-sizing: border-box;
 }
 
@@ -444,15 +409,11 @@ onBeforeUnmount(() => {
 }
 
 .account-count span {
-  color: #333333;
-  font-size: 13px;
-  font-weight: 700;
+  color: var(--color-text-main);
 }
 
 .account-count strong {
-  color: #e99b00;
-  font-size: 14px;
-  font-weight: 800;
+  color: var(--color-primary-active);
 }
 
 .refresh-button {
@@ -465,13 +426,13 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #777777;
-  font-size: 23px;
+  color: var(--color-text-sub);
+  font-size: 16px;
   cursor: pointer;
 }
 
-.refresh-button:active {
-  background: #f5f5f5;
+.refresh-button:active:not(:disabled) {
+  background: var(--color-bg-screen);
 }
 
 .refresh-button:disabled {
@@ -479,15 +440,14 @@ onBeforeUnmount(() => {
 }
 
 .rotating {
-  display: inline-block;
   animation: rotate 0.8s linear infinite;
 }
 
 .account-list-area {
   position: relative;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--color-divider);
   border-radius: 0 0 14px 14px;
-  background: #ffffff;
+  background: var(--color-bg-page);
   overflow: visible;
 }
 
@@ -504,8 +464,8 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 13px;
   padding: 13px;
-  border-bottom: 1px solid #eeeeee;
-  background: #ffffff;
+  border-bottom: 1px solid var(--color-divider);
+  background: var(--color-bg-page);
   box-sizing: border-box;
   overflow: visible;
 }
@@ -537,10 +497,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #ffbc2e;
-  color: #222222;
-  font-size: 16px;
-  font-weight: 800;
+  background: var(--color-primary);
+  color: var(--color-text-main);
 }
 
 .account-info {
@@ -556,9 +514,7 @@ onBeforeUnmount(() => {
 
 .account-title strong {
   overflow: hidden;
-  color: #222222;
-  font-size: 14px;
-  font-weight: 800;
+  color: var(--color-text-main);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -566,36 +522,37 @@ onBeforeUnmount(() => {
 .primary-badge {
   flex: none;
   padding: 3px 7px;
-  border: 1px solid #ffbc2e;
+  border: 1px solid var(--color-primary);
   border-radius: 8px;
   background: #fff9e9;
-  color: #d78d00;
+  color: var(--color-primary-active);
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .account-info p {
   margin: 5px 0 0;
-  color: #888888;
-  font-size: 11px;
+  color: var(--color-text-muted);
 }
 
 .menu-button {
-  flex: none;
+  display: flex;
   width: 34px;
   height: 42px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #333333;
-  font-size: 23px;
-  line-height: 1;
+  color: var(--color-text-main);
+  font-size: 18px;
   cursor: pointer;
 }
 
 .menu-button:active {
-  background: #f5f5f5;
+  background: var(--color-bg-screen);
 }
 
 .account-menu {
@@ -607,9 +564,9 @@ onBeforeUnmount(() => {
   width: 150px;
   flex-direction: column;
   padding: 6px;
-  border: 1px solid #eeeeee;
+  border: 1px solid var(--color-divider);
   border-radius: 11px;
-  background: #ffffff;
+  background: var(--color-bg-page);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.15);
   box-sizing: border-box;
 }
@@ -623,26 +580,24 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #333333;
-  font-size: 12px;
-  font-weight: 600;
+  color: var(--color-text-main);
   text-align: left;
   cursor: pointer;
 }
 
 .account-menu button:hover {
-  background: #f7f7f7;
+  background: var(--color-bg-screen);
 }
 
 .account-menu .delete-button {
-  color: #e53935;
+  color: var(--color-error);
 }
 
 .menu-icon {
   display: inline-flex;
   width: 18px;
   justify-content: center;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .empty-area {
@@ -659,28 +614,25 @@ onBeforeUnmount(() => {
   margin: 0 auto 21px;
   border-radius: 22px;
   background: #fff4d6;
-  font-size: 31px;
+  color: var(--color-primary-active);
+  font-size: 28px;
 }
 
 .empty-area strong {
   display: block;
-  color: #222222;
-  font-size: 17px;
-  font-weight: 800;
+  color: var(--color-text-main);
 }
 
 .empty-area p {
   margin: 11px 0 0;
-  color: #999999;
-  font-size: 12px;
+  color: var(--color-text-muted);
   line-height: 1.55;
 }
 
 .state-message {
   margin: 0;
   padding: 70px 20px;
-  color: #777777;
-  font-size: 13px;
+  color: var(--color-text-sub);
   text-align: center;
 }
 
@@ -691,85 +643,84 @@ onBeforeUnmount(() => {
 
 .error-area p {
   margin: 0;
-  color: #e53935;
-  font-size: 13px;
+  color: var(--color-error);
   line-height: 1.5;
 }
 
-.error-area button {
+.retry-button {
   margin-top: 15px;
   padding: 8px 14px;
-  border: 1px solid #dddddd;
+  border: 1px solid var(--color-border-main);
   border-radius: 9px;
-  background: #ffffff;
-  color: #555555;
-  font-size: 12px;
-  font-weight: 700;
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
   cursor: pointer;
+}
+
+.retry-button:active {
+  background: var(--color-bg-screen);
 }
 
 .connect-button {
   position: absolute;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
+  right: 24px;
+  bottom: 32px;
+  left: 24px;
   display: flex;
   width: auto;
-  height: 58px;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  margin: 0;
-  border: 1px dashed #cccccc;
-  border-radius: 10px;
-  background: #ffffff;
-  color: #222222;
-  font-size: 15px;
-  font-weight: 800;
-  cursor: pointer;
+  gap: 8px;
 }
 
-.connect-button span {
-  font-size: 21px;
-  font-weight: 500;
-}
-
-.connect-button:active {
-  border-color: #ffbc2e;
-  background: #fffaf0;
+.connect-button i {
+  font-size: 16px;
 }
 
 .toast-message {
   position: absolute;
   z-index: 50;
-  right: 28px;
-  bottom: 128px;
-  left: 28px;
+  right: 24px;
+  bottom: 106px;
+  left: 24px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   margin: 0;
-  padding: 14px 15px;
-  border-radius: 10px;
-  background: rgba(30, 30, 30, 0.9);
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 14px 16px;
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  border-radius: 12px;
+  background: rgba(34, 197, 94, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #15803d;
   box-sizing: border-box;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.08);
+  animation: toast-in 0.25s ease-out;
 }
 
 .toast-icon {
   display: inline-flex;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   flex: none;
   align-items: center;
   justify-content: center;
-  border: 1px solid #ffffff;
   border-radius: 50%;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 800;
+  background: rgba(34, 197, 94, 0.16);
+  color: #16a34a;
+  font-size: 10px;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-overlay {
@@ -789,9 +740,9 @@ onBeforeUnmount(() => {
   max-width: 330px;
   padding: 28px 20px 20px;
   border-radius: 18px;
-  background: #ffffff;
-  box-sizing: border-box;
+  background: var(--color-bg-page);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  box-sizing: border-box;
 }
 
 .warning-icon {
@@ -803,16 +754,13 @@ onBeforeUnmount(() => {
   margin: 0 auto;
   border-radius: 50%;
   background: #fff1d4;
-  color: #ffae00;
-  font-size: 26px;
-  font-weight: 800;
+  color: var(--color-primary-active);
+  font-size: 22px;
 }
 
 .disconnect-modal h3 {
   margin: 20px 0 0;
-  color: #111111;
-  font-size: 19px;
-  font-weight: 800;
+  color: var(--color-text-main);
   text-align: center;
 }
 
@@ -822,7 +770,7 @@ onBeforeUnmount(() => {
   gap: 13px;
   margin-top: 24px;
   padding: 14px;
-  border: 1px solid #dddddd;
+  border: 1px solid var(--color-border-main);
   border-radius: 12px;
   box-sizing: border-box;
 }
@@ -849,10 +797,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #ffbc2e;
-  color: #222222;
-  font-size: 16px;
-  font-weight: 800;
+  background: var(--color-primary);
+  color: var(--color-text-main);
 }
 
 .selected-account-info {
@@ -861,21 +807,17 @@ onBeforeUnmount(() => {
 
 .selected-account-info strong {
   display: block;
-  color: #222222;
-  font-size: 14px;
-  font-weight: 800;
+  color: var(--color-text-main);
 }
 
 .selected-account-info p {
   margin: 5px 0 0;
-  color: #888888;
-  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
 .modal-guide {
   margin: 20px 0 0;
-  color: #777777;
-  font-size: 12px;
+  color: var(--color-text-sub);
   line-height: 1.6;
   text-align: center;
 }
@@ -891,34 +833,23 @@ onBeforeUnmount(() => {
 .modal-delete-button {
   height: 50px;
   border-radius: 10px;
-  font-size: 15px;
-  font-weight: 800;
   cursor: pointer;
 }
 
 .modal-cancel-button {
-  border: 1px solid #dddddd;
-  background: #ffffff;
-  color: #333333;
+  border: 1px solid var(--color-border-main);
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
 }
 
 .modal-delete-button {
   border: 1px solid #ffc7c7;
   background: #ffe7e7;
-  color: #e53935;
+  color: var(--color-error);
 }
 
-@media (max-width: 360px) {
-  .account-container {
-    padding-right: 20px;
-    padding-left: 20px;
-  }
-
-  .connect-button,
-  .toast-message {
-    right: 20px;
-    left: 20px;
-  }
+.modal-cancel-button:active {
+  background: var(--color-bg-screen);
 }
 
 @keyframes rotate {

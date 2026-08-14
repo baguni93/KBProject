@@ -54,7 +54,7 @@
       </section>
     </main>
 
-    <!-- 하단 버튼 -->
+    <!-- 공통 하단 버튼 -->
     <div class="bottom-btn-area single">
       <button class="bottom-btn" type="button" @click="goLogin">
         다음
@@ -119,7 +119,8 @@ const goLogin = () => {
   left: -110px;
   width: 220px;
   height: 220px;
-  background: rgba(255, 205, 91, 0.13);
+  background: rgba(255, 205, 91, 0.12);
+  animation: background-float-left 6s ease-in-out infinite;
 }
 
 .decoration-right {
@@ -127,7 +128,8 @@ const goLogin = () => {
   right: -110px;
   width: 200px;
   height: 200px;
-  background: rgba(176, 164, 255, 0.06);
+  background: rgba(176, 164, 255, 0.055);
+  animation: background-float-right 7s ease-in-out infinite;
 }
 
 /* 메인 비주얼 */
@@ -147,6 +149,11 @@ const goLogin = () => {
       rgba(255, 188, 46, 0.17),
       rgba(255, 225, 155, 0.07)
   );
+  opacity: 0;
+  transform: scale(0.76);
+  animation:
+      circle-enter 0.5s ease 0.05s forwards,
+      circle-pulse 2.6s ease-in-out 0.9s infinite;
 }
 
 .member-icon {
@@ -162,16 +169,22 @@ const goLogin = () => {
   border-radius: 50%;
   background: linear-gradient(
       135deg,
-      #ffca52 0%,
+      #ffd268 0%,
       var(--color-primary) 65%,
       #f3a711 100%
   );
-  box-shadow: 0 14px 30px rgba(255, 188, 46, 0.26);
+  box-shadow: 0 14px 30px rgba(255, 188, 46, 0.24);
   color: #ffffff;
+  opacity: 0;
+  transform: scale(0.58);
+  animation: member-pop 0.58s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s forwards;
 }
 
 .member-icon i {
   font-size: 34px;
+  opacity: 0;
+  transform: scale(0.55) rotate(-8deg);
+  animation: icon-show 0.3s ease 0.46s forwards;
 }
 
 /* 작은 장식 */
@@ -179,6 +192,8 @@ const goLogin = () => {
   position: absolute;
   display: block;
   border-radius: 50%;
+  opacity: 0;
+  transform: scale(0);
 }
 
 .deco-one {
@@ -187,6 +202,9 @@ const goLogin = () => {
   width: 9px;
   height: 9px;
   background: #ffca52;
+  animation:
+      deco-pop 0.4s ease 0.4s forwards,
+      deco-float 3.4s ease-in-out 1s infinite;
 }
 
 .deco-two {
@@ -195,6 +213,9 @@ const goLogin = () => {
   width: 7px;
   height: 7px;
   background: #9d90ff;
+  animation:
+      deco-pop 0.4s ease 0.48s forwards,
+      deco-float 3.8s ease-in-out 1.1s infinite reverse;
 }
 
 .deco-three {
@@ -203,6 +224,9 @@ const goLogin = () => {
   width: 7px;
   height: 7px;
   background: #7bd6c7;
+  animation:
+      deco-pop 0.4s ease 0.56s forwards,
+      deco-float 3.5s ease-in-out 1.15s infinite;
 }
 
 .deco-four {
@@ -211,18 +235,25 @@ const goLogin = () => {
   width: 8px;
   height: 8px;
   background: #ff9eaa;
+  animation:
+      deco-pop 0.4s ease 0.62s forwards,
+      deco-float 3.9s ease-in-out 1.2s infinite reverse;
 }
 
 .sparkle {
   position: absolute;
-  color: var(--color-primary);
+  opacity: 0;
+  transform: scale(0);
 }
 
 .sparkle-one {
   top: 2px;
   left: 31px;
+  color: var(--color-primary);
   font-size: 11px;
-  transform: rotate(15deg);
+  animation:
+      sparkle-pop 0.45s ease 0.5s forwards,
+      sparkle-float 3.2s ease-in-out 1.1s infinite;
 }
 
 .sparkle-two {
@@ -230,10 +261,18 @@ const goLogin = () => {
   bottom: 6px;
   color: #a99df7;
   font-size: 9px;
-  transform: rotate(-15deg);
+  animation:
+      sparkle-pop 0.45s ease 0.66s forwards,
+      sparkle-float 3.6s ease-in-out 1.2s infinite reverse;
 }
 
 /* 메시지 */
+.member-message {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: content-up 0.48s ease 0.6s forwards;
+}
+
 .member-message h1 {
   margin: 0;
   color: var(--color-text-main);
@@ -256,16 +295,24 @@ const goLogin = () => {
   padding: 18px;
   border: 1px solid rgba(255, 188, 46, 0.15);
   border-radius: 18px;
-  background: linear-gradient(110deg, #fff9ec 0%, #fffdf8 70%, #faf8ff 100%);
+  background: linear-gradient(
+      110deg,
+      #fff9ec 0%,
+      #fffdf8 70%,
+      #faf8ff 100%
+  );
   box-sizing: border-box;
   text-align: left;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: content-up 0.48s ease 0.74s forwards;
 }
 
 .guide-icon {
   display: flex;
-  flex-shrink: 0;
   width: 44px;
   height: 44px;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   margin-right: 14px;
@@ -274,6 +321,7 @@ const goLogin = () => {
   box-shadow: 0 4px 12px rgba(255, 188, 46, 0.12);
   color: #d9980d;
   font-size: 17px;
+  animation: guide-float 2.8s ease-in-out 1.3s infinite;
 }
 
 .guide-text {
@@ -289,5 +337,178 @@ const goLogin = () => {
   margin: 5px 0 0;
   color: var(--color-text-sub);
   line-height: 1.45;
+}
+
+/* 애니메이션 */
+@keyframes circle-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.76);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes circle-pulse {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.07);
+  }
+}
+
+@keyframes member-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.58);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes icon-show {
+  from {
+    opacity: 0;
+    transform: scale(0.55) rotate(-8deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes deco-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes deco-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes sparkle-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-18deg);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.2) rotate(8deg);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes sparkle-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+
+  50% {
+    transform: translateY(-4px) rotate(8deg);
+  }
+}
+
+@keyframes content-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes guide-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes background-float-left {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(12px, 10px);
+  }
+}
+
+@keyframes background-float-right {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(-10px, -8px);
+  }
+}
+
+/* 모션 최소화 설정 대응 */
+@media (prefers-reduced-motion: reduce) {
+  .background-decoration,
+  .circle-background,
+  .member-icon,
+  .member-icon i,
+  .deco,
+  .sparkle,
+  .member-message,
+  .guide-card,
+  .guide-icon {
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
 }
 </style>

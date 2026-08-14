@@ -1,11 +1,12 @@
 <template>
-  <div class="page-layout complete-page">
+  <div class="page-layout page-layout-top complete-page">
     <!-- 배경 장식 -->
     <div class="background-decoration decoration-left"></div>
     <div class="background-decoration decoration-right"></div>
 
     <main class="page-content complete-container">
       <section class="complete-content">
+        <!-- 완료 애니메이션 -->
         <div class="success-visual">
           <span class="particle particle-1"></span>
           <span class="particle particle-2"></span>
@@ -14,6 +15,7 @@
           <span class="particle particle-5"></span>
           <span class="particle particle-6"></span>
 
+          <!-- 별 장식 -->
           <span class="spark spark-1">
             <i class="fa-solid fa-star"></i>
           </span>
@@ -22,110 +24,70 @@
             <i class="fa-solid fa-star"></i>
           </span>
 
+          <!-- 체크 뒤 glow -->
           <div class="success-glow"></div>
 
+          <!-- 메인 체크 -->
           <div class="success-circle">
             <i class="fa-solid fa-check"></i>
           </div>
         </div>
 
+        <!-- 완료 메시지 -->
         <div class="complete-message">
-          <h1
-              class="text-26-bold"
-              v-html="completeInfo.title"
-          ></h1>
+          <h1 class="text-30-bold">
+            카드 등록이<br />
+            완료되었어요!
+          </h1>
 
-          <p
-              class="complete-description text-15"
-              v-html="completeInfo.description"
-          ></p>
+          <p class="complete-description text-15">
+            등록한 카드로 결제 서비스를<br />
+            바로 이용할 수 있어요.
+          </p>
         </div>
 
+        <!-- 완료 상태 -->
         <div class="complete-badge">
-          <i :class="completeInfo.icon"></i>
-          <span>{{ completeInfo.badgeText }}</span>
+          <i class="fa-regular fa-credit-card"></i>
+          <span>카드 등록 완료</span>
         </div>
       </section>
     </main>
 
-    <div class="bottom-btn-area single complete-button-area">
+    <!-- 하단 2개 버튼 -->
+    <div class="bottom-btn-area double complete-button-area">
       <button
-          class="bottom-btn"
+          class="bottom-btn secondary-button complete-button"
           type="button"
-          @click="complete"
+          @click="goPayment"
       >
-        {{ completeInfo.buttonText }}
+        결제 홈
+      </button>
+
+      <button
+          class="bottom-btn primary-button complete-button"
+          type="button"
+          @click="goCardList"
+      >
+        카드 관리
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 
-const route = useRoute();
 const router = useRouter();
 
-const completeType = computed(() =>
-    String(route.query.type || 'PIN_CHANGE')
-);
+// 결제 화면으로 이동
+const goPayment = async () => {
+  await router.replace('/wallet');
+};
 
-// 완료 화면 정보
-const completeInfo = computed(() => {
-  const completeData = {
-    NAME_CHANGE: {
-      title: '이름 변경이<br />완료되었어요',
-      description:
-          '변경된 이름으로<br />서비스를 이용할 수 있어요.',
-      icon: 'fa-regular fa-user',
-      badgeText: '새 이름 적용 완료',
-      buttonText: '확인',
-      path: '/setting/account-management',
-    },
-
-    PHONE_CHANGE: {
-      title: '휴대폰 번호 변경이<br />완료되었어요',
-      description:
-          '새로운 휴대폰 번호가<br />계정에 안전하게 등록되었어요.',
-      icon: 'fa-solid fa-mobile-screen-button',
-      badgeText: '새 번호 적용 완료',
-      buttonText: '확인',
-      path: '/setting/account-management',
-    },
-
-    PIN_CHANGE: {
-      title: '간편비밀번호 변경이<br />완료되었어요',
-      description:
-          '이제 새로운 간편비밀번호로<br />서비스를 이용할 수 있어요.',
-      icon: 'fa-solid fa-lock',
-      badgeText: '새 비밀번호 적용 완료',
-      buttonText: '확인',
-      path: '/setting/account-management',
-    },
-
-    WITHDRAW: {
-      title: '회원탈퇴가<br />완료되었어요',
-      description:
-          '그동안 서비스를<br />이용해 주셔서 감사합니다.',
-      icon: 'fa-regular fa-hand',
-      badgeText: '탈퇴 처리 완료',
-      buttonText: '확인',
-      path: '/intro',
-    },
-  };
-
-  return (
-      completeData[completeType.value] ||
-      completeData.PIN_CHANGE
-  );
-});
-
-// 완료 후 이동
-const complete = async () => {
-  await router.replace(
-      completeInfo.value.path
-  );
+// 연결 카드 관리 화면으로 이동
+const goCardList = async () => {
+  await router.replace('/setting/cards');
 };
 </script>
 
@@ -144,6 +106,10 @@ const complete = async () => {
       );
 }
 
+/* =========================
+   콘텐츠
+========================= */
+
 .complete-container {
   position: relative;
   z-index: 2;
@@ -155,7 +121,7 @@ const complete = async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: -46px;
+  margin-top: -42px;
   text-align: center;
 }
 
@@ -175,9 +141,7 @@ const complete = async () => {
   width: 240px;
   height: 240px;
   background: rgba(255, 188, 46, 0.1);
-  animation:
-      backgroundFloatLeft
-      6s ease-in-out infinite;
+  animation: background-float-left 6s ease-in-out infinite;
 }
 
 .decoration-right {
@@ -186,13 +150,11 @@ const complete = async () => {
   width: 210px;
   height: 210px;
   background: rgba(176, 164, 255, 0.05);
-  animation:
-      backgroundFloatRight
-      7s ease-in-out infinite;
+  animation: background-float-right 7s ease-in-out infinite;
 }
 
 /* =========================
-   완료 애니메이션 영역
+   완료 애니메이션
 ========================= */
 
 .success-visual {
@@ -202,7 +164,6 @@ const complete = async () => {
   margin-bottom: 22px;
 }
 
-/* 뒤쪽 은은한 빛 */
 .success-glow {
   position: absolute;
   top: 50%;
@@ -212,13 +173,9 @@ const complete = async () => {
   border-radius: 50%;
   background: rgba(255, 188, 46, 0.16);
   transform: translate(-50%, -50%);
-  animation:
-      glow
-      2.2s ease-in-out
-      0.8s infinite;
+  animation: glow 2.2s ease-in-out 0.8s infinite;
 }
 
-/* 메인 체크 원 */
 .success-circle {
   position: absolute;
   z-index: 2;
@@ -241,11 +198,9 @@ const complete = async () => {
       inset 0 1px 0 rgba(255, 255, 255, 0.5);
   color: var(--color-text-white);
   font-size: 42px;
-  transform:
-      translate(-50%, -50%)
-      scale(0);
+  transform: translate(-50%, -50%) scale(0);
   animation:
-      successPop
+      success-pop
       0.55s
       cubic-bezier(0.34, 1.56, 0.64, 1)
       forwards;
@@ -253,17 +208,12 @@ const complete = async () => {
 
 .success-circle i {
   opacity: 0;
-  transform:
-      scale(0.5)
-      rotate(-15deg);
-  animation:
-      checkAppear
-      0.35s ease
-      0.42s forwards;
+  transform: scale(0.5) rotate(-15deg);
+  animation: check-appear 0.35s ease 0.42s forwards;
 }
 
 /* =========================
-   주변 파티클
+   파티클
 ========================= */
 
 .particle {
@@ -280,10 +230,7 @@ const complete = async () => {
 .particle-1 {
   top: 28px;
   left: 28px;
-  animation:
-      particlePop
-      0.55s ease
-      0.35s forwards;
+  animation: particle-pop 0.55s ease 0.35s forwards;
 }
 
 .particle-2 {
@@ -291,10 +238,8 @@ const complete = async () => {
   right: 36px;
   width: 6px;
   height: 6px;
-  animation:
-      particlePop
-      0.55s ease
-      0.5s forwards;
+  background: #9d90ff;
+  animation: particle-pop 0.55s ease 0.5s forwards;
 }
 
 .particle-3 {
@@ -302,10 +247,8 @@ const complete = async () => {
   right: 8px;
   width: 10px;
   height: 10px;
-  animation:
-      particlePop
-      0.55s ease
-      0.4s forwards;
+  background: #7bd6c7;
+  animation: particle-pop 0.55s ease 0.4s forwards;
 }
 
 .particle-4 {
@@ -313,10 +256,8 @@ const complete = async () => {
   bottom: 24px;
   width: 7px;
   height: 7px;
-  animation:
-      particlePop
-      0.55s ease
-      0.6s forwards;
+  background: #ff9eaa;
+  animation: particle-pop 0.55s ease 0.6s forwards;
 }
 
 .particle-5 {
@@ -324,10 +265,8 @@ const complete = async () => {
   left: 30px;
   width: 6px;
   height: 6px;
-  animation:
-      particlePop
-      0.55s ease
-      0.48s forwards;
+  background: #9d90ff;
+  animation: particle-pop 0.55s ease 0.48s forwards;
 }
 
 .particle-6 {
@@ -335,14 +274,12 @@ const complete = async () => {
   left: 6px;
   width: 9px;
   height: 9px;
-  animation:
-      particlePop
-      0.55s ease
-      0.58s forwards;
+  background: #7bd6c7;
+  animation: particle-pop 0.55s ease 0.58s forwards;
 }
 
 /* =========================
-   별 장식
+   별
 ========================= */
 
 .spark {
@@ -356,51 +293,43 @@ const complete = async () => {
   top: 18px;
   left: 70px;
   font-size: 12px;
-  animation:
-      sparkPop
-      0.55s ease
-      0.55s forwards;
+  animation: spark-pop 0.55s ease 0.55s forwards;
 }
 
 .spark-2 {
   right: 46px;
   bottom: 17px;
+  color: #a99df7;
   font-size: 10px;
-  animation:
-      sparkPop
-      0.55s ease
-      0.7s forwards;
+  animation: spark-pop 0.55s ease 0.7s forwards;
 }
 
 /* =========================
-   완료 텍스트
+   텍스트
 ========================= */
 
 .complete-message {
   opacity: 0;
   transform: translateY(16px);
-  animation:
-      contentUp
-      0.5s ease
-      0.55s forwards;
+  animation: content-up 0.5s ease 0.55s forwards;
 }
 
 .complete-message h1 {
   margin: 0;
   color: var(--color-text-main);
-  line-height: 1.42;
+  line-height: 1.3;
   letter-spacing: -0.7px;
 }
 
 .complete-description {
-  margin: 14px 0 0;
+  margin: 16px 0 0;
   color: var(--color-text-sub);
   font-weight: 400;
   line-height: 1.65;
 }
 
 /* =========================
-   완료 상태 뱃지
+   완료 뱃지
 ========================= */
 
 .complete-badge {
@@ -409,21 +338,15 @@ const complete = async () => {
   gap: 7px;
   margin-top: 26px;
   padding: 10px 15px;
-  border:
-      1px solid
-      rgba(255, 188, 46, 0.22);
+  border: 1px solid rgba(255, 188, 46, 0.22);
   border-radius: 999px;
-  background:
-      rgba(255, 188, 46, 0.1);
+  background: rgba(255, 188, 46, 0.1);
   color: #9a6900;
   font-size: 13px;
   font-weight: 500;
   opacity: 0;
   transform: translateY(10px);
-  animation:
-      contentUp
-      0.45s ease
-      0.72s forwards;
+  animation: content-up 0.45s ease 0.72s forwards;
 }
 
 .complete-badge i {
@@ -432,73 +355,89 @@ const complete = async () => {
 }
 
 /* =========================
-   하단 버튼 등장
+   하단 2개 버튼
+   common.css의
+   .bottom-btn-area.double 사용
 ========================= */
 
 .complete-button-area {
-  border: 0 !important;
-  outline: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-
-  opacity: 0;
-  transform: translateY(14px);
-
-  animation:
-      buttonUp
-      0.45s ease
-      0.85s forwards;
+  position: relative;
+  z-index: 3;
 }
 
-.complete-button-area::before,
-.complete-button-area::after {
-  display: none !important;
+/*
+  버튼 크기 / 높이 / 폰트 크기는
+  common.css의 .bottom-btn을 그대로 사용합니다.
+*/
+.complete-button {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: button-show 0.45s ease forwards;
+}
+
+/* 왼쪽 버튼 등장 */
+.complete-button:nth-child(1) {
+  animation-delay: 0.82s;
+}
+
+/* 오른쪽 버튼 등장 */
+.complete-button:nth-child(2) {
+  animation-delay: 0.9s;
+}
+
+/* 왼쪽 - 보조 버튼 */
+.secondary-button {
+  border: 1px solid var(--color-border-main);
+  background: #ffffff;
+  color: var(--color-text-main);
+}
+
+.secondary-button:active {
+  background: var(--color-bg-screen);
+}
+
+/* 오른쪽 - 메인 버튼 */
+.primary-button {
+  border: none;
+  background: var(--color-primary);
+  color: var(--color-text-main);
+}
+
+.primary-button:active {
+  background: var(--color-primary-active);
 }
 
 /* =========================
    애니메이션
 ========================= */
 
-/* 메인 원 등장 */
-@keyframes successPop {
+@keyframes success-pop {
   0% {
-    transform:
-        translate(-50%, -50%)
-        scale(0);
+    transform: translate(-50%, -50%) scale(0);
   }
 
   70% {
-    transform:
-        translate(-50%, -50%)
-        scale(1.08);
+    transform: translate(-50%, -50%) scale(1.08);
   }
 
   100% {
-    transform:
-        translate(-50%, -50%)
-        scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
-/* 체크 등장 */
-@keyframes checkAppear {
+@keyframes check-appear {
   from {
     opacity: 0;
-    transform:
-        scale(0.5)
-        rotate(-15deg);
+    transform: scale(0.5) rotate(-15deg);
   }
 
   to {
     opacity: 1;
-    transform:
-        scale(1)
-        rotate(0);
+    transform: scale(1) rotate(0);
   }
 }
 
-/* 주변 원 등장 */
-@keyframes particlePop {
+@keyframes particle-pop {
   0% {
     opacity: 0;
     transform: scale(0);
@@ -510,55 +449,42 @@ const complete = async () => {
   }
 
   100% {
-    opacity: 0.65;
+    opacity: 0.7;
     transform: scale(1);
   }
 }
 
-/* 별 등장 */
-@keyframes sparkPop {
+@keyframes spark-pop {
   0% {
     opacity: 0;
-    transform:
-        scale(0)
-        rotate(-40deg);
+    transform: scale(0) rotate(-40deg);
   }
 
   60% {
     opacity: 1;
-    transform:
-        scale(1.4)
-        rotate(12deg);
+    transform: scale(1.4) rotate(12deg);
   }
 
   100% {
     opacity: 0.75;
-    transform:
-        scale(1)
-        rotate(0);
+    transform: scale(1) rotate(0);
   }
 }
 
-/* 은은한 원 효과 */
 @keyframes glow {
   0%,
   100% {
     opacity: 0.55;
-    transform:
-        translate(-50%, -50%)
-        scale(0.95);
+    transform: translate(-50%, -50%) scale(0.95);
   }
 
   50% {
     opacity: 1;
-    transform:
-        translate(-50%, -50%)
-        scale(1.1);
+    transform: translate(-50%, -50%) scale(1.1);
   }
 }
 
-/* 텍스트 등장 */
-@keyframes contentUp {
+@keyframes content-up {
   from {
     opacity: 0;
     transform: translateY(16px);
@@ -570,11 +496,10 @@ const complete = async () => {
   }
 }
 
-/* 버튼 등장 */
-@keyframes buttonUp {
+@keyframes button-show {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(10px);
   }
 
   to {
@@ -583,8 +508,7 @@ const complete = async () => {
   }
 }
 
-/* 배경 왼쪽 움직임 */
-@keyframes backgroundFloatLeft {
+@keyframes background-float-left {
   0%,
   100% {
     transform: translate(0, 0);
@@ -595,8 +519,7 @@ const complete = async () => {
   }
 }
 
-/* 배경 오른쪽 움직임 */
-@keyframes backgroundFloatRight {
+@keyframes background-float-right {
   0%,
   100% {
     transform: translate(0, 0);
@@ -608,7 +531,7 @@ const complete = async () => {
 }
 
 /* =========================
-   모션 최소화 설정 대응
+   모션 최소화
 ========================= */
 
 @media (prefers-reduced-motion: reduce) {
@@ -620,26 +543,28 @@ const complete = async () => {
   .spark,
   .complete-message,
   .complete-badge,
-  .complete-button-area {
+  .complete-button {
     opacity: 1;
     animation: none;
+  }
+
+  .background-decoration,
+  .particle,
+  .spark,
+  .complete-message,
+  .complete-badge,
+  .complete-button {
     transform: none;
   }
 
   .success-circle {
-    transform:
-        translate(-50%, -50%);
+    transform: translate(-50%, -50%);
   }
 
   .success-glow {
-    transform:
-        translate(-50%, -50%);
+    transform: translate(-50%, -50%);
   }
 }
-
-/* =========================
-   작은 화면
-========================= */
 
 @media (max-width: 360px) {
   .success-visual {

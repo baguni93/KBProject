@@ -1,30 +1,79 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHeader from '@/components/common/PageHeader.vue';
-import {
-  deleteProfileImage,
-  getProfile,
-  getProfileImage,
-  updateProfile,
-  updateProfileImage,
-} from '@/api/profileApi';
+import { deleteProfileImage, getProfile, getProfileImage, updateProfile, updateProfileImage } from '@/api/profileApi';
 
 const router = useRouter();
 
 const profile = reactive({ nickname: '', introduction: '' });
+
 const originalProfile = reactive({ nickname: '', introduction: '' });
 
 const imageInput = ref(null);
 const profileImage = ref('');
+
 const loading = ref(false);
 const saving = ref(false);
+
 const imageUploading = ref(false);
 const imageDeleting = ref(false);
 const imageActionSheetOpen = ref(false);
+
 const nicknameError = ref('');
 const imageError = ref('');
 const errorMessage = ref('');
+
+// 저장 성공 모달
+const successModalOpen = ref(false);
+
+const confirmModal = reactive({
+  open: false,
+  type: '',
+  title: '',
+  message: '',
+  confirmText: '확인',
+  cancelText: '취소',
+  danger: false,
+});
+
+const openConfirmModal = ({
+  type,
+  title,
+  message,
+  confirmText = '확인',
+  cancelText = '취소',
+  danger = false,
+}) => {
+  confirmModal.type = type;
+  confirmModal.title = title;
+  confirmModal.message = message;
+  confirmModal.confirmText = confirmText;
+  confirmModal.cancelText = cancelText;
+  confirmModal.danger = danger;
+  confirmModal.open = true;
+};
+
+const closeConfirmModal = () => {
+  if (imageProcessing.value) return;
+
+  confirmModal.open = false;
+  confirmModal.type = '';
+};
+
+const handleConfirmModal = async () => {
+  if (confirmModal.type === 'DELETE_IMAGE') {
+    await confirmRemoveProfileImage();
+    return;
+  }
+
+  if (confirmModal.type === 'CANCEL_EDIT') {
+    confirmModal.open = false;
+    confirmModal.type = '';
+
+    await router.push('/setting');
+  }
+};
 
 // 이미지 작업 중 여부
 const imageProcessing = computed(() => imageUploading.value || imageDeleting.value);
@@ -62,19 +111,23 @@ const selectImage = () => {
 // 이미지 파일 검증
 const validateImage = (file) => {
   const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
   const maxImageSize = 10 * 1024 * 1024;
 
   if (!allowedTypes.includes(file.type)) {
     imageError.value = 'JPG, PNG, GIF, WEBP 이미지만 등록할 수 있어요.';
+
     return false;
   }
 
   if (file.size > maxImageSize) {
     imageError.value = '프로필 이미지는 10MB 이하만 등록할 수 있어요.';
+
     return false;
   }
 
   imageError.value = '';
+
   return true;
 };
 
@@ -103,19 +156,30 @@ const changeImage = async (event) => {
   } finally {
     imageUploading.value = false;
 
-    if (imageInput.value) imageInput.value.value = '';
+    if (imageInput.value) {
+      imageInput.value.value = '';
+    }
   }
 };
 
 // 프로필 이미지 삭제
-const removeProfileImage = async () => {
+const removeProfileImage = () => {
   if (imageProcessing.value) return;
 
   imageActionSheetOpen.value = false;
 
-  const confirmed = window.confirm('등록된 프로필 사진을 삭제하고 기본 사진으로 변경할까요?');
+  openConfirmModal({
+    type: 'DELETE_IMAGE',
+    title: '프로필 사진 삭제',
+    message: '등록된 프로필 사진을 삭제하고 기본 사진으로 변경할까요?',
+    confirmText: '삭제',
+    cancelText: '취소',
+    danger: true,
+  });
+};
 
-  if (!confirmed) return;
+const confirmRemoveProfileImage = async () => {
+  if (imageProcessing.value) return;
 
   try {
     imageDeleting.value = true;
@@ -124,20 +188,18 @@ const removeProfileImage = async () => {
 
     await deleteProfileImage();
     await refreshProfileImage();
+
+    confirmModal.open = false;
+    confirmModal.type = '';
   } catch (error) {
     console.error(error);
 
-    imageError.value = error.response?.data?.message || '프로필 이미지 삭제에 실패했습니다.';
+    imageError.value =
+      error.response?.data?.message ||
+      '프로필 이미지 삭제에 실패했습니다.';
   } finally {
     imageDeleting.value = false;
   }
-};
-
-// ESC 키로 이미지 메뉴 닫기
-const handleEscapeKey = (event) => {
-  if (event.key !== 'Escape' || !imageActionSheetOpen.value) return;
-
-  closeImageActionSheet();
 };
 
 // 닉네임 검증
@@ -146,15 +208,18 @@ const validateNickname = () => {
 
   if (!profile.nickname) {
     nicknameError.value = '닉네임을 입력해 주세요.';
+
     return false;
   }
 
   if (!nicknamePattern.test(profile.nickname)) {
     nicknameError.value = '한글, 영문 소문자, 숫자, 밑줄만 사용할 수 있어요.';
+
     return false;
   }
 
   nicknameError.value = '';
+
   return true;
 };
 
@@ -173,9 +238,11 @@ const loadProfile = async () => {
     const data = await getProfile();
 
     profile.nickname = data.nickname || '';
+
     profile.introduction = data.introduction || '';
 
     originalProfile.nickname = profile.nickname;
+
     originalProfile.introduction = profile.introduction;
 
     await refreshProfileImage();
@@ -196,19 +263,16 @@ const saveProfile = async () => {
     saving.value = true;
     errorMessage.value = '';
 
-    const profileData = {
-      nickname: profile.nickname.trim(),
-      introduction: profile.introduction.trim(),
-    };
+    const profileData = { nickname: profile.nickname.trim(), introduction: profile.introduction.trim() };
 
     await updateProfile(profileData);
 
-    originalProfile.nickname = profile.nickname;
-    originalProfile.introduction = profile.introduction;
+    originalProfile.nickname = profileData.nickname;
 
-    window.alert('프로필이 수정되었습니다.');
+    originalProfile.introduction = profileData.introduction;
 
-    await router.replace('/setting');
+    // 브라우저 alert 대신 성공 모달 표시
+    successModalOpen.value = true;
   } catch (error) {
     console.error(error);
 
@@ -218,74 +282,108 @@ const saveProfile = async () => {
   }
 };
 
+// 성공 모달 확인
+const closeSuccessModal = async () => {
+  successModalOpen.value = false;
+
+  await router.replace('/setting');
+};
+
 // 수정 여부 확인
-const isProfileChanged = () =>
-    profile.nickname !== originalProfile.nickname
-    || profile.introduction !== originalProfile.introduction;
+const isProfileChanged = () => profile.nickname !== originalProfile.nickname || profile.introduction !== originalProfile.introduction;
 
 // 수정 취소
 const cancel = async () => {
   if (isProfileChanged()) {
-    const confirmed = window.confirm('수정한 내용을 저장하지 않고 나갈까요?');
+    openConfirmModal({
+      type: 'CANCEL_EDIT',
+      title: '수정을 취소할까요?',
+      message: '수정한 내용은 저장되지 않아요.',
+      confirmText: '나가기',
+      cancelText: '계속 수정',
+      danger: false,
+    });
 
-    if (!confirmed) return;
+    return;
   }
 
-  await router.back();
+  await router.push('/setting');
 };
 
 // 설정 메인 화면
 const goBack = () => {
+  if (isProfileChanged()) {
+    openConfirmModal({
+      type: 'CANCEL_EDIT',
+      title: '수정을 취소할까요?',
+      message: '수정한 내용은 저장되지 않아요.',
+      confirmText: '나가기',
+      cancelText: '계속 수정',
+      danger: false,
+    });
+
+    return;
+  }
+
   router.push('/setting');
 };
 
 onMounted(() => {
   loadProfile();
-  window.addEventListener('keydown', handleEscapeKey);
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleEscapeKey);
 });
 </script>
 
 <template>
-  <div class="profile-page">
-    <main class="profile-container">
-      <!-- 공통 페이지 헤더 -->
-      <PageHeader
-          title="프로필 관리"
-          custom-back
-          @back="goBack"
-      />
+  <main class="page-layout profile-page">
+    <PageHeader
+        title="프로필 관리"
+        custom-back
+        @back="goBack"
+    />
 
+    <div class="page-content profile-content">
       <section class="title-section">
-        <h2>
-          내 정보를 확인하고<br />
-          수정해 주세요
+        <h2 class="text-26-bold">
+          내 정보를 확인해 주세요
         </h2>
 
-        <p>프로필 사진과 소개는 자유롭게 변경할 수 있어요.</p>
+        <p class="text-15">
+          프로필 사진과 소개는 자유롭게 변경할 수 있어요.
+        </p>
       </section>
 
+      <!-- 프로필 이미지 -->
       <section class="profile-image-section">
-        <div class="profile-image-wrap">
+        <div
+          class="profile-image-wrap"
+          :class="{ disabled: imageProcessing }"
+          role="button"
+          aria-label="프로필 사진 수정 메뉴 열기"
+          @click="openImageActionSheet"
+        >
           <img
-              :key="profileImage"
-              :src="profileImage"
-              alt="프로필 이미지"
-              class="profile-image"
+            :key="profileImage"
+            :src="profileImage"
+            alt="프로필 이미지"
+            class="profile-image"
           />
 
           <button
-              aria-label="프로필 사진 수정 메뉴 열기"
-              class="image-edit-button"
-              :disabled="imageProcessing"
-              type="button"
-              @click="openImageActionSheet"
+            aria-label="프로필 사진 수정 메뉴 열기"
+            class="image-edit-button"
+            :disabled="imageProcessing"
+            type="button"
+            @click.stop="openImageActionSheet"
           >
-            <span v-if="imageProcessing" class="mini-spinner"></span>
-            <span v-else class="edit-icon"></span>
+            <span
+              v-if="imageProcessing"
+              class="mini-spinner"
+            ></span>
+
+            <i
+              v-else
+              class="fa-solid fa-camera"
+            ></i>
           </button>
         </div>
 
@@ -297,20 +395,38 @@ onBeforeUnmount(() => {
             @change="changeImage"
         />
 
-        <p v-if="imageError" class="image-error">
+        <p
+            v-if="imageError"
+            class="image-error text-13"
+        >
           {{ imageError }}
         </p>
       </section>
 
-      <form class="profile-form" @submit.prevent="saveProfile">
+      <!-- 프로필 입력 폼 -->
+      <form
+          class="profile-form"
+          @submit.prevent="saveProfile"
+      >
+        <!-- 닉네임 -->
         <section class="input-card">
-          <label for="nickname">닉네임</label>
+          <label
+              for="nickname"
+              class="text-15-bold"
+          >
+            닉네임
+          </label>
 
-          <p class="input-guide">
+          <p class="input-guide text-13">
             다른 사용자에게 표시되는 이름이에요.
           </p>
 
-          <div :class="{ error: !!nicknameError }" class="input-area">
+          <div
+              :class="{
+                error: !!nicknameError,
+              }"
+              class="input-area"
+          >
             <input
                 id="nickname"
                 v-model.trim="profile.nickname"
@@ -320,18 +436,29 @@ onBeforeUnmount(() => {
                 @input="clearNicknameError"
             />
 
-            <span>{{ profile.nickname.length }}/15</span>
+            <span class="text-13">
+              {{ profile.nickname.length }}/15
+            </span>
           </div>
 
-          <p v-if="nicknameError" class="field-error">
+          <p
+              v-if="nicknameError"
+              class="field-error text-13"
+          >
             {{ nicknameError }}
           </p>
         </section>
 
+        <!-- 소개 -->
         <section class="input-card introduction-card">
-          <label for="introduction">소개</label>
+          <label
+              for="introduction"
+              class="text-15-bold"
+          >
+            소개
+          </label>
 
-          <p class="input-guide">
+          <p class="input-guide text-13">
             나를 간단히 소개해 보세요!
           </p>
 
@@ -341,20 +468,30 @@ onBeforeUnmount(() => {
                 v-model="profile.introduction"
                 maxlength="100"
                 placeholder="소개를 입력해 주세요"
+                class="text-15"
             ></textarea>
 
-            <span>{{ profile.introduction.length }}/100</span>
+            <span class="text-13">
+              {{ profile.introduction.length }}/100
+            </span>
           </div>
         </section>
 
-        <p v-if="errorMessage" class="page-error">
+        <p
+            v-if="errorMessage"
+            class="page-error text-13"
+        >
           {{ errorMessage }}
         </p>
 
-        <div class="button-area">
+        <!-- 하단 버튼 -->
+        <div class="bottom-btn-area double button-area">
           <button
-              class="cancel-button"
-              :disabled="saving || imageProcessing"
+              class="bottom-btn cancel-button"
+              :disabled="
+                saving ||
+                imageProcessing
+              "
               type="button"
               @click="cancel"
           >
@@ -362,134 +499,267 @@ onBeforeUnmount(() => {
           </button>
 
           <button
-              class="save-button"
-              :disabled="loading || saving || imageProcessing || !canSave"
+              class="bottom-btn save-button"
+              :disabled="
+                loading ||
+                saving ||
+                imageProcessing ||
+                !canSave
+              "
               type="submit"
           >
-            {{ saving ? '저장 중...' : '저장하기' }}
+            {{
+              saving
+                ? '저장 중...'
+                : '저장하기'
+            }}
           </button>
         </div>
       </form>
+    </div>
 
-      <transition name="action-sheet">
-        <div
-            v-if="imageActionSheetOpen"
-            class="action-sheet-overlay"
-            role="presentation"
-            @click.self="closeImageActionSheet"
+    <!-- 프로필 이미지 액션시트 -->
+    <transition name="action-sheet">
+      <div
+          v-if="imageActionSheetOpen"
+          class="action-sheet-overlay"
+          role="presentation"
+          @click.self="closeImageActionSheet"
+      >
+        <section
+            aria-label="프로필 사진 수정 메뉴"
+            aria-modal="true"
+            class="action-sheet"
+            role="dialog"
         >
-          <section
-              aria-label="프로필 사진 수정 메뉴"
-              aria-modal="true"
-              class="action-sheet"
-              role="dialog"
-          >
-            <div class="action-sheet-handle"></div>
+          <div class="action-sheet-handle"></div>
 
-            <div class="action-sheet-header">
-              <h3>프로필 사진 수정</h3>
-            </div>
+          <div class="action-sheet-header">
+            <h3 class="text-18-bold">
+              프로필 사진 수정
+            </h3>
+          </div>
 
-            <div class="action-sheet-menu">
-              <button
-                  class="action-sheet-button"
-                  :disabled="imageProcessing"
-                  type="button"
-                  @click="selectImage"
-              >
-                <span class="menu-icon image-icon">
-                  <span class="image-mountain"></span>
-                  <span class="image-sun"></span>
-                </span>
-
-                <span class="menu-text">
-                  <strong>사진 선택</strong>
-                  <small>라이브러리에서 사진 가져오기</small>
-                </span>
-
-                <span class="menu-arrow">›</span>
-              </button>
-
-              <button
-                  class="action-sheet-button delete-action"
-                  :disabled="imageProcessing"
-                  type="button"
-                  @click="removeProfileImage"
-              >
-                <span class="menu-icon trash-icon">
-                  <span class="trash-lid"></span>
-                  <span class="trash-body"></span>
-                </span>
-
-                <span class="menu-text">
-                  <strong>프로필 사진 삭제</strong>
-                  <small>기본 프로필 이미지로 변경</small>
-                </span>
-
-                <span class="menu-arrow">›</span>
-              </button>
-            </div>
-
+          <div class="action-sheet-menu">
             <button
-                class="action-sheet-cancel"
+                class="action-sheet-button"
                 :disabled="imageProcessing"
                 type="button"
-                @click="closeImageActionSheet"
+                @click="selectImage"
             >
-              취소
-            </button>
-          </section>
-        </div>
-      </transition>
+              <span class="menu-icon">
+                <i class="fa-regular fa-image"></i>
+              </span>
 
-      <div v-if="loading" class="loading-overlay">
-        <div class="loading-spinner"></div>
-        <span>프로필 정보를 불러오고 있어요.</span>
+              <span class="menu-text">
+                <strong class="text-15-bold">
+                  사진 선택
+                </strong>
+
+                <small class="text-13">
+                  라이브러리에서 사진 가져오기
+                </small>
+              </span>
+
+              <i
+                  class="fa-solid fa-chevron-right menu-arrow"
+              ></i>
+            </button>
+
+            <button
+                class="action-sheet-button delete-action"
+                :disabled="imageProcessing"
+                type="button"
+                @click="removeProfileImage"
+            >
+              <span class="menu-icon">
+                <i class="fa-regular fa-trash-can"></i>
+              </span>
+
+              <span class="menu-text">
+                <strong class="text-15-bold">
+                  프로필 사진 삭제
+                </strong>
+
+                <small class="text-13">
+                  기본 프로필 이미지로 변경
+                </small>
+              </span>
+
+              <i
+                  class="fa-solid fa-chevron-right menu-arrow"
+              ></i>
+            </button>
+          </div>
+
+          <button
+              class="action-sheet-cancel text-15-bold"
+              :disabled="imageProcessing"
+              type="button"
+              @click="closeImageActionSheet"
+          >
+            취소
+          </button>
+        </section>
       </div>
-    </main>
-  </div>
+    </transition>
+
+    <!-- 공통 확인 모달 -->
+    <transition name="confirm-modal">
+      <div
+        v-if="confirmModal.open"
+        class="confirm-modal-overlay"
+        @click.self="closeConfirmModal"
+      >
+        <section
+          aria-modal="true"
+          class="confirm-modal"
+          role="dialog"
+        >
+          <div class="confirm-icon-wrap">
+            <div
+              class="confirm-icon"
+              :class="{ danger: confirmModal.danger }"
+            >
+              <i
+                v-if="confirmModal.type === 'DELETE_IMAGE'"
+                class="fa-regular fa-trash-can"
+              ></i>
+
+              <i
+                v-else
+                class="fa-solid fa-exclamation"
+              ></i>
+            </div>
+          </div>
+
+          <div class="confirm-content">
+            <h3 class="text-20-bold">
+              {{ confirmModal.title }}
+            </h3>
+
+            <p class="text-14">
+              {{ confirmModal.message }}
+            </p>
+          </div>
+
+          <div class="confirm-buttons">
+            <button
+              class="confirm-cancel-button text-15-bold"
+              :disabled="imageProcessing"
+              type="button"
+              @click="closeConfirmModal"
+            >
+              {{ confirmModal.cancelText }}
+            </button>
+
+            <button
+              class="confirm-action-button text-15-bold"
+              :class="{ danger: confirmModal.danger }"
+              :disabled="imageProcessing"
+              type="button"
+              @click="handleConfirmModal"
+            >
+              {{
+                imageDeleting &&
+                confirmModal.type === 'DELETE_IMAGE'
+                  ? '삭제 중...'
+                  : confirmModal.confirmText
+              }}
+            </button>
+          </div>
+        </section>
+      </div>
+    </transition>
+
+    <!-- 프로필 수정 성공 모달 -->
+    <transition name="success-modal">
+      <div
+          v-if="successModalOpen"
+          class="success-modal-overlay"
+      >
+        <section
+            aria-labelledby="profile-success-title"
+            aria-modal="true"
+            class="success-modal"
+            role="dialog"
+        >
+          <!-- 성공 아이콘 -->
+          <div class="success-icon-wrap">
+            <div class="success-icon">
+              <i class="fa-solid fa-check"></i>
+            </div>
+          </div>
+
+          <!-- 성공 메시지 -->
+          <div class="success-content">
+            <h3
+                id="profile-success-title"
+                class="text-20-bold"
+            >
+              프로필 수정 완료
+            </h3>
+
+            <p class="text-14">
+              프로필이 수정되었어요.
+            </p>
+          </div>
+
+          <!-- 확인 -->
+          <button
+              class="success-confirm-button text-15-bold"
+              type="button"
+              @click="closeSuccessModal"
+          >
+            확인
+          </button>
+        </section>
+      </div>
+    </transition>
+
+    <!-- 로딩 -->
+    <div
+        v-if="loading"
+        class="loading-overlay"
+    >
+      <div class="loading-spinner"></div>
+
+      <span class="text-15-bold">
+        프로필 정보를 불러오고 있어요.
+      </span>
+    </div>
+  </main>
 </template>
 
 <style scoped>
 .profile-page {
-  width: 100%;
-  height: 100%;
-  background: #ffffff;
-}
-
-.profile-container {
   position: relative;
-  display: flex;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-  padding: 10px 28px 140px;
-  background: #ffffff;
-  box-sizing: border-box;
+  background: var(--color-bg-page);
 }
 
+.profile-content {
+  padding-bottom: 84px;
+}
+
+/* 제목 */
 .title-section {
   margin-top: 38px;
 }
 
 .title-section h2 {
   margin: 0;
-  color: #111111;
-  font-size: 28px;
-  font-weight: 800;
+  color: var(--color-text-main);
   line-height: 1.35;
   letter-spacing: -0.8px;
 }
 
 .title-section p {
   margin: 14px 0 0;
-  color: #888888;
-  font-size: 15px;
-  font-weight: 500;
+  color: var(--color-text-muted);
   line-height: 1.5;
 }
 
+/* 프로필 이미지 */
 .profile-image-section {
   display: flex;
   flex-direction: column;
@@ -501,15 +771,21 @@ onBeforeUnmount(() => {
   position: relative;
   width: 104px;
   height: 104px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.profile-image-wrap.disabled {
+  cursor: wait;
 }
 
 .profile-image {
   display: block;
   width: 104px;
   height: 104px;
-  border: 1px solid #eeeeee;
+  border: 1px solid var(--color-divider);
   border-radius: 50%;
-  background: #dbe5ff;
+  background: var(--color-bg-screen);
   object-fit: cover;
 }
 
@@ -523,18 +799,16 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--color-bg-page);
   border-radius: 50%;
-  background: #222222;
+  background: var(--color-text-main);
+  color: var(--color-text-white);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
   cursor: pointer;
-  transition:
-      transform 0.15s ease,
-      background 0.15s ease;
+  transition: transform 0.15s ease;
 }
 
 .image-edit-button:hover:not(:disabled) {
-  background: #333333;
   transform: scale(1.05);
 }
 
@@ -547,42 +821,15 @@ onBeforeUnmount(() => {
   opacity: 0.75;
 }
 
-.edit-icon {
-  position: relative;
-  display: block;
-  width: 15px;
-  height: 15px;
-  transform: rotate(-45deg);
-}
-
-.edit-icon::before {
-  position: absolute;
-  top: 5px;
-  left: 1px;
-  width: 11px;
-  height: 5px;
-  border-radius: 1px;
-  background: #ffffff;
-  content: '';
-}
-
-.edit-icon::after {
-  position: absolute;
-  top: 5px;
-  right: 0;
-  width: 0;
-  height: 0;
-  border-top: 2.5px solid transparent;
-  border-bottom: 2.5px solid transparent;
-  border-left: 4px solid #ffffff;
-  content: '';
+.image-edit-button i {
+  font-size: 14px;
 }
 
 .mini-spinner {
   width: 14px;
   height: 14px;
   border: 2px solid rgba(255, 255, 255, 0.45);
-  border-top-color: #ffffff;
+  border-top-color: var(--color-text-white);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -593,12 +840,12 @@ onBeforeUnmount(() => {
 
 .image-error {
   margin: 8px 0 0;
-  color: #e53935;
-  font-size: 12px;
+  color: var(--color-error);
   line-height: 1.4;
   text-align: center;
 }
 
+/* 프로필 폼 */
 .profile-form {
   display: flex;
   min-height: 0;
@@ -607,11 +854,12 @@ onBeforeUnmount(() => {
   margin-top: 28px;
 }
 
+/* 입력 카드 */
 .input-card {
   padding: 18px;
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--color-divider);
   border-radius: 16px;
-  background: #ffffff;
+  background: var(--color-bg-page);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
 }
 
@@ -621,36 +869,34 @@ onBeforeUnmount(() => {
 
 .input-card label {
   display: block;
-  color: #222222;
-  font-size: 15px;
-  font-weight: 800;
+  color: var(--color-text-main);
 }
 
 .input-guide {
   margin: 7px 0 12px;
-  color: #999999;
-  font-size: 12px;
+  color: var(--color-text-muted);
   line-height: 1.5;
 }
 
+/* 닉네임 */
 .input-area {
   display: flex;
   height: 54px;
   align-items: center;
   padding: 0 14px;
-  border: 1px solid #dddddd;
+  border: 1px solid var(--color-border-main);
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--color-bg-page);
   box-sizing: border-box;
 }
 
 .input-area:focus-within {
-  border-color: #ffbc2e;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
 }
 
 .input-area.error {
-  border-color: #e53935;
+  border-color: var(--color-error);
 }
 
 .input-area input {
@@ -658,34 +904,36 @@ onBeforeUnmount(() => {
   flex: 1;
   border: 0;
   background: transparent;
-  color: #222222;
-  font-size: 16px;
+  color: var(--color-text-main);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
   outline: none;
 }
 
 .input-area input::placeholder {
-  color: #aaaaaa;
+  color: var(--color-text-disabled);
 }
 
 .input-area span {
   flex: none;
   margin-left: 8px;
-  color: #999999;
-  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
+/* 소개 */
 .textarea-area {
   position: relative;
   height: 108px;
   padding: 14px 14px 30px;
-  border: 1px solid #dddddd;
+  border: 1px solid var(--color-border-main);
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--color-bg-page);
   box-sizing: border-box;
 }
 
 .textarea-area:focus-within {
-  border-color: #ffbc2e;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.12);
 }
 
@@ -695,97 +943,75 @@ onBeforeUnmount(() => {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #222222;
+  color: var(--color-text-main);
   font-family: inherit;
-  font-size: 15px;
   line-height: 1.5;
   outline: none;
   resize: none;
 }
 
 .textarea-area textarea::placeholder {
-  color: #aaaaaa;
+  color: var(--color-text-disabled);
 }
 
 .textarea-area span {
   position: absolute;
   right: 14px;
   bottom: 10px;
-  color: #999999;
-  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
+/* 오류 */
 .field-error {
   margin: 8px 0 0;
-  color: #e53935;
-  font-size: 12px;
+  color: var(--color-error);
   line-height: 1.4;
 }
 
 .page-error {
   margin: 12px 0 0;
-  color: #e53935;
-  font-size: 13px;
+  color: var(--color-error);
   line-height: 1.5;
   text-align: center;
 }
 
+/* 하단 버튼 */
 .button-area {
   position: absolute;
-  right: 28px;
-  bottom: 58px;
-  left: 28px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.cancel-button,
-.save-button {
-  width: 100%;
-  height: 58px;
-  border-radius: 10px;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
+  right: 24px;
+  bottom: 32px;
+  left: 24px;
 }
 
 .cancel-button {
-  border: 1px solid #bbbbbb;
-  background: #ffffff;
-  color: #222222;
+  border: 1px solid var(--color-border-main);
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
 }
 
 .save-button {
-  border: 1px solid #cc9200;
-  background: #ffbc2e;
-  color: #111111;
+  border: 1px solid var(--color-primary-border);
+  background: var(--color-primary);
+  color: var(--color-text-main);
 }
 
 .cancel-button:active:not(:disabled) {
-  background: #f5f5f5;
+  background: var(--color-bg-screen);
 }
 
 .save-button:active:not(:disabled) {
-  background: #f2aa10;
+  background: var(--color-primary-active);
 }
 
 .cancel-button:disabled,
 .save-button:disabled {
+  border-color: var(--color-border-main);
+  background: var(--color-bg-disabled);
+  color: var(--color-text-disabled);
   cursor: not-allowed;
 }
 
-.cancel-button:disabled {
-  border-color: #dddddd;
-  color: #aaaaaa;
-}
-
-.save-button:disabled {
-  border-color: #dddddd;
-  background: #eeeeee;
-  color: #aaaaaa;
-}
-
+/* 이미지 액션시트 */
 .action-sheet-overlay {
   position: absolute;
   z-index: 100;
@@ -803,7 +1029,7 @@ onBeforeUnmount(() => {
   width: 100%;
   padding: 10px 12px 12px;
   border-radius: 22px;
-  background: #f7f7f7;
+  background: var(--color-bg-screen);
   box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.18);
   box-sizing: border-box;
 }
@@ -813,7 +1039,7 @@ onBeforeUnmount(() => {
   height: 4px;
   margin: 0 auto 14px;
   border-radius: 999px;
-  background: #cccccc;
+  background: var(--color-border-main);
 }
 
 .action-sheet-header {
@@ -822,16 +1048,14 @@ onBeforeUnmount(() => {
 
 .action-sheet-header h3 {
   margin: 0;
-  color: #222222;
-  font-size: 17px;
-  font-weight: 800;
+  color: var(--color-text-main);
 }
 
 .action-sheet-menu {
   overflow: hidden;
-  border: 1px solid #e7e7e7;
+  border: 1px solid var(--color-divider);
   border-radius: 16px;
-  background: #ffffff;
+  background: var(--color-bg-page);
 }
 
 .action-sheet-button {
@@ -841,22 +1065,19 @@ onBeforeUnmount(() => {
   align-items: center;
   padding: 12px 16px;
   border: 0;
-  background: #ffffff;
+  background: var(--color-bg-page);
   text-align: left;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .action-sheet-button + .action-sheet-button {
-  border-top: 1px solid #eeeeee;
+  border-top: 1px solid var(--color-divider);
 }
 
-.action-sheet-button:hover:not(:disabled) {
-  background: #f8f8f8;
-}
-
+.action-sheet-button:hover:not(:disabled),
 .action-sheet-button:active:not(:disabled) {
-  background: #f0f0f0;
+  background: var(--color-bg-screen);
 }
 
 .action-sheet-button:disabled {
@@ -865,75 +1086,14 @@ onBeforeUnmount(() => {
 }
 
 .menu-icon {
-  position: relative;
-  display: block;
-  width: 26px;
-  height: 26px;
+  display: flex;
   flex: none;
+  width: 28px;
+  align-items: center;
+  justify-content: center;
   margin-right: 13px;
-}
-
-.image-icon {
-  border: 2px solid #444444;
-  border-radius: 6px;
-}
-
-.image-mountain {
-  position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 14px;
-  height: 9px;
-  border-right: 2px solid #444444;
-  border-bottom: 2px solid #444444;
-  transform: rotate(-45deg);
-}
-
-.image-sun {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #444444;
-}
-
-.trash-icon {
-  color: #e5484d;
-}
-
-.trash-lid {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 18px;
-  height: 2px;
-  border-radius: 2px;
-  background: currentColor;
-}
-
-.trash-lid::before {
-  position: absolute;
-  top: -4px;
-  left: 5px;
-  width: 8px;
-  height: 4px;
-  border: 2px solid currentColor;
-  border-bottom: 0;
-  border-radius: 3px 3px 0 0;
-  content: '';
-}
-
-.trash-body {
-  position: absolute;
-  top: 8px;
-  left: 6px;
-  width: 14px;
-  height: 15px;
-  border: 2px solid currentColor;
-  border-top: 0;
-  border-radius: 0 0 4px 4px;
+  color: var(--color-text-main);
+  font-size: 20px;
 }
 
 .menu-text {
@@ -945,45 +1105,39 @@ onBeforeUnmount(() => {
 }
 
 .menu-text strong {
-  color: #222222;
-  font-size: 15px;
-  font-weight: 700;
+  color: var(--color-text-main);
 }
 
 .menu-text small {
-  color: #999999;
-  font-size: 11px;
+  color: var(--color-text-muted);
 }
 
+.delete-action .menu-icon,
 .delete-action .menu-text strong,
 .delete-action .menu-arrow {
-  color: #e5484d;
+  color: var(--color-error);
 }
 
 .menu-arrow {
   flex: none;
   margin-left: 8px;
-  color: #aaaaaa;
-  font-size: 25px;
-  font-weight: 300;
-  line-height: 1;
+  color: var(--color-text-disabled);
+  font-size: 13px;
 }
 
 .action-sheet-cancel {
   width: 100%;
   height: 54px;
   margin-top: 10px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--color-border-main);
   border-radius: 16px;
-  background: #ffffff;
-  color: #222222;
-  font-size: 16px;
-  font-weight: 800;
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
   cursor: pointer;
 }
 
-.action-sheet-cancel:hover:not(:disabled) {
-  background: #f7f7f7;
+.action-sheet-cancel:active:not(:disabled) {
+  background: var(--color-bg-screen);
 }
 
 .action-sheet-cancel:disabled {
@@ -991,6 +1145,7 @@ onBeforeUnmount(() => {
   opacity: 0.5;
 }
 
+/* 액션시트 애니메이션 */
 .action-sheet-enter-active,
 .action-sheet-leave-active {
   transition: opacity 0.2s ease;
@@ -1008,31 +1163,252 @@ onBeforeUnmount(() => {
 
 .action-sheet-enter-from .action-sheet,
 .action-sheet-leave-to .action-sheet {
-  transform: translateY(24px);
+  transform: translateY(100%);
 }
 
-.loading-overlay {
+/* ========================================
+   프로필 저장 성공 모달
+======================================== */
+.success-modal-overlay {
   position: absolute;
-  z-index: 80;
+  z-index: 300;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 24px;
+  background: rgba(15, 15, 15, 0.42);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  box-sizing: border-box;
+}
+
+.success-modal {
+  width: 100%;
+  max-width: 320px;
+  padding: 28px 22px 20px;
+  border-radius: 22px;
+  background: var(--color-bg-page);
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* 성공 아이콘 */
+.success-icon-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.success-icon {
+  display: flex;
+  width: 62px;
+  height: 62px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 188, 46, 0.16);
+  color: var(--color-primary-border);
+  font-size: 25px;
+  animation: success-icon-pop 0.4s
+    cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 성공 문구 */
+.success-content h3 {
+  margin: 0;
+  color: var(--color-text-main);
+  line-height: 1.4;
+}
+
+.success-content p {
+  margin: 9px 0 0;
+  color: var(--color-text-sub);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* 확인 버튼 */
+.success-confirm-button {
+  width: 100%;
+  height: 50px;
+  margin-top: 24px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--color-primary);
+  color: var(--color-text-main);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.success-confirm-button:active {
+  background: var(--color-primary-active);
+  transform: scale(0.98);
+}
+
+/* 성공 모달 애니메이션 */
+.success-modal-enter-active,
+.success-modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.success-modal-enter-active .success-modal,
+.success-modal-leave-active .success-modal {
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+
+.success-modal-enter-from,
+.success-modal-leave-to {
+  opacity: 0;
+}
+
+.success-modal-enter-from .success-modal {
+  opacity: 0;
+  transform: translateY(12px) scale(0.96);
+}
+
+.success-modal-leave-to .success-modal {
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+}
+
+@keyframes success-icon-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 로딩 */
+.loading-overlay {
+  position: absolute;
+  z-index: 200;
+  inset: 0;
+  display: flex;
   flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
   background: rgba(255, 255, 255, 0.88);
-  color: #444444;
-  font-size: 14px;
-  font-weight: 700;
+  color: var(--color-text-main);
 }
 
 .loading-spinner {
   width: 36px;
   height: 36px;
-  border: 4px solid #eeeeee;
-  border-top-color: #ffbc2e;
+  border: 4px solid var(--color-bg-disabled);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+}
+/* 공통 확인 모달 */
+.confirm-modal-overlay {
+  position: absolute;
+  z-index: 300;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 15, 15, 0.42);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  box-sizing: border-box;
+}
+
+.confirm-modal {
+  width: 100%;
+  max-width: 320px;
+  padding: 28px 22px 20px;
+  border-radius: 22px;
+  background: var(--color-bg-page);
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.confirm-icon-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.confirm-icon {
+  display: flex;
+  width: 62px;
+  height: 62px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 188, 46, 0.16);
+  color: var(--color-primary-border);
+  font-size: 25px;
+}
+
+.confirm-icon.danger {
+  background: rgba(211, 47, 47, 0.1);
+  color: var(--color-error);
+}
+
+.confirm-content h3 {
+  margin: 0;
+  color: var(--color-text-main);
+  line-height: 1.4;
+}
+
+.confirm-content p {
+  margin: 9px 0 0;
+  color: var(--color-text-sub);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.confirm-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.confirm-cancel-button,
+.confirm-action-button {
+  height: 50px;
+  flex: 1;
+  border-radius: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.confirm-cancel-button {
+  border: 1px solid var(--color-border-main);
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
+}
+
+.confirm-action-button {
+  border: 1px solid var(--color-primary-border);
+  background: var(--color-primary);
+  color: var(--color-text-main);
+}
+
+.confirm-action-button.danger {
+  border-color: var(--color-error);
+  background: var(--color-error);
+  color: var(--color-text-white);
 }
 
 @keyframes spin {
@@ -1041,15 +1417,16 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (max-width: 360px) {
-  .profile-container {
-    padding-right: 20px;
-    padding-left: 20px;
+@media (prefers-reduced-motion: reduce) {
+  .success-icon {
+    animation: none;
   }
 
-  .button-area {
-    right: 20px;
-    left: 20px;
+  .success-modal-enter-active,
+  .success-modal-leave-active,
+  .success-modal-enter-active .success-modal,
+  .success-modal-leave-active .success-modal {
+    transition: none;
   }
 }
 </style>

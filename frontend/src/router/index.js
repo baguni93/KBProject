@@ -211,22 +211,23 @@ router.beforeEach((to) => {
   }
 
   // 로그인 상태에서는 로그인/회원가입 화면 접근 차단
-  const guestOnlyPaths = [
-    '/intro',
-    '/auth/pin-login',
-    '/signup/agreement',
-    '/signup/existing-member',
-    '/signup/new-member',
-    '/signup/pin',
-    '/signup/pin-confirm',
-    '/signup/nickname',
-  ];
-
-  const isGuestOnly = guestOnlyPaths.includes(to.path);
-
-  if (loggedIn && isGuestOnly) {
-    return '/wallet';
-  }
+  // const guestOnlyPaths = [
+  //   '/intro',
+  //   '/auth/pin-login',
+  //   '/signup/agreement',
+  //   '/signup/existing-member',
+  //   '/signup/new-member',
+  //   '/signup/pin',
+  //   '/signup/pin-confirm',
+  //   '/signup/nickname',
+  //   '/signup/complete',
+  // ];
+  //
+  // const isGuestOnly = guestOnlyPaths.includes(to.path);
+  //
+  // if (loggedIn && isGuestOnly) {
+  //   return '/wallet';
+  // }
 
   // 로그인이 필요한 화면
   if (to.matched.some((route) => route.meta.requiresAuth)) {
