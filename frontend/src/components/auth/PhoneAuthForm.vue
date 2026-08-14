@@ -329,17 +329,39 @@ const phoneNumberInput = ref(
   ),
 );
 
+// PIN 재설정 여부
+const isPinReset = computed(
+    () =>
+        verificationPurpose.value ===
+        'PIN_RESET',
+);
+
 // 초기 단계
 const getInitialStep = () => {
   if (isSettingChange.value) {
     return form.carrierCode ? 4 : 3;
   }
 
+  // PIN 재설정 시 이미 전달받은 정보는 건너뜀
+  if (isPinReset.value) {
+    if (form.carrierCode) {
+      return 4;
+    }
+
+    if (form.birthDate) {
+      return 3;
+    }
+
+    if (form.userName) {
+      return 2;
+    }
+  }
+
   return 1;
 };
 
 const currentStep = ref(
-  getInitialStep(),
+    getInitialStep(),
 );
 
 // 통신사 표시 이름
