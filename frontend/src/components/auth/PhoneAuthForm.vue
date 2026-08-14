@@ -362,10 +362,15 @@ const rawPhoneNumber = computed(
 );
 
 // 이름 유효성
+// const isValidUserName = () =>
+//   /^[가-힣]{2,7}$/.test(
+//     form.userName.trim(),
+//   );
+
 const isValidUserName = () =>
-  /^[가-힣]{2,7}$/.test(
-    form.userName.trim(),
-  );
+    /^[가-힣0-9]{2,10}$/.test(
+        form.userName.trim(),
+    );
 
 // 휴대폰번호 유효성
 const isValidPhoneNumber = () =>

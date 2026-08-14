@@ -97,7 +97,8 @@ const loading = ref(false);
 const nameErrorMessage = ref('');
 const loadErrorMessage = ref('');
 
-const nameRegex = /^[가-힣]{2,7}$/;
+// const nameRegex = /^[가-힣]{2,7}$/;
+const nameRegex = /^[가-힣0-9]{2,10}$/;
 
 // 회원정보 조회
 const loadUserInfo = async () => {
