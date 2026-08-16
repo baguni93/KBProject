@@ -115,8 +115,18 @@ public class CardRecommendationServiceImpl
                         benefitEndAt
                 );
 
+        /*
+         * 연회비 포함 순혜택이 음수여도 카드를 추천 후보에 남긴다.
+         * NET_BENEFIT 모드에서는 음수 값 그대로 정렬하므로,
+         * 순혜택이 덜 손해인 카드가 먼저 노출된다.
+         */
+        List<CardProductCalculationResult> candidateResults = results.stream()
+                .filter(Objects::nonNull)
+                .filter(result -> result.getProduct() != null)
+                .collect(Collectors.toList());
+
         // CREDIT / CHECK를 서로 섞지 않고 카드 유형별로 각각 순위를 부여한다.
-        assignRecommendationRanks(results);
+        assignRecommendationRanks(candidateResults);
 
         List<CardRecommendationCategoryVO> categories =
                 cardRecommendationMapper.selectAnalysisCategories(
@@ -128,7 +138,7 @@ public class CardRecommendationServiceImpl
          * 전체 카드는 예상 혜택 계산과 순위 산정에 사용하지만,
          * DB에는 화면에서 실제 사용하는 TOP 3 결과만 저장한다.
          */
-        List<CardProductCalculationResult> topResults = results.stream()
+        List<CardProductCalculationResult> topResults = candidateResults.stream()
                 .filter(Objects::nonNull)
                 .filter(result -> result.getProduct() != null)
                 .filter(result -> result.getRecommendationRank() != null)
@@ -200,17 +210,15 @@ public class CardRecommendationServiceImpl
                         cardType.name()
                 );
 
-        if (rows == null || rows.isEmpty()) {
-            throw new CustomException(
-                    ErrorCode.CARD_RECOMMENDATION_NOT_FOUND
-            );
-        }
+        List<CardRecommendationListItemVO> safeRows =
+                rows == null ? List.of() : rows;
 
         Comparator<CardRecommendationListItemVO> comparator =
                 createDisplayComparator(feeMode);
 
         List<CardRecommendationListItemVO> sortedRows =
-                rows.stream()
+                safeRows.stream()
+                        .filter(Objects::nonNull)
                         .sorted(comparator)
                         .limit(DISPLAY_LIMIT)
                         .collect(Collectors.toList());
@@ -384,6 +392,7 @@ public class CardRecommendationServiceImpl
 
         List<CardRecommendationListItemVO> sortedRows =
                 sameTypeRows.stream()
+                        .filter(Objects::nonNull)
                         .sorted(createDisplayComparator(feeMode))
                         .collect(Collectors.toList());
 
