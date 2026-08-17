@@ -7,6 +7,7 @@ import org.scoula.common.util.UploadFiles;
 import org.scoula.common.util.UploadPathName;
 import org.scoula.exception.CustomException;
 import org.scoula.exception.ErrorCode;
+import org.scoula.event.service.EventService;
 import org.scoula.feed.domain.FeedImageVO;
 import org.scoula.feed.domain.FeedVO;
 import org.scoula.feed.dto.FeedCreateRequestDTO;
@@ -33,6 +34,7 @@ public class FeedServiceImpl implements FeedService {
     private final FeedMapper feedMapper;
     private final SettlementMapper settlementMapper;
     private final LikeService likeService;
+    private final EventService eventService;
 
     @Transactional
     @Override
@@ -47,6 +49,9 @@ public class FeedServiceImpl implements FeedService {
         if(files != null && !files.isEmpty()) { // 첨부 파일이 있는 경우
             upload(feedVO.getFeedId(), files);
         }
+
+        // 박준우: 피드 작성 이벤트 기록 작성
+        eventService.recordMissionProgress(request.getUserId(), "FEED");
 
         return get(feedVO.getFeedId());
     }

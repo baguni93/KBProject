@@ -20,7 +20,7 @@ DROP TABLE IF EXISTS `event_reward_tbl`;
 
 DROP TABLE IF EXISTS `event_tbl`;
 
-DROP TABLE IF EXISTS `event_user_tb`;
+DROP TABLE IF EXISTS `event_user_tbl`;
 
 DROP TABLE IF EXISTS `card_application_history_tbl`;
 
@@ -1530,7 +1530,7 @@ CREATE TABLE event_tbl
             	
    CONSTRAINT chk_event_category
         CHECK (
-            event_category IN ('ATTENDANCE', 'FEED', 'CARD', 'REMITTANCE', 'WALLET', 'ANALYSIS', 'RANDOMBOX', 'ETC')
+            event_category IN ('ATTENDANCE', 'FEED', 'CARD', 'REMITTANCE', 'WALLET', 'ANALYSIS', 'RANDOMBOX', 'ETC', 'SETTLEMENT')
             ),
 
     CONSTRAINT chk_event_status
@@ -1588,10 +1588,9 @@ CREATE TABLE event_participation_tbl
 
     CONSTRAINT fk_event_participation_user
         FOREIGN KEY (user_id)
-            REFERENCES user_tbl (user_id),
+            REFERENCES user_tbl (user_id)
 
-    CONSTRAINT uk_event_participation
-        UNIQUE (event_id, user_id)
+
 );
 
 -- 45-1. 이벤트 참여 관리 테이블
@@ -3077,36 +3076,10 @@ VALUES
  '2026-07-15 00:00:00',
  '2026-12-01 00:00:00',
  '2026-07-01 00:00:00'),
-(4,
- '나만의 스타일, 커스텀 카드 만들기',
- '커스텀 카드를 한 번 더 만들어 보세요.',
- 'PERMANENT',
- 'CARD',
- 'OPEN',
- 'attendance_event.png',
- 2,
- 2,
- 1,
- '2026-07-15 00:00:00',
- '2026-12-01 00:00:00',
- '2026-07-01 00:00:00'),
-(5,
- '나만의 스타일, 커스텀 카드 만들기',
- '커스텀 카드를 3번 제작해 보세요',
- 'PERMANENT',
- 'CARD',
- 'OPEN',
- 'attendance_event.png',
- 3,
- 3,
- 1,
- '2026-07-15 00:00:00',
- '2026-12-01 00:00:00',
- '2026-07-01 00:00:00'),
- (6,
+ (4,
   '프로 피드러로 가는 길! 피드 3회 등록',
   '피드를 3개 등록하여 자유롭게 다른 사람들과 일상을 공유해 보세요.',
-  'PERMANENT', 
+  'PERMANENT',
   'FEED',
   'OPEN',
   'feed.png',
@@ -3116,33 +3089,34 @@ VALUES
   '2026-07-15 00:00:00',
   '2026-12-01 00:00:00',
   '2026-07-01 00:00:00'),
-  (7,
-    '스마트한 소비 생활! 지갑 결제 사용해보기',
-    '편의점, 카페 어디서나 편리한 지갑 결제를 이용하고 포인트를 받으세요.',
-    'PERMANENT', 
-    'REMITTANCE',
-    'OPEN',
-    'wallet.png',
-    1,
-    1,
-    1,
-    '2026-07-01 00:00:00',
-    '2026-12-01 00:00:00',
-    '2026-07-01 00:00:00'),
- (8,
-    'N분의 1도 간편하게! 정산하기 체험',
-    '친구들과의 모임 회비를 정산 기능을 통해 편리하게 요청하고 정산해 보세요.',
-    'PERMANENT',
-    'REMITTANCE',
-    'OPEN',
-    'wallet.png',
-    1,
-    1,
-    1,
-    '2026-07-01 00:00:00',
-    '2026-12-01 00:00:00',
-    '2026-07-01 00:00:00'),
-(9,
+(5,
+ '스마트한 소비 생활! 지갑 결제 사용해보기',
+ '편의점, 카페 어디서나 편리한 지갑 결제를 이용하고 포인트를 받으세요.',
+ 'PERMANENT',
+ 'WALLET',
+ 'OPEN',
+ 'wallet.png',
+ 1,
+ 1,
+ 1,
+ '2026-07-01 00:00:00',
+ '2026-12-01 00:00:00',
+ '2026-07-01 00:00:00'),
+
+(6,
+ 'N분의 1도 간편하게! 정산하기 체험',
+ '친구들과의 모임 회비를 정산 기능을 통해 편리하게 요청하고 정산해 보세요.',
+ 'PERMANENT',
+ 'SETTLEMENT',
+ 'OPEN',
+ 'wallet.png',
+ 1,
+ 1,
+ 1,
+ '2026-07-01 00:00:00',
+ '2026-12-01 00:00:00',
+ '2026-07-01 00:00:00'),
+(7,
     '두근두근 대박 기회! 랜덤박스 열기',
     '랜덤박스를 열고 포인트를 받아가세요!',
     'LUCKYDRAW',
@@ -3155,7 +3129,7 @@ VALUES
     '2026-07-20 10:00:00',
     '2026-12-01 00:00:00',
     '2026-07-01 00:00:00'),
-(10,
+(8,
     '자산 관리의 시작, 소비패턴 분석',
     '소비패턴 분석 서비스를 체험하고 소비 분석 리포트를 받아보세요.',
     'PERMANENT',
@@ -3172,20 +3146,21 @@ VALUES
 -- ---------------------------------------------------------------------
 -- 48. event_reward_tbl (5건)
 -- ---------------------------------------------------------------------
-INSERT INTO event_reward_tbl (reward_id,
-                              event_id,
-                              reward_point,
-                              reward_exp)
-VALUES (1, 1, 100, 10),
-       (2, 2, 200, 50),
-       (3, 3, 300, 60),
-       (4, 4, 400, 70),
-       (5, 5, 500, 80),
-       (6, 6, 100, 50),
-       (7, 7, 200, 50),
-       (8, 8, 100, 50),
-       (9, 9, 50, 10),
-       (10, 10, 500, 100);
+INSERT INTO event_reward_tbl (
+    reward_id,
+    event_id,
+    reward_point,
+    reward_exp
+)
+VALUES
+    (1, 1, 100, 10),   -- 이벤트 출석
+    (2, 2, 200, 50),   -- 첫 피드
+    (3, 3, 300, 60),   -- 최초 커스텀 카드
+    (4, 4, 100, 50),   -- 피드 3회
+    (5, 5, 200, 50),   -- 지갑 결제
+    (6, 6, 100, 50),   -- 정산
+    (7, 7, 50, 10),    -- 랜덤박스
+    (8, 8, 500, 100);  -- 소비패턴 분석
 
 -- ---------------------------------------------------------------------
 -- 49. event_participation_tbl (5건)
@@ -3203,15 +3178,18 @@ VALUES (1, 1, 100, 10),
 -- ---------------------------------------------------------------------
 -- 51. event_reward_receive_tbl (4건)
 -- ---------------------------------------------------------------------
--- INSERT INTO event_reward_receive_tbl (recv_id,
---                                      event_id,
---                                      reward_id,
---                                      user_id,
---                                      received_at)
--- VALUES (2, 1, 1, 2, '2026-07-01 08:25:00'),
---        (3, 2, 2, 1, '2026-07-01 08:50:00'),
---       (4, 2, 2, 2, '2026-07-05 09:00:00'),
---       (5, 5, 1, 1, '2026-07-01 08:10:00');
+-- INSERT INTO event_reward_receive_tbl (
+--     recv_id,
+--     event_id,
+--     reward_id,
+--     user_id,
+--     received_at
+-- )
+-- VALUES
+--     (2, 1, 1, 2, '2026-07-01 08:25:00'),
+--     (3, 2, 2, 1, '2026-07-01 08:50:00'),
+--     (4, 2, 2, 2, '2026-07-05 09:00:00'),
+--     (5, 1, 1, 1, '2026-07-01 08:10:00');
 
 -- ---------------------------------------------------------------------
 -- 52. event_challenge_tbl (4건)
@@ -3363,3 +3341,4 @@ VALUES
     (11, 12, '최근 반려동물 관련 소비가 있어 고양이 펫보험을 추천합니다.', 2, 'Y');
 
 COMMIT;
+

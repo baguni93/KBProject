@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.scoula.event.domain.EventAttendanceVO;
-import org.scoula.event.domain.EventNormalVO;
 
 import java.util.Date;
 
@@ -36,6 +35,7 @@ public class EventGetAttendanceResponseDTO {
     private boolean completed;
     private boolean rewardReceived;
     private boolean todayAttendanceCompleted;
+    private boolean joined;
 
     public static EventGetAttendanceResponseDTO of(EventAttendanceVO eventAttendanceVO){
         return  eventAttendanceVO == null ? null : EventGetAttendanceResponseDTO.builder()
@@ -43,6 +43,7 @@ public class EventGetAttendanceResponseDTO {
                 .eventName(eventAttendanceVO.getEventName())
                 .eventDesc(eventAttendanceVO.getEventDesc())
                 .eventType(eventAttendanceVO.getEventType())
+                .eventCategory(eventAttendanceVO.getEventCategory())
                 .eventStatus(eventAttendanceVO.getEventStatus())
                 .eventImgName(eventAttendanceVO.getEventImgName())// gpt 만들어서
                 .eventTarget(eventAttendanceVO.getEventTarget())
@@ -57,6 +58,7 @@ public class EventGetAttendanceResponseDTO {
                 .completed(eventAttendanceVO.isCompleted())
                 .rewardReceived(eventAttendanceVO.isRewardReceived())
                 .todayAttendanceCompleted(eventAttendanceVO.isTodayAttendanceCompleted())
+                .joined(eventAttendanceVO.isJoined())
                 .build();
     }
 

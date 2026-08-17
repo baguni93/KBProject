@@ -18,6 +18,7 @@ public class EventAttendanceVO {
     private String eventDesc;
     private String eventType;
     private String eventStatus;
+    private String eventCategory;
     private String eventImgName;
     private int eventTarget; // 이벤트 목표
     private int eventLevel;
@@ -33,4 +34,5 @@ public class EventAttendanceVO {
     private boolean completed;
     private boolean rewardReceived;
     private boolean todayAttendanceCompleted;
+    private boolean joined;
 }

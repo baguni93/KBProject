@@ -61,9 +61,9 @@ const props = defineProps({
     default: () => [],
   },
 });
-
+// event 경로 수정되어서 바꿨습니다.
 const handleOpen = () => {
-  router.push('/event/main');
+  router.push('/event');
 };
 
 import tags from '@/config/tags';

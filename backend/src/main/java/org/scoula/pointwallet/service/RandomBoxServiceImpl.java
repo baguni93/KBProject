@@ -2,6 +2,7 @@ package org.scoula.pointwallet.service;
 
 import org.scoula.exception.CustomException;
 import org.scoula.exception.ErrorCode;
+import org.scoula.event.service.EventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.pointwallet.common.PointReasonType;
@@ -26,6 +27,7 @@ public class RandomBoxServiceImpl implements RandomBoxService {
 
     private final RandomBoxMapper randomBoxMapper;
     private final PointWalletService pointWalletService;
+    private final EventService eventService;
 
     @Override
     @Transactional
@@ -419,6 +421,8 @@ public class RandomBoxServiceImpl implements RandomBoxService {
             );
         }
 
+        eventService.recordMissionProgress(userId, "RANDOMBOX");
+
         log.info(
                 "랜덤박스 개봉 완료 userId={}, userRandomBoxId={}, rewardPoint={}, pointBalance={}",
                 userId,
@@ -592,6 +596,10 @@ public class RandomBoxServiceImpl implements RandomBoxService {
             );
 
             totalRewardPoint += rewardPoint;
+        }
+        // 랜덤박스 열기 성공 후 이벤트 진행 기록
+        if (!openedResults.isEmpty()) {
+            eventService.recordMissionProgress(userId, "RANDOMBOX");
         }
 
         log.info(

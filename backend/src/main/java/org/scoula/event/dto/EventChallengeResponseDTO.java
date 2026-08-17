@@ -1,6 +1,5 @@
 package org.scoula.event.dto;
 
-import io.swagger.models.auth.In;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,6 +25,7 @@ public class EventChallengeResponseDTO {
     private Integer level;
     private Integer requiredExp;
     private Integer rewardPoint;
+    private Integer maxLevel;
 
     public static EventChallengeResponseDTO of(EventChallengeUserVO eventChallengeUserVO) {
         return eventChallengeUserVO == null ? null : EventChallengeResponseDTO.builder()
@@ -40,6 +40,7 @@ public class EventChallengeResponseDTO {
                 .level(eventChallengeUserVO.getLevel())
                 .requiredExp(eventChallengeUserVO.getRequiredExp())
                 .rewardPoint(eventChallengeUserVO.getRewardPoint())
+                .maxLevel(eventChallengeUserVO.getMaxLevel())
                 .build();
     }
 }

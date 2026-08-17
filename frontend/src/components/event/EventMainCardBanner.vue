@@ -23,7 +23,7 @@ const router = useRouter();
 
 // 나만의 커스텀 카드 메인 페이지로 이동
 const goToCustomCard = () => {
-  router.push('/card');
+  router.push('/card/create/intro');
 };
 </script>
 
