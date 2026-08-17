@@ -1,9 +1,10 @@
 <template>
   <div class="kb-mobile-page category-edit-page">
     <PageHeader
-      title="카테고리 수정"
-      :custom-back="true"
-      @back="goBack"
+        title="카테고리 수정"
+        :showBack="true"
+        :customBack="true"
+        @back="goBack"
     />
 
     <div class="category-edit-content">
@@ -17,7 +18,7 @@
         <section class="edit-target kb-card">
           <div class="edit-icon">
             <i
-              :class="getCategoryIcon(
+                :class="getCategoryIcon(
                 transaction.parentCategoryName || transaction.categoryName,
               )"
             ></i>
@@ -47,7 +48,7 @@
 
         <section class="kb-section">
           <div class="kb-section-title-row">
-            <h2 class="kb-section-title text-20-bold">대분류 선택</h2>
+            <h2 class="kb-section-title text-18-bold">대분류 선택</h2>
           </div>
 
           <!--
@@ -56,21 +57,21 @@
             세부 카테고리가 있는 경우의 라우팅/저장 로직은 이 페이지가 계속 담당합니다.
           -->
           <SpendingCategorySelector
-            v-model="selectedTopCategoryId"
-            class="edit-category-selector"
-            :categories="categories"
-            compact
-            @select="selectTopCategory"
+              v-model="selectedTopCategoryId"
+              class="edit-category-selector"
+              :categories="categories"
+              compact
+              @select="selectTopCategory"
           />
         </section>
 
         <button
-          type="button"
-          class="content-btn primary save-button"
-          :disabled="!selectedCategoryId || saving"
-          @click="saveCategory"
+            type="button"
+            class="content-btn primary save-button"
+            :disabled="!selectedCategoryId || saving"
+            @click="saveCategory"
         >
-          {{ saving ? '수정 중...' : '카테고리 수정 완료' }}
+          {{ saving ? '저장 중...' : '저장' }}
         </button>
       </template>
 
@@ -124,9 +125,9 @@ const selectTopCategory = async (category, meta = {}) => {
         parentCategoryId: category.spendingCategoryId,
         mode: 'edit',
         returnTo:
-          typeof route.query.returnTo === 'string'
-            ? route.query.returnTo
-            : '',
+            typeof route.query.returnTo === 'string'
+                ? route.query.returnTo
+                : '',
       },
     });
     return;
@@ -138,7 +139,7 @@ const selectTopCategory = async (category, meta = {}) => {
 const initializeSelection = () => {
   if (!transaction.value?.spendingCategoryId) return;
   selectedTopCategoryId.value =
-    transaction.value.parentCategoryId ?? transaction.value.spendingCategoryId;
+      transaction.value.parentCategoryId ?? transaction.value.spendingCategoryId;
   selectedCategoryId.value = transaction.value.spendingCategoryId;
 };
 
@@ -155,8 +156,8 @@ const loadData = async () => {
   } catch (error) {
     messageType.value = 'error';
     message.value = getAnalysisErrorMessage(
-      error,
-      '카테고리 수정 정보를 불러오지 못했습니다.',
+        error,
+        '카테고리 수정 정보를 불러오지 못했습니다.',
     );
   } finally {
     loading.value = false;
@@ -170,14 +171,14 @@ const saveCategory = async () => {
 
   try {
     await analysisApi.classifyTransaction(
-      transactionId,
-      selectedCategoryId.value,
+        transactionId,
+        selectedCategoryId.value,
     );
     messageType.value = 'success';
     message.value = '카테고리가 수정되었습니다.';
 
     const returnTo =
-      typeof route.query.returnTo === 'string' ? route.query.returnTo : null;
+        typeof route.query.returnTo === 'string' ? route.query.returnTo : null;
 
     setTimeout(() => {
       if (returnTo) router.push(returnTo);
@@ -186,8 +187,8 @@ const saveCategory = async () => {
   } catch (error) {
     messageType.value = 'error';
     message.value = getAnalysisErrorMessage(
-      error,
-      '카테고리 수정에 실패했습니다.',
+        error,
+        '카테고리 수정에 실패했습니다.',
     );
   } finally {
     saving.value = false;
@@ -201,40 +202,50 @@ onMounted(loadData);
 
 <style scoped>
 .category-edit-page {
+  min-height: 100%;
   padding-bottom: 34px;
   background: var(--color-bg-screen);
   color: var(--color-text-main);
 }
 
-.category-edit-content {
-  /*
-   * 팀 협의 후 헤더와 첫 콘텐츠 사이 간격을 적용할 경우
-   * 아래 주석을 해제합니다.
-   * margin-top: 14px;
-   */
+/* AnalysisMainPage와 동일한 공통 헤더 정렬 */
+.category-edit-page :deep(.page-header) {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  padding: 0 24px;
+  background: var(--color-bg-page);
 }
 
+/* 본문 공통 좌우 여백 */
+.category-edit-content {
+  padding: 16px 24px 0;
+}
+
+/* 거래 요약 카드 */
 .edit-target {
-  padding: 15px;
+  padding: 18px 16px;
   display: grid;
-  grid-template-columns: 44px 1fr auto;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
   align-items: center;
   gap: 11px;
   border: 1px solid var(--color-divider);
+  border-radius: 18px;
   background: var(--color-bg-page);
   box-shadow: none;
 }
 
 .edit-icon {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
+  border-radius: 13px;
   background: #fff3cf;
   color: #d79500;
-  font-size: 17px;
+  font-size: 16px;
 }
 
 .edit-info {
@@ -249,11 +260,13 @@ onMounted(loadData);
 
 .edit-info span {
   color: var(--color-text-muted);
+  font-weight: 500;
 }
 
 .edit-info strong {
   margin-top: 3px;
   overflow: hidden;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -261,29 +274,76 @@ onMounted(loadData);
 .edit-info small {
   margin-top: 3px;
   color: var(--color-text-disabled);
+  font-weight: 500;
 }
 
 .edit-amount {
   color: var(--color-error);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
+/* 현재 카테고리 */
 .current-category {
-  margin: 10px 2px 0;
+  margin: 12px 0 0;
   color: var(--color-text-muted);
+  font-weight: 500;
 }
 
 .current-category strong {
   margin-left: 4px;
   color: #9a7200;
+  font-weight: 600;
 }
 
+/* 공통 kb-section 기본 여백 대신 이 화면 기준으로 정렬 */
+.category-edit-page :deep(.kb-section) {
+  margin-top: 28px;
+  padding: 0;
+}
+
+.category-edit-page :deep(.kb-section-title-row) {
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.category-edit-page :deep(.kb-section-title) {
+  font-size: 18px;
+  font-weight: 600;
+}
 
 .edit-category-selector {
-  margin-top: 17px;
+  margin-top: 0;
 }
 
+/* 저장 버튼 */
 .save-button {
-  margin-top: 17px;
+  width: 100%;
+  height: 52px;
+  margin-top: 20px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
+@media (max-width: 380px) {
+  .category-edit-page :deep(.page-header) {
+    padding: 0 20px;
+  }
+
+  .category-edit-content {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .edit-target {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    padding: 18px 16px;
+  }
+
+  .edit-icon {
+    width: 40px;
+    height: 40px;
+  }
+}
 </style>
