@@ -52,6 +52,19 @@
 }
 
 /* 작은 보조 텍스트 */
+.text-14-bold {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* 작은 보조 텍스트 */
+.text-14 {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+
+/* 작은 보조 텍스트 */
 .text-13 {
     font-size: 13px;
     font-weight: 500;
@@ -61,4 +74,16 @@
 .text-13-bold {
     font-size: 13px;
     font-weight: 600;
+}
+
+/* 작은 보조 텍스트 */
+.text-12-bold {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* 작은 보조 텍스트 */
+.text-12 {
+    font-size: 12px;
+    font-weight: 400;
 }
