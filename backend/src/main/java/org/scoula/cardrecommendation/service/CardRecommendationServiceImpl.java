@@ -23,13 +23,13 @@ import java.util.stream.Collectors;
  * 2) 이미 card_recommendation_tbl에 결과가 있으면 기존 결과 재사용
  * 3) 카드 상품/혜택/최근 12개월 거래 조회
  * 4) CardBenefitCalculator로 카드별 실제 예상 혜택 계산
- * 5) 신용카드와 체크카드를 각각 별도로 순위 산정
+ * 5) 신용카드와 체크카드를 각각 순혜택(예상 할인액 - 연회비)으로 순위 산정
  * 6) 각 유형별 TOP 3 결과만 최종 저장 대상으로 필터링
  * 7) TOP 3 카드만 NarrativeService로 AI 추천문구 생성
  * 8) SaveService를 통해 TOP 3 결과와 AI 문구 DB 저장
  *
  * [조회 흐름]
- * - 목록: CREDIT/CHECK + 연회비 계산 방식에 따라 정렬 후 최대 3개 반환
+ * - 목록: 저장된 순혜택 순위를 유지하고, 연회비 모드는 표시 금액에만 반영
  * - 상세: 선택한 cardRecommendationId의 카드/혜택/AI 설명 반환
  */
 @Log4j2
@@ -116,9 +116,8 @@ public class CardRecommendationServiceImpl
                 );
 
         /*
-         * 연회비 포함 순혜택이 음수여도 카드를 추천 후보에 남긴다.
-         * NET_BENEFIT 모드에서는 음수 값 그대로 정렬하므로,
-         * 순혜택이 덜 손해인 카드가 먼저 노출된다.
+         * 순혜택이 음수여도 카드를 추천 후보에 남긴다.
+         * 음수 값 그대로 순위를 계산하므로 손해가 적은 카드가 먼저 노출된다.
          */
         List<CardProductCalculationResult> candidateResults = results.stream()
                 .filter(Objects::nonNull)
@@ -134,7 +133,7 @@ public class CardRecommendationServiceImpl
                 );
 
         /*
-         * CREDIT / CHECK 각각 3위까지만 최종 추천 결과로 확정한다.
+         * CREDIT / CHECK 각각 순혜택 3위까지만 최종 추천 결과로 확정한다.
          * 전체 카드는 예상 혜택 계산과 순위 산정에 사용하지만,
          * DB에는 화면에서 실제 사용하는 TOP 3 결과만 저장한다.
          */
@@ -187,8 +186,8 @@ public class CardRecommendationServiceImpl
 
     /*
      * 카드추천 메인 목록 조회.
-     * cardType으로 신용/체크를 나누고 feeMode에 따라 정렬 기준을 바꾼 뒤
-     * 화면에는 최대 DISPLAY_LIMIT(3)개만 반환한다.
+     * cardType으로 신용/체크를 나누되 생성 시 저장한 순혜택 순위를 유지한다.
+     * feeMode는 표시 금액에만 사용하며 순위에는 영향을 주지 않는다.
      */
     @Override
     @Transactional(readOnly = true)
@@ -213,13 +212,18 @@ public class CardRecommendationServiceImpl
         List<CardRecommendationListItemVO> safeRows =
                 rows == null ? List.of() : rows;
 
-        Comparator<CardRecommendationListItemVO> comparator =
-                createDisplayComparator(feeMode);
-
         List<CardRecommendationListItemVO> sortedRows =
                 safeRows.stream()
                         .filter(Objects::nonNull)
-                        .sorted(comparator)
+                        .sorted(
+                                Comparator
+                                        .comparingInt(
+                                                this::recommendationRankOrLast
+                                        )
+                                        .thenComparingInt(row ->
+                                                nullSafe(row.getCardProductId())
+                                        )
+                        )
                         .limit(DISPLAY_LIMIT)
                         .collect(Collectors.toList());
 
@@ -244,7 +248,11 @@ public class CardRecommendationServiceImpl
                             .displayBenefitAmount(
                                     calculateDisplayBenefit(row, feeMode)
                             )
-                            .recommendationRank(index + 1)
+                            .recommendationRank(
+                                    row.getRecommendationRank() == null
+                                            ? index + 1
+                                            : row.getRecommendationRank()
+                            )
                             .aiRecommendationSummary(
                                     row.getAiRecommendationSummary()
                             )
@@ -265,7 +273,8 @@ public class CardRecommendationServiceImpl
     /*
      * 카드 한 장의 상세 정보 조회.
      * 저장된 카드별 AI 문구와 혜택별 실제 계산 결과를 함께 반환한다.
-     * feeMode에 따라 화면에 보여줄 혜택금액/순위를 다시 계산한다.
+     * feeMode에 따라 화면에 보여줄 금액만 계산한다.
+     * 순위는 추천 생성 시 확정한 순혜택 순위를 그대로 반환한다.
      */
     @Override
     @Transactional(readOnly = true)
@@ -342,11 +351,7 @@ public class CardRecommendationServiceImpl
         );
         int annualFee = nullSafe(header.getAnnualFee());
         int netBenefit = expectedBenefit - annualFee;
-        int displayRank = calculateDisplayRank(
-                userId,
-                header,
-                feeMode
-        );
+        int displayRank = nullSafe(header.getRecommendationRank());
 
         return CardRecommendationDetailResponseDTO.builder()
                 .cardRecommendationId(header.getCardRecommendationId())
@@ -372,40 +377,6 @@ public class CardRecommendationServiceImpl
                 )
                 .benefits(benefits)
                 .build();
-    }
-
-    private int calculateDisplayRank(
-            Integer userId,
-            CardRecommendationDetailHeaderVO header,
-            FeeMode feeMode
-    ) {
-        List<CardRecommendationListItemVO> sameTypeRows =
-                cardRecommendationMapper.selectRecommendationList(
-                        userId,
-                        header.getSpendingAnalysisId(),
-                        header.getCardType()
-                );
-
-        if (sameTypeRows == null || sameTypeRows.isEmpty()) {
-            return nullSafe(header.getRecommendationRank());
-        }
-
-        List<CardRecommendationListItemVO> sortedRows =
-                sameTypeRows.stream()
-                        .filter(Objects::nonNull)
-                        .sorted(createDisplayComparator(feeMode))
-                        .collect(Collectors.toList());
-
-        for (int index = 0; index < sortedRows.size(); index++) {
-            if (Objects.equals(
-                    sortedRows.get(index).getCardRecommendationId(),
-                    header.getCardRecommendationId()
-            )) {
-                return index + 1;
-            }
-        }
-
-        return nullSafe(header.getRecommendationRank());
     }
 
     private CardRecommendationAnalysisVO getValidatedAnalysis(
@@ -450,8 +421,8 @@ public class CardRecommendationServiceImpl
 
     /*
      * 카드 유형별 원본 추천 순위를 만든다.
-     * 예상 할인액이 큰 카드 우선, 동률이면 연회비가 낮은 카드,
-     * 다시 동률이면 cardProductId가 작은 카드 순으로 정렬한다.
+     * 순혜택(예상 할인액 - 연회비)이 큰 카드가 먼저다.
+     * 순혜택 동률이면 예상 할인액, cardProductId 순으로 정렬한다.
      */
     private void assignRecommendationRanks(
             List<CardProductCalculationResult> results
@@ -499,54 +470,29 @@ public class CardRecommendationServiceImpl
     createCalculationComparator() {
         return Comparator
                 .comparingInt((CardProductCalculationResult result) ->
-                        nullSafe(result.getExpectedBenefitAmount())
+                        calculateNetBenefit(result)
                 )
                 .reversed()
-                .thenComparingInt(result ->
-                        nullSafe(result.getProduct().getAnnualFee())
+                .thenComparing(
+                        Comparator.comparingInt(
+                                (CardProductCalculationResult result) ->
+                                        nullSafe(result.getExpectedBenefitAmount())
+                        ).reversed()
                 )
                 .thenComparingInt(result ->
                         nullSafe(result.getProduct().getCardProductId())
                 );
     }
 
-    /*
-     * 프론트에 보여줄 순위용 정렬 기준.
-     * MAX_BENEFIT: 예상 할인액 기준
-     * NET_BENEFIT: 예상 할인액 - 연회비 기준
-     */
-    private Comparator<CardRecommendationListItemVO>
-    createDisplayComparator(FeeMode feeMode) {
-        if (feeMode == FeeMode.NET_BENEFIT) {
-            return Comparator
-                    .comparingInt((CardRecommendationListItemVO row) ->
-                            calculateDisplayBenefit(row, feeMode)
-                    )
-                    .reversed()
-                    .thenComparing(
-                            Comparator.comparingInt(
-                                    (CardRecommendationListItemVO row) ->
-                                            nullSafe(
-                                                    row.getExpectedBenefitAmount()
-                                            )
-                            ).reversed()
-                    )
-                    .thenComparingInt(row ->
-                            nullSafe(row.getCardProductId())
-                    );
-        }
+    private int calculateNetBenefit(CardProductCalculationResult result) {
+        return nullSafe(result.getExpectedBenefitAmount())
+                - nullSafe(result.getProduct().getAnnualFee());
+    }
 
-        return Comparator
-                .comparingInt((CardRecommendationListItemVO row) ->
-                        nullSafe(row.getExpectedBenefitAmount())
-                )
-                .reversed()
-                .thenComparingInt(row ->
-                        nullSafe(row.getAnnualFee())
-                )
-                .thenComparingInt(row ->
-                        nullSafe(row.getCardProductId())
-                );
+    private int recommendationRankOrLast(CardRecommendationListItemVO row) {
+        return row.getRecommendationRank() == null
+                ? Integer.MAX_VALUE
+                : row.getRecommendationRank();
     }
 
     private int calculateDisplayBenefit(

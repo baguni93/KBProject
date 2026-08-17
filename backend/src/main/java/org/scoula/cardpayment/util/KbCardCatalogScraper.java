@@ -31,10 +31,11 @@ import java.util.regex.Pattern;
  * 서버 시작 시 KB국민카드 카탈로그를 수집해 카드 추천용 마스터 데이터를 재구축한다.
  *
  * 처리 순서
- * 1. 모바일 카드 목록에서 카드명/이미지/상품코드를 수집한다.
- * 2. 상품코드로 상세 페이지를 조회해 연회비와 현재 계산기가 지원하는 할인 혜택을 추출한다.
- * 3. 전체 수집 결과가 정상일 때만 추천 결과 -> 혜택 -> 상품 순으로 TRUNCATE한다.
- * 4. 상품 INSERT 후 생성된 PK를 사용해 혜택을 INSERT한다.
+ * 1. 신용카드/체크카드 전용 목록을 각각 순회해 카드명, 이미지, 상품코드를 수집한다.
+ * 2. 목록의 종류로 CREDIT/CHECK를 확정하고 상품코드 기준으로 중복을 제거한다.
+ * 3. 상품코드로 상세 페이지를 조회해 연회비와 현재 계산기가 지원하는 할인 혜택을 추출한다.
+ * 4. 전체 수집 결과가 정상일 때만 추천 결과 -> 혜택 -> 상품 순으로 TRUNCATE한다.
+ * 5. 상품 INSERT 후 생성된 PK를 사용해 혜택을 INSERT한다.
  *
  * RootConfig에서만 이 패키지를 스캔하므로 애플리케이션 시작당 한 번만 실행된다.
  */
@@ -44,30 +45,61 @@ public class KbCardCatalogScraper implements InitializingBean {
     private static final Logger log =
             LogManager.getLogger(KbCardCatalogScraper.class);
 
-    private static final String TARGET_MOBILE_URL =
-            "https://m.kbcard.com/CRD/DVIEW/MCAM0101";
+    private static final String KB_CARD_BASE_URL =
+            "https://card.kbcard.com";
+
+    private static final String CREDIT_LIST_URL =
+            KB_CARD_BASE_URL + "/CRD/DVIEW/HCAMCXPRICAC0047";
+
+    private static final String CHECK_LIST_URL =
+            KB_CARD_BASE_URL + "/CRD/DVIEW/HCAMCXPRICAC0056";
 
     private static final String DETAIL_URL_TEMPLATE =
             "https://card.kbcard.com/CRD/DVIEW/HCAMCXPRICAC0076"
                     + "?cooperationcode=%s&mainCC=a";
-
-    private static final String MOBILE_USER_AGENT =
-            "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) "
-                    + "AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
 
     private static final String DESKTOP_USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                     + "AppleWebKit/537.36 (KHTML, like Gecko) "
                     + "Chrome/124.0.0.0 Safari/537.36";
 
-    private static final int MINIMUM_REPLACE_CARD_COUNT = 2;
+    private static final int MINIMUM_REPLACE_CARD_COUNT_PER_TYPE = 2;
     private static final int MAX_DESCRIPTION_LENGTH = 1000;
+    private static final int LIST_REQUEST_TIMEOUT_MILLIS = 15000;
+
+    /*
+     * 같은 상품이 여러 혜택 카테고리에 중복 노출된다. 목록의 종류와
+     * 상품코드를 조합해 중복을 제거하며, 카드명으로 종류를 추측하지 않는다.
+     */
+    private static final List<CardListSource> CARD_LIST_SOURCES = List.of(
+            new CardListSource("CREDIT", 1),
+            new CardListSource("CREDIT", 5),
+            new CardListSource("CREDIT", 2),
+            new CardListSource("CREDIT", 3),
+            new CardListSource("CREDIT", 10),
+            new CardListSource("CREDIT", 8),
+            new CardListSource("CREDIT", 9),
+            new CardListSource("CREDIT", 6),
+            new CardListSource("CREDIT", 12),
+            new CardListSource("CHECK", 12),
+            new CardListSource("CHECK", 13),
+            new CardListSource("CHECK", 14),
+            new CardListSource("CHECK", 15),
+            new CardListSource("CHECK", 16),
+            new CardListSource("CHECK", 17),
+            new CardListSource("CHECK", 10),
+            new CardListSource("CHECK", 18)
+    );
 
     private static final Pattern PRODUCT_CODE_PATTERN =
             Pattern.compile("(?<!\\d)(\\d{5})(?!\\d)");
 
     private static final Pattern COOPERATION_CODE_PATTERN =
             Pattern.compile("cooperationcode(?:=|%3D)(\\d{5})",
+                    Pattern.CASE_INSENSITIVE);
+
+    private static final Pattern GO_DETAIL_CODE_PATTERN =
+            Pattern.compile("goDetail\\s*\\(\\s*['\"](\\d{5})['\"]",
                     Pattern.CASE_INSENSITIVE);
 
     /*
@@ -150,19 +182,20 @@ public class KbCardCatalogScraper implements InitializingBean {
         log.info("==================================================");
         log.info("[카탈로그 매니저] 카드 추천용 상품/혜택 자동 동기화 시작");
         log.info("==================================================");
-        scrapeCardCatalogFromMobileWeb();
+        scrapeCardCatalogFromKbWeb();
     }
 
     /**
      * 네트워크 수집이 완전히 끝난 뒤에만 DB를 비운다.
      * KB카드 접속 실패나 HTML 구조 변경 시 기존 DB 데이터는 유지된다.
      */
-    public void scrapeCardCatalogFromMobileWeb() {
+    public void scrapeCardCatalogFromKbWeb() {
         try {
             List<CrawledCardProductDTO> products = crawlAllProducts();
 
-            if (products.size() < MINIMUM_REPLACE_CARD_COUNT) {
-                log.warn("[카탈로그 매니저] 정상 수집 카드가 {}건뿐이어서 DB 교체를 생략합니다.",
+            if (!hasMinimumProductCounts(products)) {
+                log.warn("[카탈로그 매니저] 카드 종류별 최소 수집 건수를 충족하지 못해 "
+                                + "DB 교체를 생략합니다. 전체 {}건",
                         products.size());
                 loadFallbackSeed();
                 return;
@@ -184,66 +217,197 @@ public class KbCardCatalogScraper implements InitializingBean {
     }
 
     private List<CrawledCardProductDTO> crawlAllProducts() throws Exception {
-        Document listDocument = Jsoup.connect(TARGET_MOBILE_URL)
-                .userAgent(MOBILE_USER_AGENT)
-                .referrer("https://m.kbcard.com/")
-                .timeout(10000)
-                .get();
+        Map<String, ListCardSeed> seedsByProductKey = new LinkedHashMap<>();
 
-        // 동일 상품이 여러 추천 영역에 반복 노출되므로 카드명 기준으로 합친다.
-        Map<String, CrawledCardProductDTO> productsByName = new LinkedHashMap<>();
-        Elements cardItems = listDocument.select(
-                "ul li:has(img), div.card_list_item:has(img), "
-                        + "div[class*=goods_item]:has(img)"
-        );
-
-        for (Element item : cardItems) {
-            Element imageElement = item.select("img").first();
-            if (imageElement == null) {
-                continue;
-            }
-
-            String imageUrl = resolveImageUrl(imageElement);
-            if (!isLikelyCardImage(imageUrl)) {
-                continue;
-            }
-
-            String savedFileName = downloadAndSaveImage(imageUrl);
-            if (savedFileName == null || savedFileName.contains("logo-")) {
-                continue;
-            }
-
-            String cardName = resolveCardNameFromFile(savedFileName, item);
-            if (!isValidCardName(cardName)) {
-                continue;
-            }
-
-            String cleanName = cleanCardNameText(cardName);
-            String summary = cleanSummaryText(item.text(), cleanName);
-            String detailUrl = resolveDetailUrl(item, savedFileName);
-
-            CrawledCardProductDTO product = crawlProductDetails(
-                    cleanName,
-                    summary,
-                    savedFileName,
-                    detailUrl
-            );
-
-            mergeProduct(productsByName, product);
+        for (CardListSource source : CARD_LIST_SOURCES) {
+            crawlListSource(source, seedsByProductKey);
         }
 
-        return new ArrayList<>(productsByName.values());
+        List<CrawledCardProductDTO> products = new ArrayList<>();
+        for (ListCardSeed seed : seedsByProductKey.values()) {
+            String savedFileName = downloadAndSaveImage(seed.imageUrl);
+            if (savedFileName == null || savedFileName.contains("logo-")) {
+                log.warn("[카탈로그 매니저] 이미지 저장 실패로 상품 제외: "
+                                + "type={}, code={}, card={}",
+                        seed.cardType, seed.productCode, seed.cardName);
+                continue;
+            }
+
+            String detailUrl = String.format(
+                    DETAIL_URL_TEMPLATE,
+                    seed.productCode
+            );
+            products.add(crawlProductDetails(
+                    seed.cardName,
+                    seed.summary,
+                    savedFileName,
+                    detailUrl,
+                    seed.cardType,
+                    seed.listPageUrl
+            ));
+        }
+
+        long creditCount = products.stream()
+                .filter(product -> "CREDIT".equals(product.getCardType()))
+                .count();
+        long checkCount = products.stream()
+                .filter(product -> "CHECK".equals(product.getCardType()))
+                .count();
+        log.info("[카탈로그 매니저] 목록 수집 결과: 신용카드 {}건, 체크카드 {}건, 전체 {}건",
+                creditCount, checkCount, products.size());
+        return products;
+    }
+
+    private void crawlListSource(
+            CardListSource source,
+            Map<String, ListCardSeed> seedsByProductKey
+    ) throws Exception {
+        String pageUrl = source.buildPageUrl();
+        Document listDocument = Jsoup.connect(pageUrl)
+                .userAgent(DESKTOP_USER_AGENT)
+                .referrer(KB_CARD_BASE_URL + "/")
+                .timeout(LIST_REQUEST_TIMEOUT_MILLIS)
+                .followRedirects(true)
+                .get();
+
+        Elements cardItems = listDocument.select("div.card-box__item");
+        if (cardItems.isEmpty()) {
+            throw new IllegalStateException(
+                    "카드 목록 HTML에서 상품 영역을 찾지 못했습니다: " + pageUrl
+            );
+        }
+
+        Set<String> pageProductCodes = new TreeSet<>();
+        int newProductCount = 0;
+        for (Element item : cardItems) {
+            ListCardSeed seed = parseListCardSeed(item, source, pageUrl);
+            if (seed == null) {
+                continue;
+            }
+
+            pageProductCodes.add(seed.productCode);
+            String key = seed.cardType + ":" + seed.productCode;
+            ListCardSeed existing = seedsByProductKey.get(key);
+            if (existing == null) {
+                seedsByProductKey.put(key, seed);
+                newProductCount++;
+            } else {
+                existing.mergeMissingFields(seed);
+            }
+        }
+
+        if (pageProductCodes.isEmpty()) {
+            throw new IllegalStateException(
+                    "카드 목록 HTML에서 상품코드를 읽지 못했습니다: " + pageUrl
+            );
+        }
+
+        log.info("[카탈로그 매니저] 목록 페이지 수집: "
+                        + "type={}, cateIdx={}, 노출 {}건, 신규 {}건",
+                source.cardType, source.categoryIndex,
+                pageProductCodes.size(), newProductCount);
+    }
+
+    private boolean hasMinimumProductCounts(
+            List<CrawledCardProductDTO> products
+    ) {
+        long creditCount = products.stream()
+                .filter(product -> "CREDIT".equals(product.getCardType()))
+                .count();
+        long checkCount = products.stream()
+                .filter(product -> "CHECK".equals(product.getCardType()))
+                .count();
+        return creditCount >= MINIMUM_REPLACE_CARD_COUNT_PER_TYPE
+                && checkCount >= MINIMUM_REPLACE_CARD_COUNT_PER_TYPE;
+    }
+
+    private ListCardSeed parseListCardSeed(
+            Element item,
+            CardListSource source,
+            String pageUrl
+    ) {
+        String productCode = extractProductCode(item);
+        if (productCode == null) {
+            return null;
+        }
+
+        String cardName = resolveListCardName(item);
+        if (!isValidCardName(cardName)) {
+            return null;
+        }
+
+        Element imageElement = item.selectFirst("img");
+        if (imageElement == null) {
+            return null;
+        }
+
+        String imageUrl = resolveImageUrl(imageElement);
+        if (!isLikelyCardImage(imageUrl)) {
+            return null;
+        }
+
+        return new ListCardSeed(
+                source.cardType,
+                productCode,
+                cleanCardNameText(cardName),
+                resolveListSummary(item),
+                imageUrl,
+                pageUrl
+        );
+    }
+
+    private String extractProductCode(Element item) {
+        Matcher detailMatcher = GO_DETAIL_CODE_PATTERN.matcher(item.html());
+        if (detailMatcher.find()) {
+            return detailMatcher.group(1);
+        }
+
+        Matcher cooperationMatcher = COOPERATION_CODE_PATTERN.matcher(item.html());
+        if (cooperationMatcher.find()) {
+            return cooperationMatcher.group(1);
+        }
+
+        Element image = item.selectFirst("img");
+        if (image != null) {
+            Matcher imageMatcher = PRODUCT_CODE_PATTERN.matcher(resolveImageUrl(image));
+            if (imageMatcher.find()) {
+                return imageMatcher.group(1);
+            }
+        }
+        return null;
+    }
+
+    private String resolveListCardName(Element item) {
+        Element heading = item.selectFirst("h3.tit-dep4, h3, .card_name, .name, .title");
+        if (heading != null && isValidCardName(heading.text())) {
+            return heading.text();
+        }
+
+        Element image = item.selectFirst("img[alt]");
+        return image == null ? null : image.attr("alt");
+    }
+
+    private String resolveListSummary(Element item) {
+        for (Element summary : item.select("p.badge--txt")) {
+            String text = normalizeText(summary.text());
+            if (!text.isBlank()) {
+                return truncate(text, MAX_DESCRIPTION_LENGTH);
+            }
+        }
+        return null;
     }
 
     private CrawledCardProductDTO crawlProductDetails(
             String cardName,
             String summary,
             String savedFileName,
-            String detailUrl
+            String detailUrl,
+            String cardType,
+            String listPageUrl
     ) {
         CrawledCardProductDTO product = new CrawledCardProductDTO();
         product.setCardName(cardName);
-        product.setCardType(cardName.contains("체크") ? "CHECK" : "CREDIT");
+        product.setCardType(cardType);
         product.setCardDescription(truncate(summary, MAX_DESCRIPTION_LENGTH));
         product.setCardImage(savedFileName);
         product.setApplication(detailUrl);
@@ -257,8 +421,9 @@ public class KbCardCatalogScraper implements InitializingBean {
         try {
             Document detailDocument = Jsoup.connect(detailUrl)
                     .userAgent(DESKTOP_USER_AGENT)
-                    .referrer(TARGET_MOBILE_URL)
-                    .timeout(10000)
+                    .referrer(listPageUrl)
+                    .timeout(LIST_REQUEST_TIMEOUT_MILLIS)
+                    .followRedirects(true)
                     .get();
 
             Element productContainer = findProductContainer(detailDocument, cardName);
@@ -267,7 +432,6 @@ public class KbCardCatalogScraper implements InitializingBean {
             String detailCardName = resolveDetailCardName(productContainer, cardName);
             if (isValidCardName(detailCardName)) {
                 product.setCardName(cleanCardNameText(detailCardName));
-                product.setCardType(detailCardName.contains("체크") ? "CHECK" : "CREDIT");
             }
 
             product.setAnnualFee(extractAnnualFee(productText));
@@ -280,33 +444,6 @@ public class KbCardCatalogScraper implements InitializingBean {
         }
 
         return product;
-    }
-
-    private void mergeProduct(
-            Map<String, CrawledCardProductDTO> productsByName,
-            CrawledCardProductDTO incoming
-    ) {
-        CrawledCardProductDTO existing = productsByName.get(incoming.getCardName());
-        if (existing == null) {
-            productsByName.put(incoming.getCardName(), incoming);
-            return;
-        }
-
-        if ((existing.getAnnualFee() == null || existing.getAnnualFee() == 0)
-                && incoming.getAnnualFee() != null) {
-            existing.setAnnualFee(incoming.getAnnualFee());
-        }
-        if ((existing.getApplication() == null || existing.getApplication().isBlank())
-                && incoming.getApplication() != null) {
-            existing.setApplication(incoming.getApplication());
-        }
-        if ((existing.getCardDescription() == null || existing.getCardDescription().isBlank())
-                && incoming.getCardDescription() != null) {
-            existing.setCardDescription(incoming.getCardDescription());
-        }
-
-        existing.getBenefits().addAll(incoming.getBenefits());
-        existing.setBenefits(deduplicateBenefits(existing.getBenefits()));
     }
 
     private boolean isSafeRecommendationCatalog(
@@ -924,6 +1061,77 @@ public class KbCardCatalogScraper implements InitializingBean {
         }
     }
 
+    /**
+     * 카드 종류별 공식 목록 출처. categoryIndex는 KB카드가 사용하는
+     * 혜택 카테고리 번호이며, 카드 종류는 이 출처에서 확정한다.
+     */
+    private static final class CardListSource {
+        private final String cardType;
+        private final int categoryIndex;
+
+        private CardListSource(String cardType, int categoryIndex) {
+            this.cardType = cardType;
+            this.categoryIndex = categoryIndex;
+        }
+
+        private String buildPageUrl() {
+            String listUrl = "CHECK".equals(cardType)
+                    ? CHECK_LIST_URL
+                    : CREDIT_LIST_URL;
+            return listUrl
+                    + "?pageNo=1"
+                    + "&cateIdx=" + categoryIndex;
+        }
+    }
+
+    /**
+     * 목록에서 먼저 확보하는 최소 상품 정보. 상세 페이지는 동일 상품당
+     * 한 번만 조회할 수 있도록 이 단계에서 중복을 제거한다.
+     */
+    private static final class ListCardSeed {
+        private final String cardType;
+        private final String productCode;
+        private String cardName;
+        private String summary;
+        private String imageUrl;
+        private String listPageUrl;
+
+        private ListCardSeed(
+                String cardType,
+                String productCode,
+                String cardName,
+                String summary,
+                String imageUrl,
+                String listPageUrl
+        ) {
+            this.cardType = cardType;
+            this.productCode = productCode;
+            this.cardName = cardName;
+            this.summary = summary;
+            this.imageUrl = imageUrl;
+            this.listPageUrl = listPageUrl;
+        }
+
+        private void mergeMissingFields(ListCardSeed incoming) {
+            if ((cardName == null || cardName.isBlank())
+                    && incoming.cardName != null) {
+                cardName = incoming.cardName;
+            }
+            if ((summary == null || summary.isBlank())
+                    && incoming.summary != null) {
+                summary = incoming.summary;
+            }
+            if ((imageUrl == null || imageUrl.isBlank())
+                    && incoming.imageUrl != null) {
+                imageUrl = incoming.imageUrl;
+            }
+            if ((listPageUrl == null || listPageUrl.isBlank())
+                    && incoming.listPageUrl != null) {
+                listPageUrl = incoming.listPageUrl;
+            }
+        }
+    }
+
     private boolean isSupportedBenefitText(String text) {
         if (text == null || text.length() < 4 || text.length() > 600) {
             return false;
@@ -1470,19 +1678,25 @@ public class KbCardCatalogScraper implements InitializingBean {
     }
 
     private String resolveImageUrl(Element imageElement) {
-        String imageUrl = imageElement.attr("src");
-        if (imageUrl == null || imageUrl.isBlank()) {
+        String imageUrl = imageElement.absUrl("src");
+        if (imageUrl.isBlank()) {
+            imageUrl = imageElement.absUrl("data-src");
+        }
+        if (imageUrl.isBlank()) {
+            imageUrl = imageElement.attr("src");
+        }
+        if (imageUrl.isBlank()) {
             imageUrl = imageElement.attr("data-src");
         }
 
-        if (imageUrl == null || imageUrl.isBlank()) {
+        if (imageUrl.isBlank()) {
             return "";
         }
         if (imageUrl.startsWith("//")) {
             return "https:" + imageUrl;
         }
         if (imageUrl.startsWith("/")) {
-            return "https://m.kbcard.com" + imageUrl;
+            return KB_CARD_BASE_URL + imageUrl;
         }
         return imageUrl;
     }
@@ -1502,109 +1716,6 @@ public class KbCardCatalogScraper implements InitializingBean {
         return lower.contains("crd")
                 || lower.contains("card")
                 || PRODUCT_CODE_PATTERN.matcher(lower).find();
-    }
-
-    private String resolveDetailUrl(Element item, String fileName) {
-        Element detailLink = item.selectFirst("a[href*=cooperationcode]");
-        if (detailLink != null) {
-            String absolute = detailLink.absUrl("href");
-            if (!absolute.isBlank()) {
-                return absolute;
-            }
-        }
-
-        Matcher htmlMatcher = COOPERATION_CODE_PATTERN.matcher(item.html());
-        if (htmlMatcher.find()) {
-            return String.format(DETAIL_URL_TEMPLATE, htmlMatcher.group(1));
-        }
-
-        Matcher fileMatcher = PRODUCT_CODE_PATTERN.matcher(fileName);
-        if (fileMatcher.find()) {
-            return String.format(DETAIL_URL_TEMPLATE, fileMatcher.group(1));
-        }
-
-        return null;
-    }
-
-    /**
-     * UI 순위 텍스트를 배제하고 개별 카드 요소 안에서 카드명을 추출한다.
-     */
-    private String resolveCardNameFromFile(String fileName, Element item) {
-        Element imageElement = item.select("img").first();
-        if (imageElement != null) {
-            String alt = imageElement.attr("alt");
-            if (isValidCardName(alt)) {
-                return cleanCardNameText(alt);
-            }
-        }
-
-        Element titleElement = item.select(
-                ".card_name, .name, .title, .tit, strong, dt"
-        ).first();
-        if (titleElement != null) {
-            String textName = titleElement.text();
-            if (isValidCardName(textName)) {
-                return cleanCardNameText(textName);
-            }
-        }
-
-        // HTML에 카드명이 없을 때만 기존 검증된 이미지 파일명 매핑을 사용한다.
-        if (fileName.contains("00218")) return "KB국민 TBX 카드";
-        if (fileName.contains("00236")) return "KB국민 VOLT UP EV 카드";
-        if (fileName.contains("01570")) return "KB국민 So Young 체크카드";
-        if (fileName.contains("01574")) return "KB국민 체크카드 (그래피티 디자인)";
-        if (fileName.contains("01664")) return "KB국민 nori(노리) 체크카드";
-        if (fileName.contains("01690")) return "KB국민 직장인보너스 체크카드";
-        if (fileName.contains("01914")) return "KB국민 첵첵 체크카드";
-        if (fileName.contains("01998")) return "KB국민 가온 올포인트 체크카드";
-        if (fileName.contains("02083")) return "LG헬로비전 KB국민카드 II";
-        if (fileName.contains("02219")) return "두산베어스 KB국민카드";
-        if (fileName.contains("04124")) return "KB Youth Club 체크카드";
-        if (fileName.contains("04241")) return "Liiv M Ⅱ 카드";
-        if (fileName.contains("04285")) return "스카이패스 티타늄 카드";
-        if (fileName.contains("04288")) return "T-economy KB국민카드";
-        if (fileName.contains("04366")) return "SK 7mobile Ⅱ 카드";
-        if (fileName.contains("07964")) return "가온플래티늄카드";
-        if (fileName.contains("07986")) return "노리2 체크카드 (Play)";
-        if (fileName.contains("07998")) return "노리2 체크카드 (Global)";
-        if (fileName.contains("09106")) return "KB국민 다담카드";
-        if (fileName.contains("09123")) return "KB국민 청춘대로 톡톡카드";
-        if (fileName.contains("09125")) return "KB국민 탄탄대로 온리유 카드";
-        if (fileName.contains("09126")) return "KB국민 청춘대로 카드";
-        if (fileName.contains("09127")) return "KB국민 이지픽(Easy Pick) 카드";
-        if (fileName.contains("09128")) return "KB국민 알파원(Alpha One) 카드";
-        if (fileName.contains("09129")) return "KB국민 탄탄대로 올쇼핑 카드";
-        if (fileName.contains("09137")) return "KB국민 마이 위시(My WE:SH) 카드";
-        if (fileName.contains("09138")) return "KB국민 위시 올(WE:SH All) 카드";
-        if (fileName.contains("09139")) return "KB국민 위시 디어(WE:SH Dear) 카드";
-        if (fileName.contains("09152")) return "KB국민 탄탄대로 Biz 카드";
-        if (fileName.contains("09162")) return "KB국민 청춘대로 티타늄 카드";
-        if (fileName.contains("09292")) return "KB국민 이지온(Easy On) 카드";
-        if (fileName.contains("09297")) return "KB국민 이지홈(Easy Home) 카드";
-        if (fileName.contains("09298")) return "KB국민 이지스마트(Easy Smart) 카드";
-        if (fileName.contains("09305")) return "KB국민 나라사랑카드";
-        if (fileName.contains("09306")) return "KB국민 가온 파이낸스 카드";
-        if (fileName.contains("09310")) return "KB국민 쇼핑앤쇼핑 카드";
-        if (fileName.contains("09322")) return "KB국민 와이즈홈 카드";
-        if (fileName.contains("09348")) return "KB국민 와이즈오토 카드";
-        if (fileName.contains("09561")) return "KB국민 가온누리 카드";
-        if (fileName.contains("09563")) return "KB국민 가온누리 체크카드";
-        if (fileName.contains("09570")) return "KB국민 가온누리 쇼핑 카드";
-        if (fileName.contains("09659")) return "KB국민 가온누리 비즈 카드";
-        if (fileName.contains("09701")) return "KB국민 가온누리 플러스 카드";
-        if (fileName.contains("09771")) return "KB국민 가온누리 트래블 카드";
-        if (fileName.contains("09780")) return "KB국민 가온누리 스마트 카드";
-        if (fileName.contains("79562")) return "KB국민 나라사랑체크카드";
-        if (fileName.contains("09790")) return "KB국민 청춘대로 싱글 체크카드";
-        if (fileName.contains("09792")) return "KB국민 청춘대로 오일 체크카드";
-        if (fileName.contains("09800")) return "KB국민 청춘대로 톡톡 체크카드";
-        if (fileName.contains("09821")) return "KB국민 청춘대로 아임인 체크카드";
-        if (fileName.contains("09922")) return "KB국민 청춘대로 프리미엄 체크카드";
-        if (fileName.contains("09924")) return "KB국민 청춘대로 티타늄 체크카드";
-        if (fileName.contains("19565")) return "KB국민 나라사랑카드";
-
-        return "KB국민카드 상품 ("
-                + fileName.replace(".png", "").replace(".jpg", "") + ")";
     }
 
     private boolean isValidCardName(String text) {
@@ -1627,16 +1738,6 @@ public class KbCardCatalogScraper implements InitializingBean {
                 .replaceAll("\\[.*?]", "")
                 .replaceAll("(?:신용|체크)발급\\s*\\d+위", "")
                 .trim();
-    }
-
-    private String cleanSummaryText(String text, String cardName) {
-        return truncate(
-                normalizeText(text)
-                        .replace(cardName, "")
-                        .replaceAll("(?:신용|체크)발급\\s*\\d+위", "")
-                        .trim(),
-                MAX_DESCRIPTION_LENGTH
-        );
     }
 
     private String normalizeText(String text) {
@@ -1683,8 +1784,8 @@ public class KbCardCatalogScraper implements InitializingBean {
             URL url = new URL(imageUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
-            connection.setRequestProperty("User-Agent", MOBILE_USER_AGENT);
-            connection.setRequestProperty("Referer", "https://m.kbcard.com/");
+            connection.setRequestProperty("User-Agent", DESKTOP_USER_AGENT);
+            connection.setRequestProperty("Referer", KB_CARD_BASE_URL + "/");
             connection.setConnectTimeout(3000);
             connection.setReadTimeout(3000);
 
@@ -1717,7 +1818,7 @@ public class KbCardCatalogScraper implements InitializingBean {
                 .sum();
 
         log.info("==================================================");
-        log.info("[카탈로그 매니저] 모바일 웹 크롤링 완료: 카드 {}건, 혜택 {}건",
+        log.info("[카탈로그 매니저] KB카드 공식 목록 크롤링 완료: 카드 {}건, 혜택 {}건",
                 products.size(), benefitCount);
         for (Map.Entry<String, String> entry
                 : catalogRepository.getAllCatalog().entrySet()) {
