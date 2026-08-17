@@ -2,23 +2,24 @@
   <div class="kb-mobile-page guide-page">
     <PageHeader
         title="12개월 분석 안내"
-        :custom-back="true"
+        :showBack="true"
+        :customBack="true"
         @back="goBack"
     />
 
     <div class="guide-content-start">
       <section class="guide-card kb-card">
-      <div class="guide-icon">
-        <i :class="isInsurance ? 'fa-solid fa-shield-heart' : 'fa-regular fa-credit-card'"></i>
-      </div>
-      <span class="text-13-bold">{{ currentPeriod }}개월 분석 선택 중</span>
-      <h2 class="text-20-bold">{{ featureName }}을 이용하려면<br />12개월 소비분석이 필요해요</h2>
-      <p class="text-13">
-        계절별 소비와 전월 실적까지 정확하게 비교하려면<br />최근 12개월 소비내역을 기준으로 분석해야 합니다.
-      </p>
-      <button type="button" class="content-btn primary" @click="goToTwelveMonthAnalysis">
-        12개월 소비분석 보기
-      </button>
+        <div class="guide-icon">
+          <i :class="isInsurance ? 'fa-solid fa-shield-heart' : 'fa-regular fa-credit-card'"></i>
+        </div>
+        <span class="text-13-bold">{{ currentPeriod }}개월 분석 선택 중</span>
+        <h2 class="text-20-bold">{{ featureName }}을 이용하려면<br />12개월 소비분석이 필요해요</h2>
+        <p class="text-13">
+          계절별 소비와 전월 실적까지 정확하게 비교하려면<br />최근 12개월 소비내역을 기준으로 분석해야 합니다.
+        </p>
+        <button type="button" class="content-btn primary" @click="goToTwelveMonthAnalysis">
+          12개월 소비분석 보기
+        </button>
       </section>
     </div>
   </div>
@@ -35,12 +36,12 @@ const router = useRouter();
 const currentPeriod = normalizeAnalysisPeriod(route.query.period);
 const isInsurance = computed(() => route.query.type === 'insurance');
 const featureName = computed(() =>
-  isInsurance.value ? '보험 추천' : '카드 추천',
+    isInsurance.value ? '보험 추천' : '카드 추천',
 );
 
 const goBack = () => router.back();
 const goToTwelveMonthAnalysis = () =>
-  router.push({ name: 'analysis-main', query: { period: 12 } });
+    router.push({ name: 'analysis-main', query: { period: 12 } });
 </script>
 
 <style scoped>
@@ -50,21 +51,35 @@ const goToTwelveMonthAnalysis = () =>
   color: var(--color-text-main);
 }
 
+
+.guide-page :deep(.page-header) {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  padding: 0 24px;
+  background: var(--color-bg-page);
+}
+
 .guide-content-start {
-  /*
-   * 팀 협의 후 PageHeader와 첫 콘텐츠 사이 간격을 적용할 경우
-   * 아래 주석을 해제합니다.
-   * margin-top: 14px;
-   */
+  min-height: calc(100dvh - 64px);
+  padding: 16px 24px 32px;
+  background: var(--color-bg-soft);
 }
 
 .guide-card {
-  margin-top: 18px;
-  padding: 38px 22px 24px;
+  margin-top: 0;
+  padding: 28px 20px 22px;
   text-align: center;
   border: 1px solid var(--color-divider);
   background: var(--color-bg-page);
   box-shadow: none;
+}
+
+
+.guide-card .content-btn {
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .guide-icon {
@@ -99,4 +114,30 @@ const goToTwelveMonthAnalysis = () =>
   color: var(--color-text-sub);
   line-height: 1.7;
 }
+
+@media (max-width: 380px) {
+  .guide-page :deep(.page-header) {
+    padding: 0 20px;
+  }
+
+  .guide-content-start {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+}
+
+
+.guide-description {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--color-bg-soft);
+  line-height: 1.6;
+}
+
+.guide-card .content-btn {
+  margin-top: 20px;
+  width: 100%;
+}
+
 </style>
