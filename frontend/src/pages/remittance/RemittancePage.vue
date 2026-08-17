@@ -14,23 +14,7 @@
       :tabs="tabOptions"
     />
 
-    <!-- 진행 단계 Step 인디케이터 (STEP 2 이상일 때 표시) -->
-    <div v-else-if="currentStep > 1 && !remitSuccess" class="step-progress-bar-wrap">
-      <div class="step-progress-track">
-        <div
-          class="step-progress-fill"
-          :style="{
-            width: remitType === 'DUTCH'
-              ? `${((currentStep - 1) / 3) * 100}%`
-              : `${((currentStep - 1) / 2) * 100}%`
-          }"
-        ></div>
-      </div>
-      <div class="step-label-text text-12-bold">
-        <span>STEP {{ currentStep - 1 }}</span>
-        <span>/ {{ remitType === 'DUTCH' ? '3' : '2' }}</span>
-      </div>
-    </div>
+
 
     <!-- 본문 가변 스크롤 영역 -->
     <div class="card-body-scroll">
@@ -68,6 +52,7 @@
           <FriendRemitSection
             v-else-if="remitType === 'FRIEND'"
             v-model:keyword="friendSearchKeyword"
+            :recent-friends="recentFriends"
             :friends="filteredFriends"
             :selected-friend-id="selectedFriendId"
             :get-profile-image-url="getProfileImageUrl"
@@ -243,41 +228,22 @@
         <!-- ==========================================
              [STEP 4 - 정산 전용 (더치페이)] 총 정보 요약 & 피드 작성
         ========================================== -->
-        <div
+        <!-- ==========================================
+             [STEP 4 - 정산 전용 (더치페이)] 분리된 전용 컴포넌트 (DutchCreateSummaryStep)
+        ========================================== -->
+        <DutchCreateSummaryStep
           v-else-if="remitType === 'DUTCH' && currentStep === 4"
-          class="step-content-wrap"
-        >
-          <div class="kakaopay-settlement-head">
-            <div
-              class="form-field-group"
-              style="margin-bottom: 12px; text-align: left"
-            >
-              <label class="field-label text-13-bold"
-                >정산 제목 (모임방 이름)</label
-              >
-              <input
-                v-model="dutchRoomTitle"
-                type="text"
-                class="custom-input text-15-bold"
-                placeholder="예: 맛있는 저녁 식사 정산"
-              />
-            </div>
-
-            <div class="main-amount-row">
-              <span class="text-13-bold" style="color: #666">총</span>
-              <h2 class="text-28-bold" style="margin: 0 4px; color: #111">
-                {{ formatCurrency(remitAmount || 0) }}
-              </h2>
-              <span class="text-20-bold" style="color: #111">원</span>
-            </div>
-          </div>
-
-          <div class="next-btn-wrap">
-            <button class="bottom-btn text-18-bold" @click="submitRemittance">
-              정산 요청 보내기 <i class="fa-solid fa-paper-plane"></i>
-            </button>
-          </div>
-        </div>
+          v-model:dutch-room-title="dutchRoomTitle"
+          v-model:remit-memo="remitMemo"
+          :remit-amount="remitAmount"
+          :selected-dutch-friends="selectedDutchFriends"
+          :get-friend-name="getFriendName"
+          :image-preview-url="imagePreviewUrl"
+          :format-currency="formatCurrency"
+          @file-change="handleFileChange"
+          @remove-file="removeSelectedFile"
+          @submit="submitRemittance"
+        />
       </template>
     </div>
 
@@ -324,6 +290,7 @@ import FriendRemitSection from "@/components/remittance/FriendRemitSection.vue";
 import DutchRemitSection from "@/components/remittance/DutchRemitSection.vue";
 import RemitAmountStep from "@/components/remittance/RemitAmountStep.vue";
 import RemitStep3FeedForm from "@/components/remittance/RemitStep3FeedForm.vue";
+import DutchCreateSummaryStep from "@/components/remittance/DutchCreateSummaryStep.vue";
 import RemitConfirmModal from "@/components/remittance/RemitConfirmModal.vue";
 import RemitPasswordModal from "@/components/remittance/RemitPasswordModal.vue";
 import RemitResultStep from "@/components/remittance/RemitResultStep.vue";
@@ -338,7 +305,7 @@ const remitType = ref("ACCOUNT");
 const tabOptions = [
   { label: "계좌 송금", value: "ACCOUNT" },
   { label: "친구 송금", value: "FRIEND" },
-  { label: "정산 (더치페이)", value: "DUTCH" },
+  { label: "정산", value: "DUTCH" },
 ];
 
 const headerTitleText = computed(() => {
@@ -544,7 +511,11 @@ const selectedCategoryId = ref(null);
 
 const proceedFromStep2 = () => {
   if (remitAmount.value > 0) {
-    currentStep.value = 3;
+    if (remitType.value === "DUTCH") {
+      currentStep.value = 4; // 결제 건 선택 화면(Step 3) 튕김 차단! 바로 정산 개설(Step 4) 직행!
+    } else {
+      currentStep.value = 3;
+    }
   }
 };
 
@@ -639,7 +610,23 @@ const showPasswordModal = ref(false);
 const inputPinCode = ref("");
 const remitSuccess = ref(false);
 
+const BAD_WORDS = [
+  "시발", "씨발", "개새끼", "병신", "지랄", "존나", "졸라", "미친", "새끼", "꺼져",
+  "쌰Protected", "fuck", "shit", "bitch", "asshole", "새끼야", "개새", "엠창", "느금마"
+];
+
+const containsProfanity = (text) => {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  return BAD_WORDS.some((word) => lower.includes(word));
+};
+
 const submitRemittance = () => {
+  // 피드 메모 및 정산 제목 욕설/비속어 필터링 검증
+  if (containsProfanity(remitMemo.value) || containsProfanity(dutchRoomTitle.value)) {
+    alert("⚠️ 입력하신 내용에 올바르지 않은 표현(비속어/욕설)이 포함되어 있습니다. 내용을 수정해주세요.");
+    return;
+  }
   showConfirmModal.value = true;
 };
 
@@ -830,7 +817,7 @@ textarea {
   width: 100%;
   height: 100%;
   margin: 0;
-  padding: 0;
+  padding: 0 16px;
   background-color: var(--color-bg-page, #ffffff);
   box-sizing: border-box;
 }
@@ -838,7 +825,7 @@ textarea {
 .card-body-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px 0;
 }
 
 .step-content-wrap {
@@ -971,28 +958,216 @@ textarea {
 }
 
 /* ========================================
-   송금 화면 전용 헤더 여백 보정 (공용 PageHeader.vue 원본 100% 보존)
+   캡처 2번 레퍼런스: 카카오페이 정산하기 100% 동일 다크 디자인
 ======================================== */
-.remit-container :deep(.page-header) {
-  padding: 0 16px;
+.kakaopay-dark-wrapper {
+  background-color: #19191b;
+  min-height: 100%;
+  padding: 24px 20px 36px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  color: #ffffff;
+  margin: -16px -16px 0 -16px;
 }
 
-.remit-container :deep(.header-left .header-icon-btn) {
-  transform: none;
-}
-
-.kakaopay-settlement-head {
-  background-color: #f8f9fa;
-  border-radius: 20px;
-  padding: 24px 20px;
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.main-amount-row {
+.kakaopay-title-row {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.kakaopay-title-edit {
+  background: transparent;
+  border: none;
+  color: #8e8e93;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  width: 140px;
+}
+
+.kakaopay-title-edit:focus {
+  color: #ffffff;
+  border-bottom: 1px solid #fee500;
+}
+
+.edit-pencil-ic {
+  color: #8e8e93;
+  font-size: 13px;
+}
+
+.kakaopay-total-display {
+  font-size: 32px;
+  font-weight: 800;
+  text-align: center;
+  margin: 12px 0 28px;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.kakaopay-card-box {
+  background-color: #25262a;
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.card-box-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.icon-utensils-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background-color: #33343a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #ff6b4a;
+}
+
+.card-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item-title-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.item-amount-text {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.item-members-text {
+  font-size: 13px;
+  color: #8e8e93;
+}
+
+.btn-card-close {
+  background: transparent;
+  border: none;
+  color: #54555a;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.btn-kakaopay-outline {
+  width: 100%;
+  height: 52px;
+  background-color: #25262a;
+  border: 1px solid #33343a;
+  border-radius: 16px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 24px;
+}
+
+.kakaopay-feed-box {
+  background-color: #25262a;
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 32px;
+}
+
+.kakaopay-memo-textarea {
+  width: 100%;
+  background-color: #19191b;
+  border: 1px solid #33343a;
+  border-radius: 14px;
+  padding: 12px;
+  color: #ffffff;
+  font-size: 14px;
+  box-sizing: border-box;
+  resize: none;
+  outline: none;
+}
+
+.kakaopay-memo-textarea:focus {
+  border-color: #fee500;
+}
+
+.photo-attach-wrapper {
   margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.photo-btn-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #33343a;
+  color: #8e8e93;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.preview-img-box {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-del-img {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.kakaopay-bottom-submit {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.btn-kakaopay-yellow {
+  width: 100%;
+  height: 56px;
+  background-color: #fee500;
+  color: #111111;
+  border: none;
+  border-radius: 28px;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(254, 229, 0, 0.2);
 }
 </style>

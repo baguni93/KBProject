@@ -16,6 +16,8 @@ public class RemittanceDTO {
 
     private Integer walletId;
     private Integer receiverId;
+    private String receiverName;
+    private String merchantName;
     private Integer amount;
     private String memo;
     private String status;

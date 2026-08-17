@@ -1,24 +1,8 @@
 <template>
   <div class="wallet-pay-group-box">
-    <div class="kakao-pay-header-row">
-      <div class="pay-title-area">
-        <span class="lightning-icon">⚡</span>
-        <span class="text-15-bold">바로 결제</span>
-      </div>
-      <div
-        class="balance-link-area"
-        @click="$router.push('/transactions')"
-      >
-        <span class="text-13">전자지갑 잔액</span>
-        <span class="text-15-bold balance-highlight"
-          >{{ formatCurrency(walletBalance) }}원</span
-        >
-        <i class="fa-solid fa-chevron-right text-11"></i>
-      </div>
-    </div>
-
-    <!-- 결제 코드 (좌측 바코드 / 우측 QR 각각 개별 터치 진입) -->
-    <div class="active-barcode-qr-card">
+    <!-- KakaoPay 스타일 메인 결제 카드 (바코드 + QR + 페이머니 잔액 + 연결 계좌) -->
+    <div class="active-barcode-qr-card kakaopay-style-card">
+      <!-- 1. 바코드 & QR 코드 영역 -->
       <div class="barcode-qr-dual-row">
         <div class="barcode-display-section" @click="$emit('openBarcode')">
           <div class="svg-barcode-box">
@@ -38,11 +22,38 @@
         </div>
       </div>
 
-      <div class="security-token-info-bar">
-        <span class="text-13 text-muted">전자지갑 즉시 충전</span>
-        <button class="charge-action-badge-btn text-13-bold" @click="$emit('goToCharge')">
-          <i class="fa-solid fa-plus"></i> 충전하기
-        </button>
+      <div class="kakaopay-card-divider"></div>
+
+      <!-- 2. KakaoPay 스타일 페이머니 잔액 & 연결 충전계좌 -->
+      <div class="kakaopay-account-info-section">
+        <!-- 행 1: 페이머니 잔액 -->
+        <div class="pay-money-row" @click="$router.push('/transactions')" style="cursor: pointer;">
+          <span class="lbl-text text-14">페이머니</span>
+          <div class="val-text text-16-bold balance-highlight">
+            {{ formatCurrency(walletBalance) }}원
+            <i class="fa-solid fa-chevron-right text-11 icon-sub"></i>
+          </div>
+        </div>
+
+        <!-- 행 2: 연결 충전계좌 (클릭 시 /setting/accounts 로 이동) -->
+        <div class="charge-account-row" @click="$router.push('/setting/accounts')" style="cursor: pointer;">
+          <span class="lbl-text text-13">충전계좌</span>
+          <div class="val-text text-13-bold acc-val-text">
+            <span>{{ primaryAccount?.bankName || "KB국민" }} {{ maskAccount(primaryAccount?.accountNumber) }}</span>
+            <i class="fa-solid fa-chevron-right text-11 icon-sub"></i>
+          </div>
+        </div>
+
+        <!-- 행 3: 하단 전폭 충전 버튼 (지갑 충전 라벨 제거) -->
+        <div class="card-charge-btn-wrap">
+          <button
+            type="button"
+            class="card-charge-btn text-14-bold"
+            @click="$emit('goToCharge')"
+          >
+            충전
+          </button>
+        </div>
       </div>
     </div>
 
@@ -96,6 +107,10 @@ defineProps({
     type: Number,
     default: 0,
   },
+  primaryAccount: {
+    type: Object,
+    default: () => ({}),
+  },
   barcodeLines: {
     type: Array,
     default: () => [],
@@ -126,59 +141,39 @@ defineEmits([
   "approveQr",
   "goToCharge",
 ]);
+
+const maskAccount = (acc) => {
+  if (!acc) return "1111";
+  const str = String(acc);
+  if (str.length >= 4) {
+    return str.slice(-4);
+  }
+  return str;
+};
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+
 .wallet-pay-group-box {
   width: 100%;
-  margin: 0;
+  margin: 16px 0 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   background-color: var(--color-bg-page, #ffffff);
   box-sizing: border-box;
 }
 
-.kakao-pay-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 4px;
-}
-
-.pay-title-area {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 800;
-  color: var(--color-text-main, #111111);
-}
-
-.lightning-icon {
-  font-size: 16px;
-}
-
-.balance-link-area {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--color-text-sub, #777777);
-  cursor: pointer;
-}
-
-.balance-highlight {
-  color: var(--color-text-main, #111111);
-}
-
 .active-barcode-qr-card {
   background-color: var(--color-bg-page, #ffffff);
-  border-radius: 14px;
-  padding: 16px;
+  border-radius: 20px;
+  padding: 22px 20px;
   border: 1px solid var(--color-border-card, #e8e8e8);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .barcode-qr-dual-row {
@@ -223,24 +218,89 @@ defineEmits([
   background-color: var(--color-bg-screen, #f5f6f8);
 }
 
-.security-token-info-bar {
+.kakaopay-card-divider {
+  height: 1px;
+  background-color: #edf2f7;
+  margin: 2px 0;
+}
+
+.kakaopay-account-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pay-money-row,
+.charge-account-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 10px;
-  border-top: 1px dashed var(--color-border-main, #dddddd);
 }
 
-.charge-action-badge-btn {
+.pay-money-row .lbl-text {
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.pay-money-right-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kakaopay-charge-btn {
+  background-color: #ffbc2e;
   border: none;
-  background-color: var(--color-primary, #ffbc2e);
-  color: var(--color-text-main, #111111);
-  padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: 8px;
+  padding: 5px 12px;
+  color: #111111;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kakaopay-charge-btn:hover {
+  background-color: #e5a900;
+}
+
+.card-charge-btn-wrap {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.card-charge-btn {
+  width: 100%;
+  height: 44px;
+  background-color: #ffbc2e;
+  border: none;
+  border-radius: 12px;
+  color: #111111;
+  font-weight: 700;
+  font-size: 15px;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.card-charge-btn:active {
+  background-color: #e5a900;
+}
+
+.charge-account-row .lbl-text {
+  color: #718096;
+}
+
+.charge-account-row .acc-val-text {
+  color: #2d3748;
+  display: flex;
+  align-items: center;
   gap: 4px;
+}
+
+.icon-sub {
+  color: #a0aec0;
 }
 
 .kakaopay-fullscreen-overlay {

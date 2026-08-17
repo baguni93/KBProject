@@ -1,22 +1,22 @@
 <template>
-  <div>
-    <!-- 계좌 번호 입력 -->
+  <div class="account-remit-container">
+    <!-- 1. 계좌번호 입력 바 (카메라 아이콘 제거) -->
     <div class="form-field-group">
-      <label class="field-label text-13-bold">계좌 번호 입력</label>
-      <div class="input-with-btn-row">
+      <div class="toss-search-bar">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
         <input
           :value="accountNumber"
           @input="$emit('update:accountNumber', $event.target.value)"
           type="text"
-          class="custom-input text-15-bold"
+          class="toss-search-input text-15-bold"
           placeholder="'-' 없이 계좌번호 입력"
         />
       </div>
     </div>
 
-    <!-- 은행 선택 5열 그리드 -->
+    <!-- 2. 은행 선택 (공용 폰트 규격 text-15-bold 통일) -->
     <div class="form-field-group">
-      <label class="field-label text-13-bold">은행 선택</label>
+      <span class="field-sec-title text-15-bold">은행 선택</span>
       <div class="bank-chip-grid">
         <button
           v-for="b in bankOptions"
@@ -35,41 +35,38 @@
       </div>
     </div>
 
-    <!-- 최근 송금 계좌 -->
+    <!-- 3. 최근 보낸 계좌 (공용 폰트 규격 text-15-bold 통일, 파란 별 제거) -->
     <div class="form-field-group">
-      <label class="field-label text-13-bold">최근 송금 계좌</label>
+      <span class="field-sec-title text-15-bold">최근 보낸 계좌</span>
       <div
-        v-if="recentAccounts.length === 0"
+        v-if="uniqueRecentAccounts.length === 0"
         class="empty-recent-msg text-13"
       >
-        최근 송금 내역이 없습니다.
+        최근 보낸 계좌가 없습니다.
       </div>
-      <div v-else class="recent-list-wrap">
+      <div v-else class="toss-recent-list">
         <div
-          v-for="recent in recentAccounts"
-          :key="recent.id || recent.accountNumber"
-          class="recent-card-item"
+          v-for="recent in uniqueRecentAccounts"
+          :key="recent.accountNumber + '_' + (recent.bankCode || recent.bankName)"
+          class="toss-recent-row"
           @click="$emit('selectRecent', recent)"
         >
-          <div class="recent-item-left">
+          <div class="toss-recent-avatar-wrap">
             <img
-              :src="`/api/banks/logo/${getBankLogoFileName(recent.bankName)}`"
-              class="bank-logo-img-small"
+              :src="`/api/banks/logo/${getBankLogoFileName(recent.bankName || recent.bankCode)}`"
+              class="toss-bank-avatar-img"
+              :alt="getBankName(recent.bankName || recent.bankCode)"
+              @error="(e) => (e.target.src = '/api/banks/logo/kb.png')"
             />
-            <div class="recent-info-text">
-              <p class="recent-name-line text-15-bold">
-                {{ recent.receiverName || recent.name || "수취인" }} ({{
-                  getBankName(recent.bankName)
-                }}
-                {{ recent.accountNumber }})
-              </p>
-              <p class="recent-sub-line text-13">
-                최근 송금: {{ recent.date || "최근" }} •
-                {{ formatCurrency(recent.amount) }}원
-              </p>
-            </div>
           </div>
-          <i class="fa-solid fa-chevron-right arrow-ic"></i>
+          <div class="toss-recent-text-area">
+            <span class="toss-recent-name text-15-bold">
+              {{ recent.ownerName || recent.receiverName || recent.name || "수취인" }}
+            </span>
+            <span class="toss-recent-account text-13">
+              {{ getBankName(recent.bankName || recent.bankCode) }} {{ recent.accountNumber }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -77,7 +74,9 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from "vue";
+
+const props = defineProps({
   accountNumber: {
     type: String,
     default: "",
@@ -108,6 +107,18 @@ defineProps({
   },
 });
 
+const uniqueRecentAccounts = computed(() => {
+  const seen = new Set();
+  return (props.recentAccounts || []).filter((item) => {
+    const acc = item.accountNumber || "";
+    const bank = item.bankCode || item.bankName || "";
+    const key = `${bank}_${acc}`;
+    if (!acc || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+});
+
 defineEmits([
   "update:accountNumber",
   "update:bankCode",
@@ -116,36 +127,69 @@ defineEmits([
 </script>
 
 <style scoped>
-.form-field-group {
-  margin-bottom: 20px;
-}
+@import "@/components/common/common/common.css";
 
-.field-label {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--color-text-main, #111111);
-}
-
-.input-with-btn-row {
+.account-remit-container {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.custom-input {
-  flex: 1;
-  height: 48px;
-  border: 1px solid var(--color-border-main, #ededed);
-  border-radius: 12px;
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 팀 공통 타이포그래피 표준 적용 섹션 타이틀 */
+.field-sec-title {
+  color: #111111;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+/* 입력 바 */
+.toss-search-bar {
+  display: flex;
+  align-items: center;
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
   padding: 0 16px;
-  background-color: var(--color-bg-screen, #f8f9fa);
-  outline: none;
+  height: 50px;
+  transition: all 0.2s ease;
 }
 
-.custom-input:focus {
-  border-color: #ffbc00;
+.toss-search-bar:focus-within {
   background-color: #ffffff;
+  border-color: #ffbc2e;
+  box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.15);
 }
 
+.search-icon {
+  color: #a0aec0;
+  font-size: 15px;
+  margin-right: 10px;
+}
+
+.toss-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 15px;
+  color: #111111;
+  line-height: 1.4;
+}
+
+.toss-search-input::placeholder {
+  color: #a0aec0;
+}
+
+/* 은행 칩 그리드 */
 .bank-chip-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -157,82 +201,107 @@ defineEmits([
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 10px 4px;
-  border: 1px solid var(--color-border-main, #ededed);
-  border-radius: 12px;
+  aspect-ratio: 1 / 1;
+  padding: 6px 2px;
+  border: 1px solid #edf2f7;
+  border-radius: 14px;
   background-color: #ffffff;
   cursor: pointer;
-  gap: 6px;
+  gap: 5px;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.bank-chip-card:hover {
+  background-color: #f7fafc;
 }
 
 .bank-chip-card.active {
-  border-color: #ffbc00;
-  background-color: rgba(255, 188, 0, 0.08);
+  border-color: #ffbc2e;
+  background-color: #fffdf8;
+  box-shadow: 0 2px 8px rgba(255, 188, 46, 0.2);
 }
 
 .bank-logo-img {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .bank-chip-name {
-  font-size: 11px;
-  color: #333333;
-}
-
-.empty-recent-msg {
-  color: #888888;
-  padding: 16px 0;
+  font-size: 12px;
+  color: #2d3748;
+  line-height: 1;
   text-align: center;
 }
 
-.recent-list-wrap {
+/* 최근 보낸 계좌 리스트 (공용 폰트 일치) */
+.empty-recent-msg {
+  color: #a0aec0;
+  padding: 20px 0;
+  text-align: center;
+}
+
+.toss-recent-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
-.recent-card-item {
+.toss-recent-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border: 1px solid var(--color-border-main, #ededed);
+  padding: 12px 10px;
   border-radius: 14px;
-  background-color: #ffffff;
+  background-color: transparent;
   cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
-.recent-item-left {
+.toss-recent-row:hover,
+.toss-recent-row:active {
+  background-color: #f7fafc;
+}
+
+.toss-recent-avatar-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #f8f9fa;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  margin-right: 14px;
+  flex-shrink: 0;
+  border: 1px solid #edf2f7;
 }
 
-.bank-logo-img-small {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
+.toss-bank-avatar-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 
-.recent-info-text p {
-  margin: 0;
+.toss-recent-text-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
-.recent-name-line {
+.toss-recent-name {
   color: #111111;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
-.recent-sub-line {
-  color: #777777;
-  margin-top: 2px;
-}
-
-.arrow-ic {
-  color: #cccccc;
-  font-size: 12px;
+.toss-recent-account {
+  color: #718096;
+  font-size: 13px;
+  line-height: 1.2;
 }
 </style>

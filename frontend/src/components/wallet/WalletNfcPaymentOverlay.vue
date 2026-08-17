@@ -9,9 +9,9 @@
 
       <div class="spay-top-header text-center">
         <span class="spay-badge text-15-bold">결제 대기중</span>
-        <p class="timer-desc text-13">
+        <p class="timer-desc text-15">
           결제 남은시간
-          <span class="timer-highlight text-18-bold">{{ formattedTimer }}</span>
+          <span class="timer-highlight text-20-bold">{{ formattedTimer }}</span>
         </p>
       </div>
 
@@ -21,15 +21,16 @@
             v-if="cardImg"
             :src="cardImg"
             class="giant-card-bg"
-            alt="giant card"
+            alt="card plate"
+            @error="(e) => (e.target.src = 'http://localhost:8080/upload/card/00236_img.png')"
           />
         </div>
       </div>
 
-      <div class="spay-bottom-actions">
+      <div class="bottom-btn-area single spay-bottom-area">
         <button
           type="button"
-          class="bottom-btn text-18-bold cancel-overlay-btn"
+          class="bottom-btn secondary-button"
           @click="$emit('cancel')"
         >
           결제 취소
@@ -59,6 +60,8 @@ defineEmits(["cancel"]);
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+
 .spay-in-app-overlay {
   position: absolute;
   top: 0;
@@ -72,7 +75,7 @@ defineEmits(["cancel"]);
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: 28px 16px 36px;
+  padding: 32px 24px;
   box-sizing: border-box;
   overflow: hidden;
   border-radius: 24px;
@@ -129,21 +132,22 @@ defineEmits(["cancel"]);
 .spay-badge {
   background-color: #ffbc2e;
   color: #111111;
-  padding: 4px 12px;
-  border-radius: 9999px;
+  padding: 6px 14px;
+  border-radius: 20px;
   display: inline-block;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
   white-space: nowrap;
 }
 
 .timer-desc {
   margin: 0;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
 }
 
 .timer-highlight {
   color: #ffbc2e;
+  margin-left: 4px;
 }
 
 .spay-giant-card-container {
@@ -158,7 +162,7 @@ defineEmits(["cancel"]);
   border-radius: 14px;
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   overflow: hidden;
-  box-shadow: 0 0 20px rgba(255, 188, 46, 0.4);
+  box-shadow: 0 0 24px rgba(255, 188, 46, 0.4);
   border: 2px solid #ffbc2e;
   transform: rotate(90deg);
 }
@@ -171,21 +175,10 @@ defineEmits(["cancel"]);
   object-fit: cover;
 }
 
-.spay-bottom-actions {
+.spay-bottom-area {
   width: 100%;
-  max-width: 280px;
   z-index: 10;
-}
-
-.cancel-overlay-btn {
-  width: 100%;
-  height: 48px;
-  background-color: #ffffff;
-  color: #111111;
-  border: none;
-  border-radius: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
+  background: transparent !important;
+  padding-top: 0 !important;
 }
 </style>

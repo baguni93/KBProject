@@ -79,6 +79,9 @@ public class RemittanceServiceImpl implements RemittanceService {
         }
 
         // 거래 내역 기록
+        if (remittanceDTO.getReceiverName() != null && !remittanceDTO.getReceiverName().isEmpty()) {
+            remittanceDTO.setMerchantName(remittanceDTO.getReceiverName());
+        }
         remittanceDTO.setStatus("SUCCESS");
         remittanceMapper.insertRemittance(remittanceDTO);
 

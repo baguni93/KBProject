@@ -310,7 +310,9 @@ defineEmits([
 .hint-text-line {
   color: var(--color-text-sub, #777777);
   text-align: center;
-  margin-top: 4px;
+  margin-top: 20px;
+  margin-bottom: 12px;
+  background: transparent;
 }
 
 .center-graphic-section {
