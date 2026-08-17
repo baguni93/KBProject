@@ -1,51 +1,82 @@
 <template>
-  <div>
-    <div class="search-box-wrap">
-      <i class="fa-solid fa-magnifying-glass search-ic"></i>
-      <input
-        :value="keyword"
-        @input="$emit('update:keyword', $event.target.value)"
-        type="text"
-        class="search-input text-15"
-        placeholder="친구 이름 또는 프로필 ID 입력..."
-      />
+  <div class="friend-remit-container">
+    <!-- 1. 통합 검색바 (계좌/정산 탭과 100% 동일한 50px 규격 및 힌트 문구) -->
+    <div class="form-field-group">
+      <div class="toss-search-bar">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input
+          :value="keyword"
+          @input="$emit('update:keyword', $event.target.value)"
+          type="text"
+          class="toss-search-input text-15-bold"
+          placeholder="이름, 닉네임 검색"
+        />
+      </div>
     </div>
 
+    <!-- 2. 최근 보낸 친구 (계좌 송금과 100% 동일한 최근 목록 섹션) -->
+    <div v-if="!keyword && recentFriends.length > 0" class="form-field-group">
+      <span class="field-sec-title text-15-bold">최근 보낸 친구</span>
+      <div class="toss-friend-list">
+        <div
+          v-for="friend in recentFriends"
+          :key="'recent-' + (friend.id || friend.friendUserId || friend.friendId)"
+          class="toss-friend-row"
+          :class="{ active: selectedFriendId === (friend.id || friend.friendUserId || friend.friendId) }"
+          @click="$emit('selectFriend', friend.id || friend.friendUserId || friend.friendId)"
+        >
+          <div class="toss-friend-avatar-wrap">
+            <img
+              :src="getProfileImageUrl(friend)"
+              class="toss-friend-avatar-img"
+              @error="$event.target.src = '/api/feeds/profile/unknown.png'"
+            />
+          </div>
+          <div class="toss-friend-text-area">
+            <span class="toss-friend-name text-15-bold">
+              {{ friend.name || friend.nickname || friend.receiver?.nickname || friend.receiver?.name || '친구' }}
+            </span>
+            <span class="toss-friend-sub text-13">
+              @{{ friend.username || friend.receiver?.username || friend.nickname || friend.receiver?.nickname || '' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 내 친구 목록 -->
     <div class="form-field-group">
-      <label class="field-label text-13-bold">내 친구 목록</label>
+      <span class="field-sec-title text-15-bold">내 친구 목록</span>
       <div
         v-if="friends.length === 0"
         class="empty-recent-msg text-13"
       >
         등록된 친구가 없습니다.
       </div>
-      <div
-        v-for="friend in friends"
-        :key="friend.id"
-        class="friend-card-item"
-        :class="{ active: selectedFriendId === friend.id }"
-        @click="$emit('selectFriend', friend.id)"
-      >
-        <div class="friend-item-left">
-          <img
-            :src="getProfileImageUrl(friend)"
-            class="friend-avatar-img"
-            @error="$event.target.style.display = 'none'"
-          />
-          <div>
-            <p class="friend-name text-15-bold">{{ friend.name }}</p>
-            <p class="friend-sub text-13">@{{ friend.username }}</p>
+      <div v-else class="toss-friend-list">
+        <div
+          v-for="friend in friends"
+          :key="friend.id || friend.friendUserId || friend.friendId"
+          class="toss-friend-row"
+          :class="{ active: selectedFriendId === (friend.id || friend.friendUserId || friend.friendId) }"
+          @click="$emit('selectFriend', friend.id || friend.friendUserId || friend.friendId)"
+        >
+          <div class="toss-friend-avatar-wrap">
+            <img
+              :src="getProfileImageUrl(friend)"
+              class="toss-friend-avatar-img"
+              @error="$event.target.src = '/api/feeds/profile/unknown.png'"
+            />
+          </div>
+          <div class="toss-friend-text-area">
+            <span class="toss-friend-name text-15-bold">
+              {{ friend.name || friend.nickname || friend.receiver?.nickname || friend.receiver?.name || '친구' }}
+            </span>
+            <span class="toss-friend-sub text-13">
+              @{{ friend.username || friend.receiver?.username || friend.nickname || friend.receiver?.nickname || '' }}
+            </span>
           </div>
         </div>
-
-        <div
-          v-if="selectedFriendId === friend.id"
-          class="selected-badge-wrap"
-        >
-          <span class="sel-tag text-13-bold">선택됨</span>
-          <i class="fa-solid fa-circle-check sel-ic"></i>
-        </div>
-        <i v-else class="fa-regular fa-circle unsel-ic"></i>
       </div>
     </div>
   </div>
@@ -56,6 +87,10 @@ defineProps({
   keyword: {
     type: String,
     default: "",
+  },
+  recentFriends: {
+    type: Array,
+    default: () => [],
   },
   friends: {
     type: Array,
@@ -75,109 +110,138 @@ defineEmits(["update:keyword", "selectFriend"]);
 </script>
 
 <style scoped>
-.search-box-wrap {
-  position: relative;
-  margin-bottom: 20px;
-}
+@import "@/components/common/common/common.css";
 
-.search-ic {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #888888;
-}
-
-.search-input {
+.friend-remit-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   width: 100%;
-  height: 48px;
-  border: 1px solid var(--color-border-main, #ededed);
-  border-radius: 12px;
-  padding: 0 16px 0 44px;
-  background-color: var(--color-bg-screen, #f8f9fa);
-  outline: none;
   box-sizing: border-box;
 }
 
-.search-input:focus {
-  border-color: #ffbc00;
-  background-color: #ffffff;
-}
-
 .form-field-group {
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.field-label {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--color-text-main, #111111);
+/* 계좌/정산 탭과 100% 일치하는 50px 검색바 */
+.toss-search-bar {
+  display: flex;
+  align-items: center;
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 0 16px;
+  height: 50px;
+  transition: all 0.2s ease;
+}
+
+.toss-search-bar:focus-within {
+  background-color: #ffffff;
+  border-color: #ffbc2e;
+  box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.15);
+}
+
+.search-icon {
+  color: #a0aec0;
+  font-size: 15px;
+  margin-right: 10px;
+}
+
+.toss-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 15px;
+  color: #111111;
+  line-height: 1.4;
+}
+
+.toss-search-input::placeholder {
+  color: #a0aec0;
+}
+
+/* 팀 공통 타이포그래피 표준 적용 섹션 타이틀 */
+.field-sec-title {
+  color: #111111;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
 }
 
 .empty-recent-msg {
-  color: #888888;
-  padding: 16px 0;
+  color: #a0aec0;
+  padding: 20px 0;
   text-align: center;
 }
 
-.friend-card-item {
+/* 친구 리스트 (44px 서클 통일) */
+.toss-friend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toss-friend-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border: 1px solid var(--color-border-main, #ededed);
+  padding: 12px 10px;
   border-radius: 14px;
-  background-color: #ffffff;
-  margin-bottom: 8px;
+  background-color: transparent;
   cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
-.friend-card-item.active {
-  border-color: #ffbc00;
-  background-color: rgba(255, 188, 0, 0.05);
+.toss-friend-row:hover,
+.toss-friend-row:active {
+  background-color: #f7fafc;
 }
 
-.friend-item-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.toss-friend-row.active {
+  background-color: #fffdf8;
 }
 
-.friend-avatar-img {
-  width: 40px;
-  height: 40px;
+.toss-friend-avatar-wrap {
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  object-fit: cover;
-  background-color: #e0e0e0;
-}
-
-.friend-name {
-  margin: 0;
-  color: #111111;
-}
-
-.friend-sub {
-  margin: 2px 0 0;
-  color: #888888;
-}
-
-.selected-badge-wrap {
+  overflow: hidden;
+  background-color: #f8f9fa;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  margin-right: 14px;
+  flex-shrink: 0;
+  border: 1px solid #edf2f7;
 }
 
-.sel-tag {
-  color: #ffbc00;
+.toss-friend-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.sel-ic {
-  color: #ffbc00;
-  font-size: 18px;
+.toss-friend-text-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
-.unsel-ic {
-  color: #cccccc;
-  font-size: 18px;
+.toss-friend-name {
+  color: #111111;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.toss-friend-sub {
+  color: #718096;
+  font-size: 13px;
+  line-height: 1.2;
 }
 </style>

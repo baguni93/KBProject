@@ -8,6 +8,7 @@ import setting from './setting';
 import pagesample from './pagesample';
 import analysis from './analysis';
 import customcard from './customcard';
+import remittance from './remittance';
 
 import WalletPage from '@/pages/wallet/WalletPage.vue';
 import RemittancePage from '@/pages/remittance/RemittancePage.vue';
@@ -51,15 +52,7 @@ const router = createRouter({
         showBottomNav: false,
       },
     },
-    {
-      path: '/remittance',
-      name: 'remittance',
-      component: RemittancePage,
-      meta: {
-        requiresAuth: true,
-        showBottomNav: false,
-      },
-    },
+    ...remittance,
     {
       path: '/transactions',
       name: 'transaction-list',

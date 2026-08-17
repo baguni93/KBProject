@@ -12,6 +12,8 @@
             lc.user_id          AS userId,
             c.card_num          AS cardNum,
             c.expiry_date       AS expiryDate,
+            c.card_name         AS cardName,
+            c.card_img_file_name AS cardImgFileName,
             lc.represent_yn     AS representYn,
             'SUCCESS'           AS paymentStatus,
             '대표 카드가 조회되었습니다.' AS message

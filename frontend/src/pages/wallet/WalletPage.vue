@@ -2,15 +2,13 @@
   <div class="fintech-wallet-root">
     <!-- 1. 메인 결제 화면 -->
     <template v-if="currentView === 'MAIN'">
-      <div class="unified-header">
-        <h2 class="text-18-bold header-main-title">결제 서비스</h2>
-      </div>
+      <PageHeader title="결제 서비스" :show-back="false" />
 
       <div class="fintech-body">
         <div class="payment-unified-group">
-          <!-- 상단 탭바 & 시작 화면 셋팅 버튼 -->
+          <!-- 상단 탭바 -->
           <div class="mode-control-row">
-            <div class="mode-tab-bar">
+            <div class="mode-tab-bar" style="width: 100%;">
               <button
                 class="tab-item text-15-bold"
                 :class="{ active: !isWalletModeActive }"
@@ -26,17 +24,6 @@
                 지갑 결제
               </button>
             </div>
-            <button
-              class="start-toggle-icon-btn"
-              @click="toggleStartMode"
-              :title="
-                isWalletModeActive
-                  ? '시작 화면: 무선카드로 변경'
-                  : '시작 화면: 전자지갑으로 변경'
-              "
-            >
-              <i class="fa-solid fa-sliders brand-ic"></i>
-            </button>
           </div>
 
           <!-- A. 카드 결제 모드 (삼성페이 style 카루셀 슬라이더) -->
@@ -60,6 +47,7 @@
           <WalletPayCodeSection
             v-else
             :wallet-balance="walletBalance"
+            :primary-account="primaryAccount"
             :barcode-lines="barcodeLines"
             :qr-modules="qrModules"
             :dynamic-barcode-token="dynamicBarcodeToken"
@@ -126,6 +114,7 @@ import { getCards, requestCardPayment, cancelCardPayment, getCardTransactionStat
 import walletApi from "@/api/walletApi";
 import { useAuthStore } from "@/stores/auth";
 
+import PageHeader from "@/components/common/PageHeader.vue";
 import WalletCardSliderSection from "@/components/wallet/WalletCardSliderSection.vue";
 import WalletPayCodeSection from "@/components/wallet/WalletPayCodeSection.vue";
 import WalletChargeSection from "@/components/wallet/WalletChargeSection.vue";
@@ -819,7 +808,7 @@ const handleRealtimeNotification = async (event) => {
   let pushTitle = "지갑 결제 승인 완료";
   let pushMsg = notif.message || "";
 
-  if (!pushMsg && notif.targetId) {
+  if (!pushMsg && notif.targetId && notif.notificationType === 'CARD_PAYMENT') {
     try {
       const { data: txInfo } = await api.get(`/api/cards/payments/transactions/${notif.targetId}`);
       if (txInfo && txInfo.merchantName) {
@@ -852,14 +841,21 @@ const handleRealtimeNotification = async (event) => {
   }
 };
 
+const handleLongPressPaymentEvent = () => {
+  console.log("하단 결제 버튼 롱프레스 감지 -> 지갑 정식 NFC 결제 서비스 구동!");
+  startNfcTimer();
+};
+
 onMounted(() => {
   loadData();
   window.addEventListener('notification-received', handleRealtimeNotification);
+  window.addEventListener('TRIGGER_LONG_PRESS_PAYMENT', handleLongPressPaymentEvent);
 });
 
 onUnmounted(() => {
   stopNfcPayment();
   window.removeEventListener('notification-received', handleRealtimeNotification);
+  window.removeEventListener('TRIGGER_LONG_PRESS_PAYMENT', handleLongPressPaymentEvent);
 });
 </script>
 
@@ -898,7 +894,7 @@ textarea {
   align-items: center;
   padding: 14px 16px;
   background-color: var(--color-bg-page, #ffffff);
-  border-bottom: 1px solid var(--color-divider, #ededed);
+  border-bottom: none;
   flex-shrink: 0;
 }
 

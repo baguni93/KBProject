@@ -129,9 +129,14 @@ const getItemTitle = (item) => {
   if (tType === "CHARGE")
     return item.merchantName || item.merchant_name || item.title || "지갑 충전";
   if (tType === "TRANSFER" || tType === "REMIT") {
-    return item.receiverName
-      ? `송금 (${item.receiverName})`
-      : item.title || "송금 완료";
+    let name = item.merchantName || item.merchant_name || item.receiverName || item.ownerName || item.title || item.memo || "";
+    if (name.startsWith("송금 (") && name.endsWith(")")) {
+      name = name.substring(4, name.length - 1);
+    }
+    if (name === "송금 완료" || name === "송금" || !name) {
+      name = "수취인";
+    }
+    return name;
   }
   return (
     item.merchantName ||

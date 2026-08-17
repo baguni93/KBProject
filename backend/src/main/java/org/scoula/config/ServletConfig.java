@@ -70,6 +70,9 @@ public class ServletConfig implements WebMvcConfigurer {
 
         registry.addResourceHandler("/assets/**")
                 .addResourceLocations("/resources/assets/");
+
+        registry.addResourceHandler("/upload/**")
+                .addResourceLocations("/resources/upload/", "file:c:/upload/");
     }
 
     @Override

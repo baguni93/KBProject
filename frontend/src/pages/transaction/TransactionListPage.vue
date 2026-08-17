@@ -27,15 +27,15 @@
         <div class="insight-summary-grid">
           <div class="summary-box expense">
             <span class="summary-label text-13">총 지출</span>
-            <span class="summary-amount text-18-bold text-dark"
-              >-{{ formatCurrency(summaryExpense) }}</span
+            <span class="summary-amount text-18-bold text-expense"
+              >{{ formatCurrency(summaryExpense) }}</span
             >
           </div>
           <div class="summary-divider"></div>
           <div class="summary-box income">
             <span class="summary-label text-13">총 수입 / 충전</span>
-            <span class="summary-amount text-18-bold text-kb-yellow"
-              >+{{ formatCurrency(summaryIncome) }}</span
+            <span class="summary-amount text-18-bold text-income"
+              >{{ formatCurrency(summaryIncome) }}</span
             >
           </div>
         </div>
@@ -231,10 +231,15 @@ const changeMonth = (delta) => {
   }
   selectedYear.value = y;
   selectedMonth.value = m;
+  selectedPeriod.value = "ALL"; // 월 변경 시 전체 모드(해당 월 기준)로 설정
 };
 
 const setPeriodFilter = (val) => {
   selectedPeriod.value = val;
+  if (val === "CURRENT") {
+    selectedYear.value = now.getFullYear();
+    selectedMonth.value = now.getMonth() + 1;
+  }
 };
 
 const changeTypeTab = (val) => {
@@ -288,11 +293,41 @@ const fetchTransactions = async () => {
 };
 
 const filteredTransactions = computed(() => {
+  const currentDate = new Date();
+
   return rawTransactions.value.filter((item) => {
+    // 1. 거래 유형 필터
     if (selectedType.value && item.transactionType !== selectedType.value) {
       return false;
     }
-    return true;
+
+    if (!item.createdAt) return true;
+    const txDate = new Date(item.createdAt);
+
+    // 2. 기간 칩(ALL, CURRENT, 1M, 3M) 및 월 피커 필터링
+    if (selectedPeriod.value === "CURRENT") {
+      // 당월 (이번달)
+      return (
+        txDate.getFullYear() === currentDate.getFullYear() &&
+        txDate.getMonth() === currentDate.getMonth()
+      );
+    } else if (selectedPeriod.value === "1M") {
+      // 최근 1개월 (30일 이내)
+      const oneMonthAgo = new Date(currentDate);
+      oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+      return txDate >= oneMonthAgo;
+    } else if (selectedPeriod.value === "3M") {
+      // 최근 3개월 (90일 이내)
+      const threeMonthsAgo = new Date(currentDate);
+      threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90);
+      return txDate >= threeMonthsAgo;
+    } else {
+      // ALL (선택된 년/월 기준 필터링)
+      return (
+        txDate.getFullYear() === selectedYear.value &&
+        txDate.getMonth() + 1 === selectedMonth.value
+      );
+    }
   });
 });
 
@@ -346,23 +381,19 @@ const formatTime = (dateStr) => {
 };
 
 const getItemTitle = (item) => {
-  if (item.merchantName) return item.merchantName;
-  if (item.merchant_name) return item.merchant_name;
-  if (
-    item.memo &&
-    item.memo !== "가맹점 현장 결제" &&
-    !item.memo.includes("충전") &&
-    !item.memo.includes("송금")
-  )
-    return item.memo;
-
-  if (item.transactionType === "CHARGE") return item.memo || "KB Pay 머니 충전";
-  if (item.transactionType === "TRANSFER")
-    return item.receiverName
-      ? `송금 (${item.receiverName})`
-      : item.memo || "송금 완료";
-
-  return "가맹점 현장 결제";
+  const type = (item.transactionType || item.type || "").toUpperCase();
+  if (type === "CHARGE") return item.merchantName || item.merchant_name || item.memo || "KB Pay 머니 충전";
+  if (type === "TRANSFER" || type === "REMIT") {
+    let name = item.merchantName || item.merchant_name || item.receiverName || item.ownerName || item.memo || item.title || "";
+    if (name.startsWith("송금 (") && name.endsWith(")")) {
+      name = name.substring(4, name.length - 1);
+    }
+    if (name === "송금 완료" || name === "송금" || !name) {
+      name = "수취인";
+    }
+    return name;
+  }
+  return item.merchantName || item.merchant_name || item.memo || "가맹점 현장 결제";
 };
 
 const getTypeIcon = (item) => {
@@ -462,6 +493,17 @@ onMounted(() => {
   box-sizing: border-box;
 }
 
+/* ========================================
+   거래 내역 화면 전용 헤더 여백 보정 (공용 PageHeader.vue 원본 100% 보존)
+======================================== */
+.transaction-root :deep(.page-header) {
+  padding: 0 16px;
+}
+
+.transaction-root :deep(.header-left .header-icon-btn) {
+  transform: none;
+}
+
 .tx-body {
   max-width: 500px;
   margin: 0 auto;
@@ -535,6 +577,14 @@ onMounted(() => {
   width: 1px;
   height: 28px;
   background-color: var(--color-divider, #ededed);
+}
+
+.text-expense {
+  color: #ef4444;
+}
+
+.text-income {
+  color: #10b981;
 }
 
 .text-kb-yellow {
@@ -745,11 +795,11 @@ onMounted(() => {
 }
 
 .tx-amount.amount-plus {
-  color: var(--color-success, #1fa64b);
+  color: #10b981;
 }
 
 .tx-amount.amount-minus {
-  color: var(--color-text-main, #111111);
+  color: #111111;
 }
 
 .expand-indicator {

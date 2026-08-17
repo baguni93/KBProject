@@ -9,18 +9,19 @@
     :transactionId="selectedTransactionId"
     @close="showReceiptModal = false"
   />
+
+  <!-- 카드 결제 대기중 모달 (하단 결제 버튼 롱 프레스 탐지) -->
+  <CardPaymentPendingModal v-model="showPendingModal" />
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import WalletSection from '@/components/wallet/WalletSection.vue';
 import ReceiptDetailModal from '@/components/transaction/ReceiptDetailModal.vue';
-// import { useUserStore } from '@/stores/user';
-
-// const userStore = useUserStore();
-// const userId = computed(() => userStore.userId || 1);
+import CardPaymentPendingModal from '@/components/wallet/CardPaymentPendingModal.vue';
 
 const showReceiptModal = ref(false);
+const showPendingModal = ref(false);
 const selectedTransactionId = ref(null);
 
 const onOpenReceipt = (transactionId) => {

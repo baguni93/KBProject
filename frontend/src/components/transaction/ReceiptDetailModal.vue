@@ -23,7 +23,10 @@
             </div>
 
             <!-- 금액 -->
-            <h2 class="text-28-bold receipt-amount text-center">
+            <h2
+              class="text-28-bold receipt-amount text-center"
+              :class="transaction.transactionType === 'CHARGE' ? 'amount-income' : 'amount-expense'"
+            >
               {{ formatCurrency(transaction.amount) }}
             </h2>
             <div class="type-badge-wrap text-center">
@@ -547,8 +550,15 @@ textarea {
 }
 
 .receipt-amount {
-  color: var(--color-text-main, #111111);
-  margin: 6px 0;
+  margin: 6px 0 10px 0;
+}
+
+.receipt-amount.amount-income {
+  color: #10b981;
+}
+
+.receipt-amount.amount-expense {
+  color: #111111;
 }
 
 .type-badge-wrap {

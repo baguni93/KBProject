@@ -37,8 +37,8 @@
 
     <!-- 송금 거래 내역 저장 (spendingCategoryId 전달값 반영, 선택 안 시 기본값 1) -->
     <insert id="insertRemittance" useGeneratedKeys="true" keyProperty="transactionId">
-        INSERT INTO financial_transaction_tbl (user_id, receive_id, spending_category_id, transaction_type, source_type, target_type, transaction_status, amount, created_at)
-        VALUES (#{walletId}, #{receiverId}, COALESCE(#{spendingCategoryId}, 1), 'TRANSFER', 'WALLET', #{receiverType}, 'SUCCESS', #{amount}, NOW())
+        INSERT INTO financial_transaction_tbl (user_id, receive_id, spending_category_id, transaction_type, source_type, target_type, transaction_status, amount, merchant_name, created_at)
+        VALUES (#{walletId}, #{receiverId}, COALESCE(#{spendingCategoryId}, 1), 'TRANSFER', 'WALLET', #{receiverType}, 'SUCCESS', #{amount}, #{merchantName}, NOW())
     </insert>
 
     <!-- 최신 init.sql 기준 피드 데이터 저장 (target_id & feed_status 반영) -->
@@ -54,19 +54,33 @@
         ORDER BY bank_code ASC
     </select>
 
-    <!-- 최근 송금 계좌 3건 조회 (실제 로그인 유저의 송금 이력 기준) -->
+    <!-- 최근 송금 계좌 3건 조회 (계좌 중복 제거 & 최신 송금 이력 기준) -->
     <select id="getRecentAccounts" resultType="org.scoula.remittance.dto.RecentAccountDTO">
         SELECT
-            '088' AS bankCode,
-            '신한은행' AS bankName,
-            COALESCE(u.phone_number, '111-001-000001') AS accountNumber,
-            COALESCE(u.user_name, '수취인') AS ownerName,
-            t.created_at AS lastTransferAt
-        FROM financial_transaction_tbl t
-        LEFT JOIN user_tbl u ON t.receive_id = u.user_id
-        WHERE t.user_id = #{userId}
-          AND t.transaction_type = 'TRANSFER'
-        ORDER BY t.transaction_id DESC
+            accountNumber,
+            bankCode,
+            bankName,
+            MAX(ownerName) AS ownerName,
+            MAX(lastTransferAt) AS lastTransferAt
+        FROM (
+            SELECT
+                COALESCE(la.account_number, u.phone_number, '110-222-222222') AS accountNumber,
+                COALESCE(la.bank_code, '081') AS bankCode,
+                COALESCE(b.bank_name, '하나') AS bankName,
+                COALESCE(u.user_name, NULLIF(t.merchant_name, ''), '테스트회원2') AS ownerName,
+                t.created_at AS lastTransferAt
+            FROM financial_transaction_tbl t
+            LEFT JOIN user_tbl u ON (
+                t.receive_id = u.user_id 
+                OR (t.merchant_name IS NOT NULL AND t.merchant_name = u.user_name)
+            )
+            LEFT JOIN linked_account_tbl la ON u.user_id = la.user_id
+            LEFT JOIN bank_tbl b ON la.bank_code = b.bank_code
+            WHERE t.user_id = #{userId}
+              AND t.transaction_type = 'TRANSFER'
+        ) sub
+        GROUP BY accountNumber, bankCode, bankName
+        ORDER BY lastTransferAt DESC
         LIMIT #{limit}
     </select>
 

@@ -17,6 +17,7 @@ public class PrimaryCardResponseDTO {
     private String expiryDate;
     private String representYn;
     private String cardName;
+    private String cardImgFileName;
     private String holderName;
     private String paymentStatus;
     private String message;

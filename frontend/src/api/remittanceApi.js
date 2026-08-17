@@ -29,7 +29,9 @@ export default {
     formData.append('accountNumber', remittanceData.accountNumber || '');
     formData.append('visibility', remittanceData.visibility || 'PUBLIC');
 
-    if (remittanceData.file) {
+    if (remittanceData.files && remittanceData.files.length) {
+      remittanceData.files.forEach((f) => formData.append('files', f));
+    } else if (remittanceData.file) {
       formData.append('files', remittanceData.file);
     }
 
