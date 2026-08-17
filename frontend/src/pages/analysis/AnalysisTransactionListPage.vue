@@ -1,6 +1,6 @@
 <template>
   <div class="kb-mobile-page transaction-list-page">
-    <PageHeader title="전체 소비내역" />
+    <PageHeader title="전체 소비내역" :showBack="true" />
 
     <div class="transaction-content">
       <div v-if="loading" class="kb-card kb-loading text-13">
@@ -15,12 +15,12 @@
 
             <div class="period-options" role="group" aria-label="조회 기간 선택">
               <button
-                v-for="option in periodOptions"
-                :key="option.value"
-                type="button"
-                class="period-option text-13"
-                :class="{ active: selectedPeriod === option.value }"
-                @click="selectedPeriod = option.value"
+                  v-for="option in periodOptions"
+                  :key="option.value"
+                  type="button"
+                  class="period-option text-13"
+                  :class="{ active: selectedPeriod === option.value }"
+                  @click="selectedPeriod = option.value"
               >
                 {{ option.label }}
               </button>
@@ -28,17 +28,17 @@
 
             <div v-if="selectedPeriod === 'CUSTOM'" class="custom-period-row">
               <input
-                v-model="customStartDate"
-                class="text-13"
-                type="date"
-                aria-label="조회 시작일"
+                  v-model="customStartDate"
+                  class="text-13"
+                  type="date"
+                  aria-label="조회 시작일"
               />
               <span class="text-13">~</span>
               <input
-                v-model="customEndDate"
-                class="text-13"
-                type="date"
-                aria-label="조회 종료일"
+                  v-model="customEndDate"
+                  class="text-13"
+                  type="date"
+                  aria-label="조회 종료일"
               />
             </div>
           </div>
@@ -46,53 +46,117 @@
           <div class="filter-divider" aria-hidden="true"></div>
 
           <div class="filter-select-grid">
-            <label>
+            <div class="custom-select">
               <span class="text-13-bold">카테고리</span>
-              <select v-model="selectedCategoryId" class="text-13">
-                <option value="ALL">전체</option>
-                <option
-                  v-for="category in topCategories"
-                  :key="category.spendingCategoryId"
-                  :value="String(category.spendingCategoryId)"
+
+              <button
+                  type="button"
+                  class="custom-select-trigger text-13"
+                  :class="{ open: openedSelect === 'CATEGORY' }"
+                  @click.stop="toggleSelect('CATEGORY')"
+              >
+                <span>{{ selectedCategoryLabel }}</span>
+                <i class="fa-solid fa-chevron-down"></i>
+              </button>
+
+              <div v-if="openedSelect === 'CATEGORY'" class="custom-select-menu category-menu">
+                <button
+                    type="button"
+                    class="custom-select-option text-13"
+                    :class="{ selected: selectedCategoryId === 'ALL' }"
+                    @click="selectCategory('ALL')"
                 >
-                  {{ category.categoryName }}
-                </option>
-              </select>
-            </label>
+                  <span>전체</span>
+                  <i v-if="selectedCategoryId === 'ALL'" class="fa-solid fa-check"></i>
+                </button>
 
-            <label>
+                <button
+                    v-for="category in topCategories"
+                    :key="category.spendingCategoryId"
+                    type="button"
+                    class="custom-select-option text-13"
+                    :class="{ selected: selectedCategoryId === String(category.spendingCategoryId) }"
+                    @click="selectCategory(String(category.spendingCategoryId))"
+                >
+                  <span>{{ category.categoryName }}</span>
+                  <i
+                      v-if="selectedCategoryId === String(category.spendingCategoryId)"
+                      class="fa-solid fa-check"
+                  ></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="custom-select">
               <span class="text-13-bold">분류 상태</span>
-              <select v-model="classificationFilter" class="text-13">
-                <option value="ALL">전체</option>
-                <option value="CLASSIFIED">분류 완료</option>
-                <option value="UNCLASSIFIED">미분류</option>
-              </select>
-            </label>
 
-            <label>
+              <button
+                  type="button"
+                  class="custom-select-trigger text-13"
+                  :class="{ open: openedSelect === 'CLASSIFICATION' }"
+                  @click.stop="toggleSelect('CLASSIFICATION')"
+              >
+                <span>{{ classificationFilterLabel }}</span>
+                <i class="fa-solid fa-chevron-down"></i>
+              </button>
+
+              <div v-if="openedSelect === 'CLASSIFICATION'" class="custom-select-menu">
+                <button
+                    v-for="option in classificationOptions"
+                    :key="option.value"
+                    type="button"
+                    class="custom-select-option text-13"
+                    :class="{ selected: classificationFilter === option.value }"
+                    @click="selectClassification(option.value)"
+                >
+                  <span>{{ option.label }}</span>
+                  <i v-if="classificationFilter === option.value" class="fa-solid fa-check"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="custom-select">
               <span class="text-13-bold">정렬</span>
-              <select v-model="sortOption" class="text-13">
-                <option value="LATEST">최신순</option>
-                <option value="OLDEST">과거순</option>
-                <option value="AMOUNT_DESC">금액 높은순</option>
-                <option value="AMOUNT_ASC">금액 낮은순</option>
-              </select>
-            </label>
+
+              <button
+                  type="button"
+                  class="custom-select-trigger text-13"
+                  :class="{ open: openedSelect === 'SORT' }"
+                  @click.stop="toggleSelect('SORT')"
+              >
+                <span>{{ sortOptionLabel }}</span>
+                <i class="fa-solid fa-chevron-down"></i>
+              </button>
+
+              <div v-if="openedSelect === 'SORT'" class="custom-select-menu align-right">
+                <button
+                    v-for="option in sortOptions"
+                    :key="option.value"
+                    type="button"
+                    class="custom-select-option text-13"
+                    :class="{ selected: sortOption === option.value }"
+                    @click="selectSort(option.value)"
+                >
+                  <span>{{ option.label }}</span>
+                  <i v-if="sortOption === option.value" class="fa-solid fa-check"></i>
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
         <section class="kb-section">
           <div class="kb-section-title-row">
-            <h2 class="kb-section-title text-20-bold">소비내역</h2>
+            <h2 class="kb-section-title text-18-bold">소비내역</h2>
             <span class="transaction-count text-13">{{ filteredTransactions.length }}건</span>
           </div>
 
           <div class="transaction-list kb-card">
             <template v-if="visibleTransactions.length">
               <div
-                v-for="transaction in visibleTransactions"
-                :key="transaction.transactionId"
-                class="transaction-row"
+                  v-for="transaction in visibleTransactions"
+                  :key="transaction.transactionId"
+                  class="transaction-row"
               >
                 <div class="transaction-icon">
                   <i :class="getCategoryIcon(transaction.parentCategoryName || transaction.categoryName)"></i>
@@ -103,9 +167,9 @@
                   우측의 카테고리명/연필 버튼과 동일한 수정 화면으로 이동한다.
                 -->
                 <button
-                  type="button"
-                  class="transaction-info transaction-info-button"
-                  @click="goToCategoryEdit(transaction)"
+                    type="button"
+                    class="transaction-info transaction-info-button"
+                    @click="goToCategoryEdit(transaction)"
                 >
                   <strong class="text-15-bold">
                     {{ transaction.transactionLabel || transaction.merchantName || '거래 정보 없음' }}
@@ -160,7 +224,7 @@ const transactions = ref([]);
 const loading = ref(false);
 const message = ref('');
 
-const selectedPeriod = ref('12');
+const selectedPeriod = ref('1');
 const customStartDate = ref('');
 const customEndDate = ref('');
 const selectedCategoryId = ref('ALL');
@@ -168,7 +232,21 @@ const classificationFilter = ref('ALL');
 const sortOption = ref('LATEST');
 const visibleCount = ref(PAGE_SIZE);
 const loadMoreSentinel = ref(null);
+const openedSelect = ref(null);
 let loadMoreObserver = null;
+
+const classificationOptions = [
+  { value: 'ALL', label: '전체' },
+  { value: 'CLASSIFIED', label: '분류 완료' },
+  { value: 'UNCLASSIFIED', label: '미분류' },
+];
+
+const sortOptions = [
+  { value: 'LATEST', label: '최신순' },
+  { value: 'OLDEST', label: '과거순' },
+  { value: 'AMOUNT_DESC', label: '금액 높은순' },
+  { value: 'AMOUNT_ASC', label: '금액 낮은순' },
+];
 
 const periodOptions = [
   { value: '1', label: '1개월' },
@@ -179,8 +257,43 @@ const periodOptions = [
 ];
 
 const topCategories = computed(() =>
-  categories.value.filter((category) => category.parentCategoryId == null),
+    categories.value.filter((category) => category.parentCategoryId == null),
 );
+const selectedCategoryLabel = computed(() => {
+  if (selectedCategoryId.value === 'ALL') return '전체';
+  return topCategories.value.find((category) => String(category.spendingCategoryId) === selectedCategoryId.value)?.categoryName ?? '전체';
+});
+
+const classificationFilterLabel = computed(() =>
+    classificationOptions.find((option) => option.value === classificationFilter.value)?.label ?? '전체',
+);
+
+const sortOptionLabel = computed(() =>
+    sortOptions.find((option) => option.value === sortOption.value)?.label ?? '최신순',
+);
+
+const toggleSelect = (type) => {
+  openedSelect.value = openedSelect.value === type ? null : type;
+};
+
+const closeSelect = () => {
+  openedSelect.value = null;
+};
+
+const selectCategory = (value) => {
+  selectedCategoryId.value = value;
+  closeSelect();
+};
+
+const selectClassification = (value) => {
+  classificationFilter.value = value;
+  closeSelect();
+};
+
+const selectSort = (value) => {
+  sortOption.value = value;
+  closeSelect();
+};
 
 const parseTransactionDate = (value) => {
   if (!value) return null;
@@ -217,16 +330,16 @@ const matchesSelectedPeriod = (transaction) => {
 const filteredTransactions = computed(() => {
   const filtered = transactions.value.filter((transaction) => {
     const normalizedCategoryId =
-      transaction.parentCategoryId ?? transaction.spendingCategoryId;
+        transaction.parentCategoryId ?? transaction.spendingCategoryId;
     const categoryMatches =
-      selectedCategoryId.value === 'ALL' ||
-      Number(selectedCategoryId.value) === Number(normalizedCategoryId);
+        selectedCategoryId.value === 'ALL' ||
+        Number(selectedCategoryId.value) === Number(normalizedCategoryId);
 
     const classified = transaction.spendingCategoryId != null;
     const classificationMatches =
-      classificationFilter.value === 'ALL' ||
-      (classificationFilter.value === 'CLASSIFIED' && classified) ||
-      (classificationFilter.value === 'UNCLASSIFIED' && !classified);
+        classificationFilter.value === 'ALL' ||
+        (classificationFilter.value === 'CLASSIFIED' && classified) ||
+        (classificationFilter.value === 'UNCLASSIFIED' && !classified);
 
     return matchesSelectedPeriod(transaction) && categoryMatches && classificationMatches;
   });
@@ -246,11 +359,11 @@ const filteredTransactions = computed(() => {
 });
 
 const visibleTransactions = computed(() =>
-  filteredTransactions.value.slice(0, visibleCount.value),
+    filteredTransactions.value.slice(0, visibleCount.value),
 );
 
 const hasMore = computed(() =>
-  visibleCount.value < filteredTransactions.value.length,
+    visibleCount.value < filteredTransactions.value.length,
 );
 
 const loadMore = () => {
@@ -265,10 +378,10 @@ const setupLoadMoreObserver = () => {
   if (!loadMoreSentinel.value || typeof IntersectionObserver === 'undefined') return;
 
   loadMoreObserver = new IntersectionObserver(
-    (entries) => {
-      if (entries[0]?.isIntersecting) loadMore();
-    },
-    { rootMargin: '160px 0px' },
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMore();
+      },
+      { rootMargin: '160px 0px' },
   );
   loadMoreObserver.observe(loadMoreSentinel.value);
 };
@@ -301,22 +414,29 @@ const loadPage = async () => {
 };
 
 const goToCategoryEdit = (transaction) =>
-  router.push({
-    name: 'analysis-category-edit',
-    params: { transactionId: transaction.transactionId },
-    query: {
-      period: 12,
-      returnTo: route.fullPath,
-    },
-  });
+    router.push({
+      name: 'analysis-category-edit',
+      params: { transactionId: transaction.transactionId },
+      query: {
+        period: 12,
+        returnTo: route.fullPath,
+      },
+    });
 
 watch(
-  [selectedPeriod, customStartDate, customEndDate, selectedCategoryId, classificationFilter, sortOption],
-  resetVisibleTransactions,
+    [selectedPeriod, customStartDate, customEndDate, selectedCategoryId, classificationFilter, sortOption],
+    resetVisibleTransactions,
 );
 
-onMounted(loadPage);
-onBeforeUnmount(() => loadMoreObserver?.disconnect());
+onMounted(() => {
+  loadPage();
+  document.addEventListener('click', closeSelect);
+});
+
+onBeforeUnmount(() => {
+  loadMoreObserver?.disconnect();
+  document.removeEventListener('click', closeSelect);
+});
 </script>
 
 <style scoped>
@@ -327,13 +447,24 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect());
   color: var(--color-text-main);
 }
 
+/* AnalysisMainPage와 동일한 공통 헤더 정렬 */
+.transaction-list-page :deep(.page-header) {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  padding: 0 24px;
+  background: var(--color-bg-page);
+}
+
 .transaction-content {
-  //margin-top: 14px;
+  padding: 16px 24px 0;
 }
 
 .transaction-filter {
-  padding: 14px;
+  padding: 18px 16px;
   border: 1px solid var(--color-divider);
+  border-radius: 18px;
   background: var(--color-bg-page);
   box-shadow: none;
 }
@@ -404,18 +535,128 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect());
   gap: 8px;
 }
 
-.filter-select-grid label {
+.custom-select {
+  position: relative;
   min-width: 0;
 }
 
-.filter-select-grid select {
+.custom-select > span {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--color-text-sub);
+}
+
+.custom-select-trigger {
   width: 100%;
   height: 40px;
-  padding: 0 8px;
+  padding: 0 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   border: 1px solid var(--color-border-main);
   border-radius: 9px;
   background: var(--color-bg-page);
   color: var(--color-text-main);
+  text-align: left;
+  cursor: pointer;
+}
+
+.custom-select-trigger.open {
+  border-color: var(--color-primary-border);
+  box-shadow: 0 0 0 2px rgba(255, 188, 46, 0.12);
+}
+
+.custom-select-trigger > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select-trigger i {
+  flex-shrink: 0;
+  font-size: 11px;
+  transition: transform 0.2s ease;
+}
+
+.custom-select-trigger.open i {
+  transform: rotate(180deg);
+}
+
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 80;
+  width: 100%;
+  max-height: 220px;
+  padding: 6px;
+  overflow-y: auto;
+  border: 1px solid var(--color-divider);
+  border-radius: 12px;
+  background: var(--color-bg-page);
+  box-shadow: 0 10px 28px rgba(17, 17, 17, 0.14);
+}
+
+.custom-select-menu.category-menu {
+  min-width: 150px;
+}
+
+.custom-select-menu.align-right {
+  right: 0;
+  left: auto;
+}
+
+.custom-select-option {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-main);
+  text-align: left;
+  cursor: pointer;
+}
+
+.custom-select-option + .custom-select-option {
+  margin-top: 2px;
+}
+
+.custom-select-option:hover {
+  background: var(--color-bg-screen);
+}
+
+.custom-select-option.selected {
+  background: #fff4d2;
+  color: #9b7000;
+  font-weight: 700;
+}
+
+.custom-select-option i {
+  flex-shrink: 0;
+  color: #d99b00;
+  font-size: 11px;
+}
+
+.transaction-list-page :deep(.kb-section) {
+  margin-top: 28px;
+  padding: 0;
+}
+
+.transaction-list-page :deep(.kb-section-title-row) {
+  margin-bottom: 10px;
+  padding: 0;
+}
+
+.transaction-list-page :deep(.kb-section-title) {
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .transaction-count {
@@ -423,9 +664,10 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect());
 }
 
 .transaction-list {
-  padding: 3px 15px;
+  padding: 4px 16px;
   overflow: hidden;
   border: 1px solid var(--color-divider);
+  border-radius: 18px;
   background: var(--color-bg-page);
   box-shadow: none;
 }
@@ -443,9 +685,9 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect());
 }
 
 .transaction-icon {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -482,8 +724,8 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect());
 }
 
 .transaction-info span {
-  margin-top: 3px;
-  color: var(--color-text-muted);
+  margin-top: 1px;
+  color: var(--color-text-disabled);
 }
 
 .transaction-right {
@@ -491,7 +733,7 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect());
 }
 
 .transaction-right button {
-  margin-top: 3px;
+  margin-top: 1px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -509,6 +751,15 @@ onBeforeUnmount(() => loadMoreObserver?.disconnect());
 }
 
 @media (max-width: 380px) {
+  .transaction-list-page :deep(.page-header) {
+    padding: 0 20px;
+  }
+
+  .transaction-content {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
   .filter-select-grid {
     grid-template-columns: 1fr;
   }
