@@ -33,7 +33,7 @@
 
       <section class="kb-section coverage-section">
         <div class="kb-section-title-row">
-          <h2 class="kb-section-title text-20-bold">주요 보장 내용</h2>
+          <h2 class="kb-section-title text-20-bold">상품 주요 안내</h2>
           <span class="coverage-count text-13">{{ coverages.length }}개</span>
         </div>
 
@@ -49,7 +49,6 @@
               </div>
               <div>
                 <h3 class="text-15-bold">{{ coverage.coverageName }}</h3>
-                <span class="text-13">{{ coverage.coverageLimit || '보장 한도는 약관 확인' }}</span>
               </div>
             </div>
 
@@ -64,7 +63,7 @@
           <div class="kb-empty-state__icon">
             <i class="fa-solid fa-shield"></i>
           </div>
-          <strong class="text-15-bold">등록된 보장 항목이 없습니다.</strong>
+          <strong class="text-15-bold">등록된 상품 안내가 없습니다.</strong>
         </div>
       </section>
 
@@ -98,7 +97,7 @@
         </article>
 
         <div v-if="evidenceTransactions.length" class="evidence-transaction-list">
-          <h3 class="text-15-bold">관련 결제내역</h3>
+          <h3 class="text-15-bold">관련 거래내역</h3>
           <article
             v-for="transaction in evidenceTransactions"
             :key="transaction.transactionId"
@@ -123,7 +122,7 @@
       <section class="notice-card kb-card">
         <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
         <p class="text-13">
-          표시된 보장 내용은 프로젝트에 등록된 상품 정보입니다.
+          표시된 내용은 프로젝트에 등록된 상품 안내입니다.
           실제 가입 가능 여부와 최종 보장 조건은 KB손해보험에서 확인해 주세요.
         </p>
       </section>

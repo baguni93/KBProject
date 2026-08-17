@@ -2,11 +2,27 @@ package org.scoula.insurancerecommendation.mapper;
 
 import org.apache.ibatis.annotations.Param;
 import org.scoula.insurancerecommendation.domain.*;
+import org.scoula.insurancerecommendation.dto.CrawledInsuranceCoverageDTO;
+import org.scoula.insurancerecommendation.dto.CrawledInsuranceProductDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 public interface InsuranceRecommendationMapper {
+
+    // 서버 시작 시 크롤링한 보험 상품 저장
+    int insertCrawledInsuranceProduct(CrawledInsuranceProductDTO product);
+
+    // 크롤링한 상품의 주요 보장 항목 저장
+    int insertCrawledInsuranceCoverage(CrawledInsuranceCoverageDTO coverage);
+
+    // 공식 페이지 코드 기반 정책으로 소비카테고리-보험 매핑 자동 저장
+    int insertCrawledInsuranceMatch(
+            @Param("insuranceProductId") Integer insuranceProductId,
+            @Param("spendingCategoryName") String spendingCategoryName,
+            @Param("recommendationReason") String recommendationReason,
+            @Param("priority") Integer priority
+    );
 
     /*
      * 분석기간의 실제 금융거래를 기준으로

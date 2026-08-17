@@ -25,7 +25,7 @@ public class InsuranceRecommendationNarrativeServiceImpl
     /*
      * 보험추천 한 번에 AI 호출도 한 번만 수행한다.
      * 각 상품 카드의 "추천 이유"는 이 Service를 사용하지 않고
-     * 실제 결제내역으로 규칙 기반 생성한다.
+     * 실제 결제·송금·정산 거래내역으로 규칙 기반 생성한다.
      */
     @Override
     public String createInsuranceSummary(
@@ -158,7 +158,7 @@ public class InsuranceRecommendationNarrativeServiceImpl
             List<InsuranceRecommendationCandidateVO> candidates
     ) {
         if (candidates == null || candidates.isEmpty()) {
-            return "최근 12개월 소비분석에서 확인된 결제내역을 바탕으로 관련 보험을 살펴볼 수 있도록 안내해 드려요. 상품별 보장 내용과 가입 조건은 상세 화면에서 확인해 주세요.";
+            return "최근 12개월 소비분석에서 확인된 거래내역을 바탕으로 관련 보험을 살펴볼 수 있도록 안내해 드려요. 상품별 보장 내용과 가입 조건은 상세 화면에서 확인해 주세요.";
         }
 
         String categoryText = candidates.stream()
@@ -173,7 +173,7 @@ public class InsuranceRecommendationNarrativeServiceImpl
         }
 
         return limitLength(
-                "최근 12개월 결제내역에서 "
+                "최근 12개월 거래내역에서 "
                         + categoryText
                         + " 관련 소비가 확인되어, 관련 보장을 함께 살펴보실 수 있도록 보험 상품을 안내해 드려요. "
                         + "총 "

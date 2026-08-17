@@ -79,7 +79,7 @@ public class InsuranceRecommendationServiceImpl
 
         /*
          * 상품 카드의 "추천 이유"는 AI를 사용하지 않는다.
-         * Mapper가 함께 조회한 실제 결제 1건의 날짜/가맹점과
+         * Mapper가 함께 조회한 실제 거래 1건의 날짜/표시명과
          * 보험 카테고리를 조합해 규칙 기반 문구를 만든다.
          */
         for (InsuranceRecommendationCandidateVO candidate : candidates) {
@@ -444,10 +444,10 @@ public class InsuranceRecommendationServiceImpl
 
     /* Service 내부에서만 사용하는 분석기간 값 객체 */
     /*
-     * 실제 결제내역 한 건을 근거로 상품별 추천 사유를 만든다.
+     * 실제 결제·송금·정산 거래 한 건을 근거로 상품별 추천 사유를 만든다.
      *
      * "보험이 꼭 필요하다", "질병 위험이 있다"처럼 단정하지 않고
-     * 확인된 결제 사실 + 관련 보장을 살펴볼 수 있다는 정도로만 안내한다.
+     * 확인된 거래 사실 + 관련 보장을 살펴볼 수 있다는 정도로만 안내한다.
      */
     private String createRuleBasedRecommendationReason(
             InsuranceRecommendationCandidateVO candidate
@@ -467,7 +467,7 @@ public class InsuranceRecommendationServiceImpl
             return createdAt.format(RECOMMENDATION_REASON_DATE_FORMAT)
                     + " "
                     + merchantName
-                    + "에서 결제한 내역이 확인되어, "
+                    + " 관련 거래가 확인되어, "
                     + coverageLabel
                     + " 관련 보장을 함께 살펴보실 수 있도록 이 상품을 추천드렸어요.";
         }
@@ -475,14 +475,14 @@ public class InsuranceRecommendationServiceImpl
         if (merchantName != null && !merchantName.isBlank()) {
             return "최근 12개월 동안 "
                     + merchantName
-                    + "에서 결제한 내역이 확인되어, "
+                    + " 관련 거래가 확인되어, "
                     + coverageLabel
                     + " 관련 보장을 함께 살펴보실 수 있도록 이 상품을 추천드렸어요.";
         }
 
         if (createdAt != null) {
             return createdAt.format(RECOMMENDATION_REASON_DATE_FORMAT)
-                    + " 관련 결제내역이 확인되어, "
+                    + " 관련 거래내역이 확인되어, "
                     + coverageLabel
                     + " 관련 보장을 함께 살펴보실 수 있도록 이 상품을 추천드렸어요.";
         }
@@ -492,7 +492,7 @@ public class InsuranceRecommendationServiceImpl
                     || candidate.getCategoryName().isBlank()
                     ? "관련"
                     : candidate.getCategoryName())
-                + " 관련 결제가 확인되어, "
+                + " 관련 거래가 확인되어, "
                 + coverageLabel
                 + " 관련 보장을 함께 살펴보실 수 있도록 이 상품을 추천드렸어요.";
     }

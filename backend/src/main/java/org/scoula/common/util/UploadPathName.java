@@ -32,6 +32,10 @@ public class UploadPathName {
         return getUploadPath() + "/card/";
     }
 
+    public static String getInsurancePath() {
+        return getUploadPath() + "/insurance/";
+    }
+
     public static String getProfilePath() {
         return getUploadPath() + "/profile/";
     }

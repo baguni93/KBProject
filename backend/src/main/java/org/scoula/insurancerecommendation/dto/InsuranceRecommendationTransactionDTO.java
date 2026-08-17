@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/* 보험 추천 근거로 사용된 실제 결제 거래 DTO. */
+/* 보험 추천 근거로 사용된 실제 결제·송금·정산 거래 DTO. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

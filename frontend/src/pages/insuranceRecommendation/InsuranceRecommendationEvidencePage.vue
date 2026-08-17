@@ -16,7 +16,7 @@
         <div class="summary-icon">
           <i class="fa-solid fa-chart-column"></i>
         </div>
-        <span class="summary-label text-13-bold">12개월 실제 결제내역 기준</span>
+        <span class="summary-label text-13-bold">12개월 실제 거래내역 기준</span>
         <h2 class="text-20-bold">추천에 반영된 소비를 확인해보세요</h2>
         <p class="text-13">{{ evidence.message }}</p>
 
@@ -77,7 +77,7 @@
       <section class="notice-card kb-card">
         <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
         <p class="text-13">
-          보험 추천은 선택한 12개월 소비분석 기간의 정상 결제 거래를 기준으로 합니다.
+          보험 추천은 선택한 12개월 소비분석 기간의 정상 결제·송금·정산 거래를 기준으로 합니다.
           소비 카테고리가 보험상품과 연결된 경우 추천 근거로 사용됩니다.
         </p>
       </section>

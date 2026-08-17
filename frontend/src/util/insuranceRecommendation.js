@@ -99,7 +99,8 @@ export const getInsuranceImageUrl = (insuranceImage) => {
     return value;
   }
 
-  return INSURANCE_IMAGE_MAP[value] ?? `/images/insurance/${value}`;
+  return INSURANCE_IMAGE_MAP[value]
+    ?? `/api/insurance-products/images/${encodeURIComponent(value)}`;
 };
 
 export const getInsuranceApplicationUrl = (insurance) => {
