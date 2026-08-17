@@ -2,22 +2,54 @@
   <div class="kb-mobile-page card-recommendation-page">
     <PageHeader
         title="맞춤 카드 추천"
-        :custom-back="true"
+        :showBack="true"
+        :customBack="true"
         @back="goBack"
     />
 
     <div class="recommendation-content-start">
 
-    <section class="recommendation-intro kb-card">
-      <div class="intro-icon" aria-hidden="true">
-        <i class="fa-solid fa-wand-magic-sparkles"></i>
-      </div>
-      <div>
-        <span class="text-13-bold">12개월 소비분석 기반</span>
-        <h2 class="text-20-bold">내 소비에 맞는 카드를 추천해요</h2>
-        <p class="text-13">실제 결제내역과 카드별 전월 실적·월 할인 한도를 반영한 추천입니다.</p>
-      </div>
-    </section>
+      <section class="recommendation-intro kb-card">
+        <div class="intro-topline">
+          <span class="intro-icon" aria-hidden="true">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </span>
+          <span class="intro-badge text-13-bold">12개월 소비분석 기반</span>
+        </div>
+
+        <div class="intro-copy">
+          <h2 class="text-18-bold">내 소비에 딱 맞는 카드를 찾았어요</h2>
+          <p class="text-13">실제 소비내역을 분석해 혜택이 큰 카드를 골랐어요.</p>
+        </div>
+
+        <template v-if="topRecommendationSummary">
+          <button
+              type="button"
+              class="ai-reason-toggle"
+              :aria-expanded="aiReasonOpen"
+              @click="aiReasonOpen = !aiReasonOpen"
+          >
+            <span class="ai-reason-toggle__label text-13-bold">
+              <i class="fa-solid fa-sparkles"></i>
+              AI 추천 이유
+            </span>
+
+            <span class="ai-reason-toggle__action text-13-bold">
+              {{ aiReasonOpen ? '접기' : '펼쳐보기' }}
+              <i
+                  class="fa-solid fa-chevron-down"
+                  :class="{ open: aiReasonOpen }"
+                  aria-hidden="true"
+              ></i>
+            </span>
+          </button>
+
+          <div v-if="aiReasonOpen" class="ai-reason-content">
+            <p class="ai-reason-lead text-13-bold">이 소비 패턴에 혜택이 큰 카드예요.</p>
+            <p class="text-13">{{ formatWonInText(topRecommendationSummary) }}</p>
+          </div>
+        </template>
+      </section>
 
       <div v-if="loading" class="kb-card kb-loading recommendation-loading">
         <div class="spinner-border kb-spinner"></div>
@@ -33,141 +65,133 @@
         </small>
       </div>
 
-    <template v-else-if="recommendationData">
-      <section v-if="topRecommendationSummary" class="ai-summary kb-card">
-        <div class="ai-summary__label text-13-bold">
-          <i class="fa-solid fa-wand-magic-sparkles"></i>
-          AI 추천 요약
-        </div>
-        <p class="text-13">{{ topRecommendationSummary }}</p>
-      </section>
-
-      <section class="filter-section">
-        <div class="section-label-row">
-          <h2 class="text-15-bold">카드 유형</h2>
-          <span class="text-13">{{ recommendationData.analysisPeriod }}개월 분석</span>
-        </div>
-        <div
-          class="segmented-control card-type-control"
-          role="tablist"
-          aria-label="카드 유형"
-        >
-          <button
-              v-for="option in cardTypeOptions"
-              :key="option.value"
-              type="button"
-              :class="['text-13-bold', { active: selectedCardType === option.value }]"
-              @click="changeCardType(option.value)"
+      <template v-else-if="recommendationData">
+        <section class="filter-section">
+          <div class="section-label-row">
+            <h2 class="text-15-bold">카드 유형</h2>
+            <span class="text-13">{{ recommendationData.analysisPeriod }}개월 분석</span>
+          </div>
+          <div
+              class="segmented-control card-type-control"
+              role="tablist"
+              aria-label="카드 유형"
           >
-            {{ option.label }}
-          </button>
-        </div>
-      </section>
+            <button
+                v-for="option in cardTypeOptions"
+                :key="option.value"
+                type="button"
+                :class="['text-13-bold', { active: selectedCardType === option.value }]"
+                @click="changeCardType(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+        </section>
 
-      <section class="kb-section recommendation-list-section">
-        <div class="kb-section-title-row">
-          <h2 class="kb-section-title text-20-bold">{{ selectedCardTypeLabel }} 추천 TOP 3</h2>
+        <section class="kb-section recommendation-list-section">
+          <div class="kb-section-title-row">
+            <h2 class="kb-section-title text-18-bold">{{ selectedCardTypeLabel }} 추천 TOP 3</h2>
 
-        </div>
+          </div>
 
-        <div v-if="recommendations.length" class="recommendation-list">
-          <article
-              v-for="card in recommendations"
-              :key="card.cardRecommendationId"
-              :class="[
+          <div v-if="recommendations.length" class="recommendation-list">
+            <article
+                v-for="card in recommendations"
+                :key="card.cardRecommendationId"
+                :class="[
                 'recommendation-item',
                 'kb-card',
                 { 'has-annual-fee-toggle': card.cardType === 'CREDIT' },
               ]"
-          >
-            <div class="rank-badge" :class="`rank-${card.recommendationRank}`">
-              {{ card.recommendationRank }}위
-            </div>
-
-            <div
-                v-if="card.cardType === 'CREDIT'"
-                class="annual-fee-toggle-row"
             >
-              <span class="text-13-bold">연회비 포함</span>
+              <div class="rank-badge" :class="`rank-${card.recommendationRank}`">
+                {{ card.recommendationRank }}위
+              </div>
+
+              <div
+                  v-if="card.cardType === 'CREDIT'"
+                  class="annual-fee-toggle-row"
+              >
+                <span class="text-13-bold">연회비 포함</span>
+                <button
+                    type="button"
+                    class="annual-fee-switch"
+                    :class="{ active: isAnnualFeeIncluded(card.cardRecommendationId) }"
+                    role="switch"
+                    :aria-checked="isAnnualFeeIncluded(card.cardRecommendationId)"
+                    :aria-label="`${card.cardName} 예상 할인액에 연회비 포함`"
+                    @click.stop="toggleAnnualFee(card.cardRecommendationId)"
+                >
+                  <span class="annual-fee-switch__knob"></span>
+                </button>
+              </div>
+
+              <div class="card-visual">
+                <img
+                    v-if="getCardImagePath(card.cardImage)"
+                    :src="getCardImagePath(card.cardImage)"
+                    :alt="`${card.cardName} 카드 이미지`"
+                />
+                <div v-else class="card-placeholder" aria-hidden="true">
+                  <span>KB</span>
+                  <i class="fa-regular fa-credit-card"></i>
+                  <strong>{{ getCardInitial(card.cardName) }}</strong>
+                </div>
+              </div>
+
+              <div class="card-copy">
+                <span class="card-kind text-13-bold">{{ getCardTypeLabel(card.cardType) }}</span>
+                <h3 class="text-18-bold">{{ card.cardName }}</h3>
+                <p class="text-13">{{ card.cardDescription }}</p>
+              </div>
+
+              <div class="benefit-summary benefit-summary--two-column">
+                <div>
+                  <span class="text-13">예상 할인액</span>
+                  <strong
+                      class="text-15-bold"
+                      :class="{ negative: getDisplayedBenefitAmount(card) < 0 }"
+                  >
+                    {{ formatCardAmount(getDisplayedBenefitAmount(card)) }}원
+                  </strong>
+                </div>
+                <div>
+                  <span class="text-13">연회비</span>
+                  <strong class="text-15-bold">{{ formatCardAmount(card.annualFee) }}원</strong>
+                </div>
+              </div>
+
               <button
                   type="button"
-                  class="annual-fee-switch"
-                  :class="{ active: isAnnualFeeIncluded(card.cardRecommendationId) }"
-                  role="switch"
-                  :aria-checked="isAnnualFeeIncluded(card.cardRecommendationId)"
-                  :aria-label="`${card.cardName} 예상 할인액에 연회비 포함`"
-                  @click.stop="toggleAnnualFee(card.cardRecommendationId)"
+                  class="detail-button text-14-bold"
+                  @click="openDetail(card.cardRecommendationId)"
               >
-                <span class="annual-fee-switch__knob"></span>
+                계산 근거 상세보기
+                <i class="fa-solid fa-chevron-right"></i>
               </button>
-            </div>
-
-            <div class="card-visual">
-              <img
-                v-if="getCardImagePath(card.cardImage)"
-                :src="getCardImagePath(card.cardImage)"
-                :alt="`${card.cardName} 카드 이미지`"
-              />
-              <div v-else class="card-placeholder" aria-hidden="true">
-                <span>KB</span>
-                <i class="fa-regular fa-credit-card"></i>
-                <strong>{{ getCardInitial(card.cardName) }}</strong>
-              </div>
-            </div>
-
-            <div class="card-copy">
-              <span class="card-kind text-13-bold">{{ getCardTypeLabel(card.cardType) }}</span>
-              <h3 class="text-18-bold">{{ card.cardName }}</h3>
-              <p class="text-13">{{ card.cardDescription }}</p>
-            </div>
-
-            <div class="benefit-summary benefit-summary--two-column">
-              <div>
-                <span class="text-13">예상 할인액</span>
-                <strong
-                    class="text-15-bold"
-                    :class="{ negative: getDisplayedBenefitAmount(card) < 0 }"
-                >
-                  {{ formatCardAmount(getDisplayedBenefitAmount(card)) }}원
-                </strong>
-              </div>
-              <div>
-                <span class="text-13">연회비</span>
-                <strong class="text-15-bold">{{ formatCardAmount(card.annualFee) }}원</strong>
-              </div>
-            </div>
-
-            <button
-                type="button"
-                class="detail-button text-13-bold"
-                @click="openDetail(card.cardRecommendationId)"
-            >
-              계산 근거 상세보기
-              <i class="fa-solid fa-chevron-right"></i>
-            </button>
-          </article>
-        </div>
-
-        <div v-else class="kb-card kb-empty-state">
-          <div class="kb-empty-state__icon">
-            <i class="fa-regular fa-credit-card"></i>
+            </article>
           </div>
-          <strong class="text-15-bold">추천 결과가 없습니다.</strong>
-          <p class="text-13">카드 상품과 혜택 데이터를 확인해 주세요.</p>
-        </div>
-      </section>
-    </template>
 
-    <div v-else-if="!loading" class="kb-card kb-empty-state error-state">
-      <div class="kb-empty-state__icon">
-        <i class="fa-solid fa-triangle-exclamation"></i>
+          <div v-else class="kb-card kb-empty-state">
+            <div class="kb-empty-state__icon">
+              <i class="fa-regular fa-credit-card"></i>
+            </div>
+            <strong class="text-15-bold">추천 결과가 없습니다.</strong>
+            <p class="text-13">카드 상품과 혜택 데이터를 확인해 주세요.</p>
+          </div>
+        </section>
+      </template>
+
+      <div v-else-if="!loading" class="kb-card kb-empty-state error-state">
+        <div class="kb-empty-state__icon">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <strong class="text-15-bold">카드 추천 결과를 불러오지 못했습니다.</strong>
+        <p class="text-13">백엔드 서버와 DB 데이터를 확인한 뒤 다시 시도해 주세요.</p>
+        <button type="button" class="content-btn primary" @click="reloadRecommendations">
+          다시 시도
+        </button>
       </div>
-      <strong class="text-15-bold">카드 추천 결과를 불러오지 못했습니다.</strong>
-      <p class="text-13">백엔드 서버와 DB 데이터를 확인한 뒤 다시 시도해 주세요.</p>
-      <button type="button" class="content-btn primary" @click="reloadRecommendations">
-        다시 시도
-      </button>
-    </div>
     </div>
   </div>
 </template>
@@ -198,15 +222,16 @@ const recommendationCache = ref({});
 const annualFeeIncludedByCard = ref({});
 const creationResult = ref(null);
 const loading = ref(false);
+const aiReasonOpen = ref(false);
 const message = ref("");
 const messageType = ref("info");
 
 const recommendations = computed(
-  () => recommendationData.value?.recommendations ?? [],
+    () => recommendationData.value?.recommendations ?? [],
 );
 
 const selectedCardTypeLabel = computed(() =>
-  getCardTypeLabel(selectedCardType.value),
+    getCardTypeLabel(selectedCardType.value),
 );
 
 const topRecommendation = computed(() =>
@@ -219,13 +244,21 @@ const topRecommendationSummary = computed(
     () => topRecommendation.value?.aiRecommendationSummary ?? '',
 );
 
+const formatWonInText = (text) => {
+  if (!text) return '';
+
+  return String(text).replace(/(\d+)\s*원/g, (_, number) => {
+    return `${Number(number).toLocaleString('ko-KR')}원`;
+  });
+};
+
 const creationStatusLabel = computed(() => {
   if (!creationResult.value) return "확인 전";
   return creationResult.value.created ? "새 추천 생성" : "기존 추천 재사용";
 });
 
 const isValidAnalysisId = () =>
-  Number.isInteger(spendingAnalysisId) && spendingAnalysisId > 0;
+    Number.isInteger(spendingAnalysisId) && spendingAnalysisId > 0;
 
 const updateQuery = () => {
   router.replace({
@@ -286,8 +319,8 @@ const completeRecommendationLoading = async (status) => {
     recommendationData.value = null;
     messageType.value = "error";
     message.value = getCardRecommendationErrorMessage(
-      error,
-      "카드 추천 목록을 불러오지 못했습니다.",
+        error,
+        "카드 추천 목록을 불러오지 못했습니다.",
     );
   } finally {
     loading.value = false;
@@ -326,8 +359,8 @@ const checkRecommendationStatus = async () => {
     recommendationData.value = null;
     messageType.value = "error";
     message.value = getCardRecommendationErrorMessage(
-      error,
-      "카드 추천 진행 상태를 확인하지 못했습니다.",
+        error,
+        "카드 추천 진행 상태를 확인하지 못했습니다.",
     );
   }
 };
@@ -335,8 +368,8 @@ const checkRecommendationStatus = async () => {
 const startStatusPolling = () => {
   stopStatusPolling();
   statusTimer = window.setInterval(
-    checkRecommendationStatus,
-    STATUS_POLL_INTERVAL,
+      checkRecommendationStatus,
+      STATUS_POLL_INTERVAL,
   );
 };
 
@@ -357,7 +390,7 @@ const reloadRecommendations = async () => {
 
   try {
     const currentStatus =
-      await cardRecommendationApi.getStatus(spendingAnalysisId);
+        await cardRecommendationApi.getStatus(spendingAnalysisId);
 
     if (currentStatus?.status === "COMPLETED") {
       await completeRecommendationLoading(currentStatus);
@@ -371,7 +404,7 @@ const reloadRecommendations = async () => {
     }
 
     const startedStatus =
-      await cardRecommendationApi.startAsync(spendingAnalysisId);
+        await cardRecommendationApi.startAsync(spendingAnalysisId);
 
     await applyTaskStatus(startedStatus);
 
@@ -384,8 +417,8 @@ const reloadRecommendations = async () => {
     recommendationData.value = null;
     messageType.value = "error";
     message.value = getCardRecommendationErrorMessage(
-      error,
-      "카드 추천 작업을 시작하지 못했습니다.",
+        error,
+        "카드 추천 작업을 시작하지 못했습니다.",
     );
   }
 };
@@ -435,17 +468,17 @@ const openDetail = (cardRecommendationId) =>
     });
 
 const goBack = () =>
-  router.push({
-    name: "analysis-result",
-    params: { spendingAnalysisId },
-  });
+    router.push({
+      name: "analysis-result",
+      params: { spendingAnalysisId },
+    });
 
 
 const getCardInitial = (cardName = "") => {
   const normalized = String(cardName)
-    .replace(/KB국민/g, "")
-    .replace(/카드/g, "")
-    .trim();
+      .replace(/KB국민/g, "")
+      .replace(/카드/g, "")
+      .trim();
   return normalized.slice(0, 12) || "CARD";
 };
 
@@ -455,85 +488,148 @@ onBeforeUnmount(stopStatusPolling);
 
 <style scoped>
 .card-recommendation-page {
+  min-height: 100dvh;
   padding-bottom: 36px;
   background: var(--color-bg-screen);
   color: var(--color-text-main);
 }
 
+/* AnalysisMainPage와 동일한 헤더/본문 기준 */
+.card-recommendation-page :deep(.page-header) {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  padding: 0 24px;
+  background: var(--color-bg-page);
+}
+
 .recommendation-content-start {
-  /*
-   * 팀 협의 후 PageHeader와 첫 콘텐츠 사이 간격을 적용할 경우
-   * 아래 주석을 해제합니다.
-   * margin-top: 14px;
-   */
+  padding: 16px 24px 0;
+}
+
+.recommendation-content-start > *,
+.recommendation-content-start section {
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .recommendation-intro {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 18px 16px 0;
   border: 1px solid var(--color-divider);
   background: var(--color-bg-page);
   box-shadow: none;
+  overflow: hidden;
+}
+
+.intro-topline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .intro-icon {
-  width: 52px;
-  height: 52px;
-  flex: 0 0 52px;
-  display: flex;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 18px;
-  background: #fff3c4;
+  flex: 0 0 30px;
+  border-radius: 10px;
+  background: #fff4cf;
   color: #d99a00;
-  font-size: 22px;
+  font-size: 14px;
 }
 
-.recommendation-intro > div:last-child > span {
-  display: block;
+.intro-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #fff8e5;
   color: #9a7300;
 }
 
-.recommendation-intro h2 {
-  margin: 4px 0 5px;
+.intro-copy {
+  margin-top: 10px;
+}
+
+.intro-copy h2 {
+  margin: 0;
   line-height: 1.35;
   letter-spacing: -.45px;
 }
 
-.recommendation-intro p {
-  margin: 0;
+.intro-copy p {
+  margin: 6px 0 0;
   color: var(--color-text-sub);
   line-height: 1.55;
+  word-break: keep-all;
+}
+
+.ai-reason-toggle {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 16px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 0;
+  border-top: 1px solid var(--color-divider);
+  background: transparent;
+  cursor: pointer;
+}
+
+.ai-reason-toggle__label,
+.ai-reason-toggle__action {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ai-reason-toggle__label {
+  gap: 7px;
+  color: #9a7300;
+}
+
+.ai-reason-toggle__action {
+  gap: 7px;
+  color: var(--color-text-sub);
+}
+
+.ai-reason-toggle__action i {
+  font-size: 11px;
+  transition: transform .18s ease;
+}
+
+.ai-reason-toggle__action i.open {
+  transform: rotate(180deg);
+}
+
+.ai-reason-content {
+  padding: 0 0 16px;
+}
+
+.ai-reason-content p {
+  margin: 0;
+  color: var(--color-text-sub);
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.ai-reason-content .ai-reason-lead {
+  margin-bottom: 6px;
+  color: var(--color-text-main);
 }
 
 .recommendation-loading small {
   display: block;
   margin-top: 6px;
   color: var(--color-text-muted);
-}
-
-.ai-summary {
-  position: relative;
-  margin-top: 14px;
-  padding: 18px 18px 17px;
-  background: linear-gradient(135deg, #fff8dc 0%, #fff 72%);
-  border: 1px solid #f4df99;
-  box-shadow: none;
-}
-
-.ai-summary__label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: #947000;
-}
-
-.ai-summary p {
-  margin: 9px 0 0;
-  color: #4d4430;
-  line-height: 1.7;
 }
 
 .filter-section {
@@ -544,7 +640,7 @@ onBeforeUnmount(stopStatusPolling);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 0 2px 9px;
+  margin: 0 2px 10px;
 }
 
 .section-label-row h2 {
@@ -588,17 +684,17 @@ onBeforeUnmount(stopStatusPolling);
 }
 
 .recommendation-list-section {
-  margin-top: 22px;
+  margin-top: 18px;
 }
 
 .recommendation-list {
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 
 .recommendation-item {
   position: relative;
-  padding: 18px;
+  padding: 18px 16px 4px;
   border: 1px solid var(--color-divider);
   background: var(--color-bg-page);
   box-shadow: none;
@@ -754,12 +850,37 @@ onBeforeUnmount(stopStatusPolling);
 
 .benefit-summary {
   margin-top: 16px;
-  padding: 13px 12px;
+  padding: 0;
   display: grid;
-  grid-template-columns: 1.3fr 1fr 1fr;
-  gap: 7px;
+  grid-template-columns: 1fr 1fr;
   border-radius: 13px;
   background: #f7f7f8;
+  overflow: hidden;
+}
+
+.benefit-summary > div {
+  min-width: 0;
+  min-height: 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.benefit-summary > div + div {
+  border-left: 1px solid var(--color-divider);
+}
+
+.benefit-summary span {
+  display: block;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.benefit-summary strong {
+  display: block;
+  margin-top: 4px;
+  white-space: nowrap;
 }
 
 .benefit-summary--two-column {
@@ -816,5 +937,16 @@ onBeforeUnmount(stopStatusPolling);
 .loading-highlight {
   font-weight: 700;
   color: var(--color-text-main);
+}
+
+@media (max-width: 380px) {
+  .card-recommendation-page :deep(.page-header) {
+    padding: 0 20px;
+  }
+
+  .recommendation-content-start {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
 }
 </style>
