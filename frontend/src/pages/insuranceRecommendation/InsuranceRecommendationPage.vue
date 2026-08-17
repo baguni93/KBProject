@@ -1,137 +1,160 @@
 <template>
   <div class="kb-mobile-page insurance-recommendation-page">
     <PageHeader
-      title="맞춤 보험 추천"
-      :custom-back="true"
-      @back="goBack"
+        title="맞춤 보험 추천"
+        :showBack="true"
+        :customBack="true"
+        @back="goBack"
     />
 
-    <section class="recommendation-intro kb-card">
-      <div class="intro-icon" aria-hidden="true">
-        <i class="fa-solid fa-shield-heart"></i>
-      </div>
-      <div>
-        <span class="text-13-bold">12개월 소비분석 기반</span>
-        <h2 class="text-20-bold">내 소비에 맞는 보험을 추천해요</h2>
-        <p class="text-13">
-          실제 결제·송금·정산 거래의 소비 카테고리를 기준으로 관련 보험을 찾아드려요.
-        </p>
-      </div>
-    </section>
-
-    <!-- 카드추천과 동일한 비동기 대기 UX를 사용한다. -->
-    <div v-if="loading" class="kb-card kb-loading recommendation-loading">
-      <div class="spinner-border kb-spinner"></div>
-      <div class="text-13">
-        1년간의 소비분석 결과로 나에게 맞는 보험을 찾고 있어요
-      </div>
-      <small class="text-13">
-        <strong class="loading-highlight">
-          화면을 벗어나도 추천 작업은 계속 진행돼요<br />
-          다시 들어오면 결과를 확인할 수 있어요.
-        </strong>
-      </small>
-    </div>
-
-    <template v-else-if="recommendationData">
-      <section v-if="topRecommendationSummary" class="ai-summary kb-card">
-        <div class="ai-summary__label text-13-bold">
-          <i class="fa-solid fa-wand-magic-sparkles"></i>
-          AI 추천 요약
-        </div>
-        <p class="text-13">{{ topRecommendationSummary }}</p>
-      </section>
-
-      <section class="analysis-meta kb-card">
-        <div>
-          <span class="text-13">분석 기간</span>
-          <strong class="text-15-bold">{{ recommendationData.analysisPeriod }}개월</strong>
-        </div>
-        <div>
-          <span class="text-13">추천 보험</span>
-          <strong class="text-15-bold">{{ recommendations.length }}개</strong>
-        </div>
-      </section>
-
-      <section class="kb-section recommendation-list-section">
-        <div class="kb-section-title-row">
-          <h2 class="kb-section-title text-20-bold">맞춤 보험 추천</h2>
-        </div>
-
-        <div v-if="recommendations.length" class="recommendation-list">
-          <article
-            v-for="insurance in recommendations"
-            :key="insurance.insuranceRecommendationId"
-            class="insurance-item kb-card"
-          >
-            <div class="insurance-item__visual">
-              <img
-                v-if="getImage(insurance) && !isImageFailed(insurance.insuranceProductId)"
-                :src="getImage(insurance)"
-                :alt="`${insurance.insuranceName} 대표 이미지`"
-                referrerpolicy="no-referrer"
-                loading="lazy"
-                @error="markImageFailed(insurance.insuranceProductId)"
-              />
-              <div v-else class="insurance-placeholder" aria-hidden="true">
-                <i :class="getInsuranceCategoryIcon(insurance.insuranceCategory)"></i>
-              </div>
-            </div>
-
-            <div class="insurance-item__body">
-              <span class="category-chip text-13-bold">
-                {{ insurance.insuranceCategory }}
-              </span>
-              <h3 class="text-18-bold">{{ insurance.insuranceName }}</h3>
-              <p class="description text-13">{{ insurance.insuranceDescription }}</p>
-
-              <div v-if="insurance.recommendationReason" class="reason-box">
-                <span class="text-13-bold">
-                  <i class="fa-solid fa-circle-check"></i>
-                  추천 이유
-                </span>
-                <p class="text-13">{{ insurance.recommendationReason }}</p>
-              </div>
-
-              <button
-                type="button"
-                class="content-btn secondary detail-button"
-                @click="openProductDetail(insurance)"
-              >
-                보험 상세보기
-                <i class="fa-solid fa-chevron-right"></i>
-              </button>
-            </div>
-          </article>
-        </div>
-
-        <!-- 별도 analysis-008 페이지를 만들지 않고 현재 결과 화면 안에서 빈 결과만 표현한다. -->
-        <div v-else class="kb-card kb-empty-state empty-recommendation">
-          <div class="kb-empty-state__icon">
+    <div class="recommendation-content-start">
+      <section class="recommendation-intro kb-card">
+        <div class="intro-topline">
+          <span class="intro-icon" aria-hidden="true">
             <i class="fa-solid fa-shield-heart"></i>
-          </div>
-          <strong class="text-15-bold">현재 소비내역에 맞는 추천 보험이 없어요.</strong>
-          <p class="text-13">
-            전체 보험상품을 둘러보고 필요한 보장을 직접 확인할 수 있어요.
-          </p>
+          </span>
+          <span class="intro-badge text-13-bold">12개월 소비분석 기반</span>
         </div>
+
+        <div class="intro-copy">
+          <h2 class="text-18-bold">내 소비에 맞는 보험을 찾았어요</h2>
+          <p class="text-13">실제 소비내역을 분석해 관련 보장을 받을 수 있는 보험을 골랐어요.</p>
+        </div>
+
+        <template v-if="topRecommendationSummary">
+          <button
+              type="button"
+              class="ai-reason-toggle"
+              :aria-expanded="aiReasonOpen"
+              @click="aiReasonOpen = !aiReasonOpen"
+          >
+            <span class="ai-reason-toggle__label text-13-bold">
+              <i class="fa-solid fa-sparkles"></i>
+              AI 추천 이유
+            </span>
+
+            <span class="ai-reason-toggle__action text-13-bold">
+              {{ aiReasonOpen ? '접기' : '펼쳐보기' }}
+              <i
+                  class="fa-solid fa-chevron-down"
+                  :class="{ open: aiReasonOpen }"
+                  aria-hidden="true"
+              ></i>
+            </span>
+          </button>
+
+          <div v-if="aiReasonOpen" class="ai-reason-content">
+            <p class="ai-reason-lead text-13-bold">이 소비 패턴과 관련성이 높은 보험이에요.</p>
+            <p class="text-13">{{ topRecommendationSummary }}</p>
+          </div>
+        </template>
       </section>
 
-      <button type="button" class="content-btn primary browse-button" @click="openProducts">
-        전체 보험 둘러보기
-        <i class="fa-solid fa-chevron-right"></i>
-      </button>
-    </template>
-
-    <div v-else-if="!loading" class="kb-card kb-empty-state error-state">
-      <div class="kb-empty-state__icon">
-        <i class="fa-solid fa-triangle-exclamation"></i>
+      <div v-if="loading" class="kb-card kb-loading recommendation-loading">
+        <div class="spinner-border kb-spinner"></div>
+        <div class="text-13">
+          1년간의 소비분석 결과로 나에게 맞는 보험을 찾고 있어요
+        </div>
+        <small class="text-13">
+          <strong class="loading-highlight">
+            화면을 벗어나도 추천 작업은 계속 진행돼요<br />
+            다시 들어오면 결과를 확인할 수 있어요.
+          </strong>
+        </small>
       </div>
-      <strong class="text-15-bold">보험 추천 결과를 불러오지 못했습니다.</strong>
-      <p class="text-13">{{ message || '백엔드 서버와 추천 데이터를 확인한 뒤 다시 시도해 주세요.' }}</p>
-      <button type="button" class="content-btn primary" @click="reloadRecommendations">
-        다시 시도
-      </button>
+
+      <template v-else-if="recommendationData">
+        <section class="recommendation-meta">
+          <span class="text-13">최근 {{ recommendationData.analysisPeriod }}개월 분석</span>
+          <span class="text-13">{{ recommendations.length }}개 추천</span>
+        </section>
+
+        <section class="kb-section recommendation-list-section">
+          <div class="kb-section-title-row">
+            <h2 class="kb-section-title text-18-bold">맞춤 보험 추천</h2>
+          </div>
+
+          <div v-if="recommendations.length" class="recommendation-list">
+            <article
+                v-for="(insurance, index) in recommendations"
+                :key="insurance.insuranceRecommendationId"
+                class="insurance-item kb-card"
+            >
+              <div class="rank-badge" :class="`rank-${index + 1}`">
+                {{ index + 1 }}위
+              </div>
+
+              <div class="insurance-item__visual">
+                <img
+                    v-if="getImage(insurance) && !isImageFailed(insurance.insuranceProductId)"
+                    :src="getImage(insurance)"
+                    :alt="`${insurance.insuranceName} 대표 이미지`"
+                    referrerpolicy="no-referrer"
+                    loading="lazy"
+                    @error="markImageFailed(insurance.insuranceProductId)"
+                />
+                <div v-else class="insurance-placeholder" aria-hidden="true">
+                  <i :class="getInsuranceCategoryIcon(insurance.insuranceCategory)"></i>
+                </div>
+              </div>
+
+              <div class="insurance-item__body">
+                <span class="category-chip text-13-bold">
+                  {{ insurance.insuranceCategory }}
+                </span>
+
+                <h3 class="text-18-bold">{{ insurance.insuranceName }}</h3>
+                <p class="description text-13">{{ insurance.insuranceDescription }}</p>
+
+                <div v-if="insurance.recommendationReason" class="reason-box">
+                  <span class="text-13-bold">
+                    <i class="fa-solid fa-circle-check"></i>
+                    추천 이유
+                  </span>
+                  <p class="text-13">{{ insurance.recommendationReason }}</p>
+                </div>
+
+                <button
+                    type="button"
+                    class="insurance-detail-button text-14-bold"
+                    @click="openProductDetail(insurance)"
+                >
+                  보험 상세보기
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+            </article>
+          </div>
+
+          <div v-else class="kb-card kb-empty-state empty-recommendation">
+            <div class="kb-empty-state__icon">
+              <i class="fa-solid fa-shield-heart"></i>
+            </div>
+            <strong class="text-15-bold">현재 소비내역에 맞는 추천 보험이 없어요.</strong>
+            <p class="text-13">
+              전체 보험상품을 둘러보고 필요한 보장을 직접 확인할 수 있어요.
+            </p>
+          </div>
+        </section>
+
+        <button type="button" class="content-btn primary browse-button" @click="openProducts">
+          전체 보험 둘러보기
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </template>
+
+      <div v-else-if="!loading" class="kb-card kb-empty-state error-state">
+        <div class="kb-empty-state__icon">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <strong class="text-15-bold">보험 추천 결과를 불러오지 못했습니다.</strong>
+        <p class="text-13">
+          {{ message || '백엔드 서버와 추천 데이터를 확인한 뒤 다시 시도해 주세요.' }}
+        </p>
+        <button type="button" class="content-btn primary" @click="reloadRecommendations">
+          다시 시도
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -155,26 +178,27 @@ const recommendationData = ref(null);
 const loading = ref(false);
 const message = ref('');
 const failedImages = ref({});
+const aiReasonOpen = ref(false);
 
 const recommendations = computed(
-  () => recommendationData.value?.recommendations ?? [],
+    () => recommendationData.value?.recommendations ?? [],
 );
 
 const topRecommendationSummary = computed(() => {
   const item = recommendations.value.find(
-    (insurance) => Boolean(insurance?.aiRecommendationSummary),
+      (insurance) => Boolean(insurance?.aiRecommendationSummary),
   );
   return item?.aiRecommendationSummary ?? '';
 });
 
 const isValidAnalysisId = () =>
-  Number.isInteger(spendingAnalysisId) && spendingAnalysisId > 0;
+    Number.isInteger(spendingAnalysisId) && spendingAnalysisId > 0;
 
 const getImage = (insurance) =>
-  getInsuranceImageUrl(insurance?.insuranceImage);
+    getInsuranceImageUrl(insurance?.insuranceImage);
 
 const isImageFailed = (insuranceProductId) =>
-  Boolean(failedImages.value[insuranceProductId]);
+    Boolean(failedImages.value[insuranceProductId]);
 
 const markImageFailed = (insuranceProductId) => {
   failedImages.value = {
@@ -196,7 +220,7 @@ const stopStatusPolling = () => {
 
 const loadRecommendationList = async () => {
   recommendationData.value =
-    await insuranceRecommendationApi.getRecommendations(spendingAnalysisId);
+      await insuranceRecommendationApi.getRecommendations(spendingAnalysisId);
 };
 
 const completeRecommendationLoading = async () => {
@@ -207,8 +231,8 @@ const completeRecommendationLoading = async () => {
   } catch (error) {
     recommendationData.value = null;
     message.value = getInsuranceRecommendationErrorMessage(
-      error,
-      '보험 추천 목록을 불러오지 못했습니다.',
+        error,
+        '보험 추천 목록을 불러오지 못했습니다.',
     );
   } finally {
     loading.value = false;
@@ -244,8 +268,8 @@ const checkRecommendationStatus = async () => {
     loading.value = false;
     recommendationData.value = null;
     message.value = getInsuranceRecommendationErrorMessage(
-      error,
-      '보험 추천 진행 상태를 확인하지 못했습니다.',
+        error,
+        '보험 추천 진행 상태를 확인하지 못했습니다.',
     );
   }
 };
@@ -253,8 +277,8 @@ const checkRecommendationStatus = async () => {
 const startStatusPolling = () => {
   stopStatusPolling();
   statusTimer = window.setInterval(
-    checkRecommendationStatus,
-    STATUS_POLL_INTERVAL,
+      checkRecommendationStatus,
+      STATUS_POLL_INTERVAL,
   );
 };
 
@@ -280,7 +304,7 @@ const reloadRecommendations = async () => {
 
   try {
     const currentStatus = await insuranceRecommendationApi.getStatus(
-      spendingAnalysisId,
+        spendingAnalysisId,
     );
 
     if (currentStatus?.status === 'COMPLETED') {
@@ -295,7 +319,7 @@ const reloadRecommendations = async () => {
     }
 
     const startedStatus = await insuranceRecommendationApi.startAsync(
-      spendingAnalysisId,
+        spendingAnalysisId,
     );
 
     await applyTaskStatus(startedStatus);
@@ -308,35 +332,35 @@ const reloadRecommendations = async () => {
     loading.value = false;
     recommendationData.value = null;
     message.value = getInsuranceRecommendationErrorMessage(
-      error,
-      '보험 추천 작업을 시작하지 못했습니다.',
+        error,
+        '보험 추천 작업을 시작하지 못했습니다.',
     );
   }
 };
 
 const openProducts = () =>
-  router.push({
-    name: 'insurance-product-list',
-    query: { spendingAnalysisId },
-  });
+    router.push({
+      name: 'insurance-product-list',
+      query: { spendingAnalysisId },
+    });
 
 const openProductDetail = (insurance) =>
-  router.push({
-    name: 'insurance-product-detail',
-    params: { insuranceProductId: insurance.insuranceProductId },
-    query: {
-      from: 'recommendation',
-      spendingAnalysisId,
-      // 추천에서 진입한 상세 화면은 이 ID로 실제 추천 근거 거래까지 조회한다.
-      insuranceRecommendationId: insurance.insuranceRecommendationId,
-    },
-  });
+    router.push({
+      name: 'insurance-product-detail',
+      params: { insuranceProductId: insurance.insuranceProductId },
+      query: {
+        from: 'recommendation',
+        spendingAnalysisId,
+        // 추천에서 진입한 상세 화면은 이 ID로 실제 추천 근거 거래까지 조회한다.
+        insuranceRecommendationId: insurance.insuranceRecommendationId,
+      },
+    });
 
 const goBack = () =>
-  router.push({
-    name: 'analysis-result',
-    params: { spendingAnalysisId },
-  });
+    router.push({
+      name: 'analysis-result',
+      params: { spendingAnalysisId },
+    });
 
 onMounted(reloadRecommendations);
 onBeforeUnmount(stopStatusPolling);
@@ -344,61 +368,150 @@ onBeforeUnmount(stopStatusPolling);
 
 <style scoped>
 .insurance-recommendation-page {
+  min-height: 100dvh;
   padding-bottom: 36px;
   background: var(--color-bg-screen);
   color: var(--color-text-main);
 }
 
+.insurance-recommendation-page :deep(.page-header) {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  padding: 0 24px;
+  background: var(--color-bg-page);
+}
+
+.recommendation-content-start {
+  padding: 16px 24px 0;
+}
+
+.recommendation-content-start > *,
+.recommendation-content-start section {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
 .recommendation-intro {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  padding: 20px;
+  width: 100%;
+  padding: 18px 16px 0;
   border: 1px solid var(--color-divider);
   background: var(--color-bg-page);
   box-shadow: none;
+  overflow: hidden;
+}
+
+.intro-topline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .intro-icon {
-  width: 52px;
-  height: 52px;
-  flex: 0 0 52px;
-  display: flex;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 18px;
-  background: #fff3c4;
+  flex: 0 0 30px;
+  border-radius: 10px;
+  background: #fff4cf;
   color: #d99a00;
-  font-size: 22px;
+  font-size: 14px;
 }
 
-.recommendation-intro > div:last-child > span {
-  display: block;
+.intro-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #fff8e5;
   color: #9a7300;
 }
 
-.recommendation-intro h2 {
-  margin: 4px 0 5px;
+.intro-copy {
+  margin-top: 10px;
+}
+
+.intro-copy h2 {
+  margin: 0;
   line-height: 1.35;
   letter-spacing: -.45px;
 }
 
-.recommendation-intro p,
-.recommendation-loading small,
-.description,
-.empty-recommendation p,
-.error-state p {
+.intro-copy p {
+  margin: 6px 0 0;
+  color: var(--color-text-sub);
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.ai-reason-toggle {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 16px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 0;
+  border-top: 1px solid var(--color-divider);
+  background: transparent;
+  cursor: pointer;
+}
+
+.ai-reason-toggle__label,
+.ai-reason-toggle__action {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ai-reason-toggle__label {
+  gap: 7px;
+  color: #9a7300;
+}
+
+.ai-reason-toggle__action {
+  gap: 7px;
   color: var(--color-text-sub);
 }
 
-.recommendation-intro p {
+.ai-reason-toggle__action i {
+  font-size: 11px;
+  transition: transform .18s ease;
+}
+
+.ai-reason-toggle__action i.open {
+  transform: rotate(180deg);
+}
+
+.ai-reason-content {
+  padding: 0 0 16px;
+}
+
+.ai-reason-content p {
   margin: 0;
-  line-height: 1.55;
+  color: var(--color-text-sub);
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.ai-reason-content .ai-reason-lead {
+  margin-bottom: 6px;
+  color: var(--color-text-main);
+}
+
+.recommendation-loading {
+  margin-top: 16px;
 }
 
 .recommendation-loading small {
   display: block;
   margin-top: 6px;
+  color: var(--color-text-muted);
 }
 
 .loading-highlight {
@@ -406,80 +519,77 @@ onBeforeUnmount(stopStatusPolling);
   color: var(--color-text-main);
 }
 
-.ai-summary {
-  margin-top: 14px;
-  padding: 18px;
-  border: 1px solid #f4df99;
-  background: linear-gradient(135deg, #fff8dc 0%, #fff 72%);
-  box-shadow: none;
-}
-
-.ai-summary__label {
+.recommendation-meta {
+  margin-top: 16px;
+  padding: 0 2px;
   display: flex;
   align-items: center;
-  gap: 7px;
-  color: #947000;
-}
-
-.ai-summary p {
-  margin: 9px 0 0;
-  line-height: 1.7;
-  color: #4d4430;
-}
-
-.analysis-meta {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-top: 14px;
-  padding: 16px 18px;
-  border: 1px solid var(--color-divider);
-  box-shadow: none;
-}
-
-.analysis-meta > div {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.analysis-meta span {
+  justify-content: space-between;
   color: var(--color-text-muted);
 }
 
-.evidence-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: #8a6800;
+.recommendation-list-section {
+  margin-top: 18px;
 }
 
 .recommendation-list {
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 
 .insurance-item {
-  overflow: hidden;
+  position: relative;
+  padding: 18px 16px 4px;
   border: 1px solid var(--color-divider);
   background: var(--color-bg-page);
   box-shadow: none;
+  overflow: hidden;
+}
+
+.rank-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  min-width: 48px;
+  padding: 6px 10px 7px;
+  border-radius: 18px 0 14px 0;
+  background: var(--color-bg-disabled);
+  color: #555;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.rank-badge.rank-1 {
+  background: var(--color-primary);
+  color: var(--color-text-main);
+}
+
+.rank-badge.rank-2 {
+  background: #dfe3e8;
+}
+
+.rank-badge.rank-3 {
+  background: #ead6c6;
 }
 
 .insurance-item__visual {
-  min-height: 158px;
+  height: 136px;
+  margin: 18px 0 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: #fbfaf6;
-  border-bottom: 1px solid var(--color-divider);
 }
 
 .insurance-item__visual img {
-  width: 100%;
-  height: 158px;
+  max-width: 205px;
+  max-height: 128px;
+  width: auto;
+  height: auto;
   object-fit: contain;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .08));
 }
 
 .insurance-placeholder {
@@ -491,55 +601,72 @@ onBeforeUnmount(stopStatusPolling);
   border-radius: 24px;
   background: #fff3c4;
   color: #d99a00;
-  font-size: 31px;
+  font-size: 30px;
 }
 
 .insurance-item__body {
-  padding: 17px;
+  text-align: center;
 }
 
 .category-chip {
   display: inline-flex;
-  padding: 5px 9px;
+  padding: 4px 9px;
   border-radius: 999px;
-  background: #fff3cf;
-  color: #866300;
+  background: var(--color-bg-disabled);
+  color: var(--color-text-sub);
 }
 
 .insurance-item h3 {
-  margin: 9px 0 5px;
+  margin: 8px 0 5px;
   line-height: 1.4;
 }
 
 .description {
   margin: 0;
-  line-height: 1.6;
+  color: var(--color-text-sub);
+  line-height: 1.55;
+  word-break: keep-all;
 }
-
-
 
 .reason-box {
   margin-top: 14px;
-  padding: 13px 14px;
+  padding: 12px 14px;
   border-radius: 12px;
   background: #f7f8fa;
+  text-align: left;
 }
 
 .reason-box > span {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #6f5900;
+  color: #8a6800;
 }
 
 .reason-box p {
-  margin: 7px 0 0;
-  line-height: 1.6;
+  margin: 6px 0 0;
   color: var(--color-text-sub);
+  line-height: 1.55;
+  word-break: keep-all;
 }
 
-.detail-button {
-  margin-top: 14px;
+.insurance-detail-button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 11px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-top: 1px solid var(--color-divider);
+  background: var(--color-bg-page);
+  color: var(--color-text-main);
+  cursor: pointer;
+}
+
+.insurance-detail-button i {
+  font-size: 11px;
 }
 
 .browse-button {
@@ -553,5 +680,10 @@ onBeforeUnmount(stopStatusPolling);
 
 .error-state .content-btn {
   margin-top: 16px;
+}
+
+.browse-button {
+  font-size: 16px;
+  font-weight: 600;
 }
 </style>
