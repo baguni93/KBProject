@@ -3173,7 +3173,7 @@ INSERT INTO event_reward_tbl (
     reward_id,
     event_id,
     reward_point,
-    reward_exp
+    reward_exe
 )
 VALUES
     (1, 1, 100, 10),   -- 이벤트 출석

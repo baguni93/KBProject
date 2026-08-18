@@ -33,7 +33,7 @@ public class RemittanceDTO {
 
     @JsonIgnore
     private boolean isSettlement;
-    private Integer settlementId;
+//    private Integer settlementId;
 
     // 피드 연동용 필드
     private String feedType;    // REMITTANCE

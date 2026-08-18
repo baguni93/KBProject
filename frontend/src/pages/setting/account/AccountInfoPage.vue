@@ -1,27 +1,22 @@
 <template>
   <div class="page-layout account-page">
     <!-- 공통 상단 헤더 -->
-    <PageHeader
-        custom-back
-        @back="goBack"
-    />
+    <PageHeader custom-back @back="goBack" />
 
     <main class="page-content account-content">
       <!-- 계좌 정보 제목 -->
       <header class="account-header">
         <div class="selected-bank">
           <img
-              v-if="accountStore.accountForm.bankLogoUrl"
-              :alt="accountStore.accountForm.bankName"
-              :src="accountStore.accountForm.bankLogoUrl"
+            v-if="accountStore.accountForm.bankLogoUrl"
+            :alt="accountStore.accountForm.bankName"
+            :src="accountStore.accountForm.bankLogoUrl"
           />
 
           <strong>{{ accountStore.accountForm.bankName }}</strong>
         </div>
 
-        <h1 class="text-26-bold">
-          계좌정보를 입력해 주세요
-        </h1>
+        <h1 class="text-26-bold">계좌정보를 입력해 주세요</h1>
 
         <p class="account-description text-15">
           본인 명의의 계좌만 연결할 수 있어요.
@@ -29,28 +24,20 @@
       </header>
 
       <!-- 계좌 정보 입력 -->
-      <form
-          class="account-form"
-          @submit.prevent="requestVerification"
-      >
+      <form class="account-form" @submit.prevent="requestVerification">
         <label for="accountHolder">예금주</label>
 
         <div class="readonly-field">
           <input
-              id="accountHolder"
-              :value="accountHolder"
-              class="readonly-input"
-              placeholder="회원 실명을 불러오고 있어요"
-              type="text"
-              readonly
+            id="accountHolder"
+            :value="accountHolder"
+            class="readonly-input"
+            placeholder="회원 실명을 불러오고 있어요"
+            type="text"
+            readonly
           />
 
-          <span
-              v-if="userLoading"
-              class="field-loading"
-          >
-            조회 중
-          </span>
+          <span v-if="userLoading" class="field-loading"> 조회 중 </span>
         </div>
 
         <p class="field-guide text-13">
@@ -60,19 +47,16 @@
         <label for="accountNumber">계좌번호</label>
 
         <input
-            id="accountNumber"
-            :value="accountNumber"
-            inputmode="numeric"
-            maxlength="20"
-            placeholder="'-' 없이 숫자만 입력해 주세요"
-            type="text"
-            @input="changeAccountNumber"
+          id="accountNumber"
+          :value="accountNumber"
+          inputmode="numeric"
+          maxlength="20"
+          placeholder="'-' 없이 숫자만 입력해 주세요"
+          type="text"
+          @input="changeAccountNumber"
         />
 
-        <p
-            v-if="errorMessage"
-            class="error-message text-13"
-        >
+        <p v-if="errorMessage" class="error-message text-13">
           {{ errorMessage }}
         </p>
       </form>
@@ -81,10 +65,10 @@
     <!-- 공통 하단 버튼 -->
     <div class="bottom-btn-area single">
       <button
-          class="bottom-btn"
-          :disabled="!canSubmit || loading || userLoading"
-          type="button"
-          @click="requestVerification"
+        class="bottom-btn"
+        :disabled="!canSubmit || loading || userLoading"
+        type="button"
+        @click="requestVerification"
       >
         {{ loading ? '인증 요청 중...' : '인증번호 받기' }}
       </button>
@@ -115,9 +99,9 @@ const errorMessage = ref('');
 // 인증 요청 가능 여부
 const canSubmit = computed(() => {
   return (
-      accountHolder.value.length > 0 &&
-      accountNumber.value.length >= 8 &&
-      !!accountStore.accountForm.bankCode
+    accountHolder.value?.length > 0 &&
+    accountNumber.value?.length >= 8 &&
+    !!accountStore.accountForm.bankCode
   );
 });
 
@@ -147,7 +131,8 @@ const loadAccountHolder = async () => {
   } catch (error) {
     console.error(error);
 
-    errorMessage.value = error.response?.data?.message || '회원 실명을 불러오지 못했습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '회원 실명을 불러오지 못했습니다.';
   } finally {
     userLoading.value = false;
   }
@@ -193,7 +178,8 @@ const requestVerification = async () => {
   } catch (error) {
     console.error(error);
 
-    errorMessage.value = error.response?.data?.message || '계좌 인증번호 발급에 실패했습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '계좌 인증번호 발급에 실패했습니다.';
   } finally {
     loading.value = false;
   }
@@ -204,8 +190,8 @@ const accountInfo = async () => {
   console.log(authStore.userId);
 
   const response = await getAccountByBankCode(
-      authStore.userId,
-      accountStore.accountForm.bankCode,
+    authStore.userId,
+    accountStore.accountForm.bankCode,
   );
 
   accountNumber.value = response.accountNumber;
