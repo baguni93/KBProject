@@ -1,4 +1,3 @@
-```
 <template>
   <div class="kb-mobile-page analysis-page">
     <PageHeader
@@ -19,6 +18,14 @@
       </div>
     </div>
 
+    <p
+        v-if="message"
+        :class="['analysis-message', 'text-13', messageType]"
+        role="status"
+    >
+      {{ message }}
+    </p>
+
     <div v-if="pageLoading" class="kb-card kb-loading content-loading">
       <div class="spinner-border kb-spinner" role="status"></div>
       <div class="text-13">{{ selectedPeriod }}개월 최근 분석 결과를 불러오는 중이에요.</div>
@@ -26,13 +33,29 @@
 
     <template v-else-if="latestAnalysis">
       <section class="title-card kb-card">
-        <div class="title-copy">
+        <div class="title-card-top">
           <span class="ai-label text-13-bold">AI 칭호</span>
-          <h2 class="text-18-bold">{{ latestAnalysis.aiTitle }}</h2>
-          <p class="text-13">{{ latestAnalysis.aiAnalysisSummary }}</p>
+
+          <button
+              type="button"
+              class="title-share-button"
+              aria-label="소비 분석 결과 공유"
+              @click="shareResult"
+          >
+            <i class="fa-solid fa-share-nodes"></i>
+            <span>공유</span>
+          </button>
         </div>
-        <div class="title-illustration" aria-hidden="true">
-          <i :class="getCategoryIcon(latestAnalysis.representativeCategoryName)"></i>
+
+        <div class="title-card-main">
+          <div class="title-copy">
+            <h2 class="text-18-bold">{{ latestAnalysis.aiTitle }}</h2>
+            <p class="text-13">{{ latestAnalysis.aiAnalysisSummary }}</p>
+          </div>
+
+          <div class="title-illustration" aria-hidden="true">
+            <i :class="getCategoryIcon(latestAnalysis.representativeCategoryName)"></i>
+          </div>
         </div>
       </section>
 
@@ -357,6 +380,10 @@ const goToResult = () => {
   });
 };
 
+const shareResult = () => {
+  // 분석 결과 피드 공유 동작 연결 영역
+};
+
 const goToCategorySummary = () => {
   if (!latestAnalysis.value?.spendingAnalysisId) {
     goToCheck();
@@ -437,13 +464,27 @@ onBeforeUnmount(stopStatusPolling);
 .title-card {
   padding: 18px 16px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  align-items: stretch;
   overflow: hidden;
   border: 1px solid #ffe19a;
   background: linear-gradient(135deg, #fffaf0 0%, #fff4d2 100%);
   box-shadow: none;
+}
+
+.title-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.title-card-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
 }
 
 .title-copy {
@@ -458,6 +499,44 @@ onBeforeUnmount(stopStatusPolling);
   border-radius: 999px;
   background: #ffeab0;
   color: #9b7000;
+}
+
+.title-share-button {
+  margin: 0;
+  padding: 3px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-sub);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.title-share-button i {
+  font-size: 12px;
+}
+
+.analysis-message {
+  margin: 12px 24px 0;
+  padding: 11px 13px;
+  border-radius: 12px;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
+.analysis-message.info {
+  background: #fff8dc;
+  color: #806000;
+}
+
+.analysis-message.error {
+  background: #fff0f0;
+  color: var(--color-error);
 }
 
 .title-copy h2 {
@@ -717,6 +796,11 @@ onBeforeUnmount(stopStatusPolling);
   .empty-analysis,
   .kb-section,
   .main-summary-card {
+    margin-right: 20px;
+    margin-left: 20px;
+  }
+
+  .analysis-message {
     margin-right: 20px;
     margin-left: 20px;
   }

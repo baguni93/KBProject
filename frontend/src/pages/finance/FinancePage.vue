@@ -87,7 +87,7 @@ const services = computed(() => [
   { title: '포인트 지갑', description: '출석체크로 포인트와 랜덤박스 받기', path: '/point-wallet', icon: 'fa-solid fa-coins', iconClass: 'wallet' },
   { title: '소비 분석', description: '내 소비패턴 분석으로 AI 칭호와 추천 상품 확인', path: '/analysis', icon: 'fa-solid fa-chart-pie', iconClass: 'analysis' },
   { title: '랜덤박스', description: '보유 중인 랜덤박스를 열고 포인트 받기', path: '/point-wallet/random-box', icon: 'fa-solid fa-gift', iconClass: 'random-box', badge: randomBoxCount.value > 0 ? `${randomBoxCount.value}개` : '' },
-  { title: '포인트 전환', description: '포인트를 전자 지갑으로 간편하게 전환', path: '/point-wallet/conversion', icon: 'fa-solid fa-wallet', iconClass: 'conversion' },
+  { title: '커스텀 카드', description: '나만의 디자인과 혜택으로 카드 만들기', path: '/card/create/intro', icon: 'fa-solid fa-wand-magic-sparkles', iconClass: 'custom-card' },
 ]);
 
 const loadFinanceSummary = async () => {
@@ -363,8 +363,7 @@ onMounted(loadFinanceSummary);
 }
 
 .service-icon.wallet,
-.service-icon.random-box,
-.service-icon.conversion {
+.service-icon.random-box {
   background: #fff2c0;
   color: #dda000;
 }
@@ -372,6 +371,11 @@ onMounted(loadFinanceSummary);
 .service-icon.analysis {
   background: #eef2ff;
   color: #5f74c8;
+}
+
+.service-icon.custom-card {
+  background: #f2edff;
+  color: #7657c8;
 }
 
 .service-badge {
