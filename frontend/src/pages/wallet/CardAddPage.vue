@@ -55,25 +55,31 @@
         @back="goBack"
       />
 
-      <!-- Step 1: 카드 정보 입력 (1단계) -->
+      <!-- Step 1: 카드 정보 한 개씩 동적 등장 폼 (토스/KBPay style 한 단계씩 순차 등장) -->
       <template v-if="currentStep === 1">
         <main class="page-content card-add-content">
+          <!-- 동적 헤더 타이틀 (입력 진행에 따라 문구 변환) -->
           <header class="card-add-title">
-            <h1 class="text-26-bold">
-              카드 번호를 입력하세요
-            </h1>
-            <p class="text-15">
-              본인 명의의 카드만 등록할 수 있습니다.
-            </p>
+            <transition name="heading-fade" mode="out-in">
+              <div :key="inputSubStep" class="heading-wrap">
+                <h1 class="text-26-bold">
+                  {{ currentHeadingTitle }}
+                </h1>
+                <p class="text-15">
+                  {{ currentHeadingSub }}
+                </p>
+              </div>
+            </transition>
           </header>
 
-          <!-- 카드 입력 폼 -->
+          <!-- 순차적 동적 등장 카드 입력 폼 -->
           <section class="card-form-section">
             <form id="cardAddForm" @submit.prevent="proceedToAgreement">
-              <!-- 카드 번호 -->
-              <div class="card-form-group">
+              <!-- 1. 카드 번호 입력 (기본 노출) -->
+              <div v-if="inputSubStep >= 1" class="card-form-group field-slide-up">
                 <label class="text-13-bold">카드 번호</label>
                 <input
+                  ref="cardNumInputRef"
                   v-model="cardForm.cardNum"
                   type="text"
                   class="card-input"
@@ -85,10 +91,11 @@
                 />
               </div>
 
-              <!-- 만료일 -->
-              <div class="card-form-group">
+              <!-- 2. 만료일 입력 (카드 번호 완료 시 순차 등장) -->
+              <div v-if="inputSubStep >= 2" class="card-form-group field-slide-up">
                 <label class="text-13-bold">만료일 (MM / YY)</label>
                 <input
+                  ref="expiryInputRef"
                   v-model="cardForm.expiry"
                   type="text"
                   class="card-input"
@@ -100,10 +107,11 @@
                 />
               </div>
 
-              <!-- 보안 코드 -->
-              <div class="card-form-group">
+              <!-- 3. 보안 코드 입력 (만료일 완료 시 순차 등장) -->
+              <div v-if="inputSubStep >= 3" class="card-form-group field-slide-up">
                 <label class="text-13-bold">보안 코드 (CVC/CVV)</label>
                 <input
+                  ref="cvcInputRef"
                   v-model="cardForm.cvc"
                   type="password"
                   class="card-input"
@@ -111,13 +119,15 @@
                   maxlength="3"
                   inputmode="numeric"
                   required
+                  @input="onCvcInput"
                 />
               </div>
 
-              <!-- 카드 비밀번호 -->
-              <div class="card-form-group">
+              <!-- 4. 카드 비밀번호 입력 (보안 코드 완료 시 순차 등장) -->
+              <div v-if="inputSubStep >= 4" class="card-form-group field-slide-up">
                 <label class="text-13-bold">카드 비밀번호 처음 2자리</label>
                 <input
+                  ref="passwordInputRef"
                   v-model="cardForm.cardPassword"
                   type="password"
                   class="card-input"
@@ -196,7 +206,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHeader from '@/components/common/PageHeader.vue';
 import AgreementCheckItem from '@/components/common/AgreementCheckItem.vue';
@@ -208,8 +218,35 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const currentStep = ref(1); // 1: 카드 정보 입력, 2: 약관 동의
+const inputSubStep = ref(1); // 1: 카드번호, 2: 만료일, 3: CVC, 4: 비밀번호
 const submitting = ref(false);
 const showingDetailTerm = ref(null);
+
+const cardNumInputRef = ref(null);
+const expiryInputRef = ref(null);
+const cvcInputRef = ref(null);
+const passwordInputRef = ref(null);
+
+// 상단 타이틀 & 안내 문구 동적 변환
+const currentHeadingTitle = computed(() => {
+  switch (inputSubStep.value) {
+    case 1: return "카드 번호를 입력하세요";
+    case 2: return "만료일을 입력하세요";
+    case 3: return "보안 코드를 입력하세요";
+    case 4: return "카드 비밀번호를 입력하세요";
+    default: return "카드 번호를 입력하세요";
+  }
+});
+
+const currentHeadingSub = computed(() => {
+  switch (inputSubStep.value) {
+    case 1: return "본인 명의의 카드만 등록할 수 있습니다.";
+    case 2: return "카드 전면에 인쇄된 유효기간 4자리를 입력해주세요.";
+    case 3: return "카드 뒷면 CVC/CVV 3자리 숫자를 입력해주세요.";
+    case 4: return "카드 비밀번호 앞 2자리(**)를 입력해주세요.";
+    default: return "본인 명의의 카드만 등록할 수 있습니다.";
+  }
+});
 
 // 카드 정보 폼
 const cardForm = ref({
@@ -221,17 +258,73 @@ const cardForm = ref({
   cardPassword: '',
 });
 
+// 1. 카드 번호 입력
 const onCardNumInput = (event) => {
   let value = event.target.value.replace(/\D/g, '');
   if (value.length > 16) {
     value = value.slice(0, 16);
   }
   cardForm.value.cardNum = value.replace(/(\d{4})(?=\d)/g, '$1-');
+
+  // 16자리 완성 시 다음 항목(만료일) 자동 오픈 및 포커스
+  if (value.length === 16) {
+    if (inputSubStep.value < 2) {
+      inputSubStep.value = 2;
+      nextTick(() => {
+        if (expiryInputRef.value) expiryInputRef.value.focus();
+      });
+    }
+  }
 };
 
+// 2. 만료일 입력
+const formatExpiry = (event) => {
+  let value = event.target.value.replace(/\D/g, '');
+  if (value.length > 4) {
+    value = value.slice(0, 4);
+  }
+  if (value.length >= 3) {
+    cardForm.value.expiry = `${value.slice(0, 2)}/${value.slice(2)}`;
+  } else {
+    cardForm.value.expiry = value;
+  }
+
+  // 4자리(MM/YY) 완성 시 다음 항목(CVC) 자동 오픈 및 포커스
+  if (value.length === 4) {
+    if (inputSubStep.value < 3) {
+      inputSubStep.value = 3;
+      nextTick(() => {
+        if (cvcInputRef.value) cvcInputRef.value.focus();
+      });
+    }
+  }
+};
+
+// 3. CVC 보안 코드 입력
+const onCvcInput = (event) => {
+  let value = event.target.value.replace(/\D/g, '');
+  if (value.length > 3) {
+    value = value.slice(0, 3);
+  }
+  cardForm.value.cvc = value;
+
+  // 3자리 완성 시 다음 항목(비밀번호) 자동 오픈 및 포커스
+  if (value.length === 3) {
+    if (inputSubStep.value < 4) {
+      inputSubStep.value = 4;
+      nextTick(() => {
+        if (passwordInputRef.value) passwordInputRef.value.focus();
+      });
+    }
+  }
+};
+
+// 4. 비밀번호 입력
 const onPasswordInput = () => {
   const cleanPassword = cardForm.value.cardPassword.replace(/\D/g, '');
   cardForm.value.cardPassword = cleanPassword.slice(0, 2);
+
+  // 2자리 완성 및 폼 전체 검증 성공 시 약관 동의 단계로 이동
   if (cleanPassword.length === 2 && isFormValid.value) {
     proceedToAgreement();
   }
@@ -250,18 +343,6 @@ const isFormValid = computed(() => {
     cleanPassword.length === 2
   );
 });
-
-const formatExpiry = (event) => {
-  let value = event.target.value.replace(/\D/g, '');
-  if (value.length > 4) {
-    value = value.slice(0, 4);
-  }
-  if (value.length >= 3) {
-    cardForm.value.expiry = `${value.slice(0, 2)}/${value.slice(2)}`;
-  } else {
-    cardForm.value.expiry = value;
-  }
-};
 
 const proceedToAgreement = () => {
   if (isFormValid.value) {
@@ -282,7 +363,6 @@ const loadAgreements = async () => {
     if (agreementApi && agreementApi.getAgreements) {
       const list = await agreementApi.getAgreements();
       if (list && Array.isArray(list) && list.length > 0) {
-        // CARD_ 전용 약관이 있으면 CARD_ 약관만 선별
         const cardList = list.filter((a) => (a.agreementType || '').startsWith('CARD_'));
         const targetList = cardList.length > 0 ? cardList : list;
 
@@ -359,7 +439,7 @@ const getTermFullText = (term) => {
 4. 관련 법령 또는 본 약관을 위반하는 행위
 
 제5조 (서비스 이용 제한)
-회사는 회원이 관련 법령 또는 본 약관을 위반하는 경우 서비스 이용을 제한하거나 회원 자격을 정지할 수 있습니다.`;
+회사는 회원이 관련 법령 또는 본 약관을 위반한 경우 서비스 이용을 제한하거나 회원 자격을 정지할 수 있습니다.`;
 };
 
 // 카드 등록 제출
@@ -419,6 +499,8 @@ const goBack = () => {
     showingDetailTerm.value = null;
   } else if (currentStep.value > 1) {
     currentStep.value -= 1;
+  } else if (inputSubStep.value > 1) {
+    inputSubStep.value -= 1;
   } else {
     router.back();
   }
@@ -581,6 +663,7 @@ const goBack = () => {
 .card-add-title {
   flex-shrink: 0;
   margin-top: 38px;
+  min-height: 80px;
 }
 
 .card-add-title h1 {
@@ -591,19 +674,35 @@ const goBack = () => {
 }
 
 .card-add-title p {
-  margin: 14px 0 0;
+  margin: 10px 0 0;
   color: var(--color-text-sub);
-  line-height: 1.6;
+  line-height: 1.5;
+}
+
+/* 헤더 타이틀 전환 애니메이션 */
+.heading-fade-enter-active,
+.heading-fade-leave-active {
+  transition: all 0.25s ease-out;
+}
+
+.heading-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.heading-fade-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
 .card-form-section {
-  margin-top: 44px;
+  margin-top: 30px;
 }
 
 #cardAddForm {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .card-form-group {
@@ -614,6 +713,22 @@ const goBack = () => {
   border-radius: 18px;
   background: var(--color-bg-page);
   box-sizing: border-box;
+}
+
+/* 새로 등재되는 입력창 슬라이드 업 애니메이션 */
+.field-slide-up {
+  animation: slideUpFade 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .card-form-group label {

@@ -1,42 +1,44 @@
 <template>
   <Teleport to=".app">
-    <div v-if="isNfcActive" class="spay-in-app-overlay" @click.stop>
-      <div class="spay-wave-backdrop">
-        <div class="wave-pulse ring-1"></div>
-        <div class="wave-pulse ring-2"></div>
-        <div class="wave-pulse ring-3"></div>
-      </div>
+    <transition name="spay-overlay-fade">
+      <div v-if="isNfcActive" class="spay-in-app-overlay" @click.stop>
+        <div class="spay-wave-backdrop">
+          <div class="wave-pulse ring-1"></div>
+          <div class="wave-pulse ring-2"></div>
+          <div class="wave-pulse ring-3"></div>
+        </div>
 
-      <div class="spay-top-header text-center">
-        <span class="spay-badge text-15-bold">결제 대기중</span>
-        <p class="timer-desc text-15">
-          결제 남은시간
-          <span class="timer-highlight text-20-bold">{{ formattedTimer }}</span>
-        </p>
-      </div>
+        <div class="spay-top-header text-center">
+          <span class="spay-badge text-15-bold">결제 대기중</span>
+          <p class="timer-desc text-15">
+            결제 남은시간
+            <span class="timer-highlight text-20-bold">{{ formattedTimer }}</span>
+          </p>
+        </div>
 
-      <div class="spay-giant-card-container">
-        <div class="spay-giant-card">
-          <img
-            v-if="cardImg"
-            :src="cardImg"
-            class="giant-card-bg"
-            alt="card plate"
-            @error="(e) => (e.target.src = 'http://localhost:8080/upload/card/00236_img.png')"
-          />
+        <div class="spay-giant-card-container">
+          <div class="spay-giant-card">
+            <img
+              v-if="cardImg"
+              :src="cardImg"
+              class="giant-card-bg"
+              alt="card plate"
+              @error="(e) => (e.target.src = 'http://localhost:8080/upload/card/00236_img.png')"
+            />
+          </div>
+        </div>
+
+        <div class="bottom-btn-area single spay-bottom-area">
+          <button
+            type="button"
+            class="bottom-btn secondary-button"
+            @click="$emit('cancel')"
+          >
+            결제 취소
+          </button>
         </div>
       </div>
-
-      <div class="bottom-btn-area single spay-bottom-area">
-        <button
-          type="button"
-          class="bottom-btn secondary-button"
-          @click="$emit('cancel')"
-        >
-          결제 취소
-        </button>
-      </div>
-    </div>
+    </transition>
   </Teleport>
 </template>
 
@@ -61,6 +63,54 @@ defineEmits(["cancel"]);
 
 <style scoped>
 @import "@/components/common/common/common.css";
+
+.spay-overlay-fade-enter-active,
+.spay-overlay-fade-leave-active {
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.spay-overlay-fade-enter-from,
+.spay-overlay-fade-leave-to {
+  opacity: 0;
+}
+
+/* 삼성페이 시그니처: 가로 카드 ➔ 세로 90도 회전 & 3D 입체 스케일업 애니메이션 */
+.spay-overlay-fade-enter-active .spay-giant-card {
+  animation: samsungPay90DegreeRotate 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.spay-overlay-fade-leave-active .spay-giant-card {
+  animation: samsungPay90DegreeRotateReverse 0.35s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes samsungPay90DegreeRotate {
+  0% {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.55) translateY(60px);
+    filter: blur(4px);
+  }
+  65% {
+    opacity: 0.95;
+    transform: rotate(4deg) scale(1.04);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(0deg) scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes samsungPay90DegreeRotateReverse {
+  0% {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.55) translateY(60px);
+  }
+}
 
 .spay-in-app-overlay {
   position: absolute;
@@ -157,14 +207,14 @@ defineEmits(["cancel"]);
 
 .spay-giant-card {
   position: relative;
-  width: 280px;
-  height: 175px;
-  border-radius: 14px;
+  width: 210px;
+  height: 330px;
+  border-radius: 18px;
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   overflow: hidden;
-  box-shadow: 0 0 24px rgba(255, 188, 46, 0.4);
+  box-shadow: 0 0 35px rgba(255, 188, 46, 0.5), 0 10px 25px rgba(0, 0, 0, 0.5);
   border: 2px solid #ffbc2e;
-  transform: rotate(90deg);
+  transform-origin: center center;
 }
 
 .giant-card-bg {

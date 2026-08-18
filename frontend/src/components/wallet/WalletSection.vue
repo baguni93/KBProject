@@ -231,6 +231,12 @@ const resolveCardImg = (card) => {
   if (card.cardImage) return card.cardImage;
   if (card.customCardImageUrl) return card.customCardImageUrl;
   if (card.imageUrl) return card.imageUrl;
+  if (card.cardImg) return card.cardImg;
+  if (card.cardImageName) {
+    return card.cardImageName.startsWith('/') || card.cardImageName.startsWith('http')
+      ? card.cardImageName
+      : `/images/cards/${card.cardImageName}`;
+  }
   if (card.cardName && kbCardImageMap[card.cardName]) {
     return kbCardImageMap[card.cardName];
   }
@@ -251,30 +257,44 @@ const onCardImgError = () => {
 const loadPrimaryCard = async () => {
   try {
     const targetUserId = props.userId || authStore.userId || 1;
-    const cardData = await getPrimaryCard(targetUserId);
-    if (cardData) {
-      repCard.value = cardData;
-      if (cardData.cardName || cardData.alias) {
-        repCardName.value = cardData.cardName || cardData.alias;
+    let primaryCardObj = null;
+
+    try {
+      const cardData = await getPrimaryCard(targetUserId);
+      if (cardData && (cardData.cardName || cardData.cardNumber || cardData.maskedCardNumber)) {
+        primaryCardObj = cardData;
       }
-      if (cardData.cardNumber || cardData.maskedCardNumber) {
-        primaryCardNumber.value = cardData.cardNumber || cardData.maskedCardNumber;
-      }
-      repCardImage.value = resolveCardImg(cardData);
-    } else {
-      const allCards = await getCards();
-      if (allCards && Array.isArray(allCards) && allCards.length > 0) {
-        const primary = allCards.find(c => c.representYn === 'Y' || c.isPrimary === 'Y' || c.isPrimary === true) || allCards[0];
-        repCard.value = primary;
-        if (primary.cardName || primary.alias) repCardName.value = primary.cardName || primary.alias;
-        if (primary.cardNumber || primary.maskedCardNumber) primaryCardNumber.value = primary.cardNumber || primary.maskedCardNumber;
-        repCardImage.value = resolveCardImg(primary);
+    } catch (e) {
+      console.log("getPrimaryCard API 예외:", e);
+    }
+
+    const allCards = await getCards();
+    if (allCards && Array.isArray(allCards) && allCards.length > 0) {
+      const foundPrimary = allCards.find(c => c.representYn === 'Y' || c.isPrimary === 'Y' || c.isPrimary === true) || allCards[0];
+      if (!primaryCardObj) {
+        primaryCardObj = foundPrimary;
       } else {
-        repCardImage.value = null;
+        primaryCardObj = { ...foundPrimary, ...primaryCardObj };
+        if (!resolveCardImg(primaryCardObj)) {
+          primaryCardObj.cardImageUrl = resolveCardImg(foundPrimary);
+        }
       }
     }
+
+    if (primaryCardObj) {
+      repCard.value = primaryCardObj;
+      if (primaryCardObj.cardName || primaryCardObj.alias) {
+        repCardName.value = primaryCardObj.cardName || primaryCardObj.alias;
+      }
+      if (primaryCardObj.cardNumber || primaryCardObj.maskedCardNumber) {
+        primaryCardNumber.value = primaryCardObj.cardNumber || primaryCardObj.maskedCardNumber;
+      }
+      repCardImage.value = resolveCardImg(primaryCardObj);
+    } else {
+      repCardImage.value = null;
+    }
   } catch (e) {
-    console.log("대표 카드 로드 예외 (기본 블랭크 커스텀 카드 사용):", e);
+    console.log("대표 카드 로드 예외:", e);
     repCardImage.value = null;
   }
 };

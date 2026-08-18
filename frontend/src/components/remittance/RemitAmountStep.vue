@@ -106,7 +106,7 @@
           class="tx-link-btn text-13-bold"
           @click="$emit('openTxSelect')"
         >
-          결제 내역 불러오기 <i class="fa-solid fa-chevron-right text-12"></i>
+          결제 내역 불러오기 <span class="tx-link-arr">&gt;</span>
         </button>
       </div>
 

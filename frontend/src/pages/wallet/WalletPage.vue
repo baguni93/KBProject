@@ -26,40 +26,43 @@
             </div>
           </div>
 
-          <!-- A. 카드 결제 모드 (삼성페이 style 카루셀 슬라이더) -->
-          <WalletCardSliderSection
-            v-if="!isWalletModeActive"
-            :has-representative-card="hasRepresentativeCard"
-            :registered-cards="registeredCards"
-            :current-card-idx="currentCardIdx"
-            :get-card3-d-style="getCard3DStyle"
-            :get-card-img="getCardImg"
-            :format-masked-card-num="formatMaskedCardNum"
-            @touch-start="handleTouchStart"
-            @touch-move="handleTouchMove"
-            @touch-end="handleTouchEnd"
-            @card-click="onCardClick"
-            @add-card-click="onAddCardClick"
-            @select-dot="selectDotCard"
-          />
+          <!-- A. 카드 결제 모드 ↔ B. 지갑 결제 모드 부드러운 전환 트랜지션 (WalletPage 전용 스코프) -->
+          <transition name="mode-slide-fade" mode="out-in">
+            <WalletCardSliderSection
+              v-if="!isWalletModeActive"
+              key="card-mode"
+              :has-representative-card="hasRepresentativeCard"
+              :registered-cards="registeredCards"
+              :current-card-idx="currentCardIdx"
+              :get-card3-d-style="getCard3DStyle"
+              :get-card-img="getCardImg"
+              :format-masked-card-num="formatMaskedCardNum"
+              @touch-start="handleTouchStart"
+              @touch-move="handleTouchMove"
+              @touch-end="handleTouchEnd"
+              @card-click="onCardClick"
+              @add-card-click="onAddCardClick"
+              @select-dot="selectDotCard"
+            />
 
-          <!-- B. 지갑 결제 모드 (카카오페이 style 바로 결제 QR/바코드) -->
-          <WalletPayCodeSection
-            v-else
-            :wallet-balance="walletBalance"
-            :primary-account="primaryAccount"
-            :barcode-lines="barcodeLines"
-            :qr-modules="qrModules"
-            :dynamic-barcode-token="dynamicBarcodeToken"
-            :full-screen-mode="fullScreenMode"
-            :format-currency="formatCurrency"
-            @open-barcode="openBarcodeFullScreen"
-            @open-qr="openQrFullScreen"
-            @close-full-screen="closeFullScreen"
-            @approve-barcode="approveBarcodePayment"
-            @approve-qr="approveQrPayment"
-            @go-to-charge="goToChargeView"
-          />
+            <WalletPayCodeSection
+              v-else
+              key="wallet-mode"
+              :wallet-balance="walletBalance"
+              :primary-account="primaryAccount"
+              :barcode-lines="barcodeLines"
+              :qr-modules="qrModules"
+              :dynamic-barcode-token="dynamicBarcodeToken"
+              :full-screen-mode="fullScreenMode"
+              :format-currency="formatCurrency"
+              @open-barcode="openBarcodeFullScreen"
+              @open-qr="openQrFullScreen"
+              @close-full-screen="closeFullScreen"
+              @approve-barcode="approveBarcodePayment"
+              @approve-qr="approveQrPayment"
+              @go-to-charge="goToChargeView"
+            />
+          </transition>
         </div>
       </div>
     </template>
@@ -972,6 +975,21 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.mode-slide-fade-enter-active,
+.mode-slide-fade-leave-active {
+  transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mode-slide-fade-enter-from {
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+}
+
+.mode-slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.98);
+}
 input,
 button,
 select,

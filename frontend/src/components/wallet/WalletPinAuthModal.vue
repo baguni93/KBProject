@@ -1,10 +1,11 @@
 <template>
   <Teleport to=".app">
-    <div
-      v-if="show"
-      class="wallet-pin-modal-overlay"
-      @click.self="$emit('close')"
-    >
+    <transition name="modal-fade-zoom">
+      <div
+        v-if="show"
+        class="wallet-pin-modal-overlay"
+        @click.self="$emit('close')"
+      >
       <div class="wallet-pin-modal-card text-center animate-slide-up">
         <!-- Close Button -->
         <button type="button" class="pin-close-btn" @click="$emit('close')">
@@ -106,7 +107,8 @@
         </div>
       </div>
     </div>
-  </Teleport>
+  </transition>
+</Teleport>
 </template>
 
 <script setup>
@@ -126,6 +128,18 @@ defineEmits(["close", "enterPin", "clearPin", "deletePin"]);
 
 <style scoped>
 @import "@/components/common/common/common.css";
+
+.modal-fade-zoom-enter-active,
+.modal-fade-zoom-leave-active {
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-fade-zoom-enter-from,
+.modal-fade-zoom-leave-to {
+  opacity: 0;
+  transform: scale(0.92);
+}
 
 .wallet-pin-modal-overlay {
   position: absolute;

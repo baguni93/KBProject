@@ -1,45 +1,82 @@
 <template>
-  <div class="tx-page-flex-container">
-    <!-- 1. 고정 헤더 -->
+  <div class="dutch-tx-select-page">
+    <!-- 1. 고정 안내 헤더 -->
     <div class="sec-header">
       <h3 class="text-18-bold title">정산할 카드/송금 내역 선택</h3>
       <p class="text-13 sub">정산하고 싶은 결제 내역을 터치하여 선택해 주세요.</p>
     </div>
 
-    <!-- 2. 모던 스크롤 가능한 내역 리스트 전용 영역 (기본 스크롤바 숨김 처리) -->
+    <!-- 2. 거래 내역 화면(TransactionListPage.vue) 100% 동일 UI/UX 스크롤 영역 -->
     <div class="tx-list-scroll-area">
-      <div
-        v-for="tx in formattedTxList"
-        :key="tx.id"
-        class="tx-item-card"
-        :class="{ active: remittanceStore.selectedTxIds.includes(tx.id) }"
-        @click="toggleTxSelection(tx.id)"
-      >
-        <div :class="['tx-merchant-icon-wrap', getCategoryBgClass(tx.merchantName)]">
-          <i :class="tx.faIcon"></i>
-        </div>
-
-        <div class="tx-info-left">
-          <span class="tx-merchant text-15-bold">{{ tx.merchantName }}</span>
-          <span class="tx-date text-12">{{ tx.formattedDate }}</span>
-        </div>
-
-        <div class="tx-amount-right">
-          <span class="tx-amt text-15-bold">{{ remittanceStore.formatCurrency(tx.amount) }}원</span>
-          <i
-            v-if="remittanceStore.selectedTxIds.includes(tx.id)"
-            class="fa-solid fa-circle-check sel-ic"
-          ></i>
-          <i v-else class="fa-regular fa-circle unsel-ic"></i>
-        </div>
+      <!-- 로딩 중 -->
+      <div v-if="loading" class="loading-wrap text-13 text-center py-4">
+        <p class="loading-text text-sub">거래 내역을 불러오는 중...</p>
       </div>
 
-      <div
-        v-if="formattedTxList.length === 0"
-        class="empty-tx-box text-center text-muted"
-      >
+      <!-- 내역 없음 -->
+      <div v-else-if="groupedTransactions.length === 0" class="empty-tx-box text-center text-muted">
         <i class="fa-solid fa-receipt empty-ic"></i>
-        <p class="text-13 mt-2">최근 결제 내역이 없습니다.</p>
+        <p class="text-13 mt-2">정산 가능한 결제 내역이 없습니다.</p>
+      </div>
+
+      <!-- 일자별 그룹핑 거래 내역 카체 (TransactionListPage.vue 100% 공유 스타일) -->
+      <div v-else class="tx-list-container">
+        <div
+          v-for="group in groupedTransactions"
+          :key="group.dateKey"
+          class="date-group-card"
+        >
+          <!-- 날짜 헤더 (8월 18일 화요일 | 합계 5,000원) -->
+          <div class="date-header-row">
+            <span class="date-title text-13-bold">{{ group.dateDisplay }}</span>
+            <span class="date-daily-total text-13">합계 {{ formatCurrency(group.dailySum) }}</span>
+          </div>
+
+          <!-- 내역 아이템 리스트 -->
+          <div class="date-item-list">
+            <div
+              v-for="item in group.items"
+              :key="item.transactionId"
+              class="tx-item-wrapper"
+              :class="{ selected: isSelected(item.transactionId) }"
+              @click="toggleTxSelection(item)"
+            >
+              <div class="tx-item-row">
+                <!-- 카테고리 아이콘 -->
+                <div class="tx-item-left">
+                  <div class="icon-circle text-15-bold" :class="getTypeIconClass(item.transactionType)">
+                    <i :class="getTypeIcon(item)"></i>
+                  </div>
+                  <div class="tx-info-text">
+                    <div class="tx-item-title text-15-bold">{{ getItemTitle(item) }}</div>
+                    <div v-if="getItemSubText(item)" class="tx-item-sub text-13">
+                      <span>{{ getItemSubText(item) }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 오른쪽 금액 & 선택 체크마크 [V] (영수증 아이콘 ➔ 체크마크로만 대체!) -->
+                <div class="tx-item-right">
+                  <div class="tx-amount text-15-bold" :class="getAmountClass(item.transactionType)">
+                    {{ getAmountPrefix(item.transactionType) }}{{ formatCurrency(item.amount) }}
+                  </div>
+
+                  <!-- 선택 상태 체크 아이콘 [V] -->
+                  <div class="select-check-box">
+                    <i
+                      v-if="isSelected(item.transactionId)"
+                      class="fa-solid fa-circle-check check-ic-active"
+                    ></i>
+                    <i
+                      v-else
+                      class="fa-regular fa-circle check-ic-inactive"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -51,65 +88,105 @@
         :disabled="remittanceStore.selectedTxIds.length === 0"
         @click="proceedToAmount"
       >
-        {{ remittanceStore.selectedTxIds.length > 0 ? `${remittanceStore.selectedTxIds.length}건 선택 완료 (${remittanceStore.formatCurrency(selectedTotalAmount)}원)` : "내역 선택" }}
+        {{
+          remittanceStore.selectedTxIds.length > 0
+            ? `${remittanceStore.selectedTxIds.length}건 선택 완료 (${formatCurrency(selectedTotalAmount)})`
+            : "내역 선택"
+        }}
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
-import { useRouter } from "vue-router";
-import { useRemittanceStore } from "@/stores/remittance";
-import { getCategoryIcon } from "@/util/analysis";
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useRemittanceStore } from '@/stores/remittance';
+import { useAuthStore } from '@/stores/auth';
+import transactionApi from '@/api/transactionApi';
 
 const router = useRouter();
 const remittanceStore = useRemittanceStore();
+const authStore = useAuthStore();
 
-const defaultDummyTxList = [
-  { id: 101, merchantName: "배달의민족 (153구포국수)", amount: 18500, formattedDate: "최근", faIcon: "fa-solid fa-utensils" },
-  { id: 102, merchantName: "동성로 한식당", amount: 24000, formattedDate: "최근", faIcon: "fa-solid fa-utensils" },
-  { id: 103, merchantName: "스타벅스 대구점", amount: 6200, formattedDate: "최근", faIcon: "fa-solid fa-mug-hot" },
-  { id: 104, merchantName: "투썸플레이스", amount: 5500, formattedDate: "최근", faIcon: "fa-solid fa-mug-hot" },
-  { id: 105, merchantName: "CU 계명대점", amount: 9800, formattedDate: "최근", faIcon: "fa-solid fa-store" },
-  { id: 106, merchantName: "쿠팡", amount: 42900, formattedDate: "최근", faIcon: "fa-solid fa-cart-shopping" },
-  { id: 107, merchantName: "카카오T", amount: 14500, formattedDate: "최근", faIcon: "fa-solid fa-taxi" },
-  { id: 108, merchantName: "스마일치과", amount: 65000, formattedDate: "최근", faIcon: "fa-solid fa-tooth" },
-  { id: 109, merchantName: "메가MGC커피", amount: 4900, formattedDate: "최근", faIcon: "fa-solid fa-mug-hot" },
+const loading = ref(false);
+const rawTransactions = ref([]);
+
+// 거래 내역 더미 파이프라인 (TransactionListPage.vue와 100% 동일 시드)
+const defaultFallbackTransactions = [
+  { transactionId: 901, merchantName: '스타벅스', amount: 5000, transactionType: 'PAYMENT', createdAt: '2026-08-18T10:30:00' },
+  { transactionId: 902, merchantName: '교보문고', amount: 18000, transactionType: 'PAYMENT', createdAt: '2026-08-02T15:20:00' },
+  { transactionId: 903, merchantName: '오늘의집', amount: 27600, transactionType: 'PAYMENT', createdAt: '2026-08-02T14:10:00' },
+  { transactionId: 904, merchantName: '한솥도시락', amount: 12500, transactionType: 'PAYMENT', createdAt: '2026-08-02T12:00:00' },
+  { transactionId: 905, merchantName: '메가MGC커피', amount: 4900, transactionType: 'PAYMENT', createdAt: '2026-08-02T09:40:00' },
+  { transactionId: 906, merchantName: '스마일치과', amount: 65000, transactionType: 'PAYMENT', createdAt: '2026-08-02T09:00:00' },
+  { transactionId: 907, merchantName: '카카오T', amount: 14500, transactionType: 'PAYMENT', createdAt: '2026-08-01T22:15:00' },
+  { transactionId: 908, merchantName: '쿠팡', amount: 42900, transactionType: 'PAYMENT', createdAt: '2026-08-01T19:30:00' },
+  { transactionId: 909, merchantName: 'CU 계명대점', amount: 9800, transactionType: 'PAYMENT', createdAt: '2026-08-01T18:10:00' },
+  { transactionId: 910, merchantName: '투썸플레이스', amount: 5500, transactionType: 'PAYMENT', createdAt: '2026-08-01T15:00:00' },
 ];
 
-const formattedTxList = computed(() => {
-  if (remittanceStore.userTxList && remittanceStore.userTxList.length > 0) {
-    return remittanceStore.userTxList.map((tx, idx) => {
-      const idVal = tx.id || tx.transactionId || tx.historyId || (idx + 101);
-      return {
-        id: idVal,
-        merchantName: tx.merchantName || tx.title || "결제 건",
-        amount: Number(tx.amount || 10000),
-        formattedDate: tx.transactionTime || tx.createdAt || "최근",
-        faIcon: getCategoryIcon(tx.merchantName || tx.title),
-      };
-    });
+const fetchTransactions = async () => {
+  loading.value = true;
+  try {
+    const userId = authStore.userId || 1;
+    let apiData = [];
+    if (transactionApi && transactionApi.getTransactions) {
+      apiData = await transactionApi.getTransactions(userId);
+    }
+
+    // 실제 백엔드 DB 거래 내역이 존재하면 오직 실제 DB 내역만 노출! (더미 중복 병합 제거)
+    if (Array.isArray(apiData) && apiData.length > 0) {
+      rawTransactions.value = apiData.filter((t) => {
+        const type = (t.transactionType || t.type || '').toUpperCase();
+        return type !== 'CHARGE';
+      });
+    } else {
+      // DB 내역이 아예 없는 테스트 환경일 때만 기본 폴백 노출
+      rawTransactions.value = defaultFallbackTransactions;
+    }
+  } catch (err) {
+    console.log('거래 내역 로드 예외:', err);
+    rawTransactions.value = defaultFallbackTransactions;
+  } finally {
+    loading.value = false;
   }
-  return defaultDummyTxList;
-});
-
-const selectedTotalAmount = computed(() => {
-  return formattedTxList.value
-    .filter((tx) => remittanceStore.selectedTxIds.includes(tx.id))
-    .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
-});
-
-const getCategoryBgClass = (merchantName) => {
-  const name = merchantName || "";
-  if (name.includes("커피") || name.includes("카페") || name.includes("스타벅스") || name.includes("투썸") || name.includes("메가")) return "bg-green";
-  if (name.includes("한식") || name.includes("국수") || name.includes("식당") || name.includes("배달") || name.includes("치킨")) return "bg-amber";
-  if (name.includes("택시") || name.includes("카카오") || name.includes("버스")) return "bg-blue";
-  if (name.includes("쿠팡") || name.includes("쇼핑") || name.includes("마트")) return "bg-purple";
-  return "bg-amber";
 };
 
-const toggleTxSelection = (id) => {
+onMounted(fetchTransactions);
+
+// 날짜 그룹핑 (TransactionListPage.vue와 100% 동일 로직)
+const groupedTransactions = computed(() => {
+  const groups = {};
+
+  rawTransactions.value.forEach((item) => {
+    const dateStr = item.createdAt || item.transactionTime || item.date || new Date().toISOString();
+    const d = new Date(dateStr);
+    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    const dateDisplay = `${d.getMonth() + 1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
+
+    if (!groups[dateKey]) {
+      groups[dateKey] = {
+        dateKey,
+        dateDisplay,
+        items: [],
+        dailySum: 0,
+      };
+    }
+    groups[dateKey].items.push(item);
+    groups[dateKey].dailySum += Number(item.amount || 0);
+  });
+
+  return Object.values(groups).sort((a, b) => b.dateKey.localeCompare(a.dateKey));
+});
+
+const isSelected = (id) => {
+  return remittanceStore.selectedTxIds.includes(id);
+};
+
+const toggleTxSelection = (item) => {
+  const id = item.transactionId || item.id;
   const idx = remittanceStore.selectedTxIds.indexOf(id);
   if (idx > -1) {
     remittanceStore.selectedTxIds.splice(idx, 1);
@@ -118,186 +195,237 @@ const toggleTxSelection = (id) => {
   }
 };
 
+const selectedTotalAmount = computed(() => {
+  let sum = 0;
+  rawTransactions.value.forEach((t) => {
+    const id = t.transactionId || t.id;
+    if (remittanceStore.selectedTxIds.includes(id)) {
+      sum += Number(t.amount || 0);
+    }
+  });
+  return sum;
+});
+
 const proceedToAmount = () => {
-  if (remittanceStore.selectedTxIds.length === 0) {
-    alert("정산할 내역을 최소 1건 이상 선택해 주세요.");
-    return;
-  }
   remittanceStore.remitAmount = selectedTotalAmount.value;
   router.push('/remittance/dutch/amount');
 };
+
+const formatCurrency = (val) => {
+  if (val === undefined || val === null) return '0원';
+  return Number(val).toLocaleString('ko-KR') + '원';
+};
+
+const getItemTitle = (item) => {
+  return item.merchantName || item.merchant_name || item.title || item.memo || '가맹점 결제';
+};
+
+const getItemSubText = (item) => {
+  if (item.categoryName && item.categoryName !== '기타') return item.categoryName;
+  return null;
+};
+
+const getTypeIcon = (item) => {
+  const title = getItemTitle(item);
+  if (title.includes('스타벅스') || title.includes('커피') || title.includes('투썸') || title.includes('메가')) return 'fa-solid fa-mug-hot';
+  if (title.includes('교보문고') || title.includes('책')) return 'fa-solid fa-book';
+  if (title.includes('치과') || title.includes('병원')) return 'fa-solid fa-hospital';
+  if (title.includes('카카오') || title.includes('택시')) return 'fa-solid fa-taxi';
+  if (title.includes('도시락') || title.includes('한식') || title.includes('배달')) return 'fa-solid fa-utensils';
+  if (title.includes('쿠팡') || title.includes('오늘의집') || title.includes('쇼핑')) return 'fa-solid fa-bag-shopping';
+  if (title.includes('CU') || title.includes('편의점') || title.includes('이마트')) return 'fa-solid fa-store';
+  return 'fa-solid fa-bag-shopping';
+};
+
+const getTypeIconClass = () => 'icon-payment';
+const getAmountClass = () => 'amount-minus';
+const getAmountPrefix = () => '-';
 </script>
 
 <style scoped>
 @import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
 
-.tx-page-flex-container {
+.dutch-tx-select-page {
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-height: 100%;
-  overflow: hidden;
-  box-sizing: border-box;
+  background-color: var(--color-bg-page, #ffffff);
 }
 
 .sec-header {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 12px;
+  padding: 16px 20px 8px;
 }
 
-.title {
+.sec-header .title {
   margin: 0;
-  color: #111111;
+  color: var(--color-text-main, #111111);
 }
 
-.sub {
-  margin: 0;
-  color: #718096;
+.sec-header .sub {
+  margin: 4px 0 0;
+  color: var(--color-text-sub, #666666);
 }
 
-/* 내역 리스트 전용 스크롤 영역 (기본 스크롤바 숨김) */
 .tx-list-scroll-area {
   flex: 1;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-right: 2px;
-  padding-bottom: 8px;
+  padding: 12px 16px 80px;
   box-sizing: border-box;
-  -ms-overflow-style: none;
+
   scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .tx-list-scroll-area::-webkit-scrollbar {
   display: none;
 }
 
-.tx-item-card {
+/* TransactionListPage.vue 100% 동일 카드 스타일 */
+.date-group-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.date-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 8px;
+}
+
+.date-title {
+  color: #1e293b;
+}
+
+.date-daily-total {
+  color: #64748b;
+}
+
+.date-item-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.tx-item-wrapper {
+  padding: 12px 0;
+  border-bottom: 1px dashed #f1f5f9;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.tx-item-wrapper:last-child {
+  border-bottom: none;
+}
+
+.tx-item-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background-color: #ffffff;
-  border: 1px solid #edf2f7;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-  flex-shrink: 0;
+  justify-content: space-between;
 }
 
-.tx-item-card.active {
-  border-color: #ffbc2e;
-  background-color: #fffdf5;
-  box-shadow: 0 4px 12px rgba(255, 188, 46, 0.15);
+.tx-item-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
-.tx-merchant-icon-wrap {
-  width: 40px;
-  height: 40px;
+.icon-circle {
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 16px;
+  background: #f8fafc;
+  color: #334155;
 }
 
-.tx-merchant-icon-wrap.bg-green {
-  background-color: #e6fffa;
-  color: #10b981;
+.icon-circle.icon-payment {
+  background: #f8fafc;
+  color: #0f172a;
 }
 
-.tx-merchant-icon-wrap.bg-amber {
-  background-color: #fffbe6;
-  color: #d97706;
-}
-
-.tx-merchant-icon-wrap.bg-blue {
-  background-color: #ebf8ff;
-  color: #3182ce;
-}
-
-.tx-merchant-icon-wrap.bg-purple {
-  background-color: #faf5ff;
-  color: #8b5cf6;
-}
-
-.tx-info-left {
-  flex: 1;
+.tx-info-text {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  min-width: 0;
 }
 
-.tx-merchant {
-  color: #111111;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.tx-item-title {
+  color: #0f172a;
 }
 
-.tx-date {
-  color: #a0aec0;
+.tx-item-sub {
+  color: #64748b;
+  margin-top: 2px;
 }
 
-.tx-amount-right {
+.tx-item-right {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-shrink: 0;
 }
 
-.tx-amt {
-  color: #111111;
+.tx-amount {
+  color: #0f172a;
 }
 
-.sel-ic {
-  color: #ffbc2e;
-  font-size: 20px;
+.tx-amount.amount-minus {
+  color: #0f172a;
 }
 
-.unsel-ic {
-  color: #cbd5e0;
-  font-size: 20px;
-}
-
-.empty-tx-box {
-  padding: 40px 0;
-  color: #a0aec0;
-}
-
-.empty-ic {
-  font-size: 28px;
-  color: #cbd5e0;
-}
-
-/* 화면 극하단 고정 도킹 영역 */
-.fixed-bottom-btn-wrap {
-  flex-shrink: 0;
-  padding-top: 12px;
-  padding-bottom: 4px;
-  background-color: #ffffff;
-  border-top: 1px solid #edf2f7;
-}
-
-.fixed-bottom-btn-wrap .bottom-btn {
-  width: 100%;
-  height: 52px;
-  border-radius: 14px;
-  font-size: 17px;
-  font-weight: 700;
-  border: none;
-  background-color: #ffbc2e;
-  color: #111111;
-  cursor: pointer;
+/* 선택 체크박스 아이콘 [V] */
+.select-check-box {
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+}
+
+.check-ic-active {
+  color: #ffbc2e;
+  font-size: 22px;
+}
+
+.check-ic-inactive {
+  color: #cbd5e1;
+  font-size: 22px;
+}
+
+/* 하단 고정 버튼 영역 */
+.fixed-bottom-btn-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, #ffffff 100%);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid #f1f5f9;
+  z-index: 100;
+}
+
+.bottom-btn {
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: 16px;
+  background: #ffbc2e;
+  color: #111111;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bottom-btn:disabled {
+  background: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
 }
 </style>
