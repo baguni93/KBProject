@@ -22,7 +22,7 @@
         <div class="account-summary">
           <div class="account-count">
             <span class="text-13-bold">연결 계좌</span>
-            <strong class="text-15-bold">{{ accountStore.accountCount }}</strong>
+            <strong class="text-15-bold">{{ accountStore.accounts.length }}</strong>
           </div>
 
           <button
