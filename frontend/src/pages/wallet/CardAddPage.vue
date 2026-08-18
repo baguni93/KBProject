@@ -709,10 +709,17 @@ const goBack = () => {
   display: flex;
   flex-direction: column;
   padding: 16px 20px;
-  border: 1px solid var(--color-border-main);
+  border: 1px solid var(--color-border-main, #e2e8f0);
   border-radius: 18px;
-  background: var(--color-bg-page);
+  background: var(--color-bg-page, #ffffff);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
   box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.card-form-group:focus-within {
+  border-color: var(--color-primary, #ffbc2e);
+  box-shadow: 0 4px 18px rgba(255, 188, 46, 0.2);
 }
 
 /* 새로 등재되는 입력창 슬라이드 업 애니메이션 */

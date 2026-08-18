@@ -2,8 +2,7 @@
   <div class="dutch-tx-select-page">
     <!-- 1. 고정 안내 헤더 -->
     <div class="sec-header">
-      <h3 class="text-18-bold title">정산할 카드/송금 내역 선택</h3>
-      <p class="text-13 sub">정산하고 싶은 결제 내역을 터치하여 선택해 주세요.</p>
+      <h3 class="text-18-bold title">결제 내역</h3>
     </div>
 
     <!-- 2. 거래 내역 화면(TransactionListPage.vue) 100% 동일 UI/UX 스크롤 영역 -->
@@ -139,7 +138,9 @@ const fetchTransactions = async () => {
     if (Array.isArray(apiData) && apiData.length > 0) {
       rawTransactions.value = apiData.filter((t) => {
         const type = (t.transactionType || t.type || '').toUpperCase();
-        return type !== 'CHARGE';
+        const merchant = (t.merchantName || t.merchant_name || t.storeName || '').trim();
+        // PAYMENT 타입이고 merchantName이 있는 가맹점 결제만 허용
+        return type === 'PAYMENT' && !!merchant;
       });
     } else {
       // DB 내역이 아예 없는 테스트 환경일 때만 기본 폴백 노출
@@ -208,6 +209,22 @@ const selectedTotalAmount = computed(() => {
 
 const proceedToAmount = () => {
   remittanceStore.remitAmount = selectedTotalAmount.value;
+
+  const selectedItems = rawTransactions.value.filter((t) => {
+    const id = t.transactionId || t.id;
+    return remittanceStore.selectedTxIds.includes(id);
+  });
+
+  if (selectedItems.length > 0) {
+    const sorted = [...selectedItems].sort((a, b) => (b.amount || 0) - (a.amount || 0));
+    const topMerchant = sorted[0].merchantName || sorted[0].merchant_name || sorted[0].title || '결제';
+    if (selectedItems.length === 1) {
+      remittanceStore.dutchRoomTitle = topMerchant;
+    } else {
+      remittanceStore.dutchRoomTitle = `${topMerchant} 외 ${selectedItems.length - 1}건`;
+    }
+  }
+
   router.push('/remittance/dutch/amount');
 };
 
@@ -254,7 +271,7 @@ const getAmountPrefix = () => '-';
 }
 
 .sec-header {
-  padding: 16px 20px 8px;
+  padding: 0 0 8px;
 }
 
 .sec-header .title {
@@ -262,15 +279,10 @@ const getAmountPrefix = () => '-';
   color: var(--color-text-main, #111111);
 }
 
-.sec-header .sub {
-  margin: 4px 0 0;
-  color: var(--color-text-sub, #666666);
-}
-
 .tx-list-scroll-area {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 16px 80px;
+  padding: 12px 0 80px;
   box-sizing: border-box;
 
   scrollbar-width: none;
@@ -314,14 +326,20 @@ const getAmountPrefix = () => '-';
 }
 
 .tx-item-wrapper {
-  padding: 12px 0;
+  padding: 12px 6px;
   border-bottom: 1px dashed #f1f5f9;
   cursor: pointer;
-  transition: background 0.15s ease;
+  border-radius: 12px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.tx-item-wrapper:last-child {
-  border-bottom: none;
+.tx-item-wrapper:active {
+  transform: scale(0.985);
+  background: #f8fafc;
+}
+
+.tx-item-wrapper.selected {
+  background: rgba(255, 188, 46, 0.06);
 }
 
 .tx-item-row {
@@ -346,6 +364,7 @@ const getAmountPrefix = () => '-';
   flex-shrink: 0;
   background: #f8fafc;
   color: #334155;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .icon-circle.icon-payment {
@@ -387,10 +406,15 @@ const getAmountPrefix = () => '-';
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.select-check-box:active {
+  transform: scale(1.15);
 }
 
 .check-ic-active {
-  color: #ffbc2e;
+  color: var(--color-primary, #ffbc2e);
   font-size: 22px;
 }
 
@@ -417,15 +441,22 @@ const getAmountPrefix = () => '-';
   height: 52px;
   border: none;
   border-radius: 16px;
-  background: #ffbc2e;
+  background: var(--color-primary, #ffbc2e);
   color: #111111;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(255, 188, 46, 0.35);
+}
+
+.bottom-btn:not(:disabled):active {
+  transform: scale(0.98);
+  opacity: 0.92;
 }
 
 .bottom-btn:disabled {
   background: #e2e8f0;
   color: #94a3b8;
   cursor: not-allowed;
+  box-shadow: none;
 }
 </style>

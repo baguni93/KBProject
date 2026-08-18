@@ -1,6 +1,6 @@
 <template>
   <div class="account-remit-container">
-    <!-- 1. 계좌번호 입력 바 (카메라 아이콘 제거) -->
+    <!-- 1. 계좌번호 입력 바 -->
     <div class="form-field-group">
       <div class="toss-search-bar">
         <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -14,7 +14,7 @@
       </div>
     </div>
 
-    <!-- 2. 은행 선택 (공용 폰트 규격 text-15-bold 통일) -->
+    <!-- 2. 은행 선택 (Toss style 테두리 없는 깔끔한 동동이 로고 그리드) -->
     <div class="form-field-group">
       <span class="field-sec-title text-15-bold">은행 선택</span>
       <div class="bank-chip-grid">
@@ -25,17 +25,19 @@
           :class="{ active: bankCode === b.code }"
           @click="$emit('update:bankCode', b.code)"
         >
-          <img
-            :src="`/api/banks/logo/${b.fileName}`"
-            class="bank-logo-img"
-            :alt="b.name"
-          />
+          <div class="bank-logo-circle">
+            <img
+              :src="`/api/banks/logo/${b.fileName}`"
+              class="bank-logo-img"
+              :alt="b.name"
+            />
+          </div>
           <span class="bank-chip-name text-13-bold">{{ b.name }}</span>
         </button>
       </div>
     </div>
 
-    <!-- 3. 최근 보낸 계좌 (공용 폰트 규격 text-15-bold 통일, 파란 별 제거) -->
+    <!-- 3. 최근 보낸 계좌 (카카오페이/토스 1:1 보더리스 클린 라인) -->
     <div class="form-field-group">
       <span class="field-sec-title text-15-bold">최근 보낸 계좌</span>
       <div
@@ -95,28 +97,16 @@ const props = defineProps({
   },
   getBankLogoFileName: {
     type: Function,
-    required: true,
+    default: () => "kb.png",
   },
   getBankName: {
     type: Function,
-    required: true,
+    default: () => "KB국민",
   },
   formatCurrency: {
     type: Function,
-    required: true,
+    default: (val) => new Intl.NumberFormat("ko-KR").format(val || 0),
   },
-});
-
-const uniqueRecentAccounts = computed(() => {
-  const seen = new Set();
-  return (props.recentAccounts || []).filter((item) => {
-    const acc = item.accountNumber || "";
-    const bank = item.bankCode || item.bankName || "";
-    const key = `${bank}_${acc}`;
-    if (!acc || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
 });
 
 defineEmits([
@@ -124,6 +114,19 @@ defineEmits([
   "update:bankCode",
   "selectRecent",
 ]);
+
+// 중복된 최근 계좌 제거 (동일 계좌번호는 1개만 노출)
+const uniqueRecentAccounts = computed(() => {
+  if (!props.recentAccounts || props.recentAccounts.length === 0) return [];
+  const map = new Map();
+  props.recentAccounts.forEach(item => {
+    const accNo = item.accountNumber || item.accountNo;
+    if (accNo && !map.has(accNo)) {
+      map.set(accNo, item);
+    }
+  });
+  return Array.from(map.values());
+});
 </script>
 
 <style scoped>
@@ -132,7 +135,7 @@ defineEmits([
 .account-remit-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -143,23 +146,22 @@ defineEmits([
   gap: 10px;
 }
 
-/* 팀 공통 타이포그래피 표준 적용 섹션 타이틀 */
 .field-sec-title {
-  color: #111111;
+  color: #0f172a;
   font-size: 15px;
   font-weight: 700;
   margin-bottom: 2px;
 }
 
-/* 입력 바 */
+/* 검색바 */
 .toss-search-bar {
   display: flex;
   align-items: center;
-  background-color: #f7fafc;
+  background-color: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   padding: 0 16px;
-  height: 50px;
+  height: 48px;
   transition: all 0.2s ease;
 }
 
@@ -170,7 +172,7 @@ defineEmits([
 }
 
 .search-icon {
-  color: #a0aec0;
+  color: #94a3b8;
   font-size: 15px;
   margin-right: 10px;
 }
@@ -181,19 +183,20 @@ defineEmits([
   background: transparent;
   outline: none;
   font-size: 15px;
-  color: #111111;
+  color: #0f172a;
   line-height: 1.4;
 }
 
 .toss-search-input::placeholder {
-  color: #a0aec0;
+  color: #94a3b8;
 }
 
-/* 은행 칩 그리드 */
+/* 은행 선택 (토스/카카오 style 테두리 없는 동동이 로고 그리드) */
 .bank-chip-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+  gap: 16px 8px;
+  padding: 8px 0 4px;
 }
 
 .bank-chip-card {
@@ -201,44 +204,59 @@ defineEmits([
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  aspect-ratio: 1 / 1;
-  padding: 6px 2px;
-  border: 1px solid #edf2f7;
-  border-radius: 14px;
-  background-color: #ffffff;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
   cursor: pointer;
-  gap: 5px;
+  gap: 6px;
   box-sizing: border-box;
-  transition: all 0.15s ease;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.bank-chip-card:hover {
-  background-color: #f7fafc;
+.bank-chip-card:active {
+  transform: scale(0.92);
 }
 
-.bank-chip-card.active {
-  border-color: #ffbc2e;
-  background-color: #fffdf8;
-  box-shadow: 0 2px 8px rgba(255, 188, 46, 0.2);
+.bank-logo-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.bank-chip-card.active .bank-logo-circle {
+  background-color: #fff8e5;
+  box-shadow: inset 0 0 0 2px #ffbc2e, 0 4px 12px rgba(255, 188, 46, 0.25);
 }
 
 .bank-logo-img {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
   object-fit: contain;
 }
 
 .bank-chip-name {
-  font-size: 12px;
-  color: #2d3748;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
   line-height: 1;
   text-align: center;
+  transition: color 0.2s ease;
 }
 
-/* 최근 보낸 계좌 리스트 (공용 폰트 일치) */
+.bank-chip-card.active .bank-chip-name {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+/* 최근 보낸 계좌 리스트 (버튼/구분선 없는 카카오/토스 1:1 라인) */
 .empty-recent-msg {
-  color: #a0aec0;
+  color: #94a3b8;
   padding: 20px 0;
   text-align: center;
 }
@@ -252,7 +270,8 @@ defineEmits([
 .toss-recent-row {
   display: flex;
   align-items: center;
-  padding: 12px 10px;
+  padding: 10px 4px;
+  border: none;
   border-radius: 14px;
   background-color: transparent;
   cursor: pointer;
@@ -261,26 +280,26 @@ defineEmits([
 
 .toss-recent-row:hover,
 .toss-recent-row:active {
-  background-color: #f7fafc;
+  background-color: #f8fafc;
 }
 
 .toss-recent-avatar-wrap {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   overflow: hidden;
-  background-color: #f8f9fa;
+  background-color: #f8fafc;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 14px;
   flex-shrink: 0;
-  border: 1px solid #edf2f7;
+  border: 1px solid #f1f5f9;
 }
 
 .toss-bank-avatar-img {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   object-fit: contain;
 }
 
@@ -293,14 +312,14 @@ defineEmits([
 }
 
 .toss-recent-name {
-  color: #111111;
+  color: #0f172a;
   font-size: 15px;
   font-weight: 700;
   line-height: 1.2;
 }
 
 .toss-recent-account {
-  color: #718096;
+  color: #64748b;
   font-size: 13px;
   line-height: 1.2;
 }

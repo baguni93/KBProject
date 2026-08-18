@@ -95,10 +95,26 @@ const handleTabChange = (newVal) => {
   else if (newVal === "DUTCH") router.replace('/remittance/dutch');
 };
 
-watch(() => route.path, (newPath) => {
-  // Step 1 진입 시 잔여 입력 폼 데이터(메모, 이미지, 금액 등) 깨끗하게 초기화
-  if (newPath === '/remittance/account' || newPath === '/remittance/friend' || newPath === '/remittance/dutch' || newPath === '/remittance') {
+const syncRemitTypeFromRoute = (path) => {
+  if (path.includes('/dutch')) {
+    remittanceStore.remitType = 'DUTCH';
+  } else if (path.includes('/friend')) {
+    remittanceStore.remitType = 'FRIEND';
+  } else if (path.includes('/account')) {
+    remittanceStore.remitType = 'ACCOUNT';
+  }
+};
+
+watch(() => route.path, (newPath, oldPath) => {
+  syncRemitTypeFromRoute(newPath);
+
+  // Step 1 메인 탭 전환 시에만 폼 데이터 초기화
+  const isStepOnePath = newPath === '/remittance/account' || newPath === '/remittance/friend' || newPath === '/remittance/dutch' || newPath === '/remittance';
+  const wasStepOnePath = oldPath === '/remittance/account' || oldPath === '/remittance/friend' || oldPath === '/remittance/dutch' || oldPath === '/remittance';
+
+  if (isStepOnePath && wasStepOnePath && newPath !== oldPath) {
     remittanceStore.resetAll();
+    syncRemitTypeFromRoute(newPath);
   }
 });
 
@@ -156,6 +172,8 @@ onMounted(async () => {
     remittanceStore.selectedFriendId = Number(qFriendId);
     remittanceStore.remitType = "FRIEND";
     router.push('/remittance/friend');
+  } else {
+    syncRemitTypeFromRoute(route.path);
   }
 });
 </script>

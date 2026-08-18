@@ -1,21 +1,21 @@
 <template>
   <div class="dutch-remit-container">
-    <!-- 1. 선택된 정산 참여자 상단 아바타 스크롤 라인 (레퍼런스 디자인 100% 반영) -->
-    <div v-if="selectedFriends.length > 0" class="selected-participants-header-section">
+    <!-- 1. 선택된 정산 참여자 상단 아바타 스크롤 라인 (로그인 유저 닉네임 동적 노출) -->
+    <div class="selected-participants-header-section">
       <div class="participants-avatar-scroll-row">
-        <!-- 나 (기본 참여자) -->
+        <!-- 나 (로그인한 유저) -->
         <div class="participant-avatar-item">
           <div class="avatar-circle-box">
             <img
               :src="myProfileImageUrl"
               class="participant-avatar-img"
-              @error="$event.target.src = '/api/feeds/profile/unknown.png'"
+              @error="$event.target.src = '/api/feeds/profile/default_profile.png'"
             />
           </div>
-          <span class="participant-name-text text-13-bold">나</span>
+          <span class="participant-name-text text-12-bold">{{ myProfileName }}</span>
         </div>
 
-        <!-- 선택된 친구들 (프로필 동그라미 상단 + 우상단 X 버튼 + 하단 이름/닉네임) -->
+        <!-- 선택된 친구들 (프로필 동그라미 + 우상단 다크 X 삭제 버튼) -->
         <div
           v-for="fId in selectedFriends"
           :key="fId"
@@ -25,24 +25,25 @@
             <img
               :src="getProfileImageUrl(getFriendObj(fId))"
               class="participant-avatar-img"
-              @error="$event.target.src = '/api/feeds/profile/unknown.png'"
+              @error="$event.target.src = '/api/feeds/profile/default_profile.png'"
             />
             <button
               type="button"
               class="remove-avatar-btn"
               @click.stop="$emit('removeFriend', fId)"
+              title="참여자 제외"
             >
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
-          <span class="participant-name-text text-13-bold">
+          <span class="participant-name-text text-12-bold">
             {{ getFriendName(fId) }}
           </span>
         </div>
       </div>
     </div>
 
-    <!-- 2. 검색바 -->
+    <!-- 2. 카카오페이 최상단 통합 검색바 -->
     <div class="form-field-group">
       <div class="toss-search-bar">
         <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -56,9 +57,31 @@
       </div>
     </div>
 
-    <!-- 3. 내 친구 목록 -->
-    <div class="form-field-group">
-      <span class="field-sec-title text-15-bold">친구</span>
+    <!-- 3. 내 프로필 섹션 (동적 JWT/DB 로그인 유저 닉네임 노출) -->
+    <div class="form-field-group" style="margin-top: 10px;">
+      <span class="field-sec-title text-13-bold">내 프로필</span>
+      <div class="toss-friend-list">
+        <div class="toss-friend-row my-profile-row">
+          <div class="toss-friend-avatar-wrap">
+            <img
+              :src="myProfileImageUrl"
+              class="toss-friend-avatar-img"
+              @error="$event.target.src = '/api/feeds/profile/default_profile.png'"
+            />
+          </div>
+          <div class="toss-friend-text-area">
+            <span class="toss-friend-name text-15-bold">{{ myProfileName }}</span>
+          </div>
+          <div class="selected-check-area">
+            <i class="fa-solid fa-circle-check sel-ic"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 내 친구 목록 (카카오페이 1:1 보더리스) -->
+    <div class="form-field-group" style="margin-top: 14px;">
+      <span class="field-sec-title text-13-bold">친구</span>
       <div
         v-if="friends.length === 0"
         class="empty-recent-msg text-13"
@@ -79,7 +102,7 @@
             <img
               :src="getProfileImageUrl(friend)"
               class="toss-friend-avatar-img"
-              @error="$event.target.src = '/api/feeds/profile/unknown.png'"
+              @error="$event.target.src = '/api/feeds/profile/default_profile.png'"
             />
           </div>
           <div class="toss-friend-text-area">
@@ -119,19 +142,23 @@ defineProps({
   },
   myProfileImageUrl: {
     type: String,
-    default: "",
+    default: "/api/feeds/profile/default_profile.png",
+  },
+  myProfileName: {
+    type: String,
+    default: "노랑지갑",
   },
   getProfileImageUrl: {
     type: Function,
-    required: true,
+    default: (friend) => friend?.avatarUrl || "/api/feeds/profile/default_profile.png",
   },
   getFriendObj: {
     type: Function,
-    required: true,
+    default: () => null,
   },
   getFriendName: {
     type: Function,
-    required: true,
+    default: (fId) => "친구",
   },
 });
 
@@ -144,7 +171,7 @@ defineEmits(["update:keyword", "removeFriend", "toggleFriend"]);
 .dutch-remit-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -152,15 +179,20 @@ defineEmits(["update:keyword", "removeFriend", "toggleFriend"]);
 .form-field-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
-/* =========================================
-   상단 선택된 참여자 프로필 아바타 라인 (레퍼런스 디자인 반영)
-========================================= */
+.field-sec-title {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+/* 상단 선택 참여자 아바타 칩 */
 .selected-participants-header-section {
   width: 100%;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
 }
 
 .participants-avatar-scroll-row {
@@ -168,7 +200,7 @@ defineEmits(["update:keyword", "removeFriend", "toggleFriend"]);
   align-items: flex-start;
   gap: 16px;
   overflow-x: auto;
-  padding: 4px 2px 8px;
+  padding: 4px 2px 6px;
   scrollbar-width: none;
 }
 
@@ -180,17 +212,17 @@ defineEmits(["update:keyword", "removeFriend", "toggleFriend"]);
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 68px;
+  width: 56px;
   flex-shrink: 0;
 }
 
 .avatar-circle-box {
   position: relative;
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  background-color: #f8fafc;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .participant-avatar-img {
@@ -207,7 +239,7 @@ defineEmits(["update:keyword", "removeFriend", "toggleFriend"]);
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background-color: #4a5568;
+  background-color: #475569;
   color: #ffffff;
   border: 1.5px solid #ffffff;
   display: flex;
@@ -220,14 +252,14 @@ defineEmits(["update:keyword", "removeFriend", "toggleFriend"]);
 }
 
 .remove-avatar-btn:hover {
-  background-color: #e53e3e;
+  background-color: #ef4444;
 }
 
 .participant-name-text {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 12px;
-  font-weight: 600;
-  color: #111111;
+  font-weight: 700;
+  color: #0f172a;
   text-align: center;
   width: 100%;
   overflow: hidden;
@@ -235,17 +267,15 @@ defineEmits(["update:keyword", "removeFriend", "toggleFriend"]);
   white-space: nowrap;
 }
 
-/* =========================================
-   검색바 & 리스트
-========================================= */
+/* 카카오페이 최상단 검색바 */
 .toss-search-bar {
   display: flex;
   align-items: center;
-  background-color: #f7fafc;
+  background-color: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   padding: 0 16px;
-  height: 50px;
+  height: 48px;
   transition: all 0.2s ease;
 }
 
@@ -256,7 +286,7 @@ defineEmits(["update:keyword", "removeFriend", "toggleFriend"]);
 }
 
 .search-icon {
-  color: #a0aec0;
+  color: #94a3b8;
   font-size: 15px;
   margin-right: 10px;
 }
@@ -267,27 +297,21 @@ defineEmits(["update:keyword", "removeFriend", "toggleFriend"]);
   background: transparent;
   outline: none;
   font-size: 15px;
-  color: #111111;
+  color: #0f172a;
   line-height: 1.4;
 }
 
 .toss-search-input::placeholder {
-  color: #a0aec0;
-}
-
-.field-sec-title {
-  color: #111111;
-  font-size: 15px;
-  font-weight: 700;
-  margin-bottom: 2px;
+  color: #94a3b8;
 }
 
 .empty-recent-msg {
-  color: #a0aec0;
+  color: #94a3b8;
   padding: 20px 0;
   text-align: center;
 }
 
+/* 카카오페이 1:1 보더리스 라인 리스트 */
 .toss-friend-list {
   display: flex;
   flex-direction: column;
@@ -297,34 +321,31 @@ defineEmits(["update:keyword", "removeFriend", "toggleFriend"]);
 .toss-friend-row {
   display: flex;
   align-items: center;
-  padding: 12px 10px;
-  border-radius: 14px;
+  padding: 10px 4px;
+  border: none;
   background-color: transparent;
+  border-radius: 14px;
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
 .toss-friend-row:hover,
 .toss-friend-row:active {
-  background-color: #f7fafc;
-}
-
-.toss-friend-row.dutch-active {
-  background-color: #fffdf8;
+  background-color: #f8fafc;
 }
 
 .toss-friend-avatar-wrap {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   overflow: hidden;
-  background-color: #f8f9fa;
+  background-color: #f8fafc;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 14px;
   flex-shrink: 0;
-  border: 1px solid #edf2f7;
+  border: 1px solid #f1f5f9;
 }
 
 .toss-friend-avatar-img {
@@ -337,19 +358,19 @@ defineEmits(["update:keyword", "removeFriend", "toggleFriend"]);
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
 }
 
 .toss-friend-name {
-  color: #111111;
+  color: #0f172a;
   font-size: 15px;
   font-weight: 700;
   line-height: 1.2;
 }
 
 .toss-friend-sub {
-  color: #718096;
+  color: #64748b;
   font-size: 13px;
   line-height: 1.2;
 }
@@ -357,7 +378,7 @@ defineEmits(["update:keyword", "removeFriend", "toggleFriend"]);
 .selected-check-area {
   display: flex;
   align-items: center;
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .sel-ic {
@@ -365,6 +386,6 @@ defineEmits(["update:keyword", "removeFriend", "toggleFriend"]);
 }
 
 .unsel-ic {
-  color: #cbd5e0;
+  color: #94a3b8;
 }
 </style>

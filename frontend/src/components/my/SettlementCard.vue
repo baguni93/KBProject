@@ -1,22 +1,24 @@
-<
 <template>
   <div class="card" :class="{ completed: isSettlementComplete }">
     <!-- 프로필 -->
     <CardProfile
       :user-id="settlement.requesterId"
-      :profile-image-name="settlement.profileSimpleVO.profileImageName"
-      :nickname="settlement.profileSimpleVO.nickname"
+      :profile-image-name="settlement.profileSimpleVO?.profileImageName"
+      :nickname="settlement.profileSimpleVO?.nickname"
       :created-at="settlement.createdAt"
       :show-visibility="false"
     />
 
-    <!-- 제목 -->
+    <!-- 정산 요청/완료 상태 뱃지 -->
     <div class="request-type" :class="{ completed: isSettlementComplete }">
       {{ requestTypeText }}
     </div>
 
-    <!-- 내용 -->
-    <div class="content">
+    <!-- 정산 제목 및 내용 -->
+    <div class="content text-16-bold" v-if="settlement.title">
+      {{ settlement.title }}
+    </div>
+    <div class="content" v-if="settlement.content && settlement.content !== settlement.title" style="color: #64748b; font-size: 14px; margin-top: 4px;">
       {{ settlement.content }}
     </div>
 

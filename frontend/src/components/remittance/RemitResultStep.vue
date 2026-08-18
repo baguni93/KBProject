@@ -51,7 +51,7 @@
             <div class="detail-row text-14">
               <span class="lbl text-14">정산 멤버</span>
               <span class="val text-15-bold">
-                {{ selectedDutchFriends && selectedDutchFriends.length > 0 ? `${getFriendName(selectedDutchFriends[0])} 외 ${selectedDutchFriends.length}명` : '참여자' }}
+                {{ selectedDutchFriends && selectedDutchFriends.length > 1 ? `${getFriendName(selectedDutchFriends[0])} 외 ${selectedDutchFriends.length - 1}명` : (selectedDutchFriends && selectedDutchFriends.length === 1 ? getFriendName(selectedDutchFriends[0]) : '참여자') }}
               </span>
             </div>
             <div class="detail-row text-14">

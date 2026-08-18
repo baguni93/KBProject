@@ -6,22 +6,24 @@
 
       <div class="fintech-body">
         <div class="payment-unified-group">
-          <!-- 상단 탭바 -->
+          <!-- 상단 탭바 (Option 1: 슬라이딩 필 인디케이터 스위치) -->
           <div class="mode-control-row">
             <div class="mode-tab-bar" style="width: 100%;">
+              <div class="tab-pill-slider" :class="{ right: isWalletModeActive }"></div>
+
               <button
                 class="tab-item text-15-bold"
                 :class="{ active: !isWalletModeActive }"
                 @click="switchWalletMode(false)"
               >
-                카드 결제
+                <i class="fa-solid fa-credit-card icon-left"></i> 카드 결제
               </button>
               <button
                 class="tab-item text-15-bold"
                 :class="{ active: isWalletModeActive }"
                 @click="switchWalletMode(true)"
               >
-                지갑 결제
+                <i class="fa-solid fa-qrcode icon-left"></i> 지갑 결제
               </button>
             </div>
           </div>
@@ -384,30 +386,30 @@ const getCard3DStyle = (index) => {
     };
   } else if (diff === -1) {
     return {
-      transform: "translateX(-75%) scale(0.9) rotate(-2deg)",
+      transform: "translateX(-36%) scale(0.85) rotate(-3.5deg)",
       zIndex: 5,
-      opacity: 0.55,
-      filter: "brightness(0.85)",
+      opacity: 0.72,
+      filter: "brightness(0.92)",
       pointerEvents: "auto",
     };
   } else if (diff === 1) {
     return {
-      transform: "translateX(75%) scale(0.9) rotate(2deg)",
+      transform: "translateX(36%) scale(0.85) rotate(3.5deg)",
       zIndex: 5,
-      opacity: 0.55,
-      filter: "brightness(0.85)",
+      opacity: 0.72,
+      filter: "brightness(0.92)",
       pointerEvents: "auto",
     };
   } else if (diff < -1) {
     return {
-      transform: "translateX(-130%) scale(0.75)",
+      transform: "translateX(-85%) scale(0.7)",
       zIndex: 1,
       opacity: 0,
       pointerEvents: "none",
     };
   } else {
     return {
-      transform: "translateX(130%) scale(0.75)",
+      transform: "translateX(85%) scale(0.7)",
       zIndex: 1,
       opacity: 0,
       pointerEvents: "none",
@@ -979,16 +981,17 @@ onUnmounted(() => {
 .mode-slide-fade-leave-active {
   transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden !important;
 }
 
 .mode-slide-fade-enter-from {
   opacity: 0;
-  transform: translateY(12px) scale(0.98);
+  transform: translateY(8px);
 }
 
 .mode-slide-fade-leave-to {
   opacity: 0;
-  transform: translateY(-12px) scale(0.98);
+  transform: translateY(-8px);
 }
 input,
 button,
@@ -1041,21 +1044,22 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  padding: 24px 24px 32px;
-  overflow-y: auto;
-  gap: 20px;
+  justify-content: center;
+  padding: 16px 20px 24px;
+  overflow: hidden !important;
+  gap: 24px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .payment-unified-group {
-  display: grid;
-  grid-template-rows: 44px 360px;
-  align-content: center;
-  justify-items: center;
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
   width: 100%;
   margin: auto 0;
+  overflow: hidden !important;
 }
 
 .mode-control-row {
@@ -1067,29 +1071,54 @@ textarea {
 }
 
 .mode-tab-bar {
+  position: relative;
   display: flex;
   flex: 1;
-  background-color: var(--color-bg-screen, #f5f6f8);
+  background-color: #f1f5f9;
   padding: 4px;
-  border-radius: 10px;
+  border-radius: 16px;
+  height: 50px;
+  box-sizing: border-box;
+}
+
+.tab-pill-slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+}
+
+.tab-pill-slider.right {
+  transform: translateX(100%);
 }
 
 .mode-tab-bar .tab-item {
+  position: relative;
+  z-index: 2;
   flex: 1;
   border: none;
   background: transparent;
-  padding: 10px;
-  color: var(--color-text-sub, #777777);
-  border-radius: 8px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #64748b;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
   white-space: nowrap;
 }
 
 .mode-tab-bar .tab-item.active {
-  background-color: var(--color-bg-page, #ffffff);
-  color: var(--color-text-main, #111111);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  color: #0f172a;
+  background-color: transparent;
+  box-shadow: none;
 }
 
 .start-toggle-icon-btn {

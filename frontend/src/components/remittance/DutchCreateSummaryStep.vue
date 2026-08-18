@@ -24,10 +24,10 @@
           <i class="fa-solid fa-utensils"></i>
         </div>
         <div class="card-info-col">
-          <div class="item-title-text text-16-bold">{{ dutchRoomTitle || '식사' }}</div>
+          <div class="item-title-text text-16-bold">{{ dutchRoomTitle || '더치페이 정산' }}</div>
           <div class="item-amount-text text-20-bold">{{ formatCurrency(remitAmount || 0) }}원</div>
           <div class="item-members-text text-13">
-            {{ selectedDutchFriends && selectedDutchFriends.length > 0 ? `${getFriendName(selectedDutchFriends[0])} 외 ${selectedDutchFriends.length}명` : '참여자' }}
+            {{ myProfileName || '노랑지갑' }} 외 {{ selectedDutchFriends ? selectedDutchFriends.length : 0 }}명
           </div>
         </div>
       </div>
@@ -151,6 +151,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  myProfileName: {
+    type: String,
+    default: "노랑지갑",
+  },
   getFriendName: {
     type: Function,
     default: () => "참여자",
@@ -256,16 +260,23 @@ const onSelectExpandedCategory = (catId) => {
 .bottom-btn-area.single .bottom-btn {
   width: 100%;
   height: 52px;
-  border-radius: 14px;
+  border-radius: 16px;
   font-size: 17px;
   font-weight: 700;
   border: none;
-  background-color: #ffbc2e;
+  background-color: var(--color-primary, #ffbc2e);
   color: #111111;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(255, 188, 46, 0.35);
+}
+
+.bottom-btn-area.single .bottom-btn:not(:disabled):active {
+  transform: scale(0.98);
+  opacity: 0.92;
 }
 
 .kb-summary-header-card {
