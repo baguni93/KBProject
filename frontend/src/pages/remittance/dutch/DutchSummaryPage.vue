@@ -12,6 +12,7 @@
       :selected-files="remittanceStore.selectedFiles"
       :image-preview-url="remittanceStore.imagePreviewUrl"
       :image-preview-urls="remittanceStore.imagePreviewUrls"
+      :my-profile-name="myProfileName"
       :format-currency="remittanceStore.formatCurrency"
       @file-change="remittanceStore.handleFileChange"
       @remove-file="remittanceStore.removeSelectedFile"
@@ -21,10 +22,19 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
 import { useRemittanceStore } from "@/stores/remittance";
+import { useAuthStore } from "@/stores/auth";
+import { useProfileStore } from "@/stores/profile";
 import DutchCreateSummaryStep from "@/components/remittance/DutchCreateSummaryStep.vue";
 
 const remittanceStore = useRemittanceStore();
+const authStore = useAuthStore();
+const profileStore = useProfileStore();
+
+const myProfileName = computed(() => {
+  return profileStore.profile?.nickname || authStore.userName || "노랑지갑";
+});
 
 const submitRemittance = () => {
   remittanceStore.showConfirmModal = true;

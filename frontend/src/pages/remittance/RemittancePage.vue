@@ -69,6 +69,7 @@
             :selected-friends="selectedDutchFriends"
             :friends="filteredDutchFriends"
             :my-profile-image-url="myProfileImageUrl"
+            :my-profile-name="myProfileName"
             :get-profile-image-url="getProfileImageUrl"
             :get-friend-obj="getFriendObj"
             :get-friend-name="getFriendName"
@@ -85,7 +86,12 @@
               :disabled="!canProceedStep1"
               @click="goToStep2"
             >
-              다음 단계로 이동 <i class="fa-solid fa-arrow-right"></i>
+              <template v-if="remitType === 'DUTCH'">
+                {{ selectedDutchFriends.length > 0 ? `${selectedDutchFriends.length + 1}명 선택 완료` : '1명 선택 완료' }}
+              </template>
+              <template v-else>
+                다음
+              </template>
             </button>
           </div>
         </div>
@@ -107,15 +113,21 @@
             v-model:dutch-split-mode="dutchSplitMode"
             :selected-dutch-friends="selectedDutchFriends"
             :custom-dutch-amounts="customDutchAmounts"
+            :my-profile-image-url="myProfileImageUrl"
+            :my-profile-name="myProfileName"
             :get-bank-logo-file-name="getBankLogoFileName"
             :get-bank-name="getBankName"
             :get-friend-name="getFriendName"
+            :get-friend-obj="getFriendObj"
+            :get-profile-image-url="getProfileImageUrl"
             :format-currency="formatCurrency"
             @on-amount-input="onAmountInput"
             @add-amount="remitAmount += $event"
             @set-all-balance="remitAmount = myBalance"
             @toggle-category-expanded="isCategoryExpanded = !isCategoryExpanded"
             @open-tx-select="openTxSelectStep"
+            @edit-friends="currentStep = 1"
+            @remove-friend="removeDutchFriend"
           />
 
           <div class="next-btn-wrap">
@@ -124,8 +136,12 @@
               :disabled="!remitAmount || remitAmount <= 0"
               @click="proceedFromStep2"
             >
-              다음 (소비 카테고리 & 피드 작성)
-              <i class="fa-solid fa-arrow-right"></i>
+              <template v-if="remitType === 'DUTCH'">
+                확인
+              </template>
+              <template v-else>
+                다음
+              </template>
             </button>
           </div>
         </div>
@@ -240,6 +256,7 @@
           v-model:remit-memo="remitMemo"
           :remit-amount="remitAmount"
           :selected-dutch-friends="selectedDutchFriends"
+          :my-profile-name="myProfileName"
           :get-friend-name="getFriendName"
           :image-preview-url="imagePreviewUrl"
           :format-currency="formatCurrency"
@@ -278,6 +295,8 @@
 import { ref, computed, onMounted, reactive } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { useProfileStore } from "@/stores/profile";
+import { getProfile as fetchUserProfile, getProfileImage } from "@/api/profileApi";
 import walletApi from "@/api/walletApi";
 import friendApi from "@/api/friend";
 import transactionApi from "@/api/transactionApi";
@@ -404,10 +423,30 @@ const filteredFriends = computed(() => {
   );
 });
 
+const profileStore = useProfileStore();
+const myProfile = ref(null);
+const userProfileBlobUrl = ref("");
+
+const myProfileName = computed(() => {
+  return (
+    myProfile.value?.nickname ||
+    myProfile.value?.name ||
+    myProfile.value?.userName ||
+    authStore.userName ||
+    authStore.user?.userName ||
+    "노랑지갑"
+  );
+});
+
 const getProfileImageUrl = (friend) => {
   if (!friend) return "/api/feeds/profile/default_profile.png";
   if (friend.avatarUrl) return friend.avatarUrl;
-  const imgName = friend.profileImageName || friend.profileImage || friend.profileImg;
+  const imgName =
+    friend.storedName ||
+    friend.originalName ||
+    friend.profileImageName ||
+    friend.profileImage ||
+    friend.profileImg;
   if (imgName) {
     if (imgName.startsWith("http") || imgName.startsWith("/")) return imgName;
     return `/api/feeds/profile/${imgName}`;
@@ -416,12 +455,26 @@ const getProfileImageUrl = (friend) => {
 };
 
 const myProfileImageUrl = computed(() => {
-  const pName = authStore.user?.profileImageName || authStore.user?.profileImage || authStore.user?.profileImg;
-  if (pName) {
-    if (pName.startsWith("http") || pName.startsWith("/")) return pName;
+  if (userProfileBlobUrl.value) return userProfileBlobUrl.value;
+  if (myProfile.value?.avatarUrl) return myProfile.value.avatarUrl;
+  if (myProfile.value?.url) return myProfile.value.url;
+
+  const pName =
+    myProfile.value?.storedName ||
+    myProfile.value?.originalName ||
+    myProfile.value?.imageName ||
+    myProfile.value?.profileImageName ||
+    myProfile.value?.profileImage ||
+    authStore.user?.profileImageName ||
+    authStore.user?.profileImage;
+
+  if (pName && pName !== "default_profile.png") {
+    if (pName.startsWith("http") || pName.startsWith("blob:")) return pName;
+    if (pName.startsWith("/")) return pName;
     return `/api/feeds/profile/${pName}`;
   }
-  return "/api/feeds/profile/default_profile.png";
+
+  return "/api/feeds/profile/profile_1.png";
 });
 
 const getFriendObj = (fId) => friendList.value.find((f) => f.id === fId);
@@ -567,19 +620,21 @@ const openTxSelectStep = async () => {
       const data = await transactionApi.getTransactions(userId);
       if (data && Array.isArray(data)) {
         const payItems = data.filter((t) => {
-          const typeStr = (t.transactionType || t.type || "").toUpperCase();
-          return (
-            typeStr.includes("PAY") ||
-            typeStr === "" ||
-            (!typeStr.includes("CHARGE") &&
-              !typeStr.includes("TRANSFER") &&
-              !typeStr.includes("REMIT"))
-          );
+          const typeStr = (t.transactionType || t.type || t.txType || "").toUpperCase();
+          const merchantName = (t.merchantName || t.merchant_name || t.storeName || "").trim();
+
+          // PAYMENT 타입만 허용
+          if (typeStr !== "PAYMENT") return false;
+
+          // merchantName이 없으면 가맹점 결제가 아니므로 제외
+          if (!merchantName) return false;
+
+          return true;
         });
 
         userTxList.value = payItems.map((t) => ({
-          id: t.id || t.transactionId,
-          title: t.merchantName || t.merchant_name || t.storeName || t.memo || "현장 결제",
+          id: t.transactionId || t.id,
+          title: t.merchantName || t.merchant_name || t.storeName,
           amount: Math.abs(t.amount || 0),
           date: t.createdAt || t.transactionDate || t.date || "",
         }));
@@ -596,11 +651,12 @@ const confirmTxSelection = () => {
   );
   if (selectedItems.length === 0) return;
 
-  if (selectedItems.length === 1) {
-    dutchRoomTitle.value = `${selectedItems[0].title} 정산 모임방`;
-  } else {
-    dutchRoomTitle.value = `${selectedItems[0].title} 외 ${selectedItems.length - 1}건 정산 모임방`;
-  }
+  // 가장 금액이 큰 결제건 가맹점명 기준 스마트 제목 생성
+  const sorted = [...selectedItems].sort((a, b) => (b.amount || 0) - (a.amount || 0));
+  const topTitle = sorted[0].title || "가맹점 결제";
+  const extraCount = selectedItems.length - 1;
+
+  dutchRoomTitle.value = extraCount > 0 ? `${topTitle} 외 ${extraCount}건` : topTitle;
 
   remitAmount.value = selectedTxTotalAmount.value;
   if (remitType.value === "DUTCH") {
@@ -713,6 +769,33 @@ const loadRemitInitData = async () => {
     if (!userId) return;
 
     try {
+      if (fetchUserProfile) {
+        const pData = await fetchUserProfile();
+        if (pData) {
+          myProfile.value = pData;
+        }
+      } else if (profileStore && profileStore.getProfile) {
+        const pData = await profileStore.getProfile(userId);
+        if (pData) {
+          myProfile.value = pData;
+        }
+      }
+    } catch (pErr) {
+      console.log("내 프로필 로드 예외", pErr);
+    }
+
+    try {
+      if (getProfileImage) {
+        const imgUrl = await getProfileImage();
+        if (imgUrl) {
+          userProfileBlobUrl.value = imgUrl;
+        }
+      }
+    } catch (imgErr) {
+      console.log("내 프로필 이미지 로드 예외", imgErr);
+    }
+
+    try {
       if (walletApi && walletApi.getWalletByUserId) {
         const wInfo = await walletApi.getWalletByUserId(userId);
         if (wInfo) {
@@ -823,6 +906,38 @@ textarea {
   padding: 0 16px;
   background-color: var(--color-bg-page, #ffffff);
   box-sizing: border-box;
+}
+
+/* 상단 탭바 (Option 1: 세련된 알약 형태의 슬라이딩 탭 스위치) */
+.remit-container :deep(.common-tab-bar) {
+  background-color: #f1f5f9;
+  border-bottom: none;
+  padding: 4px;
+  border-radius: 16px;
+  height: 48px;
+  margin: 8px 0 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.remit-container :deep(.common-tab-btn) {
+  height: 40px;
+  border-radius: 12px;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.remit-container :deep(.common-tab-btn.active) {
+  background-color: #ffffff;
+  color: #0f172a;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.remit-container :deep(.common-tab-btn.active::after) {
+  display: none;
 }
 
 .card-body-scroll {

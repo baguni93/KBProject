@@ -61,8 +61,9 @@ const settlementStore = useSettlementStore();
 const currentTab = ref('active');
 
 onMounted(() => {
+  const uid = authStore.userId || 1;
   settlementStore.getMyList({
-    userId,
+    userId: uid,
   });
 });
 

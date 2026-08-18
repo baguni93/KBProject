@@ -64,7 +64,8 @@ const goSettlementList = () => {
 };
 
 onMounted(() => {
-  settlementStore.getMyList(query);
+  const uid = authStore.userId || 1;
+  settlementStore.getMyList({ userId: uid });
 });
 </script>
 

@@ -493,8 +493,8 @@ onMounted(async () => {
 .wallet-section-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 12px 0 60px;
+  gap: 28px;
+  padding: 16px 0 60px;
   box-sizing: border-box;
   text-align: left;
   position: relative;
@@ -503,7 +503,7 @@ onMounted(async () => {
 
 .section-main-title {
   color: #111111;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   margin: 0;
   white-space: nowrap;
@@ -532,7 +532,7 @@ onMounted(async () => {
 .my-wallet-card-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .card-section-header {
@@ -544,16 +544,16 @@ onMounted(async () => {
 
 .rep-card-visual {
   background: linear-gradient(135deg, #ffbc2e 0%, #f5a623 100%);
-  border-radius: 14px;
-  height: 126px;
-  padding: 16px;
+  border-radius: 16px;
+  height: 160px;
+  padding: 18px 20px;
   box-sizing: border-box;
   color: #ffffff;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(255, 188, 46, 0.25);
+  box-shadow: 0 6px 18px rgba(255, 188, 46, 0.28);
   transition: transform 0.2s ease;
 }
 
@@ -561,13 +561,14 @@ onMounted(async () => {
   background: #f8f9fa;
   height: auto;
   aspect-ratio: 1.586 / 1;
-  max-height: 190px;
+  max-height: 220px;
   padding: 0;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 16px;
 }
 
 .rep-card-img {
@@ -629,7 +630,7 @@ onMounted(async () => {
 .my-wallet-account-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .account-section-header {
@@ -642,13 +643,13 @@ onMounted(async () => {
 .rep-account-card {
   background: #ffffff;
   border: 1px solid #edf2f7;
-  border-radius: 14px;
-  padding: 14px 16px;
+  border-radius: 16px;
+  padding: 16px 18px;
   box-sizing: border-box;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .acc-top-info {

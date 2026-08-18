@@ -1,6 +1,6 @@
 <template>
   <div class="friend-remit-container">
-    <!-- 1. 통합 검색바 (계좌/정산 탭과 100% 동일한 50px 규격 및 힌트 문구) -->
+    <!-- 1. 카카오페이 최상단 통합 검색바 -->
     <div class="form-field-group">
       <div class="toss-search-bar">
         <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -14,9 +14,9 @@
       </div>
     </div>
 
-    <!-- 2. 최근 보낸 친구 (계좌 송금과 100% 동일한 최근 목록 섹션) -->
-    <div v-if="!keyword && recentFriends.length > 0" class="form-field-group">
-      <span class="field-sec-title text-15-bold">최근 보낸 친구</span>
+    <!-- 2. 최근 보낸 친구 (카카오페이 1:1 보더리스) -->
+    <div v-if="!keyword && recentFriends.length > 0" class="form-field-group" style="margin-top: 10px;">
+      <span class="field-sec-title text-13-bold">최근 보낸 친구</span>
       <div class="toss-friend-list">
         <div
           v-for="friend in recentFriends"
@@ -44,9 +44,9 @@
       </div>
     </div>
 
-    <!-- 3. 내 친구 목록 -->
-    <div class="form-field-group">
-      <span class="field-sec-title text-15-bold">내 친구 목록</span>
+    <!-- 3. 내 친구 목록 (카카오페이 1:1 버튼/구분선 없는 깨끗한 가독성) -->
+    <div class="form-field-group" style="margin-top: 14px;">
+      <span class="field-sec-title text-13-bold">친구</span>
       <div
         v-if="friends.length === 0"
         class="empty-recent-msg text-13"
@@ -102,7 +102,7 @@ defineProps({
   },
   getProfileImageUrl: {
     type: Function,
-    required: true,
+    default: (friend) => friend?.avatarUrl || "/api/feeds/profile/default_profile.png",
   },
 });
 
@@ -115,7 +115,7 @@ defineEmits(["update:keyword", "selectFriend"]);
 .friend-remit-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -123,18 +123,25 @@ defineEmits(["update:keyword", "selectFriend"]);
 .form-field-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
-/* 계좌/정산 탭과 100% 일치하는 50px 검색바 */
+.field-sec-title {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+/* 카카오페이 최상단 검색바 */
 .toss-search-bar {
   display: flex;
   align-items: center;
-  background-color: #f7fafc;
+  background-color: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   padding: 0 16px;
-  height: 50px;
+  height: 48px;
   transition: all 0.2s ease;
 }
 
@@ -145,7 +152,7 @@ defineEmits(["update:keyword", "selectFriend"]);
 }
 
 .search-icon {
-  color: #a0aec0;
+  color: #94a3b8;
   font-size: 15px;
   margin-right: 10px;
 }
@@ -156,29 +163,21 @@ defineEmits(["update:keyword", "selectFriend"]);
   background: transparent;
   outline: none;
   font-size: 15px;
-  color: #111111;
+  color: #0f172a;
   line-height: 1.4;
 }
 
 .toss-search-input::placeholder {
-  color: #a0aec0;
-}
-
-/* 팀 공통 타이포그래피 표준 적용 섹션 타이틀 */
-.field-sec-title {
-  color: #111111;
-  font-size: 15px;
-  font-weight: 700;
-  margin-bottom: 2px;
+  color: #94a3b8;
 }
 
 .empty-recent-msg {
-  color: #a0aec0;
+  color: #94a3b8;
   padding: 20px 0;
   text-align: center;
 }
 
-/* 친구 리스트 (44px 서클 통일) */
+/* 카카오페이 1:1 무구분선/무버튼 클린 행 리스트 */
 .toss-friend-list {
   display: flex;
   flex-direction: column;
@@ -188,34 +187,31 @@ defineEmits(["update:keyword", "selectFriend"]);
 .toss-friend-row {
   display: flex;
   align-items: center;
-  padding: 12px 10px;
-  border-radius: 14px;
+  padding: 10px 4px;
+  border: none;
   background-color: transparent;
+  border-radius: 14px;
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
 .toss-friend-row:hover,
 .toss-friend-row:active {
-  background-color: #f7fafc;
-}
-
-.toss-friend-row.active {
-  background-color: #fffdf8;
+  background-color: #f8fafc;
 }
 
 .toss-friend-avatar-wrap {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   overflow: hidden;
-  background-color: #f8f9fa;
+  background-color: #f8fafc;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 14px;
   flex-shrink: 0;
-  border: 1px solid #edf2f7;
+  border: 1px solid #f1f5f9;
 }
 
 .toss-friend-avatar-img {
@@ -228,19 +224,19 @@ defineEmits(["update:keyword", "selectFriend"]);
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
 }
 
 .toss-friend-name {
-  color: #111111;
+  color: #0f172a;
   font-size: 15px;
   font-weight: 700;
   line-height: 1.2;
 }
 
 .toss-friend-sub {
-  color: #718096;
+  color: #64748b;
   font-size: 13px;
   line-height: 1.2;
 }

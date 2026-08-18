@@ -7,10 +7,12 @@ import analysisApi from '@/api/analysisApi';
 import transactionApi from '@/api/transactionApi';
 import { useAuthStore } from '@/stores/auth';
 import { useProfileStore } from '@/stores/profile';
+import { useSettlementStore } from '@/stores/settlement';
 
 export const useRemittanceStore = defineStore('remittance', () => {
   const authStore = useAuthStore();
   const profileStore = useProfileStore();
+  const settlementStore = useSettlementStore();
 
   // 1. 송금 기본 상태
   const remitType = ref('ACCOUNT'); // 'ACCOUNT' | 'FRIEND' | 'DUTCH'
@@ -383,10 +385,68 @@ export const useRemittanceStore = defineStore('remittance', () => {
     isSubmitting.value = true;
     try {
       const userId = authStore.userId || 1;
-      const isAccount = remitType.value === "ACCOUNT";
+
+      // ── DUTCH(정산) 분기 ──────────────────────────
+      if (remitType.value === 'DUTCH') {
+        const friendCount = selectedDutchFriends.value.length;
+        const perAmount = friendCount > 0
+          ? Math.ceil(remitAmount.value / (friendCount + 1))
+          : remitAmount.value;
+
+        let rawTitle = dutchRoomTitle.value || remitMemo.value || '더치페이 정산';
+        if (rawTitle.length > 20) rawTitle = rawTitle.substring(0, 20);
+
+        let rawContent = remitMemo.value || rawTitle;
+        if (rawContent.length > 20) rawContent = rawContent.substring(0, 20);
+
+        const memberPayloadList = selectedDutchFriends.value.map((f) => {
+          let targetUserId = 0;
+          if (typeof f === 'number') {
+            const friendObj = getFriendObj(f);
+            targetUserId = friendObj.friendUserId || friendObj.userId || friendObj.friendId || friendObj.id || f;
+          } else if (typeof f === 'object' && f !== null) {
+            targetUserId = f.friendUserId || f.userId || f.friendId || f.id || 0;
+          } else {
+            targetUserId = Number(f) || 0;
+          }
+
+          return {
+            userId: Number(targetUserId),
+            amount: perAmount,
+          };
+        }).filter((m) => m.userId > 0);
+
+        const settlementPayload = {
+          requesterId: Number(userId),
+          title: rawTitle,
+          content: rawContent,
+          totalAmount: Number(remitAmount.value),
+          spendingCategoryId: Number(selectedCategoryId.value) || 1,
+          settlementType: 'EQUAL',
+          members: memberPayloadList,
+        };
+
+        console.log('Sending settlement payload:', settlementPayload);
+
+        if (remittanceApi && remittanceApi.createSettlement) {
+          const res = await remittanceApi.createSettlement(settlementPayload);
+          console.log('Settlement created successfully:', res);
+          // 정산 목록 즉시 갱신
+          try {
+            await settlementStore.getMyList({ userId });
+          } catch (listErr) {
+            console.log('정산 목록 갱신 예외:', listErr);
+          }
+        }
+        remitSuccess.value = true;
+        return;
+      }
+
+      // ── ACCOUNT / FRIEND 송금 분기 ───────────────
+      const isAccount = remitType.value === 'ACCOUNT';
       const receiverNameVal = isAccount
-        ? (accountForm.receiverName || "수취인")
-        : (selectedFriendObj.value?.name || selectedFriendObj.value?.nickname || "친구");
+        ? (accountForm.receiverName || '수취인')
+        : (selectedFriendObj.value?.name || selectedFriendObj.value?.nickname || '친구');
 
       const payload = {
         walletId: userId,
@@ -395,12 +455,12 @@ export const useRemittanceStore = defineStore('remittance', () => {
         merchantName: receiverNameVal,
         amount: Number(remitAmount.value),
         spendingCategoryId: selectedCategoryId.value || 1,
-        memo: remitMemo.value || "송금 완료",
-        content: remitMemo.value || "송금 완료",
-        receiverType: isAccount ? "ACCOUNT" : "WALLET",
-        bankCode: accountForm.bankCode || "004",
-        accountNumber: accountForm.accountNumber || "",
-        visibility: remitVisibility.value || "PUBLIC",
+        memo: remitMemo.value || '송금 완료',
+        content: remitMemo.value || '송금 완료',
+        receiverType: isAccount ? 'ACCOUNT' : 'WALLET',
+        bankCode: accountForm.bankCode || '004',
+        accountNumber: accountForm.accountNumber || '',
+        visibility: remitVisibility.value || 'PUBLIC',
         files: selectedFiles.value.length > 0 ? selectedFiles.value : (selectedFile.value ? [selectedFile.value] : []),
         file: selectedFile.value,
       };
@@ -410,7 +470,7 @@ export const useRemittanceStore = defineStore('remittance', () => {
       }
       remitSuccess.value = true;
     } catch (err) {
-      console.error("송금 처리 중 예외 발생:", err);
+      console.error('송금/정산 처리 중 예외 발생:', err);
       remitSuccess.value = true;
     } finally {
       isSubmitting.value = false;

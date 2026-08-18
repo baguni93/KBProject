@@ -38,10 +38,14 @@
 <script setup>
 import { useRouter } from "vue-router";
 import { useRemittanceStore } from "@/stores/remittance";
+import { useAuthStore } from "@/stores/auth";
+import { useProfileStore } from "@/stores/profile";
 import RemitAmountStep from "@/components/remittance/RemitAmountStep.vue";
 
 const router = useRouter();
 const remittanceStore = useRemittanceStore();
+const authStore = useAuthStore();
+const profileStore = useProfileStore();
 
 const handleAmountInput = (e) => {
   const raw = e.target.value.replace(/[^0-9]/g, "");
@@ -66,6 +70,18 @@ const proceedToSummary = () => {
     alert("정산할 금액을 입력해주세요.");
     return;
   }
+
+  // 결제내역을 선택하지 않고 직접 금액을 입력했거나 제목이 없는 경우 자동 생성
+  if (!remittanceStore.selectedTxIds || remittanceStore.selectedTxIds.length === 0 || !remittanceStore.dutchRoomTitle) {
+    const myNickname = profileStore.profile?.nickname || authStore.userName || "노랑지갑";
+    const friendCount = remittanceStore.selectedDutchFriends ? remittanceStore.selectedDutchFriends.length : 0;
+    if (friendCount > 0) {
+      remittanceStore.dutchRoomTitle = `${myNickname} 외 ${friendCount}명`;
+    } else {
+      remittanceStore.dutchRoomTitle = myNickname;
+    }
+  }
+
   router.push('/remittance/dutch/summary');
 };
 </script>

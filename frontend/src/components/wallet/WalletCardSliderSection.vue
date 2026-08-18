@@ -164,15 +164,15 @@ defineEmits([
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 10px 0;
+  padding: 14px 0 10px;
   touch-action: pan-y;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .carousel-track {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 240px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -180,10 +180,10 @@ defineEmits([
 
 .carousel-card-item {
   position: absolute;
-  width: 280px;
-  height: 178px;
-  border-radius: 14px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  width: 340px;
+  height: 214px;
+  border-radius: 20px;
+  box-shadow: 0 22px 45px rgba(0, 0, 0, 0.22), 0 0 26px rgba(255, 188, 46, 0.25);
   transition:
     transform 0.35s cubic-bezier(0.25, 1, 0.5, 1),
     opacity 0.35s ease,
@@ -261,8 +261,9 @@ defineEmits([
 }
 
 .card-add-deck-item {
-  background-color: var(--color-bg-page, #ffffff) !important;
-  border: 2px dashed var(--color-border-main, #dddddd);
+  background: #ffffff !important;
+  border: 2.5px dashed #cbd5e1;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
 }
 
 .add-deck-content {
@@ -272,18 +273,29 @@ defineEmits([
   justify-content: center;
   height: 100%;
   text-align: center;
-  gap: 4px;
+  gap: 6px;
+}
+
+.add-deck-content .text-18-bold {
+  color: #0f172a !important;
+}
+
+.add-deck-content .text-13 {
+  color: #64748b !important;
 }
 
 .add-icon-circle {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background-color: #fffbe6;
-  border: 1px solid var(--color-primary-border, #cc9200);
+  background-color: #fff8e5;
+  border: 1.5px solid #ffbc2e;
+  color: #d97706;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 18px;
+  margin-bottom: 2px;
 }
 
 .indicator-dots {
