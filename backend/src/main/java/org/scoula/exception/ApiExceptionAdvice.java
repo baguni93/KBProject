@@ -21,7 +21,7 @@ public class ApiExceptionAdvice {
                         ErrorResponseDTO.builder()
                                 .status(error.getStatus().value())
                                 .code(error.getCode())
-                                .message(error.getMessage())
+                                .message(e.getMessage())
                                 .build()
                 );
     }

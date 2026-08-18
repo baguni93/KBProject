@@ -57,7 +57,7 @@ const onclickPayment = async () => {
       userId,
     });
 
-    router.push('/mypage');
+    router.back();
   } catch (e) {
     console.log(e.response?.data);
   }

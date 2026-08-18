@@ -58,7 +58,9 @@
             @keyup.enter="createComment"
           />
 
-          <button @click="createComment">등록</button>
+          <button @click="createComment" class="content-btn small primary">
+            등록
+          </button>
         </div>
       </div>
     </div>
@@ -228,15 +230,6 @@ const deleteComment = (commentId) => {
   border: none;
   outline: none;
   font-size: 15px;
-}
-
-.input-area button {
-  border: none;
-  background: #4f46e5;
-  color: white;
-  border-radius: 20px;
-  padding: 8px 16px;
-  cursor: pointer;
 }
 
 .bottom-sheet-enter-active {

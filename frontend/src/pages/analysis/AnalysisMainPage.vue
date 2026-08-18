@@ -8,12 +8,11 @@
     />
 
     <div class="analysis-content-start">
-
       <div :class="['analysis-tabs', { 'is-loading': pageLoading }]">
         <CommonTabBar
-            :tabs="ANALYSIS_PERIODS"
-            :model-value="selectedPeriod"
-            @update:model-value="changePeriod"
+          :tabs="ANALYSIS_PERIODS"
+          :model-value="selectedPeriod"
+          @update:model-value="changePeriod"
         />
       </div>
     </div>
@@ -28,7 +27,9 @@
 
     <div v-if="pageLoading" class="kb-card kb-loading content-loading">
       <div class="spinner-border kb-spinner" role="status"></div>
-      <div class="text-13">{{ selectedPeriod }}개월 최근 분석 결과를 불러오는 중이에요.</div>
+      <div class="text-13">
+        {{ selectedPeriod }}개월 최근 분석 결과를 불러오는 중이에요.
+      </div>
     </div>
 
     <template v-else-if="latestAnalysis">
@@ -78,7 +79,11 @@
               @click="goToCheck"
           >
             <span>{{ analysisRunning ? '분석 중' : '다시 분석하기' }}</span>
-            <span v-if="analysisRunning" class="button-spinner" aria-hidden="true"></span>
+            <span
+              v-if="analysisRunning"
+              class="button-spinner"
+              aria-hidden="true"
+            ></span>
           </button>
           <button type="button" class="content-btn primary" @click="goToResult">
             상세 분석 보기 <i class="fa-solid fa-chevron-right"></i>
@@ -101,8 +106,8 @@
               class="category-row"
           >
             <div
-                class="category-icon"
-                :style="{
+              class="category-icon"
+              :style="{
                 backgroundColor: `${categoryColor(category, index)}20`,
                 color: categoryColor(category, index),
               }"
@@ -111,12 +116,16 @@
             </div>
             <div class="category-info">
               <div class="category-head">
-                <strong class="text-15-bold">{{ category.categoryName }}</strong>
-                <span class="text-13">{{ formatRatio(category.spendingRatio) }}%</span>
+                <strong class="text-15-bold">{{
+                  category.categoryName
+                }}</strong>
+                <span class="text-13"
+                  >{{ formatRatio(category.spendingRatio) }}%</span
+                >
               </div>
               <div class="ratio-track">
                 <span
-                    :style="{
+                  :style="{
                     width: `${Math.min(Number(category.spendingRatio), 100)}%`,
                     backgroundColor: categoryColor(category, index),
                   }"
@@ -124,7 +133,9 @@
               </div>
             </div>
             <div class="category-amount">
-              <strong class="text-15-bold">{{ formatAnalysisNumber(category.spendingAmount) }}원</strong>
+              <strong class="text-15-bold"
+                >{{ formatAnalysisNumber(category.spendingAmount) }}원</strong
+              >
               <span class="text-13">{{ category.transactionCount }}건</span>
             </div>
           </div>
@@ -133,18 +144,29 @@
     </template>
 
     <section v-else class="empty-analysis kb-card">
-      <div class="empty-analysis__icon"><i class="fa-solid fa-chart-pie"></i></div>
+      <div class="empty-analysis__icon">
+        <i class="fa-solid fa-chart-pie"></i>
+      </div>
       <span class="text-13-bold">{{ selectedPeriod }}개월</span>
       <h2 class="text-20-bold">아직 저장된 소비 분석 결과가 없어요</h2>
-      <p class="text-13">현재 소비내역이 분석 가능한 상태인지 확인한 뒤<br/>새로운 분석을 시작해 보세요.</p>
+      <p class="text-13">
+        현재 소비내역이 분석 가능한 상태인지 확인한 뒤<br />새로운 분석을 시작해
+        보세요.
+      </p>
       <button
-          type="button"
-          class="content-btn primary analysis-action-button"
-          :disabled="analysisRunning"
-          @click="goToCheck"
+        type="button"
+        class="content-btn primary analysis-action-button"
+        :disabled="analysisRunning"
+        @click="goToCheck"
       >
-        <span>{{ analysisRunning ? '분석 중' : `${selectedPeriod}개월 소비 분석하기` }}</span>
-        <span v-if="analysisRunning" class="button-spinner" aria-hidden="true"></span>
+        <span>{{
+          analysisRunning ? '분석 중' : `${selectedPeriod}개월 소비 분석하기`
+        }}</span>
+        <span
+          v-if="analysisRunning"
+          class="button-spinner"
+          aria-hidden="true"
+        ></span>
       </button>
     </section>
 
@@ -162,25 +184,43 @@
         </div>
         <div v-else-if="recentTransactions.length">
           <div
-              v-for="transaction in recentTransactions"
-              :key="transaction.transactionId"
-              class="spending-row"
+            v-for="transaction in recentTransactions"
+            :key="transaction.transactionId"
+            class="spending-row"
           >
             <div class="spending-icon">
-              <i :class="getCategoryIcon(transaction.parentCategoryName || transaction.categoryName)"></i>
+              <i
+                :class="
+                  getCategoryIcon(
+                    transaction.parentCategoryName || transaction.categoryName,
+                  )
+                "
+              ></i>
             </div>
             <!-- 거래명/거래일시 영역도 카테고리 수정 화면으로 이동할 수 있게 한다. -->
             <button
-                type="button"
-                class="spending-info spending-info-button"
-                @click="goToCategoryEdit(transaction)"
+              type="button"
+              class="spending-info spending-info-button"
+              @click="goToCategoryEdit(transaction)"
             >
-              <strong class="text-15-bold">{{ transaction.transactionLabel || transaction.merchantName || '거래 정보 없음' }}</strong>
-              <span class="text-13">{{ formatShortDate(transaction.createdAt) }}</span>
+              <strong class="text-15-bold">{{
+                transaction.transactionLabel ||
+                transaction.merchantName ||
+                '거래 정보 없음'
+              }}</strong>
+              <span class="text-13">{{
+                formatShortDate(transaction.createdAt)
+              }}</span>
             </button>
             <div class="spending-right">
-              <strong class="text-15-bold">-{{ formatAnalysisNumber(transaction.amount) }}원</strong>
-              <button type="button" class="text-13-bold" @click="goToCategoryEdit(transaction)">
+              <strong class="text-15-bold"
+                >-{{ formatAnalysisNumber(transaction.amount) }}원</strong
+              >
+              <button
+                type="button"
+                class="text-13-bold"
+                @click="goToCategoryEdit(transaction)"
+              >
                 {{ transaction.categoryName || '미분류' }}
                 <i class="fa-solid fa-pen"></i>
               </button>
@@ -226,10 +266,10 @@ let statusTimer = null;
 
 const pageLoading = computed(() => latestLoading.value);
 const sortedCategories = computed(() =>
-    [...(latestAnalysis.value?.categories ?? [])].sort(
-        (left, right) =>
-            Number(right.spendingAmount ?? 0) - Number(left.spendingAmount ?? 0),
-    ),
+  [...(latestAnalysis.value?.categories ?? [])].sort(
+    (left, right) =>
+      Number(right.spendingAmount ?? 0) - Number(left.spendingAmount ?? 0),
+  ),
 );
 const recentTransactions = computed(() => transactions.value.slice(0, 3));
 
@@ -240,13 +280,13 @@ const formatRatio = (value) => {
 const formatShortDate = (value) =>
     value ? String(value).replace('T', ' ').slice(0, 16) : '-';
 const categoryColor = (category, index) =>
-    getAnalysisCategoryColor(category.categoryName, index);
+  getAnalysisCategoryColor(category.categoryName, index);
 
 const loadLatestAnalysis = async () => {
   latestLoading.value = true;
   try {
     latestAnalysis.value = await analysisApi.getLatestAnalysisDetail(
-        selectedPeriod.value,
+      selectedPeriod.value,
     );
   } catch (error) {
     if (isAnalysisResultNotFound(error)) {
@@ -255,8 +295,8 @@ const loadLatestAnalysis = async () => {
       latestAnalysis.value = null;
       messageType.value = 'error';
       message.value = getAnalysisErrorMessage(
-          error,
-          '최근 소비 분석 결과를 불러오지 못했습니다.',
+        error,
+        '최근 소비 분석 결과를 불러오지 못했습니다.',
       );
     }
   } finally {
@@ -273,8 +313,8 @@ const loadTransactions = async () => {
     transactions.value = [];
     messageType.value = 'error';
     message.value = getAnalysisErrorMessage(
-        error,
-        '최근 소비내역을 불러오지 못했습니다.',
+      error,
+      '최근 소비내역을 불러오지 못했습니다.',
     );
   } finally {
     transactionsLoading.value = false;
@@ -288,7 +328,7 @@ const stopStatusPolling = () => {
   }
 };
 
-const loadAnalysisStatus = async ({notifyOnComplete = false} = {}) => {
+const loadAnalysisStatus = async ({ notifyOnComplete = false } = {}) => {
   try {
     const status = await analysisApi.getAnalysisStatus(selectedPeriod.value);
     const wasRunning = analysisRunning.value;
@@ -297,8 +337,8 @@ const loadAnalysisStatus = async ({notifyOnComplete = false} = {}) => {
     if (analysisRunning.value) {
       if (!statusTimer) {
         statusTimer = window.setInterval(
-            () => loadAnalysisStatus({notifyOnComplete: true}),
-            2000,
+          () => loadAnalysisStatus({ notifyOnComplete: true }),
+          2000,
         );
       }
       return;
@@ -306,13 +346,15 @@ const loadAnalysisStatus = async ({notifyOnComplete = false} = {}) => {
 
     if (status?.status === 'COMPLETED') {
       const completedAnalysisId = Number(status?.spendingAnalysisId);
-      const displayedAnalysisId = Number(latestAnalysis.value?.spendingAnalysisId);
+      const displayedAnalysisId = Number(
+        latestAnalysis.value?.spendingAnalysisId,
+      );
 
       if (
-          wasRunning ||
-          (Number.isInteger(completedAnalysisId) &&
-              completedAnalysisId > 0 &&
-              completedAnalysisId !== displayedAnalysisId)
+        wasRunning ||
+        (Number.isInteger(completedAnalysisId) &&
+          completedAnalysisId > 0 &&
+          completedAnalysisId !== displayedAnalysisId)
       ) {
         stopStatusPolling();
         await loadLatestAnalysis();
@@ -336,8 +378,8 @@ const loadAnalysisStatus = async ({notifyOnComplete = false} = {}) => {
       analysisRunning.value = false;
       messageType.value = 'error';
       message.value = getAnalysisErrorMessage(
-          error,
-          '소비 분석 진행 상태를 확인하지 못했습니다.',
+        error,
+        '소비 분석 진행 상태를 확인하지 못했습니다.',
       );
     }
   }
@@ -356,7 +398,7 @@ const changePeriod = async (period) => {
   stopStatusPolling();
   analysisRunning.value = false;
   selectedPeriod.value = period;
-  await router.replace({name: 'analysis-main', query: {period}});
+  await router.replace({ name: 'analysis-main', query: { period } });
   await loadPage();
 };
 
@@ -366,7 +408,10 @@ const goToFinance = () => {
 
 const goToCheck = () => {
   if (analysisRunning.value) return;
-  router.push({name: 'analysis-check', query: {period: selectedPeriod.value}});
+  router.push({
+    name: 'analysis-check',
+    query: { period: selectedPeriod.value },
+  });
 };
 
 const goToResult = () => {
@@ -376,7 +421,7 @@ const goToResult = () => {
   }
   router.push({
     name: 'analysis-result',
-    params: {spendingAnalysisId: latestAnalysis.value.spendingAnalysisId},
+    params: { spendingAnalysisId: latestAnalysis.value.spendingAnalysisId },
   });
 };
 
@@ -391,23 +436,23 @@ const goToCategorySummary = () => {
   }
   router.push({
     name: 'analysis-category-summary',
-    params: {spendingAnalysisId: latestAnalysis.value.spendingAnalysisId},
+    params: { spendingAnalysisId: latestAnalysis.value.spendingAnalysisId },
   });
 };
 
 const goToAllTransactions = () => {
-  router.push({name: 'analysis-transactions'});
+  router.push({ name: 'analysis-transactions' });
 };
 
 const goToCategoryEdit = (transaction) =>
-    router.push({
-      name: 'analysis-category-edit',
-      params: {transactionId: transaction.transactionId},
-      query: {
-        period: selectedPeriod.value,
-        returnTo: router.currentRoute.value.fullPath,
-      },
-    });
+  router.push({
+    name: 'analysis-category-edit',
+    params: { transactionId: transaction.transactionId },
+    query: {
+      period: selectedPeriod.value,
+      returnTo: router.currentRoute.value.fullPath,
+    },
+  });
 
 onMounted(loadPage);
 onBeforeUnmount(stopStatusPolling);

@@ -25,6 +25,7 @@ public class NotificationResponseDTO {
     private int targetId;
     private Date createdAt;
     private ProfileSimpleVO sender;
+    private int actorCount;
 
     public static NotificationResponseDTO of(NotificationVO notificationVO){
 
@@ -37,6 +38,7 @@ public class NotificationResponseDTO {
                 .notificationType(notificationVO.getNotificationType())
                 .targetId(notificationVO.getTargetId())
                 .createdAt(notificationVO.getCreatedAt())
+                .actorCount(notificationVO.getActorCount())
                 .build();
     }
 }

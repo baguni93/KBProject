@@ -1,11 +1,5 @@
 <template>
   <section class="section">
-    <div class="section-header">
-      <div class="section-title">
-        <span>피드</span>
-      </div>
-    </div>
-
     <template v-if="feeds.length > 0">
       <div class="col-12 mb-3" v-for="feed in feeds" :key="feed.feedId">
         <FeedCard :feed="feed" />
@@ -68,7 +62,7 @@ onMounted(async () => {
 
 <style scoped>
 .section {
-  padding: 0 0px 0px;
+  padding: 12px 0px 0px;
 }
 
 .section-header {

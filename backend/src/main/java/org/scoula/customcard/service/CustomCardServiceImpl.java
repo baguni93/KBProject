@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.account.domain.AccountVerificationVO;
 import org.scoula.account.mapper.AccountMapper;
+import org.scoula.card.domain.CardVO;
 import org.scoula.card.dto.CardCustomCreateDTO;
 import org.scoula.card.service.CardService;
 import org.scoula.common.util.UploadFiles;
@@ -139,16 +140,15 @@ public class CustomCardServiceImpl implements CustomCardService {
             customCardMapper.insertEmojis(emojiVos);
         }
 
-        //신청 이력 내역 추가
+        //  //신청이력 요청 처리
         customCardMapper.insertHistory(customCardId);
-
-
 
         CardImageVO cardImageVO = CardImageVO.of(dto.getCardImageName(),  customCardId);
         customCardMapper.createCustomCardImage(cardImageVO);
 
+
         //카드 발급 승인
-        cardService.createCardMasterCustom(CardCustomCreateDTO
+        CardVO result = cardService.createCardMasterCustom(CardCustomCreateDTO
                 .builder()
                 .cardName(dto.getCardName())
                 .cardImgFileName(dto.getCardImageName())
@@ -156,6 +156,12 @@ public class CustomCardServiceImpl implements CustomCardService {
                 .build());
         // 박준우: 커스텀 카드 발급 이벤트 기록
         eventService.recordMissionProgress(dto.getUserId(), "CARD");
+
+        //발급계좌 상태 변경
+        customCardMapper.updateAccountIssueType(dto.getAccountNumber());
+
+        //신청이력 완료 처리
+        customCardMapper.updateHistory(result.getCardCode() ,customCardId);
 
         return customCardId;
     }

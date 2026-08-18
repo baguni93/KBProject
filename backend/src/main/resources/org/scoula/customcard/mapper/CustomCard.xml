@@ -17,6 +17,7 @@
           AND a.use_yn = 'Y'
     </insert>
 
+
     <select id="getAgreements" resultType="org.scoula.customcard.domain.CustomCardAgreementVO">
         select agreement_id, agreement_name , agreement_content
         from agreement_tbl where agreement_type = 'CHECK_CARD'
@@ -106,9 +107,16 @@
     </insert>
     <insert id="insertHistory">
         insert into card_application_history_tbl (custom_card_id, apply_status)
-        value (#{customCardId}  , 'COMPLETE')
-
+        value (#{customCardId}  , 'REQUEST')
     </insert>
+
+    <update id="updateHistory">
+        update card_application_history_tbl set  card_code = #{cardCode} , apply_status = 'SUCCESS' where custom_card_id = #{customCardId};
+    </update>
+    <update id="updateAccountIssueType">
+        update account_dummy_tbl set issue_type = 'KBONMYWAY' where account_number = #{accountNumber};
+    </update>
+
     <insert id="createCustomCardImage" useGeneratedKeys="true" keyProperty="customCardImageId">
         INSERT INTO custom_card_image_tbl (custom_card_id, custom_card_image_name)
         VALUES (#{customCardId} , #{customCardImageName} )

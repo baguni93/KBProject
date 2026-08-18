@@ -22,6 +22,9 @@ import { ref, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import BottomNav from './BottomNav.vue';
 import CommonModal from '@/components/common/CommonModal.vue';
+import { useFeedStore } from '@/stores/feed';
+const feedStore = useFeedStore();
+
 defineProps({
   showBottomNav: {
     type: Boolean,
@@ -51,7 +54,7 @@ watch(
   },
 );
 
-const handleTabClick = () => {
+const handleTabClick = async (url) => {
   if (!contentRef.value) {
     return;
   }
@@ -60,6 +63,13 @@ const handleTabClick = () => {
     top: 0,
     behavior: 'smooth',
   });
+
+  if (url === '/feed') {
+    await feedStore.refreshList({
+      page: 0,
+      size: 3,
+    });
+  }
 };
 </script>
 

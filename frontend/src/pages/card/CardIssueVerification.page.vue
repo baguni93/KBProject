@@ -17,6 +17,7 @@
             type="text"
             inputmode="numeric"
             maxlength="4"
+            autocomplete="off"
             placeholder="인증번호 4자리를 입력해 주세요"
             class="text-input"
             @input="changeVerificationCode"
@@ -36,7 +37,7 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref, computed, watch } from 'vue';
+import { nextTick, onMounted, onActivated, ref, computed, watch } from 'vue';
 import { confirmAccountVerification } from '@/api/accountApi';
 import { useModalStore } from '@/stores/userModalStore';
 import { useCustomCardStore } from '@/stores/customcard';
@@ -95,6 +96,11 @@ const changeVerificationCode = (event) => {
 };
 
 const confirmAndConnect = async () => {
+  console.log(verificationCode.value);
+  if (verificationCode.value === '') {
+    return;
+  }
+
   const userId = authStore.userId;
   const verificationId = customCardStore.id;
 
@@ -130,13 +136,27 @@ const confirmAndConnect = async () => {
 watch(
   () => props.actionTrigger,
   async (newVal) => {
-    if (newVal === 0) return;
+    if (newVal !== 1) return;
+
     await confirmAndConnect();
   },
 );
 
+const resetVerificationForm = async () => {
+  verificationCode.value = '';
+  errorMessage.value = '';
+
+  await nextTick();
+
+  verificationInput.value?.focus();
+};
+
 onMounted(() => {
-  focusInput();
+  resetVerificationForm();
+});
+
+onActivated(() => {
+  resetVerificationForm();
 });
 </script>
 

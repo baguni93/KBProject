@@ -1,5 +1,6 @@
 package org.scoula.remittance.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,6 +30,10 @@ public class RemittanceDTO {
     private Integer transactionId;
     private Integer spendingCategoryId;
     private Integer settlementId; // 정산 ID 연동용
+
+    @JsonIgnore
+    private boolean isSettlement;
+    private Integer settlementId;
 
     // 피드 연동용 필드
     private String feedType;    // REMITTANCE

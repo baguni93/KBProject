@@ -63,7 +63,9 @@ import { useAuthStore } from '@/stores/auth.js';
 import { useModalStore } from '@/stores/userModalStore';
 import { useCustomCardStore } from '@/stores/customcard';
 import { getAccountByBankCode } from '@/api/userApi';
+import { useCardEditorStore } from '@/stores/cardEditorStore';
 
+const cardEditorStore = useCardEditorStore();
 const customCardStore = useCustomCardStore();
 const modalStore = useModalStore();
 const authStore = useAuthStore();
@@ -150,7 +152,7 @@ const requestVerification = async () => {
 
     customCardStore.code = response?.verificationCode;
     customCardStore.id = response?.verificationId;
-
+    cardEditorStore.accountNumber = accountNumber.value;
     // 성공 시 부모에게 다음 단계로 넘어가라는 신호 발송
     emit('next');
   } catch (error) {
@@ -165,7 +167,7 @@ const requestVerification = async () => {
 watch(
   () => props.actionTrigger,
   async (newVal) => {
-    if (newVal === 0) return;
+    if (newVal !== 1) return;
     await requestVerification();
   },
 );

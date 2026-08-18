@@ -10,8 +10,6 @@ DROP TABLE IF EXISTS `event_challenge_user_tbl`;
 
 DROP TABLE IF EXISTS `event_challenge_tbl`;
 
-DROP TABLE IF EXISTS `event_challenge_level_tbl`;
-
 DROP TABLE IF EXISTS `event_reward_receive_tbl`;
 
 DROP TABLE IF EXISTS `event_participation_tbl`;
@@ -501,7 +499,6 @@ CREATE TABLE user_random_box_tbl
             issue_reason IN (
                              'ATTENDANCE',
                              'FEED_SHARE',
-                             'PAYMENT',
                              'TRANSFER',
                              'EVENT'
                 )
@@ -1030,7 +1027,7 @@ CREATE TABLE notification_tbl (
     target_id INT NULL COMMENT '대상번호',
     status VARCHAR(10) NOT NULL DEFAULT 'UNREAD' COMMENT '읽음상태',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-
+	actor_count INT NOT NULL DEFAULT 1 COMMENT '그룹 알림 참여자 수',
     CONSTRAINT fk_notification_receiver
         FOREIGN KEY (receiver_id)
             REFERENCES user_tbl (user_id),
@@ -1051,6 +1048,7 @@ CREATE TABLE notification_tbl (
                 'SETTLEMENT_PAYMENT',
                 'SETTLEMENT_CANCEL',
                 'SETTLEMENT_COMPLETE',
+				'SETTLEMENT_COMPLETE_OWNER',
                 'SETTLEMENT_REMIND'
             )
         ),
@@ -1062,6 +1060,70 @@ CREATE TABLE notification_tbl (
                 'UNREAD'
             )
         )
+);
+-- 30-1 좋아요 알림 테이블
+DROP TABLE IF EXISTS notification_group_tbl;
+
+CREATE TABLE notification_group_tbl (
+    group_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '알림 그룹 번호',
+    receiver_id INT NOT NULL COMMENT '알림 수신자 번호',
+    feed_id INT NOT NULL COMMENT '피드 번호',
+    notification_type VARCHAR(30) NOT NULL COMMENT '알림 그룹 유형',
+    actor_count INT NOT NULL DEFAULT 0 COMMENT '그룹 참여자 수',
+    status VARCHAR(10) NOT NULL DEFAULT 'WAITING' COMMENT '그룹 상태',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '그룹 생성일시',
+    completed_at DATETIME NULL COMMENT '알림 확정일시',
+
+    CONSTRAINT fk_notification_group_receiver
+        FOREIGN KEY (receiver_id)
+        REFERENCES user_tbl (user_id),
+
+    CONSTRAINT fk_notification_group_feed
+        FOREIGN KEY (feed_id)
+        REFERENCES feed_tbl (feed_id),
+
+    CONSTRAINT chk_notification_group_type
+        CHECK (
+            notification_type IN (
+                'LIKE',
+                'COMMENT'
+            )
+        ),
+
+    CONSTRAINT chk_notification_group_status
+        CHECK (
+            status IN (
+                'WAITING',
+                'COMPLETED'
+            )
+        )
+);
+-- 30-3 좋아요 액터 테이블
+DROP TABLE IF EXISTS notification_group_actor_tbl;
+
+CREATE TABLE notification_group_actor_tbl (
+    group_id INT NOT NULL COMMENT '알림 그룹 번호',
+    user_id INT NOT NULL COMMENT '그룹 참여 사용자 번호',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '그룹 참여일시',
+
+    PRIMARY KEY (group_id, user_id),
+
+    CONSTRAINT fk_notification_group_actor_group
+        FOREIGN KEY (group_id)
+        REFERENCES notification_group_tbl (group_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_notification_group_actor_user
+        FOREIGN KEY (user_id)
+        REFERENCES user_tbl (user_id)
+);
+
+CREATE INDEX idx_notification_group_waiting
+ON notification_group_tbl (
+    feed_id,
+    receiver_id,
+    notification_type,
+    status
 );
 
 -- 31. 통합 거래 원장 테이블
@@ -1550,12 +1612,9 @@ DROP TABLE IF EXISTS event_reward_tbl;
 CREATE TABLE event_reward_tbl
 (
     reward_id    INT AUTO_INCREMENT PRIMARY KEY COMMENT '리워드ID',
-
-    event_id     INT NOT NULL COMMENT '이벤트ID',
-
-    reward_point INT NULL DEFAULT 0 COMMENT '리워드포인트',
-
-    reward_exp   INT NULL COMMENT '리워드경험치',
+    event_id     INT     NOT NULL COMMENT '이벤트ID',
+    reward_point INT     NULL     DEFAULT 0 COMMENT '리워드포인트',
+    reward_exe   INT     NULL COMMENT '리워드경험치',
 
     CONSTRAINT fk_event_reward_event
         FOREIGN KEY (event_id)
@@ -1566,9 +1625,9 @@ CREATE TABLE event_reward_tbl
             reward_point >= 0
             ),
 
-    CONSTRAINT chk_event_reward_exp
+    CONSTRAINT chk_event_reward_exe
         CHECK (
-            reward_exp >= 0
+            reward_exe >= 0
             )
 );
 
@@ -1637,19 +1696,6 @@ CREATE TABLE event_attendance_tbl (
 
 -- 51. 이벤트 리워드 수령이력 테이블
 DROP TABLE IF EXISTS event_reward_receive_tbl;
--- UNIQUE(event_id, user_id)
-
--- 유지하면 의미는:
-
--- 한 사용자는 하나의 이벤트에서 리워드를 1번만 받을 수 있다
-
--- 라는 정책입니다.
-
--- 예:
-
--- event_id	user_id	reward_id	결과
--- 1	100	1	가능
--- 1	100	2	불가능 (이미 해당 이벤트 보상 수령)
 
 CREATE TABLE event_reward_receive_tbl
 (
@@ -1689,28 +1735,8 @@ CREATE TABLE event_challenge_tbl
     end_date       DATETIME     NOT NULL COMMENT '챌린지 종료일',
     created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시'
 ) COMMENT ='이벤트 챌린지';
--- 이벤트 챌린지 레벨 관리 테이블 정의서
-DROP TABLE IF EXISTS event_challenge_level_tbl;
 
-CREATE TABLE event_challenge_level_tbl
-(
-	challenge_level_id   INT 	AUTO_INCREMENT PRIMARY KEY COMMENT '챌린지 레벨 ID',
-    
-	challenge_id   		 INT	NOT NULL COMMENT '챌린지 ID',
-
-    level		 		 INT    NOT NULL COMMENT '챌린지 목표 난이도',
-
-    required_exp     	 INT    NOT NULL COMMENT '챌린지 요구 경험치',
-    
-    reward_point     	 INT    NOT NULL COMMENT '레벨 보상 포인트',
-    
-     CONSTRAINT fk_event_challenge_level_challenge
-		FOREIGN KEY (challenge_id)
-			REFERENCES event_challenge_tbl (challenge_id)
-
-) COMMENT ='이벤트 챌린지 레벨 관리';
-
--- 53. 이벤트 챌린지 참여이력 테이블 정의서
+-- 53. 이벤트 챌린지 참여이력 테이블
 DROP TABLE IF EXISTS event_challenge_user_tbl;
 
 CREATE TABLE event_challenge_user_tbl
@@ -1720,9 +1746,6 @@ CREATE TABLE event_challenge_user_tbl
     challenge_id      INT         NOT NULL COMMENT '챌린지ID',
     current_level     INT         NOT NULL COMMENT '현재 달성 레벨',
     current_target    INT         NOT NULL COMMENT '현재 누적 수치',
-    
-	exp		  		  INT         NOT NULL COMMENT '경험치',
-
     status            VARCHAR(20) NOT NULL DEFAULT 'PROCESS' COMMENT '현재 상태',
     updated_at        DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '마지막 갱신시간',
@@ -2081,7 +2104,9 @@ VALUES (1,
     'Y', 
     'Y'
 );
-
+select * from feed_tbl;
+select * from user_tbl;
+select * from card_tbl;
             -- ---------------------------------------------------------------------
 -- 5. user_agreement_tbl (6건)
 -- ---------------------------------------------------------------------
@@ -2940,6 +2965,9 @@ VALUES (1, 1, '포인트 지갑 충전', '2026-07-20 09:01:00', '2026-07-20 09:0
 -- ---------------------------------------------------------------------
 -- 39. feed_tbl (6건)
 -- ---------------------------------------------------------------------
+select * from feed_tbl;
+select * from user_tbl;
+select * from profile_tbl;
 INSERT INTO feed_tbl (feed_id,
                       user_id,
                       target_id,
@@ -2949,13 +2977,13 @@ INSERT INTO feed_tbl (feed_id,
                       visibility,
                       created_at,
                       updated_at)
-VALUES (1, 1, 1, 'ACTIVE', 'PAYMENT', '지갑 충전 완료', 'PUBLIC', '2026-07-20 09:05:00', '2026-07-20 09:05:00'),
-       (2, 1, 2, 'ACTIVE', 'TRANSFER', '친구에게 송금', 'FRIEND', '2026-07-20 10:05:00', '2026-07-20 10:05:00'),
-       (3, 2, 3, 'ACTIVE', 'PAYMENT', '지갑 충전 완료', 'PRIVATE', '2026-07-21 09:05:00', '2026-07-21 09:05:00'),
-       (4, 2, 4, 'ACTIVE', 'SETTLEMENT', '정산 완료', 'FRIEND', '2026-07-21 18:05:00', '2026-07-21 18:05:00'),
-       (5, 3, 5, 'ACTIVE', 'TRANSFER', '여행비 송금', 'PUBLIC', '2026-07-22 11:05:00', '2026-07-22 11:05:00'),
-       (6, 1, 6, 'ACTIVE', 'CARD', '내 커스텀 카드 자랑하기', 'PUBLIC', '2026-07-23 08:05:00', '2026-07-23 08:05:00'),
-       (7, 1, 5, 'ACTIVE', 'EVENT', '7월 출석 이벤트 달성', 'PUBLIC', '2026-07-22 11:05:00', '2026-07-22 11:05:00');
+VALUES (10, 1, 1, 'ACTIVE', 'PAYMENT', '지갑 충전 완료', 'PUBLIC', '2026-07-20 09:05:00', '2026-07-20 09:05:00'),
+       (12, 1, 2, 'ACTIVE', 'TRANSFER', '친구에게 송금', 'FRIEND', '2026-07-20 10:05:00', '2026-07-20 10:05:00'),
+       (13, 2, 3, 'ACTIVE', 'PAYMENT', '지갑 충전 완료', 'PRIVATE', '2026-07-21 09:05:00', '2026-07-21 09:05:00'),
+       (14, 2, 4, 'ACTIVE', 'SETTLEMENT', '정산 완료', 'FRIEND', '2026-07-21 18:05:00', '2026-07-21 18:05:00'),
+       (15, 3, 5, 'ACTIVE', 'TRANSFER', '여행비 송금', 'PUBLIC', '2026-07-22 11:05:00', '2026-07-22 11:05:00'),
+       (16, 1, 6, 'ACTIVE', 'CARD', '내 커스텀 카드 자랑하기', 'PUBLIC', '2026-07-23 08:05:00', '2026-07-23 08:05:00'),
+       (17, 1, 5, 'ACTIVE', 'EVENT', '7월 출석 이벤트 달성', 'PUBLIC', '2026-07-22 11:05:00', '2026-07-22 11:05:00');
 -- ---------------------------------------------------------------------
 -- 40. feed_image_tbl (6건)
 -- ---------------------------------------------------------------------
@@ -3200,31 +3228,16 @@ INSERT INTO event_challenge_tbl (challenge_id,
 VALUES (1, 'SUMMER SEASON 이벤트 챌린지', 5000, 5, 20, '2026-07-01 00:00:00', '2026-08-31 23:59:59', '2026-07-01 00:00:00');
 
 -- ---------------------------------------------------------------------
--- event_challenge_level_tbl 
--- ---------------------------------------------------------------------
-INSERT INTO event_challenge_level_tbl (challenge_level_id,
-									   challenge_id,
-									   level,
-                                       required_exp,
-                                       reward_point)
-VALUES	(1, 1, 1, 100, 1000),
-		(2, 1, 2, 250, 1500),
-		(3, 1, 3, 500, 2000),
-		(4, 1, 4, 800, 2500),
-		(5, 1, 5, 1200, 3000);
-
--- ---------------------------------------------------------------------
 -- 53. event_challenge_user_tbl (6건)
 -- ---------------------------------------------------------------------
--- INSERT INTO event_challenge_user_tbl (user_challenge_id,
---                                       user_id,
---                                       challenge_id,
---                                       current_level,
---                                       current_target,
---                                       exp,
---                                       status,
---                                       updated_at)
--- VALUES (1, 1, 1, 2, 12, 0, 'PROCESS', '2026-07-24 08:00:00');
+INSERT INTO event_challenge_user_tbl (user_challenge_id,
+                                      user_id,
+                                      challenge_id,
+                                      current_level,
+                                      current_target,
+                                      status,
+                                      updated_at)
+VALUES (1, 1, 1, 2, 12, 'PROCESS', '2026-07-24 08:00:00');
 
 
 -- ---------------------------------------------------------------------

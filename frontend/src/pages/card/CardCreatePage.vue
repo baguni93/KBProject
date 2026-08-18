@@ -184,7 +184,8 @@ const isNextButtonDisabled = computed(() => {
 });
 
 const handleGoBack = async () => {
-  if (stepIndex.value > 0) {
+  if (stepIndex.value > 0 && stepIndex.value < 4) {
+    actionTrigger.value = 0;
     stepIndex.value--;
     return;
   } else {
@@ -203,6 +204,7 @@ const handleGoBack = async () => {
 // 자식이 API 성공 후 @next 이벤트를 쏘았을 때 다음 단계로 이동
 const handleStepNext = () => {
   if (stepIndex.value < steps.length - 1) {
+    actionTrigger.value = 0;
     stepIndex.value++;
     cardStore.saveStep();
   }
@@ -244,15 +246,8 @@ const handleButtonClick = async () => {
   }
 
   // 3단계(계좌 확인)일 때는 ref 대신 트리거 값을 올려서 자식에게 실행 신호 전달
-  if (currentIndex.value === 3) {
-    actionTrigger.value++;
-    return;
-  }
-
-  // 4단계(인증번호 확인 등)는 기존 로직 유지 가능
-  if (currentIndex.value === 4) {
-    // 만약 4단계도 자식 내부 버튼이 없다면 동일하게 트리거를 쓰거나 기존 로직 유지
-    actionTrigger.value++;
+  if (currentIndex.value === 3 || currentIndex.value === 4) {
+    actionTrigger.value = 1;
     return;
   }
 

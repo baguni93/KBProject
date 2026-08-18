@@ -170,59 +170,71 @@
         WHERE a.user_id = #{userId}
         and a.feed_status IN ('ACTIVE')
         ORDER BY a.created_at DESC
+        LIMIT #{size} OFFSET #{offset}
     </select>
 
     <select id="geMemberList" resultMap="feedMap">
 
-        SELECT
-            a.feed_id,
-            a.user_id,
-            a.target_id,
-            a.feed_type,
-            a.content,
-            a.visibility,
-            a.created_at,
-            a.updated_at,
+            SELECT
+                a.feed_id,
+                a.user_id,
+                a.target_id,
+                a.feed_type,
+                a.content,
+                a.visibility,
+                a.created_at,
+                a.updated_at,
 
-            (
-                SELECT COUNT(*)
-                FROM feed_comment_tbl fc
-                WHERE fc.feed_id = a.feed_id
-            ) AS comment_count,
+                (
+                    SELECT COUNT(*)
+                    FROM feed_comment_tbl fc
+                    WHERE fc.feed_id = a.feed_id
+                ) AS comment_count,
 
-            b.image_id,
-            b.image_name,
+                b.image_id,
+                b.image_name,
 
-            d.profile_id AS sender_profile_id,
-            d.nickname AS sender_nickname,
-            d.stored_name AS sender_profile_image
+                d.profile_id AS sender_profile_id,
+                d.nickname AS sender_nickname,
+                d.stored_name AS sender_profile_image
 
-        FROM feed_tbl a
+            FROM feed_tbl a
 
-                 LEFT JOIN feed_image_tbl b
-                           ON a.feed_id = b.feed_id
-                 LEFT JOIN profile_tbl d
-                           ON a.user_id = d.user_id
-                 LEFT JOIN friend_tbl e
-                           ON (
-                               e.user_id = #{userId}
-                                   AND e.friend_user_id = #{memberUserId}
-                               )
-                                  OR
-                              (
-                                  e.user_id = #{memberUserId}
-                                      AND e.friend_user_id = #{userId}
-                                  )
-        WHERE
-            a.feed_status = 'ACTIVE'
-          AND a.user_id = #{memberUserId}
+                     LEFT JOIN feed_image_tbl b
+                               ON a.feed_id = b.feed_id
 
-          AND
-            (
+                     LEFT JOIN profile_tbl d
+                               ON a.user_id = d.user_id
+
+            WHERE
+                a.feed_status = 'ACTIVE'
+              AND a.user_id = #{memberUserId}
+
+              AND (
                 a.visibility = 'PUBLIC'
-                    OR (e.user_id IS NOT NULL AND a.visibility = 'FRIEND')
+
+                    OR (
+                    a.visibility = 'FRIEND'
+                        AND EXISTS (
+                        SELECT 1
+                        FROM friend_tbl e
+                        WHERE
+                            (
+                                e.user_id = #{userId}
+                                    AND e.friend_user_id = #{memberUserId}
+                                )
+                           OR (
+                            e.user_id = #{memberUserId}
+                                AND e.friend_user_id = #{userId}
+                            )
+                    )
+                    )
                 )
-        ORDER BY a.created_at DESC
+
+            ORDER BY a.created_at DESC
+
+            LIMIT #{size} OFFSET #{offset}
+
 
     </select>
 
@@ -340,7 +352,7 @@
                  LEFT JOIN profile_tbl d
                            ON a.user_id = d.user_id
 
-        WHERE a.feed_id = #{feedId}
+        WHERE a.feed_id = #{feedId} and a.feed_status != 'DELETED'
 
         ORDER BY a.created_at DESC;
 
@@ -378,10 +390,12 @@
     </select>
     <select id="getAnalysis" resultType="org.scoula.feed.domain.AnalysisVO">
         SELECT
-            spending_analysis_id,
-            ai_title,
-            ai_analysis_summary
-        FROM spending_analysis_tbl
+            a.spending_analysis_id,
+            a.ai_title,
+            a.ai_analysis_summary,
+            b.category_name
+        FROM spending_analysis_tbl a
+        left join spending_category_tbl b on a.representative_category_id = b.spending_category_id
         WHERE spending_analysis_id = #{targetId}
 
     </select>
@@ -391,7 +405,8 @@
             a.event_id,
             a.reward_id,
             b.reward_point,
-            c.event_img_name as eventImageName
+            c.event_img_name as eventImageName,
+            c.event_name
         FROM event_reward_receive_tbl a
                  join event_reward_tbl b
                       on a.reward_id = b.reward_id

@@ -6,8 +6,8 @@
 
 
     <insert id="create" useGeneratedKeys="true" keyProperty="notificationId">
-        insert notification_tbl(receiver_id, sender_id, notification_type, target_id)
-        values (#{receiverId}, #{senderId} , #{notificationType},#{targetId})
+        insert notification_tbl(receiver_id, sender_id, notification_type, target_id , actor_count)
+        values (#{receiverId}, #{senderId} , #{notificationType},#{targetId} , #{actorCount})
     </insert>
 
 
@@ -18,6 +18,7 @@
     <update id="readAll">
         update notification_tbl set status ='READ' where receiver_id =#{user_id} ;
     </update>
+
 
 
     <resultMap id="senderProfileMap"
@@ -38,6 +39,7 @@
         <result column="receiver_id" property="receiverId"/>
         <result column="target_id" property="senderId"/>
         <result column="created_at" property="createdAt"/>
+        <result column="actor_count" property="actorCount"/>
         <association property="sender" resultMap="senderProfileMap"/>
 
     </resultMap>
@@ -52,6 +54,7 @@
             a.receiver_id,
             a.sender_id,
             a.status,
+            a.actor_count,
 
             b.profile_id as  sender_profile_id,
             b.nickname as sender_nickname,
@@ -73,6 +76,7 @@
             a.receiver_id,
             a.sender_id,
             a.status,
+            a.actor_count,
 
             b.profile_id as  sender_profile_id,
             b.nickname as sender_nickname,
@@ -104,5 +108,14 @@
                      AND notification_type = 'FRIEND_REQUEST'
                      AND status = 'UNREAD');
     </select>
+    <select id="findLikeNotification" resultType="org.scoula.notification.domain.NotificationVO">
+        SELECT *
+        FROM notification_tbl
+        WHERE receiver_id = #{receiverId}
+          AND target_id = #{targetId}
+          AND notification_type = 'LIKE'
+        ORDER BY notification_id DESC
+        LIMIT 1
 
+    </select>
 </mapper>

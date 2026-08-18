@@ -20,8 +20,6 @@
 <script setup>
 import { useRoute } from 'vue-router';
 import config from '@/config';
-import { useFeedStore } from '@/stores/feed';
-const feedStore = useFeedStore();
 
 const route = useRoute();
 
@@ -44,12 +42,6 @@ const handleTabClick = async (url) => {
   }
   emit('tab-click', url);
   // 피드 탭을 다시 클릭
-  if (url === '/feed') {
-    await feedStore.refreshList({
-      page: 0,
-      size: 3,
-    });
-  }
 };
 </script>
 

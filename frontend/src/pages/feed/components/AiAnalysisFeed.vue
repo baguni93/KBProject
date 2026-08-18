@@ -12,24 +12,32 @@
       <div class="ai-analysis-box">
         <div class="ai-box-header">
           <span class="ai-badge">
-            <i class="fa-solid fa-wand-magic-sparkles"></i>
-            {{ feed.analysis?.title || '절약 마스터' }}
+            <i :class="category.icons[feed.analysis?.categoryName]"></i>
+            {{ feed.analysis?.aiTitle }}
           </span>
         </div>
 
         <div class="ai-content-body">
           <div class="ai-icon-pulse">
-            <i class="fa-solid fa-brain"></i>
+            <i :class="category.icons[feed.analysis?.categoryName]"></i>
           </div>
 
           <p class="ai-analysis-text">
-            {{ feed.analysis?.content || feed.content }}
+            {{ feed.analysis?.aiAnalysisSummary }}
           </p>
         </div>
       </div>
 
-      <button class="content-btn primary" type="button" @click="handleReport">
-        Ai 소비패턴 하러가기
+      <button class="ai-analysis-btn" type="button" @click="handleReport">
+        <span class="ai-btn-icon">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </span>
+
+        <span class="ai-btn-text"> 내 소비패턴 자세히 분석해보기 </span>
+
+        <span class="ai-btn-arrow">
+          <i class="fa-solid fa-arrow-right"></i>
+        </span>
       </button>
     </div>
 
@@ -48,6 +56,8 @@
 import FeedHeader from './FeedHeader.vue';
 import FeedTags from './FeedTags.vue';
 import { useRouter } from 'vue-router';
+import { computed } from 'vue';
+import category from '@/config/category.js';
 const router = useRouter();
 
 const props = defineProps({
@@ -123,8 +133,8 @@ const handleTagClick = (tag) => {
 }
 
 .ai-analysis-box {
-  width: 100%;
-
+  width: 88%;
+  margin: 0 auto;
   background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
 
   border: 1.5px solid #cbd5e1;
@@ -254,5 +264,100 @@ const handleTagClick = (tag) => {
 
 .insta-message {
   padding-left: 0;
+}
+
+/* =========================
+   AI 소비 분석 CTA
+========================= */
+
+.ai-analysis-btn {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 88%;
+  height: 44px;
+
+  margin: 0 auto;
+
+  padding: 0 16px;
+
+  border: none;
+  border-radius: 12px;
+
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-sizing: border-box;
+
+  box-shadow: 0 5px 14px rgba(99, 102, 241, 0.22);
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    filter 0.15s ease;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 아이콘 */
+
+.ai-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-right: 7px;
+
+  font-size: 15px;
+}
+
+/* 텍스트 */
+
+.ai-btn-text {
+  line-height: 1;
+
+  white-space: nowrap;
+}
+
+/* 오른쪽 화살표 */
+
+.ai-btn-arrow {
+  position: absolute;
+
+  right: 15px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 12px;
+
+  opacity: 0.85;
+}
+
+/* hover */
+
+.ai-analysis-btn:hover {
+  filter: brightness(1.06);
+
+  box-shadow: 0 7px 18px rgba(99, 102, 241, 0.28);
+}
+
+/* 클릭 */
+
+.ai-analysis-btn:active {
+  transform: scale(0.98);
+
+  box-shadow: 0 3px 8px rgba(99, 102, 241, 0.2);
 }
 </style>

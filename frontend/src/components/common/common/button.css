@@ -112,9 +112,18 @@
   cursor: pointer;
 }
 
+.content-btn.small {
+  width: auto;
+  min-width: 62px;
+  height: auto;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 20px;
+}
+
 /* 노란색 버튼 */
 .content-btn.primary {
-  border: 1px solid var(--color-primary-border);
+  border: none;
   background: var(--color-primary);
   color: var(--color-text-main);
 }

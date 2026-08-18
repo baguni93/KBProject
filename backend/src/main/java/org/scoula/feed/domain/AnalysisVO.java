@@ -13,5 +13,5 @@ public class AnalysisVO {
     private int spendingAnalysisId;
     private String aiTitle;
     private String aiAnalysisSummary;
-
+    private String categoryName;
 }

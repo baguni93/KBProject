@@ -9,7 +9,7 @@ public interface RemittanceService {
 
     BankRemittanceInfoDTO getBankRemittanceInfo(Integer userId);
 
-    boolean refundSettlement(Integer requesterUserId, Integer memberUserId, Integer amount);
+    boolean refundSettlement(Integer settlementId, Integer requesterUserId, Integer memberUserId, Integer amount);
 
     java.util.Map<String, Object> saveReceiptFeed(Integer userId, Integer targetId, String feedTypeStr, String content, String visibilityStr, java.util.List<org.springframework.web.multipart.MultipartFile> files);
 }

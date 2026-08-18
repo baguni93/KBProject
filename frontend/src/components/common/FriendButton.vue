@@ -20,20 +20,25 @@
   <!-- 상대가 나에게 요청 -->
   <div v-else-if="status.friendStatus === 'RECEIVED'" class="friend-actions">
     <button class="friend-btn accept" @click="acceptRequest">요청 수락</button>
+
     <button class="friend-btn reject" @click="rejectRequest">거절</button>
   </div>
 
   <!-- 친구 -->
   <div v-else-if="status.friendStatus === 'FRIEND'" class="friend-actions">
     <button class="friend-btn send" @click="goSend">송금/송금 요청</button>
+
     <button class="friend-btn complete" @click="deleteFriend">친구 삭제</button>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFriendStore } from '@/stores/friend';
+import { useModalStore } from '@/stores/userModalStore.js';
+
+const modalStroe = useModalStore();
 
 const friendStore = useFriendStore();
 const router = useRouter();
@@ -50,37 +55,91 @@ const props = defineProps({
   },
 });
 
+watch(
+  () => friendStore.friendStatusVersion,
+  async () => {
+    await load();
+  },
+);
+
+// =====================================================
 // 친구 요청
+// =====================================================
+
 const requestFriend = async () => {
   await friendStore.request(props.userId, props.memberUserId);
-  load();
+  modalStroe.showSuccess('친구 요청 완료');
+  await load();
 };
 
+// =====================================================
 // 요청 취소
+// =====================================================
+
 const cancelRequest = async () => {
+  const res = await modalStroe.showConfirm('친구 요청을 취소하시겠습니까?');
+
+  if (!res) {
+    return;
+  }
   await friendStore.cancel(props.userId, status.value.requestId);
-  load();
+  modalStroe.showAlert('친구 요청 취소 완료');
+  await load();
 };
 
+// =====================================================
 // 요청 수락
+// =====================================================
+
 const acceptRequest = async () => {
+  const res = await modalStroe.showConfirm('친구 요청을 수락하시겠습니까?');
+
+  if (!res) {
+    return;
+  }
   await friendStore.accept(props.userId, status.value.requestId);
-  load();
+  modalStroe.showSuccess('친구 요청 수락 완료');
+  await load();
 };
 
+// =====================================================
 // 요청 거절
+// =====================================================
+
 const rejectRequest = async () => {
+  const res = await modalStroe.showConfirm('친구 요청을 거절하시겠습니까?');
+
+  if (!res) {
+    return;
+  }
+
   await friendStore.reject(props.userId, status.value.requestId);
-  load();
+
+  modalStroe.showAlert('친구 요청 거절 완료');
+
+  await load();
 };
 
+// =====================================================
 // 친구 삭제
+// =====================================================
+
 const deleteFriend = async () => {
+  const res = await modalStroe.showConfirm('친구를 삭제하시겠습니까?');
+
+  if (!res) {
+    return;
+  }
+
   await friendStore.deleteFriend(props.userId, props.memberUserId);
-  load();
+  modalStroe.showAlert('친구 삭제 완료');
+  await load();
 };
 
+// =====================================================
 // 송금
+// =====================================================
+
 const goSend = () => {
   router.push({
     name: 'remittance',
@@ -88,9 +147,11 @@ const goSend = () => {
       receiverId: props.memberUserId,
     },
   });
-
-  closeTransferMenu();
 };
+
+// =====================================================
+// 친구 상태
+// =====================================================
 
 const status = ref({
   friendStatus: 'NONE',
@@ -108,117 +169,109 @@ onMounted(load);
 </script>
 
 <style scoped>
+/* =====================================================
+   버튼 그룹
+===================================================== */
+
 .friend-actions {
   display: flex;
   gap: 8px;
 }
 
+/* =====================================================
+   친구 버튼 공통
+   content-btn.small과 동일한 크기
+===================================================== */
+
 .friend-btn {
-  width: 120px;
-  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 4px;
+
+  width: auto;
+  min-width: 62px;
+  height: 32px;
+
+  padding: 0 14px;
+
+  box-sizing: border-box;
 
   border: none;
-  border-radius: 18px;
+  border-radius: 20px;
 
-  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
 
   cursor: pointer;
-
-  font-size: 14px;
-  font-weight: 600;
 
   transition: 0.2s;
 }
 
+/* hover */
 .friend-btn:hover {
   opacity: 0.9;
 }
 
+/* 클릭 */
 .friend-btn:active {
   transform: scale(0.97);
 }
 
-/* 친구 요청 */
+/* =====================================================
+   친구 요청
+   → content-btn.primary 느낌
+===================================================== */
+
 .friend-btn.primary {
-  background: #3182f6;
+  background: var(--color-primary);
+  color: var(--color-text-main);
 }
 
-/* 요청 취소 */
+/* =====================================================
+   요청 취소
+===================================================== */
+
 .friend-btn.cancel {
-  background: #ff9800;
-}
-
-/* 요청 수락 */
-.friend-btn.accept {
-  background: #22c55e;
-}
-
-/* 요청 거절 */
-.friend-btn.reject {
-  background: #ddd;
+  background: #e2e5e9;
   color: #555;
 }
 
-/* 송금 */
-.friend-btn.send {
-  background: #3182f6;
+/* =====================================================
+   요청 수락
+===================================================== */
+
+.friend-btn.accept {
+  background: #22c55e;
+  color: white;
 }
 
-/* 친구 삭제 */
-.friend-btn.complete {
-  background: #eee;
+/* =====================================================
+   요청 거절
+===================================================== */
+
+.friend-btn.reject {
+  background: #f1f3f5;
   color: #666;
 }
 
-/* 송금 메뉴 */
-.transfer-menu {
-  position: fixed;
+/* =====================================================
+   송금
+===================================================== */
 
-  left: 50%;
-  bottom: 30px;
-
-  transform: translateX(-50%);
-
-  width: 220px;
-
-  background: white;
-
-  border-radius: 16px;
-
-  padding: 10px;
-
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-
-  z-index: 9999;
+.friend-btn.send {
+  background: #3182f6;
+  color: white;
 }
 
-.transfer-menu button {
-  width: 100%;
+/* =====================================================
+   친구 삭제
+===================================================== */
 
-  padding: 14px;
-
-  border: none;
-
-  background: white;
-
-  border-radius: 10px;
-
-  cursor: pointer;
-
-  font-size: 15px;
-}
-
-.transfer-menu button:hover {
-  background: #f5f5f5;
-}
-
-.overlay {
-  position: fixed;
-
-  inset: 0;
-
-  background: rgba(0, 0, 0, 0.2);
-
-  z-index: 9998;
+.friend-btn.complete {
+  background: #f1f3f5;
+  color: #666;
 }
 </style>

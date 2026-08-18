@@ -1,17 +1,37 @@
 package org.scoula.like.mapper;
 
 import org.apache.ibatis.annotations.Param;
+import org.scoula.like.domain.LikeNotificationActorVO;
+import org.scoula.like.domain.LikeNotificationGroupVO;
 
 public interface LikeMapper {
 
-    boolean exists(@Param("feedId") int feedId,
-               @Param("userId") int userId);
-    void create(@Param("feedId") int feedId,
-                @Param("userId") int userId);
-    void delete(@Param("feedId") int feedId,
-                @Param("userId") int userId);
+    /* =========================
+     * 좋아요
+     * ========================= */
 
-    int getLikeCount(int feedId);
+    boolean exists(
+            @Param("feedId") int feedId,
+            @Param("userId") int userId
+    );
 
-    int getFeedOwner(int feedId);
+    void create(
+            @Param("feedId") int feedId,
+            @Param("userId") int userId
+    );
+
+    void delete(
+            @Param("feedId") int feedId,
+            @Param("userId") int userId
+    );
+
+    int getLikeCount(
+            @Param("feedId") int feedId
+    );
+
+    int getFeedOwner(
+            @Param("feedId") int feedId
+    );
+
+
 }

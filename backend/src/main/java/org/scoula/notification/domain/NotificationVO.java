@@ -23,4 +23,5 @@ public class NotificationVO {
     private Enum.NotificationStatusType status;
     private Date createdAt;
     private ProfileSimpleVO sender;
+    private int actorCount;
 }

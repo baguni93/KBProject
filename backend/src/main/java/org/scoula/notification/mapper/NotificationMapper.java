@@ -24,4 +24,6 @@ public interface NotificationMapper {
     boolean existsFriendRequestNotification(@Param("userId") int senderId,
                                             @Param("receiverId")int receiverId,
                                             @Param("targetId") int targetId);
+
+
 }

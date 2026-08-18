@@ -8,6 +8,8 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
   /* =========================================================
    * 1. 모든 상태 (State) 최상단 선언
    * ========================================================= */
+
+  const accountNumber = ref(''); // 발급받을 계좌 Id
   // 배경 상태
   const color = ref('#1e40af');
   const gradient = ref('');
@@ -323,6 +325,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
 
     // 💡 [변경] 페이로드에 cardChip 추가 (백엔드 DTO와 이름 맞춰야 함)
     const customCardSaveRequestDTO = {
+      accountNumber: accountNumber.value,
       cardImageName: uploadResponse.data,
 
       userId: userId,
@@ -544,6 +547,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     activeEditorTab,
     customCardId,
     isFeedLoad,
+    accountNumber,
     // methods
     setColor,
     setGradient,

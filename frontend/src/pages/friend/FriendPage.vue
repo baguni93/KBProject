@@ -42,11 +42,11 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import FriendList from '@/components/friend/FriendList.vue';
 import FriendRequest from '@/components/friend/FriendRequest.vue';
 import { useAuthStore } from '@/stores/auth.js';
+
 const authStore = useAuthStore();
 const userId = authStore.userId;
 
 const route = useRoute();
-
 const friendStore = useFriendStore();
 
 const currentTab = ref(route.query.tab || 'list');
@@ -58,50 +58,104 @@ watch(
   },
 );
 
-onMounted(() => {
-  friendStore.getFriendList(userId);
-  friendStore.getRequestList(userId);
-  friendStore.getSendRequestList(userId);
+watch(
+  () => friendStore.friendStatusVersion,
+  async () => {
+    await Promise.all([
+      friendStore.getFriendList(userId),
+      friendStore.getRequestList(userId),
+      friendStore.getSendRequestList(userId),
+    ]);
+  },
+);
+
+onMounted(async () => {
+  await friendStore.getFriendList(userId);
+  await friendStore.getRequestList(userId);
+  await friendStore.getSendRequestList(userId);
 });
 </script>
 
 <style scoped>
-/* 공통 페이지 규칙 */
+/* 공통 페이지 */
 .friend-page {
-  padding: 16px;
+  width: 100%;
+  min-height: 100%;
+  padding: 0 20px 30px;
+  background: var(--color-bg-screen);
 }
 
-/* 탭 */
+/* =========================
+ * 탭
+ * ========================= */
+
 .tabs {
+  position: relative;
+
   display: flex;
 
-  border-bottom: 1px solid #eee;
+  height: 52px;
 
   margin-top: 20px;
   margin-bottom: 20px;
+
+  background: #fff;
+
+  border-bottom: 1px solid #ececec;
 }
 
 .tabs button {
   flex: 1;
 
   border: none;
+  background: transparent;
 
-  background: none;
-
-  padding: 12px;
+  padding: 0;
 
   font-size: 15px;
+  font-weight: 500;
+
+  color: #999;
 
   cursor: pointer;
 
-  color: #777;
+  transition:
+    color 0.2s ease,
+    font-weight 0.2s ease;
 }
 
 .tabs button.active {
-  color: #4f46e5;
+  color: #222;
+  font-weight: 700;
+}
 
-  font-weight: bold;
+/* 활성 탭 밑줄 */
+.tabs::after {
+  content: '';
 
-  border-bottom: 2px solid #4f46e5;
+  position: absolute;
+
+  bottom: 0;
+  left: 0;
+
+  width: 50%;
+  height: 3px;
+
+  background: #ffcc00;
+
+  transition: transform 0.25s ease;
+}
+
+/* 친구 요청 선택 */
+.tabs:has(button:nth-child(2).active)::after {
+  transform: translateX(100%);
+}
+
+/* =========================
+ * 기타
+ * ========================= */
+
+.empty {
+  color: #999;
 }
 </style>

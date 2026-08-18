@@ -41,7 +41,12 @@ public class FeedController {
 
     // 친구 피드 , 사용 x  추후 피드탭에서 필터 시 사용
     @GetMapping("/friends")
-    public ResponseEntity<List<FeedResponseDTO>> getFriendFeedList(@RequestParam int userId) {
+    public ResponseEntity<List<FeedResponseDTO>> getFriendFeedList(
+            @AuthenticationPrincipal CustomUser customUser,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "3") int size
+    ) {
+        int userId = customUser.getUser().getUserId().intValue();
         return ResponseEntity.ok(feedService.getFriendList(userId));
     }
 
@@ -54,23 +59,35 @@ public class FeedController {
 
     //회원 피드 조회
     @GetMapping("/member/{memberUserId}")
-    public ResponseEntity<List<FeedResponseDTO>> getFriendFeedList(
+    public ResponseEntity<List<FeedResponseDTO>> geMemberList(
             @PathVariable int memberUserId,
-            @RequestParam int userId) {
-        return ResponseEntity.ok(feedService.geMemberList(memberUserId,userId));
+            @AuthenticationPrincipal CustomUser customUser,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "3") int size) {
+
+        int userId = customUser.getUser().getUserId().intValue();
+        return ResponseEntity.ok(feedService.geMemberList(memberUserId,userId, page, size));
     }
 
 
     // 내 피드
     @GetMapping("/me")
-    public ResponseEntity<List<FeedResponseDTO>> getMyFeedList(@RequestParam int userId) {
+    public ResponseEntity<List<FeedResponseDTO>> getMyFeedList(
+            @AuthenticationPrincipal CustomUser customUser,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "3") int size) {
 
-        return ResponseEntity.ok(feedService.getMyList(userId));
+        int userId = customUser.getUser().getUserId().intValue();
+        return ResponseEntity.ok(feedService.getMyList(userId,page,size));
     }
 
     @GetMapping("/{feedId}")
-    public ResponseEntity<FeedResponseDTO> get(@PathVariable int feedId){
-        return ResponseEntity.ok(feedService.get(feedId));
+    public ResponseEntity<FeedResponseDTO> get(
+            @PathVariable int feedId,
+            @AuthenticationPrincipal CustomUser customUser
+    ){
+        int userId = customUser.getUser().getUserId().intValue();
+        return ResponseEntity.ok(feedService.get(feedId, userId));
     }
 
     @PostMapping
@@ -80,8 +97,13 @@ public class FeedController {
     }
 
     @PatchMapping("/{feedId}")
-    public ResponseEntity<HttpStatus> delete(@PathVariable int feedId){
-        feedService.delete(feedId);
+    public ResponseEntity<HttpStatus> delete(
+            @PathVariable int feedId,
+            @AuthenticationPrincipal CustomUser customUser
+    ){
+
+        int userId = customUser.getUser().getUserId().intValue();
+        feedService.delete(feedId,userId);
         return ResponseEntity.ok(HttpStatus.OK);
     }
 

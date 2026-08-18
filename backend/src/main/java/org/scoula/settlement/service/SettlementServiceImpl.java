@@ -9,18 +9,26 @@ import org.scoula.feed.dto.FeedCreateRequestDTO;
 import org.scoula.feed.service.FeedService;
 import org.scoula.notification.dto.NotificationRequestDTO;
 import org.scoula.notification.service.NotificationService;
+import org.scoula.pointwallet.dto.PointWalletDTO;
+import org.scoula.pointwallet.service.PointWalletService;
+import org.scoula.remittance.dto.RemittanceDTO;
 import org.scoula.remittance.service.RemittanceService;
 import org.scoula.settlement.domain.SettlementMemberVO;
 import org.scoula.settlement.domain.SettlementVO;
 import org.scoula.settlement.dto.SettlementCreateRequestDTO;
 import org.scoula.settlement.dto.SettlementMemberRequestDTO;
 import org.scoula.settlement.dto.SettlementResponseDTO;
+import org.scoula.settlement.dto.SettlementWebSocketDTO;
 import org.scoula.settlement.mapper.SettlementMapper;
+import org.scoula.wallet.dto.WalletDTO;
+import org.scoula.wallet.service.WalletService;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +40,7 @@ public class SettlementServiceImpl implements SettlementService{
     private final NotificationService notificationService;
     private final SimpMessagingTemplate messagingTemplate;
     private final RemittanceService remittanceService;
+    private final WalletService walletService;
 
     @Transactional
     @Override
@@ -69,15 +78,17 @@ public class SettlementServiceImpl implements SettlementService{
 
         var settlementResponseDTO = get(settlementVO.getSettlementId());
 
-//        for(var member : settlementResponseDTO.getMembers()){
-//
-//            messagingTemplate.convertAndSendToUser(
-//                    String.valueOf(member.getUserId()),
-//                    "/queue/settlements",
-//                    settlementResponseDTO
-//            );
-//
-//        }
+        for (var member : settlementResponseDTO.getMembers()) {
+
+            messagingTemplate.convertAndSendToUser(
+                    String.valueOf(member.getUserId()),
+                    "/queue/settlements",
+                    SettlementWebSocketDTO.builder()
+                            .type("CREATE")
+                            .settlement(settlementResponseDTO)
+                            .build()
+            );
+        }
 
         return settlementResponseDTO;
     }
@@ -135,8 +146,25 @@ public class SettlementServiceImpl implements SettlementService{
             throw  new CustomException(ErrorCode.SETTLEMENT_ALREADY_PAYMENT);
         }
 
-        //송금 api 호출
+        SettlementMemberVO remittanceMember = settlementVO.getMembers().stream()
+                .filter(x -> Objects.equals(x.getUserId(), userId))
+                .findFirst()
+                .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND_MEMBER));
 
+//        WalletDTO walletDTO =
+//                walletService.getWalletByUserId(remittanceMember.getUserId());
+//
+//        remittanceService.sendMoney(
+//                RemittanceDTO.builder()
+//                        .walletId(walletDTO.getWalletId())
+//                        .receiverId(settlementVO.getRequesterId())
+//                        .amount(remittanceMember.getAmount())
+//                        .memo("정산 지불")
+//                        .receiverType("WALLET")
+//                        .isSettlement(true)
+//                        .settlementId(settlementVO.getSettlementId())
+//                        .build()
+//        );
 
         //송금 후 정산 완료 처리
         settlementMapper.completeMemberSettlement(settlementId , userId);
@@ -153,7 +181,7 @@ public class SettlementServiceImpl implements SettlementService{
                     settlementVO.getRequesterId(),
                     settlementVO.getRequesterId(),
                     settlementVO.getSettlementId(),
-                    Enum.NotificationType.SETTLEMENT_COMPLETE
+                    Enum.NotificationType.SETTLEMENT_COMPLETE_OWNER
             );
 
 
@@ -198,9 +226,11 @@ public class SettlementServiceImpl implements SettlementService{
         messagingTemplate.convertAndSendToUser(
                 String.valueOf(settlementResponseDTO.getRequesterId()),
                 "/queue/settlements",
-                settlementResponseDTO
+                SettlementWebSocketDTO.builder()
+                        .type("UPDATE")
+                        .settlement(settlementResponseDTO)
+                        .build()
         );
-
 
         if(completed){
 
@@ -209,7 +239,10 @@ public class SettlementServiceImpl implements SettlementService{
                 messagingTemplate.convertAndSendToUser(
                         String.valueOf(member.getUserId()),
                         "/queue/settlements",
-                        settlementResponseDTO
+                        SettlementWebSocketDTO.builder()
+                                .type("UPDATE")
+                                .settlement(settlementResponseDTO)
+                                .build()
                 );
 
             }
@@ -224,7 +257,10 @@ public class SettlementServiceImpl implements SettlementService{
                 messagingTemplate.convertAndSendToUser(
                         String.valueOf(member.getUserId()),
                         "/queue/settlements",
-                        settlementResponseDTO
+                        SettlementWebSocketDTO.builder()
+                                .type("UPDATE")
+                                .settlement(settlementResponseDTO)
+                                .build()
                 );
             }
         }
@@ -259,39 +295,45 @@ public class SettlementServiceImpl implements SettlementService{
 
         //3.맴버들 전부 지불 미완료
         //3-2. 지불한 맴버들에게 환불
-
+//        List<SettlementMemberVO> remittanceMembers = settlementVO.getMembers().stream()
+//                .filter(x -> Objects.equals(x.getUserId(), userId)).toList();
+//
+//        if(!remittanceMembers.isEmpty()){
+//
+//            for(var member : remittanceMembers){
+//                remittanceService.refundSettlement(
+//                        settlementVO.getSettlementId(),
+//                        settlementVO.getRequesterId(),
+//                        member.getUserId(),
+//                        member.getAmount());
+//            }
+//        }
+//        else{
+//            log.info("지불한 맴버없음");
+//        }
+//
 
         //settlement 테이블 , settlement_member 테이블 전부 cancel 처리
         settlementMapper.cancelSettlement(settlementId);
         settlementMapper.cancelMemberSettlement(settlementId);
-
+        var settlementResponseDTO = get(settlementId);
         for(var member :settlementVO.getMembers()) {
 
-            if(member.getStatus() == Enum.SettlementStatus.COMPLETE){
-                // 3-2. 지불을 완료했던 참여자에게 방장 지갑에서 자동 환불 입금 이체 실행
-                try {
-                    remittanceService.refundSettlement(settlementVO.getRequesterId(), member.getUserId(), member.getAmount());
-                } catch (Exception e) {
-                    log.error("정산 취소 환불 실행 실패 - memberUserId: {}, error: {}", member.getUserId(), e.getMessage());
-                }
+            notificationService.createSettlementNotification(
+                    settlementVO.getRequesterId(),
+                    member.getUserId(),
+                    settlementVO.getSettlementId(),
+                    Enum.NotificationType.SETTLEMENT_CANCEL
+            );
 
-                //지불한 요청자에게 환불 알림
-                notificationService.createSettlementNotification(
-                        settlementVO.getRequesterId(),
-                        member.getUserId(),
-                        settlementVO.getSettlementId(),
-                        Enum.NotificationType.SETTLEMENT_CANCEL
-                );
-            }
-            else
-            {
-                notificationService.createSettlementNotification(
-                        settlementVO.getRequesterId(),
-                        member.getUserId(),
-                        settlementVO.getSettlementId(),
-                        Enum.NotificationType.SETTLEMENT_CANCEL
-                );
-            }
+            messagingTemplate.convertAndSendToUser(
+                    String.valueOf(member.getUserId()),
+                    "/queue/settlements",
+                    SettlementWebSocketDTO.builder()
+                            .type("UPDATE")
+                            .settlement(settlementResponseDTO)
+                            .build()
+            );
         }
 
         return true;

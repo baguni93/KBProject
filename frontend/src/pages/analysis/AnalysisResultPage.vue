@@ -196,6 +196,12 @@
         {{ message }}
       </div>
     </div>
+
+    <CardShareModal
+      v-model="isModalOpen"
+      @submit="handleShareSubmit"
+      title="AI가 분석한 소비 결과 자랑하기"
+    />
   </div>
 </template>
 
@@ -235,18 +241,18 @@ const loadMoreSentinel = ref(null);
 let loadMoreObserver = null;
 
 const periodOptions = [
-  {value: '1', label: '1개월'},
-  {value: '3', label: '3개월'},
-  {value: '6', label: '6개월'},
-  {value: '12', label: '12개월'},
-  {value: 'CUSTOM', label: '직접 선택'},
+  { value: '1', label: '1개월' },
+  { value: '3', label: '3개월' },
+  { value: '6', label: '6개월' },
+  { value: '12', label: '12개월' },
+  { value: 'CUSTOM', label: '직접 선택' },
 ];
 
 const sortedCategories = computed(() =>
-    [...(analysis.value?.categories ?? [])].sort(
-        (left, right) =>
-            Number(right.spendingAmount ?? 0) - Number(left.spendingAmount ?? 0),
-    ),
+  [...(analysis.value?.categories ?? [])].sort(
+    (left, right) =>
+      Number(right.spendingAmount ?? 0) - Number(left.spendingAmount ?? 0),
+  ),
 );
 
 const recentTransactions = computed(() =>
@@ -256,23 +262,22 @@ const recentTransactions = computed(() =>
 );
 
 const topCategories = computed(() =>
-    categories.value.filter((category) => category.parentCategoryId == null),
+  categories.value.filter((category) => category.parentCategoryId == null),
 );
-
 
 const categoryTransactionCountMap = computed(() => {
   const countMap = new Map();
 
   for (const transaction of transactions.value) {
     const categoryId =
-        transaction.parentCategoryId ?? transaction.spendingCategoryId;
+      transaction.parentCategoryId ?? transaction.spendingCategoryId;
 
     if (categoryId == null) continue;
 
     const normalizedCategoryId = Number(categoryId);
     countMap.set(
-        normalizedCategoryId,
-        (countMap.get(normalizedCategoryId) ?? 0) + 1,
+      normalizedCategoryId,
+      (countMap.get(normalizedCategoryId) ?? 0) + 1,
     );
   }
 
@@ -280,14 +285,14 @@ const categoryTransactionCountMap = computed(() => {
 });
 
 const totalCategoryTransactionCount = computed(
-    () =>
-        transactions.value.filter(
-            (transaction) => transaction.spendingCategoryId != null,
-        ).length,
+  () =>
+    transactions.value.filter(
+      (transaction) => transaction.spendingCategoryId != null,
+    ).length,
 );
 
 const getCategoryTransactionCount = (spendingCategoryId) =>
-    categoryTransactionCountMap.value.get(Number(spendingCategoryId)) ?? 0;
+  categoryTransactionCountMap.value.get(Number(spendingCategoryId)) ?? 0;
 
 const parseTransactionDate = (value) => {
   if (!value) return null;
@@ -312,10 +317,11 @@ const matchesSelectedPeriod = (transaction) => {
   }
 
   const months = Number(selectedPeriodFilter.value);
-  const referenceValue = analysis.value?.analysisEndDate || analysis.value?.createdAt;
+  const referenceValue =
+    analysis.value?.analysisEndDate || analysis.value?.createdAt;
   const end = referenceValue
-      ? new Date(`${String(referenceValue).slice(0, 10)}T23:59:59.999`)
-      : new Date();
+    ? new Date(`${String(referenceValue).slice(0, 10)}T23:59:59.999`)
+    : new Date();
   const start = new Date(end);
   start.setMonth(start.getMonth() - months);
   start.setHours(0, 0, 0, 0);
@@ -326,18 +332,22 @@ const matchesSelectedPeriod = (transaction) => {
 const filteredTransactions = computed(() => {
   const filtered = transactions.value.filter((transaction) => {
     const normalizedCategoryId =
-        transaction.parentCategoryId ?? transaction.spendingCategoryId;
+      transaction.parentCategoryId ?? transaction.spendingCategoryId;
     const categoryMatches =
-        selectedCategoryId.value === 'ALL' ||
-        Number(selectedCategoryId.value) === Number(normalizedCategoryId);
+      selectedCategoryId.value === 'ALL' ||
+      Number(selectedCategoryId.value) === Number(normalizedCategoryId);
 
     const classified = transaction.spendingCategoryId != null;
     const classificationMatches =
-        classificationFilter.value === 'ALL' ||
-        (classificationFilter.value === 'CLASSIFIED' && classified) ||
-        (classificationFilter.value === 'UNCLASSIFIED' && !classified);
+      classificationFilter.value === 'ALL' ||
+      (classificationFilter.value === 'CLASSIFIED' && classified) ||
+      (classificationFilter.value === 'UNCLASSIFIED' && !classified);
 
-    return matchesSelectedPeriod(transaction) && categoryMatches && classificationMatches;
+    return (
+      matchesSelectedPeriod(transaction) &&
+      categoryMatches &&
+      classificationMatches
+    );
   });
 
   return filtered.sort((left, right) => {
@@ -355,11 +365,11 @@ const filteredTransactions = computed(() => {
 });
 
 const visibleTransactions = computed(() =>
-    filteredTransactions.value.slice(0, visibleCount.value),
+  filteredTransactions.value.slice(0, visibleCount.value),
 );
 
-const hasMore = computed(() =>
-    visibleCount.value < filteredTransactions.value.length,
+const hasMore = computed(
+  () => visibleCount.value < filteredTransactions.value.length,
 );
 
 const loadMore = () => {
@@ -371,13 +381,14 @@ const setupLoadMoreObserver = () => {
   loadMoreObserver?.disconnect();
   loadMoreObserver = null;
 
-  if (!loadMoreSentinel.value || typeof IntersectionObserver === 'undefined') return;
+  if (!loadMoreSentinel.value || typeof IntersectionObserver === 'undefined')
+    return;
 
   loadMoreObserver = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) loadMore();
-      },
-      {rootMargin: '160px 0px'},
+    (entries) => {
+      if (entries[0]?.isIntersecting) loadMore();
+    },
+    { rootMargin: '160px 0px' },
   );
   loadMoreObserver.observe(loadMoreSentinel.value);
 };
@@ -389,7 +400,7 @@ const resetVisibleTransactions = async () => {
 };
 
 const categoryColor = (category, index) =>
-    getAnalysisCategoryColor(category.categoryName, index);
+  getAnalysisCategoryColor(category.categoryName, index);
 
 const formatRatio = (value) => {
   const ratio = Number(value ?? 0);
@@ -401,7 +412,9 @@ const loadTransactions = async () => {
   transactionsLoading.value = true;
   try {
     const [transactionData, categoryData] = await Promise.all([
-      analysisApi.getAnalysisResultTransactions(analysis.value.spendingAnalysisId),
+      analysisApi.getAnalysisResultTransactions(
+        analysis.value.spendingAnalysisId,
+      ),
       analysisApi.getCategories(),
     ]);
     transactions.value = transactionData.transactions ?? [];
@@ -410,8 +423,8 @@ const loadTransactions = async () => {
     transactions.value = [];
     messageType.value = 'error';
     message.value = getAnalysisErrorMessage(
-        error,
-        '전체 소비내역을 불러오지 못했습니다.',
+      error,
+      '전체 소비내역을 불러오지 못했습니다.',
     );
   } finally {
     transactionsLoading.value = false;
@@ -434,8 +447,8 @@ const loadAnalysisDetail = async () => {
     analysis.value = await analysisApi.getAnalysisDetail(id);
     const detailPeriod = String(analysis.value?.period ?? 12);
     selectedPeriodFilter.value = ['1', '3', '6', '12'].includes(detailPeriod)
-        ? detailPeriod
-        : '12';
+      ? detailPeriod
+      : '12';
     await loadTransactions();
     if (route.query.section === 'transactions') {
       await nextTick();
@@ -447,8 +460,8 @@ const loadAnalysisDetail = async () => {
   } catch (error) {
     analysis.value = null;
     message.value = getAnalysisErrorMessage(
-        error,
-        '소비 분석 상세 결과를 불러오지 못했습니다.',
+      error,
+      '소비 분석 상세 결과를 불러오지 못했습니다.',
     );
   } finally {
     loading.value = false;
@@ -458,14 +471,14 @@ const loadAnalysisDetail = async () => {
 };
 
 const goToCategoryEdit = (transaction) =>
-    router.push({
-      name: 'analysis-category-edit',
-      params: {transactionId: transaction.transactionId},
-      query: {
-        period: analysis.value.period,
-        returnTo: route.fullPath,
-      },
-    });
+  router.push({
+    name: 'analysis-category-edit',
+    params: { transactionId: transaction.transactionId },
+    query: {
+      period: analysis.value.period,
+      returnTo: route.fullPath,
+    },
+  });
 
 const goToMain = () =>
     router.push({
@@ -495,13 +508,13 @@ const shareResult = () => {
 };
 
 const openRecommendationGuide = (type) =>
-    router.push({
-      name: 'analysis-recommendation-guide',
-      query: {
-        type,
-        period: analysis.value?.period ?? 1,
-      },
-    });
+  router.push({
+    name: 'analysis-recommendation-guide',
+    query: {
+      type,
+      period: analysis.value?.period ?? 1,
+    },
+  });
 
 const openCardRecommendation = () => {
   if (Number(analysis.value?.period) !== 12) {
@@ -537,17 +550,59 @@ const openInsuranceRecommendation = () => {
 };
 
 watch(
-    [
-      selectedPeriodFilter,
-      customStartDate,
-      customEndDate,
-      selectedCategoryId,
-      classificationFilter,
-      sortOption,
-    ],
-    resetVisibleTransactions,
+  [
+    selectedPeriodFilter,
+    customStartDate,
+    customEndDate,
+    selectedCategoryId,
+    classificationFilter,
+    sortOption,
+  ],
+  resetVisibleTransactions,
 );
 watch(() => route.params.spendingAnalysisId, loadAnalysisDetail);
+
+// 피드 공유 모달
+import CardShareModal from '../feed/components/CardShareModal.vue';
+import { useModalStore } from '@/stores/userModalStore';
+import { useFeedStore } from '@/stores/feed.js';
+const feedStore = useFeedStore();
+const useModal = useModalStore();
+const isModalOpen = ref(false);
+const selectedScope = ref('PUBLIC');
+const feedContent = ref('');
+
+const openModal = () => {
+  isModalOpen.value = true;
+};
+
+const closeModal = () => {
+  isModalOpen.value = false;
+};
+
+// 자랑하기 최종 제출
+const handleShareSubmit = async () => {
+  console.log('공개 범위:', selectedScope.value);
+
+  const fromData = feedStore.createRequestDTO({
+    targetId: analysis.value.spendingAnalysisId,
+    feedType: 'ANALYSIS',
+    visibility: selectedScope.value,
+    content: feedContent.value,
+  });
+
+  await feedStore.createFeed(fromData);
+
+  closeModal();
+
+  const result =
+    await useModal.showSuccess('피드에 성공적으로 공유되었습니다!');
+
+  if (result) {
+    router.push('/feed');
+  }
+};
+
 onMounted(loadAnalysisDetail);
 onBeforeUnmount(() => loadMoreObserver?.disconnect());
 </script>

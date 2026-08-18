@@ -1,6 +1,7 @@
 package org.scoula.feed.service;
 
 
+import io.lettuce.core.api.StatefulRedisConnection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.common.util.UploadFiles;
@@ -16,6 +17,7 @@ import org.scoula.feed.dto.FeedResponseDTO;
 import org.scoula.feed.dto.FeedUpdateRequestDTO;
 import org.scoula.feed.mapper.FeedMapper;
 import org.scoula.like.service.LikeService;
+import org.scoula.redis.RedisKey;
 import org.scoula.settlement.mapper.SettlementMapper;
 import org.scoula.pointwallet.service.RandomBoxService;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ public class FeedServiceImpl implements FeedService {
     private final LikeService likeService;
     private final EventService eventService;
     private final RandomBoxService randomBoxService;
+    private final StatefulRedisConnection<String, String> redisConnection;
 
     @Transactional
     @Override
@@ -62,13 +65,14 @@ public class FeedServiceImpl implements FeedService {
             log.warn("피드 작성 시 랜덤박스 지급 처리 예외: {}", e.getMessage());
         }
 
-        return get(feedVO.getFeedId());
+     
+        return get(feedVO.getFeedId() , feedVO.getUserId());
     }
 
 
     @Transactional
     @Override
-    public FeedResponseDTO get(int feedId){
+    public FeedResponseDTO get(int feedId , int userId){
         // 공통 정보 조회
         FeedVO feed = feedMapper.getFeedCommon(feedId);
 
@@ -78,7 +82,20 @@ public class FeedServiceImpl implements FeedService {
 
         enrichFeed(feed);
 
-        return FeedResponseDTO.of(feed);
+        FeedResponseDTO feedResponseDTO =  FeedResponseDTO.of(feed);
+
+        feedResponseDTO.setLikeCount(
+                likeService.getLikeCount(feedResponseDTO.getFeedId())
+        );
+
+        feedResponseDTO.setLiked(
+                likeService.isLiked(
+                        feedResponseDTO.getFeedId(),
+                        userId
+                )
+        );
+
+        return feedResponseDTO;
 
     }
 
@@ -88,7 +105,7 @@ public class FeedServiceImpl implements FeedService {
         int offset = page * size;
 
        List<FeedVO> list = feedMapper.getList(userId,offset,size);
-        return getFeedRespoonseDTOList(list);
+        return getFeedRespoonseDTOList(list,userId);
     }
 
     @Transactional
@@ -97,26 +114,38 @@ public class FeedServiceImpl implements FeedService {
 
         List<FeedVO> list = feedMapper.getFriendList(userId);
 
-        return getFeedRespoonseDTOList(list);
+        return getFeedRespoonseDTOList(list,userId);
     }
 
     @Transactional
     @Override
-    public List<FeedResponseDTO> getMyList(int userId) {
+    public List<FeedResponseDTO> getMyList(int userId, int page, int size) {
 
-        List<FeedVO> list = feedMapper.getMyList(userId);
+        int offset = page * size;
+        List<FeedVO> list = feedMapper.getMyList(userId,offset,size);
 
-        return getFeedRespoonseDTOList(list);
+        return getFeedRespoonseDTOList(list,userId);
     }
 
 
     @Transactional
     @Override
-    public FeedResponseDTO delete(int feedId){
+    public FeedResponseDTO delete(int feedId , int userId){
 
-        FeedResponseDTO responseDTO = get(feedId);
+        FeedResponseDTO responseDTO = get(feedId, userId);
 
         feedMapper.delete(feedId);
+
+        // 2. 좋아요 Redis 캐시 삭제
+        try {
+            redisConnection.sync().del(
+                    RedisKey.likeCount(feedId),
+                    RedisKey.likeUser(feedId)
+            );
+        } catch (Exception e) {
+            log.error("피드 삭제 후 Redis 좋아요 캐시 삭제 실패", e);
+        }
+
 
         return responseDTO;
     }
@@ -129,13 +158,13 @@ public class FeedServiceImpl implements FeedService {
     }
 
     @Override
-    public List<FeedResponseDTO> geMemberList(int memberUserId, int userId) {
-
+    public List<FeedResponseDTO> geMemberList(int memberUserId, int userId, int page, int size) {
+        int offset = page * size;
         //친구 여부 확인 후
         //공개 설정 피드 or 공개 + 친구 설정 피드
-        List<FeedVO> list = feedMapper.geMemberList(memberUserId,userId);
+        List<FeedVO> list = feedMapper.geMemberList(memberUserId,userId ,offset,size);
         log.info(list);
-        return getFeedRespoonseDTOList(list);
+        return getFeedRespoonseDTOList(list,userId);
 
     }
 
@@ -172,7 +201,8 @@ public class FeedServiceImpl implements FeedService {
         }
     }
 
-    private List<FeedResponseDTO> getFeedRespoonseDTOList(List<FeedVO> feedList){
+    private List<FeedResponseDTO> getFeedRespoonseDTOList(
+            List<FeedVO> feedList, int userId){
 
         if(feedList == null){
             log.error("feedMapper.getList() returned null");
@@ -195,7 +225,7 @@ public class FeedServiceImpl implements FeedService {
             feedResponseDTO.setLiked(
                     likeService.isLiked(
                             feedResponseDTO.getFeedId(),
-                            feedResponseDTO.getUserId()
+                            userId
                     )
             );
         }

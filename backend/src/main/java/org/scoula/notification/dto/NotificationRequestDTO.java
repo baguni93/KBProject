@@ -18,6 +18,7 @@ public class NotificationRequestDTO {
     private int senderId;
     private Enum.NotificationType notificationType;
     private int targetId;
+    private int actorCount;
 
 
     public NotificationVO toVo(){
@@ -26,6 +27,7 @@ public class NotificationRequestDTO {
                 .senderId(senderId)
                 .notificationType(notificationType)
                 .targetId(targetId)
+                .actorCount(actorCount)
                 .build();
     }
 

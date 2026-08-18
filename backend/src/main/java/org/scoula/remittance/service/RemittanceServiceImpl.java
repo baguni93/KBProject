@@ -49,12 +49,16 @@ public class RemittanceServiceImpl implements RemittanceService {
 
         // 지갑 잔액 차감
         int subtracted = remittanceMapper.subtractBalance(walletId, amount);
+
         if (subtracted == 0) {
             throw new RuntimeException("지갑 잔액 차감 실패");
         }
 
+
         // 수신처 입금 (계좌 vs 지갑)
+        // 박우진 추가 정산은 바로 돈이 입급되지않는다.
         if ("ACCOUNT".equals(remittanceDTO.getReceiverType())) {
+
             try {
                 remittanceMapper.addAccountBalance(
                         remittanceDTO.getBankCode(),
@@ -64,15 +68,21 @@ public class RemittanceServiceImpl implements RemittanceService {
             } catch (Exception accErr) {
                 log.warn("더미 계좌 입금 처리 예외 (계좌 송금 계속 진행): {}", accErr.getMessage());
             }
+
             remittanceDTO.setReceiverId(null);
+
         } else {
+
+
             Integer recId = remittanceDTO.getReceiverId();
             if (recId == null || recId <= 0) {
                 recId = 2; // 테스트용 기본 친구 ID
                 remittanceDTO.setReceiverId(recId);
             }
             try {
+
                 remittanceMapper.addBalance(recId, amount);
+
             } catch (Exception balErr) {
                 log.warn("친구 지갑 입금 처리 예외 (송금 계속 진행): {}", balErr.getMessage());
             }
@@ -84,6 +94,11 @@ public class RemittanceServiceImpl implements RemittanceService {
         }
         remittanceDTO.setStatus("SUCCESS");
         remittanceMapper.insertRemittance(remittanceDTO);
+
+        if(remittanceDTO.isSettlement()){
+            //정산 지불일떄는 피드와 ,랜덤 박스는 지급하지않는다.
+            return true;
+        }
 
         // 지갑/친구/계좌 모든 송금 성공 시 피드 및 이미지 등록
         org.scoula.feed.dto.FeedResponseDTO feedRes = null;
@@ -185,7 +200,7 @@ public class RemittanceServiceImpl implements RemittanceService {
 
     @Override
     @Transactional
-    public boolean refundSettlement(Integer requesterUserId, Integer memberUserId, Integer amount) {
+    public boolean refundSettlement(Integer settlementId,  Integer requesterUserId, Integer memberUserId, Integer amount) {
         if (amount == null || amount <= 0) {
             throw new IllegalArgumentException("환불 금액은 0원보다 커야 합니다.");
         }

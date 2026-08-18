@@ -91,7 +91,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     const payload = decodeToken(data.accessToken);
     const tokenUserId = Number(payload?.userId || data.userId);
-    connectStomp(tokenUserId);
+    connectStomp(data.accessToken);
 
     return data;
   };
@@ -103,6 +103,9 @@ export const useAuthStore = defineStore('auth', () => {
       userId: tokenData.userId || state.value.userId,
       userName: tokenData.userName || state.value.userName,
     });
+
+    disconnectStomp();
+    connectStomp(state.value.accessToken);
   };
 
   // 로그인 정보 삭제
@@ -156,7 +159,7 @@ export const useAuthStore = defineStore('auth', () => {
         userName: parsedAuth.userName || '',
       };
 
-      connectStomp(tokenUserId);
+      connectStomp(parsedAuth.accessToken);
     } catch (error) {
       console.error('저장된 로그인 정보를 불러오지 못했습니다.', error);
       clearAuth();

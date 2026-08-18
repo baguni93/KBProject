@@ -196,7 +196,7 @@
                     FROM settlement_member_tbl me
                     WHERE me.settlement_id = a.settlement_id
                       AND me.user_id = #{userId}
-                ) and (a.status = 'REQUEST' or a.status = 'COMPLETE')
+                )
                     ORDER BY created_at Desc;
     </select>
 

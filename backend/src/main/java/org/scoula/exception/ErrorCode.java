@@ -31,6 +31,7 @@ public enum ErrorCode {
     SETTLEMENT_ALREADY_PAYMENT(HttpStatus.NOT_FOUND, "S003", "이미 지불한 맴버입니다."),
     SETTLEMENT_CAN_NOT_REMINE(HttpStatus.NOT_FOUND, "S004", "리마인드 알림을 할 수 없습니다."),
     SETTLEMENT_CAN_NOT_CREATE(HttpStatus.NOT_FOUND, "S005", "맴버 없이는 정산요청 할 수 없습니다."),
+    SETTLEMENT_NOT_FOUND_MEMBER(HttpStatus.NOT_FOUND, "S006", "정산 멤버를 찾을 수 없습니다."),
 
     //Friend Request
     FRIEND_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "FR001", "친구 요청을 찾을 수 없습니다."),

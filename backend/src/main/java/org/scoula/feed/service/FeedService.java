@@ -10,15 +10,15 @@ import java.util.List;
 public interface FeedService {
 
      FeedResponseDTO create(FeedCreateRequestDTO request);
-     FeedResponseDTO get(int feedId);
+     FeedResponseDTO get(int feedId ,int userId);
      List<FeedResponseDTO> getList(int userId ,int page, int size);
      List<FeedResponseDTO> getFriendList(int userId);
-     List<FeedResponseDTO> getMyList(int userId);
-     FeedResponseDTO delete(int feedId);
+     List<FeedResponseDTO> getMyList(int userId ,int page, int size);
+     FeedResponseDTO delete(int feedId ,int userId);
 
      FeedImageDTO getImage(int imageId);
 
-    List<FeedResponseDTO> geMemberList(int memberUserId, int userId);
+    List<FeedResponseDTO> geMemberList(int memberUserId, int userId ,int page, int size);
 
     void updateFeed(FeedUpdateRequestDTO feedUpdateRequestDTO);
 }

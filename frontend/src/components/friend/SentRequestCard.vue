@@ -7,7 +7,9 @@
     <div class="status">친구 요청 대기중</div>
 
     <template #action>
-      <button class="cancel-btn" @click="cancelRequest">요청 취소</button>
+      <button class="content-btn small primary" @click="cancelRequest">
+        요청 취소
+      </button>
     </template>
   </FriendCard>
 </template>
@@ -54,25 +56,5 @@ const goProfile = () => {
   font-size: 13px;
 
   color: #999;
-}
-
-.cancel-btn {
-  border: none;
-
-  background: #eee;
-
-  color: #555;
-
-  padding: 7px 14px;
-
-  border-radius: 20px;
-
-  cursor: pointer;
-
-  font-size: 13px;
-}
-
-.cancel-btn:active {
-  transform: scale(0.95);
 }
 </style>

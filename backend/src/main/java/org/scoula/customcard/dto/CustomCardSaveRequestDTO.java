@@ -18,6 +18,7 @@ public class CustomCardSaveRequestDTO {
 
     private int customCardId;
     private int userId;
+    private String accountNumber;
     private String cardName;
     private String pattern;
     private String savedDrawingImage;

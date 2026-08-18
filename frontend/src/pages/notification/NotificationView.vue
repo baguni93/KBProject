@@ -32,7 +32,7 @@
                 {{ notification.sender.nickname }}
               </strong>
 
-              {{ notificationMessage(notification.notificationType) }}
+              {{ notificationMessage(notification) }}
             </div>
 
             <div class="date">
@@ -61,14 +61,24 @@
 <script setup>
 import { onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
+
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useNotificationStore } from '@/stores/notification';
 import { formatRelativeDate } from '@/util/data';
 import EmptyList from '@/components/common/EmptyList.vue';
 import { useAuthStore } from '@/stores/auth.js';
+import { useFriendStore } from '@/stores/friend';
+import { useSettlementStore } from '@/stores/settlement';
+import { useModalStore } from '@/stores/userModalStore';
+
+const modalStore = useModalStore();
+
+const friendStore = useFriendStore();
+const settlementStore = useSettlementStore();
 
 const authStore = useAuthStore();
 const userId = authStore.userId;
+
 const router = useRouter();
 
 const notificationStore = useNotificationStore();
@@ -77,7 +87,10 @@ const notifications = computed(() => {
   return notificationStore.notifications.filter((x) => x.status !== 'READ');
 });
 
+// =================================================
 // 제목
+// =================================================
+
 const notificationTitle = (type) => {
   const map = {
     LIKE: '좋아요 알림',
@@ -93,6 +106,8 @@ const notificationTitle = (type) => {
     SETTLEMENT_CANCEL: '정산 취소',
     SETTLEMENT_CANCEL_REFUND: '정산 취소',
 
+    SETTLEMENT_COMPLETE_OWNER: '정산 완료',
+
     SETTLEMENT_PAYMENT: '정산 결제 완료',
 
     FRIEND_REQUEST: '친구 요청',
@@ -103,8 +118,33 @@ const notificationTitle = (type) => {
   return map[type] ?? '새로운 알림';
 };
 
+// =================================================
 // 내용
-const notificationMessage = (type) => {
+// =================================================
+
+const notificationMessage = (notification) => {
+  const type = notification.notificationType;
+
+  if (type === 'LIKE') {
+    const actorCount = Number(notification.actorCount ?? 1);
+
+    if (actorCount <= 1) {
+      return '님이 피드에 좋아요를 눌렀습니다.';
+    }
+
+    return `님 외 ${actorCount - 1}명이 피드에 좋아요를 눌렀습니다.`;
+  }
+
+  if (type === 'COMMENT') {
+    const actorCount = Number(notification.actorCount ?? 1);
+
+    if (actorCount <= 1) {
+      return '님이 피드에 좋아요를 눌렀습니다.';
+    }
+
+    return `님 외 ${actorCount - 1}명이 피드에 좋아요를 눌렀습니다.`;
+  }
+
   const map = {
     LIKE: '님이 피드에 좋아요를 눌렀습니다.',
 
@@ -112,9 +152,11 @@ const notificationMessage = (type) => {
 
     SETTLEMENT_REQUEST: '님이 정산 요청을 보냈습니다.',
 
-    SETTLEMENT_REMIND: '님의 정산 요청 시간 얼마 남지 않았어요',
+    SETTLEMENT_REMIND: '님의 정산 요청 시간이 얼마 남지 않았어요',
 
     SETTLEMENT_COMPLETE: '님의 정산이 완료되었습니다.',
+
+    SETTLEMENT_COMPLETE_OWNER: '님의 정산이 완료되었습니다.',
 
     SETTLEMENT_CANCEL: '님의 정산 요청이 취소되었습니다.',
 
@@ -131,13 +173,62 @@ const notificationMessage = (type) => {
   return map[type] ?? '새로운 알림이 있습니다.';
 };
 
+// =================================================
+// 정산 알림 이동 경로
+//
+// notification.targetId
+//        ↓
+// settlementId
+//        ↓
+// 현재 정산 상태 확인
+//        ↓
+// 요청자 / 요청받은 사람 확인
+//        ↓
+// 현재 상태에 맞는 탭으로 이동
+// =================================================
+
+const getSettlementRouterPath = (notification) => {
+  const settlement = settlementStore.allSettlements.find(
+    (settlement) =>
+      Number(settlement.settlementId) === Number(notification.targetId),
+  );
+
+  // 해당 정산이 Pinia에 없는 경우
+  if (!settlement) {
+    return null;
+  }
+
+  // 내가 정산 요청자인지 확인
+  const isRequester = Number(settlement.requesterId) === Number(userId);
+
+  // 요청 방향
+  const type = isRequester ? 'requested' : 'received';
+
+  // 현재 정산 상태
+  switch (settlement.status) {
+    // 완료
+    case 'COMPLETE':
+      return `/mypage?tab=settlement&type=${type}&state=complete`;
+
+    // 취소
+    case 'CANCEL':
+      return `/mypage?tab=settlement&type=${type}&state=cancel`;
+
+    // 진행 중
+    default:
+      return `/mypage?tab=settlement&type=${type}&state=progress`;
+  }
+};
+
+// =================================================
 // 알림 클릭
+// =================================================
+
 const onclickRead = async (notification) => {
   try {
     // 읽음 처리
     await notificationStore.read({
       notificationId: notification.notificationId,
-
       userId,
     });
 
@@ -146,52 +237,88 @@ const onclickRead = async (notification) => {
     let routerPath = null;
 
     switch (type) {
-      // 좋아요 / 댓글
+      // =================================================
+      // 좋아요
+      // =================================================
+
       case 'LIKE':
-        routerPath = `/mypage`;
+        routerPath = `/feed/detail/${notification.targetId}`;
+        break;
+
+      // =================================================
+      // 댓글
+      // =================================================
+
       case 'COMMENT':
-        // 피드 상세 이동
-        routerPath = `/mypage`;
-
+        routerPath = `/feed/detail/${notification.targetId}`;
         break;
 
+      // =================================================
       // 친구 요청
-      case 'FRIEND_REQUEST':
-        routerPath = '/friends?tab=request';
+      // =================================================
 
+      case 'FRIEND_REQUEST':
+        routerPath = `/friends?tab=request&requestId=${notification.targetId}`;
         break;
 
+      // =================================================
       // 친구 수락
+      // =================================================
+
       case 'FRIEND_ACCEPT':
         routerPath = '/friends?tab=list';
-
         break;
 
+      // =================================================
       // 정산
+      //
+      // 알림 종류가 아니라
+      // 실제 정산의 현재 상태를 기준으로 이동
+      // =================================================
+
       case 'SETTLEMENT_REQUEST':
-      case 'SETTLEMENT_CANCEL_REFUND':
-      case 'SETTLEMENT_PAYMENT':
       case 'SETTLEMENT_REMIND':
+      case 'SETTLEMENT_PAYMENT':
+      case 'SETTLEMENT_CANCEL_REFUND':
+      case 'SETTLEMENT_COMPLETE_OWNER':
       case 'SETTLEMENT_COMPLETE':
-        routerPath = '/settlement';
+      case 'SETTLEMENT_CANCEL': {
+        // 알림 페이지에서 바로 들어온 경우
+        // Pinia에 정산 목록이 없을 수 있으므로 조회
+        if (settlementStore.allSettlements.length === 0) {
+          await settlementStore.getMyList({
+            userId,
+          });
+        }
+
+        // targetId로 현재 정산을 찾고
+        // 현재 상태에 맞는 경로 생성
+        routerPath = getSettlementRouterPath(notification);
+
+        // 정산을 찾지 못한 경우
+        if (!routerPath) {
+          await modalStore.showAlert(
+            '해당 정산 내역을 찾을 수 없습니다.',
+            '알림',
+          );
+
+          return;
+        }
 
         break;
+      }
 
-      // 정산 취소
-      case 'SETTLEMENT_CANCEL':
-        router.push({
-          path: '/mypage',
-
-          query: {
-            tab: 'wallet',
-          },
-        });
-
-        return;
+      // =================================================
+      // 기타
+      // =================================================
 
       default:
         return;
     }
+
+    // =================================================
+    // 페이지 이동
+    // =================================================
 
     if (routerPath) {
       router.push(routerPath);
@@ -201,12 +328,19 @@ const onclickRead = async (notification) => {
   }
 };
 
+// =================================================
 // 전체 읽음
+// =================================================
+
 const onclickReadAll = () => {
   notificationStore.readAll({
     userId,
   });
 };
+
+// =================================================
+// 알림 삭제
+// =================================================
 
 const onclickDelete = (notification) => {
   notificationStore.read({
@@ -214,6 +348,10 @@ const onclickDelete = (notification) => {
     userId,
   });
 };
+
+// =================================================
+// 초기 알림 조회
+// =================================================
 
 onMounted(() => {
   notificationStore.getList({
@@ -227,7 +365,7 @@ onMounted(() => {
   width: 100%;
   min-height: 100%;
   padding: 0 20px 30px;
-  background: #ffffff;
+  background: var(--color-bg-screen);
 }
 
 .notification-content {
@@ -237,51 +375,35 @@ onMounted(() => {
 /* 모두 읽음 */
 .notification-header {
   display: flex;
-
   justify-content: flex-end;
-
   margin-bottom: 18px;
 }
 
 .read-all {
   border: none;
-
   background: transparent;
-
   color: #666;
-
   font-size: 14px;
-
   cursor: pointer;
 }
 
 /* 리스트 */
 .notification-list {
   display: flex;
-
   flex-direction: column;
-
   gap: 14px;
 }
 
 /* 카드 */
 .notification-card {
   display: flex;
-
   align-items: center;
-
   position: relative;
-
   padding: 16px;
-
   background: white;
-
   border-radius: 16px;
-
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-
   cursor: pointer;
-
   transition: 0.2s;
 }
 
@@ -292,13 +414,9 @@ onMounted(() => {
 /* 프로필 */
 .profile-img {
   width: 52px;
-
   height: 52px;
-
   border-radius: 50%;
-
   object-fit: cover;
-
   margin-right: 14px;
 }
 
@@ -308,15 +426,12 @@ onMounted(() => {
 
 .title {
   font-size: 15px;
-
   font-weight: 700;
 }
 
 .message {
   margin-top: 5px;
-
   font-size: 14px;
-
   color: #555;
 }
 
@@ -326,49 +441,33 @@ onMounted(() => {
 
 .date {
   margin-top: 8px;
-
   font-size: 12px;
-
   color: #999;
 }
 
 /* 안읽음 점 */
 .dot {
   position: absolute;
-
   top: 16px;
-
   right: 16px;
-
   width: 8px;
-
   height: 8px;
-
   border-radius: 50%;
-
   background: #ffcc00;
 }
 
+/* 삭제 버튼 */
 .delete-btn {
   position: absolute;
-
   right: 16px;
   bottom: 14px;
-
   border: none;
-
   background: transparent;
-
   color: #999;
-
   font-size: 20px;
-
   line-height: 1;
-
   cursor: pointer;
-
   padding: 0;
-
   transition: 0.2s;
 }
 
@@ -379,11 +478,8 @@ onMounted(() => {
 
 .empty {
   text-align: center;
-
   color: #999;
-
   padding: 30px 0;
-
   font-size: 14px;
 }
 </style>

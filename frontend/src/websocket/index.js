@@ -1,24 +1,28 @@
 import { Client } from '@stomp/stompjs';
 import { useNotificationStore } from '@/stores/notification';
 import { useSettlementStore } from '@/stores/settlement';
+import { useFriendStore } from '@/stores/friend';
 
 let client = null;
 
-export const connectStomp = (userId) => {
-  // 이미 연결 중이거나 연결되어 있으면 종료
+export const connectStomp = (token) => {
   if (client?.active) return;
 
   const notificationStore = useNotificationStore();
   const settlementStore = useSettlementStore();
+  const friendStore = useFriendStore();
 
   client = new Client({
     brokerURL: 'ws://localhost:8080/ws',
 
     connectHeaders: {
-      userId: String(userId),
+      Authorization: `Bearer ${token}`,
     },
 
     reconnectDelay: 5000,
+
+    heartbeatIncoming: 10000,
+    heartbeatOutgoing: 10000,
 
     debug: (str) => console.log(str),
   });
@@ -26,17 +30,53 @@ export const connectStomp = (userId) => {
   client.onConnect = () => {
     console.log('웹소켓 연결 성공');
 
+    // 알림
     client.subscribe('/user/queue/notifications', (message) => {
       const notification = JSON.parse(message.body);
+
       console.log('웹소켓 알림 수신:', notification);
+
       notificationStore.addNotification(notification);
-      window.dispatchEvent(new CustomEvent('notification-received', { detail: notification }));
+
+      window.dispatchEvent(
+        new CustomEvent('notification-received', {
+          detail: notification,
+        }),
+      );
     });
 
+    // 정산
     client.subscribe('/user/queue/settlements', (message) => {
-      const settlement = JSON.parse(message.body);
-      console.log(settlement);
-      settlementStore.updateSettlement(settlement);
+      const data = JSON.parse(message.body);
+
+      console.log('정산 웹소켓 원본:', data);
+      console.log('정산 members:', data.settlement?.members);
+
+      if (!data?.type || !data?.settlement) {
+        return;
+      }
+
+      switch (data.type) {
+        case 'CREATE':
+          settlementStore.addSettlement(data.settlement);
+          break;
+
+        case 'UPDATE':
+          settlementStore.updateSettlement(data.settlement);
+          break;
+
+        default:
+          console.warn('알 수 없는 정산 웹소켓 타입:', data.type);
+      }
+    });
+
+    // 친구
+    client.subscribe('/user/queue/friends', (message) => {
+      const friendEvent = JSON.parse(message.body);
+
+      console.log('친구 웹소켓:', friendEvent);
+
+      friendStore.handleFriendEvent(friendEvent);
     });
   };
 
@@ -46,6 +86,18 @@ export const connectStomp = (userId) => {
 
   client.onStompError = (frame) => {
     console.error('STOMP ERROR', frame);
+  };
+
+  client.onWebSocketClose = (event) => {
+    console.warn('WebSocket 연결 종료:', event);
+  };
+
+  client.onWebSocketError = (event) => {
+    console.error('WebSocket 오류:', event);
+  };
+
+  client.onStompError = (frame) => {
+    console.error('STOMP ERROR:', frame);
   };
 
   client.activate();

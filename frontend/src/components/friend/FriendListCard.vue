@@ -44,6 +44,8 @@ import FriendCard from './FriendCard.vue';
 import { useFriendStore } from '@/stores/friend.js';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.js';
+import { useModalStore } from '@/stores/userModalStore.js';
+const modalStroe = useModalStore();
 const authStore = useAuthStore();
 const userId = authStore.userId;
 
@@ -101,14 +103,18 @@ const activity = () => {
   closeMenu();
 };
 
-const removeFriend = () => {
-  if (confirm('친구를 삭제하시겠습니까?')) {
-    console.log('친구 삭제', props.friendUserId);
+const removeFriend = async () => {
+  const res = await modalStroe.showConfirm('친구를 삭제하시겠습니까?');
+
+  if (!res) {
+    return;
   }
 
-  friendStore.deleteFriend(userId, props.friendUserId);
+  await friendStore.deleteFriend(userId, props.friendUserId);
 
   closeMenu();
+
+  modalStroe.showAlert('친구 삭제 완료');
 };
 
 const goProfile = () => {

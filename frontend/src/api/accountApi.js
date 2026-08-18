@@ -27,6 +27,8 @@ export const resendAccountVerification = async (verificationId) => {
 
 // 계좌 인증번호 확인
 export const confirmAccountVerification = async (confirmData) => {
+  console.log(confirmData);
+
   const { data } = await api.post(
     `${BASE_URL}/verification/confirm`,
     confirmData,

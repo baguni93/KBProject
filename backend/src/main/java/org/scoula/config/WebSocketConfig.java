@@ -1,6 +1,9 @@
 package org.scoula.config;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.scoula.security.account.domain.CustomUser;
+import org.scoula.security.util.JwtProcessor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -20,7 +23,10 @@ import java.util.Collections;
 @Configuration// Spring 설정 클래스 등록
 @EnableWebSocketMessageBroker// STOMP 기반 WebSocket 메시지 브로커 활성화
 @Log4j2
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    private final JwtProcessor jwtProcessor;
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
@@ -50,37 +56,35 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     // connectHeaders: {
                     //     userId: "1"
                     // }
-                    String userId = accessor
-                            .getFirstNativeHeader("userId");
+                    String authorization = accessor
+                            .getFirstNativeHeader("Authorization");
 
-
-                    log.info("WebSocket userId = " + userId);
                     // userId가 존재하면 WebSocket 사용자 정보 등록
-                    if (userId != null) {
+                    if (authorization != null && authorization.startsWith("Bearer ")) {
 
-                        // Spring Security의 Authentication 객체 생성
-                        // Principal 이름을 userId로 설정
-                        //
-                        // 이후
-                        // convertAndSendToUser("1", ...)
-                        //
-                        // 호출 시 Spring이
-                        // Principal.name == "1"
-                        // 인 사용자를 찾아 메시지를 전달
-                        accessor.setUser(
-                                new UsernamePasswordAuthenticationToken(
-                                        userId,   // Principal 이름
-                                        null,     // 비밀번호 정보 없음
-                                        Collections.emptyList() // 권한 없음
-                                )
-                        );
+                        String token = authorization.substring(7);
+
+                        if (jwtProcessor.validateToken(token)) {
+
+                            Long userId = jwtProcessor.getUserId(token);
+
+                            accessor.setUser(
+                                    new UsernamePasswordAuthenticationToken(
+                                            String.valueOf(userId),
+                                            null,
+                                            Collections.emptyList()
+                                    )
+                            );
+                        }
                     }
                 }
 
                 // 메시지 처리 계속 진행
                 return message;
             }
+
         });
+
     }
 
     /**

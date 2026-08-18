@@ -168,7 +168,7 @@ public class AccountServiceImpl implements AccountService {
 
     // 계좌 인증번호 확인
     @Override
-    @Transactional(noRollbackFor = IllegalArgumentException.class)
+    @Transactional(noRollbackFor = {IllegalArgumentException.class , CustomException.class } )
     public boolean confirmVerification(Long userId, AccountVerificationConfirmDTO confirmDTO) {
 
         if (confirmDTO.getVerificationId() == null) {
@@ -231,7 +231,12 @@ public class AccountServiceImpl implements AccountService {
                 throw new IllegalArgumentException("계좌 인증 시도 횟수를 초과했습니다. 5분 후 다시 시도해주세요.");
             }
 
-            throw new IllegalArgumentException("계좌 인증번호가 일치하지 않습니다. 남은 횟수: " + remainingCount);
+//            throw new IllegalArgumentException("계좌 인증번호가 일치하지 않습니다. 남은 횟수: " + remainingCount);
+
+            throw new CustomException(
+                    ErrorCode.VERIFICATION_ACCOUNT_CODE_NOT_INCORRECT,
+                    "계좌 인증번호가 일치하지 않습니다. \n남은 횟수: " + remainingCount
+            );
         }
 
         return accountMapper.verifyAccount(confirmDTO.getVerificationId(), userId) > 0;

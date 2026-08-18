@@ -9,4 +9,6 @@ public class RedisKey {
     public static String likeUser(int feedId){
         return "feed:like:user:" + feedId;
     }
+
+
 }

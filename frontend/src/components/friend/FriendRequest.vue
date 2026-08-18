@@ -27,11 +27,15 @@
 import FriendRequestList from './FriendRequestList.vue';
 import SentRequestList from './SentRequestList.vue';
 import { useFriendStore } from '@/stores/friend';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.js';
+import { useModalStore } from '@/stores/userModalStore.js';
+import { computed, onMounted } from 'vue';
+
+const modalStroe = useModalStore();
 const authStore = useAuthStore();
 const userId = authStore.userId;
-
+const route = useRoute();
 const router = useRouter();
 const friendStore = useFriendStore();
 
@@ -47,16 +51,40 @@ defineProps({
   },
 });
 
-const acceptRequest = (id) => {
-  friendStore.accept(userId, id);
+const acceptRequest = async (id) => {
+  const res = await modalStroe.showConfirm('친구 요청을 수락하시겠습니까?');
+
+  if (!res) {
+    return;
+  }
+
+  await friendStore.accept(userId, id);
+
+  modalStroe.showSuccess('친구 요청 수락 완료');
 };
 
-const rejectRequest = (id) => {
-  friendStore.reject(userId, id);
+const rejectRequest = async (id) => {
+  const res = await modalStroe.showConfirm('친구 요청을 거절하시겠습니까?');
+
+  if (!res) {
+    return;
+  }
+
+  await friendStore.reject(userId, id);
+
+  modalStroe.showAlert('친구 요청 거절 완료');
 };
 
-const cancelRequest = (id) => {
-  friendStore.cancel(userId, id);
+const cancelRequest = async (id) => {
+  const res = await modalStroe.showConfirm('친구 요청을 취소하시겠습니까?');
+
+  if (!res) {
+    return;
+  }
+
+  await friendStore.cancel(userId, id);
+
+  modalStroe.showAlert('친구 요청 취소 완료');
 };
 
 const goProfile = (targetId) => {
@@ -66,6 +94,29 @@ const goProfile = (targetId) => {
     router.push(`/member/${targetId}`);
   }
 };
+
+onMounted(async () => {
+  await friendStore.getRequestList(userId);
+  const requestId = Number(route.query.requestId);
+
+  console.log('requestId:', requestId, typeof requestId);
+  console.log('requestList:', friendStore.requestList);
+
+  if (!requestId) {
+    return;
+  }
+
+  const request = friendStore.requestList.find(
+    (item) => Number(item.requestId) === requestId,
+  );
+
+  console.log('찾은 request:', request);
+
+  if (!request) {
+    await modalStroe.showAlert('이미 처리된 친구 요청입니다.', '알림');
+    router.replace('/friends?tab=request');
+  }
+});
 </script>
 
 <style scoped>

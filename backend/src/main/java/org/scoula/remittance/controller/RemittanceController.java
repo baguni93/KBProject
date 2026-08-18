@@ -119,10 +119,11 @@ public class RemittanceController {
     // 정산 환불
     @PostMapping("/refund")
     public ResponseEntity<Boolean> refundSettlement(
+            @RequestParam Integer settlementId,
             @RequestParam Integer requesterUserId,
             @RequestParam Integer memberUserId,
             @RequestParam Integer amount) {
-        boolean result = remittanceService.refundSettlement(requesterUserId, memberUserId, amount);
+        boolean result = remittanceService.refundSettlement(settlementId,requesterUserId, memberUserId, amount);
         if (result) {
             return ResponseEntity.ok(true);
         } else {

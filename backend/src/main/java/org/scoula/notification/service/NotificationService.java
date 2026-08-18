@@ -20,9 +20,9 @@ public interface NotificationService {
 
     void readAll(int userId);
 
-    void createLikeNotification(int senderId, int receiverId, Integer targetId);
+    void createLikeNotification(int senderId, int receiverId, Integer targetId, int actor);
 
-    void createCommentNotification(int senderId, int receiverId, Integer targetId);
+    void createCommentNotification(int senderId, int receiverId, Integer targetId, int actor);
 
     void createFriendRequestNotification(int senderId, int receiverId, Integer targetId);
 

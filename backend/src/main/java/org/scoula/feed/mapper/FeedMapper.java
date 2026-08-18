@@ -11,7 +11,9 @@ public interface FeedMapper {
     List<FeedVO> getList(@Param("userId") int userId,
                          @Param("offset")int offset,
                          @Param("size")int size);
-    List<FeedVO> getMyList(int userId);
+    List<FeedVO> getMyList(@Param("userId")int userId,
+                           @Param("offset")int offset,
+                           @Param("size")int size);
     List<FeedVO> getFriendList(int userId);
 
     void create(FeedVO feedVO);
@@ -32,7 +34,9 @@ public interface FeedMapper {
     EventVO getEvent(int targetId);
 
     List<FeedVO> geMemberList(@Param("memberUserId") int memberUserId,
-                              @Param("userId") int userId);
+                              @Param("userId") int userId,
+                              @Param("offset")int offset,
+                              @Param("size")int size);
 
     void deleteImage(Integer imageId);
 

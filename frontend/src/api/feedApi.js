@@ -36,14 +36,11 @@ export default {
 
   // 회원 피드 조회
   async getMemberList(params) {
-    const { data } = await api.get(
-      `${BASE_URL}/member/${params.memberUserId}`,
-      {
-        params: {
-          userId: params.userId,
-        },
-      },
-    );
+    const { memberUserId, ...queryParams } = params;
+
+    const { data } = await api.get(`${BASE_URL}/member/${memberUserId}`, {
+      params: queryParams,
+    });
 
     return data;
   },

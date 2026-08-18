@@ -5,11 +5,7 @@
       <FriendButton :user-id="userId" :member-user-id="memberUserId" />
     </ProfileHeader>
 
-    <FeedSection
-      type="member"
-      :user-id="userId"
-      :member-user-id="memberUserId"
-    />
+    <FeedSection type="member" :member-user-id="memberUserId" />
   </div>
 </template>
 <script setup>
@@ -17,7 +13,7 @@ import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import PageHeader from '@/components/common/PageHeader.vue';
 import ProfileHeader from '@/components/profile/ProfileHeader.vue';
-import FeedSection from '@/components/my/FeedSection.vue';
+import FeedSection from '../feed/components/FeedSection.vue';
 import FriendButton from '@/components/common/FriendButton.vue';
 import { useProfileStore } from '@/stores/profile';
 import { useAuthStore } from '@/stores/auth.js';
@@ -40,8 +36,17 @@ onMounted(loadProfile);
 
 <style scoped>
 .profile-page {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  padding: 20px;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--color-bg-screen);
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 16px 16px 20px 16px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 .friend-page {
   padding: 20px;

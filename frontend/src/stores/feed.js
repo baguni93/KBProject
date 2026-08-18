@@ -22,6 +22,9 @@ export const useFeedStore = defineStore('feed', () => {
 
   const isRefreshing = ref(false);
 
+  // 피드 목록 스크롤 위치
+  const savedScrollPosition = ref(0);
+
   const createRequestDTO = ({ feedType, visibility, content, targetId }) => {
     {
       const formData = new FormData();
@@ -60,11 +63,23 @@ export const useFeedStore = defineStore('feed', () => {
   const deleteFeed = async (feedId) => {
     try {
       await feedApi.delete(feedId);
+
       publicFeeds.value = publicFeeds.value.filter(
         (feed) => feed.feedId !== feedId,
       );
+
+      friendFeeds.value = friendFeeds.value.filter(
+        (feed) => feed.feedId !== feedId,
+      );
+
+      myFeeds.value = myFeeds.value.filter((feed) => feed.feedId !== feedId);
+
+      memberFeeds.value = memberFeeds.value.filter(
+        (feed) => feed.feedId !== feedId,
+      );
     } catch (e) {
-      console.log(e);
+      console.error('피드 삭제 실패:', e);
+      throw e;
     }
   };
 
@@ -128,11 +143,18 @@ export const useFeedStore = defineStore('feed', () => {
   // 내 피드 조회
   const getMyList = async (params) => {
     try {
-      myFeeds.value = await feedApi.getMyList(params);
+      const result = await feedApi.getMyList(params);
 
-      return myFeeds.value;
+      if (params.page === 0) {
+        myFeeds.value = result;
+      } else {
+        myFeeds.value.push(...result);
+      }
+
+      return result;
     } catch (e) {
-      console.log(e);
+      console.error('내 피드 조회 실패:', e);
+      throw e;
     }
   };
 
@@ -150,10 +172,18 @@ export const useFeedStore = defineStore('feed', () => {
   // 맴버 피드 조회
   const getMemberList = async (params) => {
     try {
-      memberFeeds.value = await feedApi.getMemberList(params);
-      return memberFeeds.value;
+      const result = await feedApi.getMemberList(params);
+
+      if (params.page === 0) {
+        memberFeeds.value = result;
+      } else {
+        memberFeeds.value.push(...result);
+      }
+
+      return result;
     } catch (e) {
-      console.log(e);
+      console.error('멤버 피드 조회 실패:', e);
+      throw e;
     }
   };
 
@@ -181,6 +211,7 @@ export const useFeedStore = defineStore('feed', () => {
     updateLike(publicFeeds.value, params.feedId, liked);
     updateLike(friendFeeds.value, params.feedId, liked);
     updateLike(myFeeds.value, params.feedId, liked);
+    updateLike(memberFeeds.value, params.feedId, liked);
 
     return liked;
   };
@@ -202,17 +233,22 @@ export const useFeedStore = defineStore('feed', () => {
     }
   };
 
+  const findFeed = (feedId) => {
+    return (
+      publicFeeds.value.find((feed) => feed.feedId === feedId) ||
+      friendFeeds.value.find((feed) => feed.feedId === feedId) ||
+      myFeeds.value.find((feed) => feed.feedId === feedId) ||
+      memberFeeds.value.find((feed) => feed.feedId === feedId)
+    );
+  };
+
   const createComment = async (params) => {
     try {
       const data = await commentApi.create(params);
 
-      // 댓글 목록에 바로 추가
-      comments.value.push(data);
+      comments.value.unshift(data);
 
-      // 피드 댓글 수 증가
-      const targetFeed = publicFeeds.value.find(
-        (feed) => feed.feedId === params.feedId,
-      );
+      const targetFeed = findFeed(params.feedId);
 
       if (targetFeed) {
         targetFeed.commentCount++;
@@ -229,15 +265,11 @@ export const useFeedStore = defineStore('feed', () => {
     try {
       await commentApi.delete(commentId);
 
-      // Pinia 댓글 목록에서 제거
       comments.value = comments.value.filter(
         (comment) => comment.commentId !== commentId,
       );
 
-      // 피드 댓글 수 감소
-      const targetFeed = publicFeeds.value.find(
-        (feed) => feed.feedId === feedId,
-      );
+      const targetFeed = findFeed(feedId);
 
       if (targetFeed && targetFeed.commentCount > 0) {
         targetFeed.commentCount--;
@@ -255,6 +287,9 @@ export const useFeedStore = defineStore('feed', () => {
     memberFeeds,
     comments,
     isRefreshing,
+
+    savedScrollPosition,
+
     createRequestDTO,
     createFeed,
     deleteFeed,

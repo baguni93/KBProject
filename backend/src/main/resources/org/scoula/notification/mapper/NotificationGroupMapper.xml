@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.scoula.notification.mapper.NotificationGroupMapper">
+
+    <!-- =========================
+         대기 중 그룹 조회
+         ========================= -->
+
+    <select id="findWaitingGroup"
+            resultType="org.scoula.notification.domain.NotificationGroupVO">
+
+        SELECT
+            group_id,
+            receiver_id,
+            feed_id,
+            notification_type,
+            actor_count,
+            status,
+            created_at,
+            completed_at
+        FROM notification_group_tbl
+        WHERE feed_id = #{feedId}
+          AND receiver_id = #{receiverId}
+          AND notification_type = #{notificationType}
+          AND status = 'WAITING'
+        ORDER BY group_id DESC
+        LIMIT 1
+
+    </select>
+
+
+    <!-- =========================
+         그룹 생성
+         ========================= -->
+
+    <insert id="createGroup"
+            useGeneratedKeys="true"
+            keyProperty="groupId">
+
+        INSERT INTO notification_group_tbl (
+            receiver_id,
+            feed_id,
+            notification_type,
+            actor_count,
+            status
+        )
+        VALUES (
+                   #{receiverId},
+                   #{feedId},
+                   #{notificationType},
+                   0,
+                   'WAITING'
+               )
+
+    </insert>
+
+
+    <!-- =========================
+         그룹 actor 추가
+         ========================= -->
+
+    <insert id="createActor">
+
+        INSERT IGNORE INTO notification_group_actor_tbl (
+            group_id,
+            user_id
+        )
+        VALUES (
+                   #{groupId},
+                   #{userId}
+               )
+
+    </insert>
+
+
+    <!-- =========================
+         actor 수 증가
+         ========================= -->
+
+    <update id="increaseActorCount">
+
+        UPDATE notification_group_tbl
+        SET actor_count = actor_count + 1
+        WHERE group_id = #{groupId}
+
+    </update>
+
+
+    <!-- =========================
+         actor 수 감소
+         ========================= -->
+
+    <update id="decreaseActorCount">
+
+        UPDATE notification_group_tbl
+        SET actor_count = actor_count - 1
+        WHERE group_id = #{groupId}
+          AND actor_count > 0
+
+    </update>
+
+
+    <!-- =========================
+         actor 수 조회
+         ========================= -->
+
+    <select id="getActorCount"
+            resultType="int">
+
+        SELECT actor_count
+        FROM notification_group_tbl
+        WHERE group_id = #{groupId}
+
+    </select>
+
+
+    <!-- =========================
+         최초 actor 조회
+         ========================= -->
+
+    <select id="getFirstActor"
+            resultType="int">
+
+        SELECT user_id
+        FROM notification_group_actor_tbl
+        WHERE group_id = #{groupId}
+        ORDER BY created_at ASC
+        LIMIT 1
+
+    </select>
+
+
+    <!-- =========================
+         actor 삭제
+         ========================= -->
+
+    <delete id="deleteActor">
+
+        DELETE
+        FROM notification_group_actor_tbl
+        WHERE group_id = #{groupId}
+          AND user_id = #{userId}
+
+    </delete>
+
+
+    <!-- =========================
+         그룹 완료
+         ========================= -->
+
+    <update id="completeGroup">
+
+        UPDATE notification_group_tbl
+        SET
+            status = 'COMPLETED',
+            completed_at = NOW()
+        WHERE group_id = #{groupId}
+
+    </update>
+
+
+    <!-- =========================
+         그룹 삭제
+         ========================= -->
+
+    <delete id="deleteGroup">
+
+        DELETE
+        FROM notification_group_tbl
+        WHERE group_id = #{groupId}
+
+    </delete>
+
+</mapper>

@@ -32,4 +32,9 @@ public interface CustomCardMapper {
     void createCustomCardImage(CardImageVO cardImageVO);
 
     CardImageVO getCustomCardImage(int customCardId);
+
+    void updateHistory(@Param("cardCode") Integer cardCode ,
+                       @Param("customCardId") int customCardId);
+
+    void updateAccountIssueType(String accountNumber);
 }

@@ -10,5 +10,6 @@ import PageHeader from '@/components/common/PageHeader.vue';
 .setting-page {
   width: 100%;
   padding: 20px;
+  background: var(--color-bg-screen);
 }
 </style>

@@ -10,9 +10,11 @@
     <!-- 버튼 -->
     <template #action>
       <div class="actions">
-        <button class="accept" @click="acceptRequest">수락</button>
+        <button class="content-btn small primary" @click="acceptRequest">
+          수락
+        </button>
 
-        <button class="reject" @click="rejectRequest">거절</button>
+        <button class="content-btn small" @click="rejectRequest">거절</button>
       </div>
     </template>
   </FriendCard>
@@ -72,20 +74,8 @@ const goProfile = () => {
   gap: 8px;
 }
 
-.actions button {
-  border: none;
-
-  padding: 7px 14px;
-
-  border-radius: 20px;
-
-  font-size: 13px;
-
-  cursor: pointer;
-}
-
 .accept {
-  background: #4f46e5;
+  background: #ffbc2e;
 
   color: white;
 }

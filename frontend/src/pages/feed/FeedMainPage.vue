@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <!-- 1. 상단 검색바 & 스캔(그리드) 버튼 영역 -->
+    <!-- 상단 검색바 & 알림 -->
     <header class="header-section">
       <div class="search-bar" @click="handleSearchClick">
         <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -10,352 +10,75 @@
       <button
         class="icon-square-btn"
         type="button"
-        aria-label="스캔 및 메뉴"
+        aria-label="알림"
         @click="goToNotification"
       >
         <i class="fa-regular fa-bell"></i>
+
         <span
           v-if="notificationStore.hasUnread"
           class="notification-dot"
+          aria-hidden="true"
         ></span>
       </button>
     </header>
 
-    <!-- 2. 프로모션 배너 영역 -->
+    <!-- 프로모션 배너 -->
     <section class="banner-section">
+      <img
+        src="/images/card_edit_background/glass.png"
+        alt="카드 배경"
+        class="banner-bg-img"
+      />
+
       <div class="banner-content">
-        <h2 class="banner-title">
-          Fast-forward payday.<br />
-          Get paid up to two days<br />
-          faster with Direct<br />
-          Deposit.
-        </h2>
-        <button class="banner-btn" type="button">배너 액션</button>
-      </div>
-      <div class="banner-illustration">
-        <div class="calendar-icon-box">📅</div>
+        <span class="banner-badge">KB 나만의 체크카드</span>
+
+        <h2 class="banner-title">나만의 디자인으로 완성</h2>
+
+        <p class="banner-desc">
+          세상에 단 하나뿐인 디자인과<br />
+          내가 직접 고르는 혜택으로 당당하게.
+        </p>
+
+        <button class="banner-btn" type="button" @click="handleBannerClick">
+          나만의 카드 만들기
+        </button>
       </div>
     </section>
+
     <p class="banner-subtext">
-      Subject to bank/employer practices. Terms apply.
+      나만의 디자인과 혜택으로 특별한 카드를 만들어보세요.
     </p>
 
-    <!-- 3. 인스타그램 스타일 피드 리스트 영역 -->
-    <main class="feed-section">
-      <!-- 새로고침 로딩 -->
-      <div v-if="feedStore.isRefreshing" class="refresh-loading-area">
-        <div class="loading-spinner"></div>
-      </div>
-
-      <component
-        v-for="feed in feedStore.publicFeeds"
-        :key="feed.feedId"
-        :is="feedComponents[feed.feedType]"
-        :feed="feed"
-      >
-        <template #actions>
-          <FeedActions
-            :liked="feed.liked"
-            :like-count="feed.likeCount"
-            :comment-count="feed.commentCount"
-            @comment="handleComment(feed.feedId)"
-            @like="handleLike(feed.feedId)"
-            @more="handleMore(feed.feedId)"
-          />
-        </template>
-      </component>
-
-      <!-- 무한 스크롤 감지 영역 -->
-      <div ref="loadMoreTarget" class="load-more-area">
-        <div v-if="isLoadingMore" class="loading-spinner"></div>
-        <span v-else-if="!hasMore" class="end-message">
-          모든 피드를 불러왔어요
-        </span>
-      </div>
-
-      <CommentBottomSheet
-        v-model="openComment"
-        :comments="feedStore.comments"
-        @create="handleCreateComment"
-        @delete="handleDeleteComment"
-      />
-      <FeedBottomSheet
-        v-model="openFeedMenu"
-        :is-mine="isSelectedFeedMine"
-        @edit="handleEdit"
-        @delete="handleDelete"
-        @report="handleReport"
-      />
-    </main>
+    <!-- 피드 -->
+    <FeedSection type="public" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
-import PaymentFeed from './components/PaymentFeed.vue';
-import EventFeed from './components/EventFeed.vue';
-import AiAnalysisFeed from './components/AiAnalysisFeed.vue';
-import CustomCardFeed from './components/CustomCardFeed.vue';
-import TransferFeed from './components/TransferFeed.vue';
-import SettlementFeed from './components/SettlementFeed.vue';
-import CommentBottomSheet from '@/components/feed/CommentBottomSheet.vue';
-import FeedBottomSheet from '@/components/feed/FeedBottomSheet.vue';
-import FeedActions from './components/FeedActions.vue';
-
-import { useNotificationStore } from '@/stores/notification';
-const notificationStore = useNotificationStore();
-
-import { useModalStore } from '@/stores/userModalStore.js';
-const modalStore = useModalStore();
-
 import { useRouter } from 'vue-router';
+import FeedSection from './components/FeedSection.vue';
+import { useNotificationStore } from '@/stores/notification';
+
 const router = useRouter();
 
-import { useAuthStore } from '@/stores/auth';
-const authStore = useAuthStore();
-const userId = computed(() => authStore.userId);
+const notificationStore = useNotificationStore();
 
-import { useFeedStore } from '@/stores/feed';
-const feedStore = useFeedStore();
-
-// -- 알림
+// 알림
 const goToNotification = () => {
   router.push('/notification');
 };
 
-//------------------------------페이지 네이션 --------------------------------------------//
-
-const page = ref(0);
-const size = 3;
-const isLoadingMore = ref(false);
-const hasMore = ref(true);
-
-const loadMoreTarget = ref(null);
-
-let observer = null;
-
-//------------------------------페이지 네이션 --------------------------------------------//
-
-const loadMoreFeeds = async () => {
-  if (isLoadingMore.value || !hasMore.value) {
-    return;
-  }
-
-  isLoadingMore.value = true;
-
-  try {
-    const nextPage = page.value + 1;
-    // 로딩 UI 확인용
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    const result = await feedStore.getList({
-      page: nextPage,
-      size: size,
-    });
-
-    page.value = nextPage;
-
-    // 받아온 데이터가 size보다 적으면 마지막 페이지
-    if (result.length < size) {
-      hasMore.value = false;
-    }
-  } catch (e) {
-    console.error('다음 피드 조회 실패', e);
-  } finally {
-    isLoadingMore.value = false;
-  }
-};
-
-//----
-const feedComponents = {
-  CARD: CustomCardFeed,
-  TRANSFER: TransferFeed,
-  EVENT: EventFeed,
-  PAYMENT: PaymentFeed,
-  ANALYSIS: AiAnalysisFeed,
-  SETTLEMENT: SettlementFeed,
-};
-
+// 사용자 검색
 const handleSearchClick = () => {
   router.push('/search');
 };
 
-const selectedFeedId = ref(null);
-//--댓글 창
-const openComment = ref(false);
-
-const handleComment = async (feedId) => {
-  selectedFeedId.value = feedId;
-
-  await feedStore.getComments(feedId);
-
-  openComment.value = true;
+// 카드 만들기
+const handleBannerClick = () => {
+  router.push('/card/create/intro');
 };
-
-//--더보기 창
-const openFeedMenu = ref(false);
-
-const handleMore = (feedId) => {
-  console.log(feedId);
-  selectedFeedId.value = feedId;
-  openFeedMenu.value = true;
-};
-
-// 댓글 액션
-
-const handleCreateComment = async (content) => {
-  if (!selectedFeedId.value) return;
-
-  try {
-    await feedStore.createComment({
-      feedId: selectedFeedId.value,
-      userId: userId.value,
-      content,
-    });
-  } catch (e) {
-    console.error('댓글 등록 실패', e);
-  }
-};
-
-const handleDeleteComment = async (commentId) => {
-  const isConfirm = await modalStore.showConfirm('댓글을 삭제하시겠습니까?');
-
-  if (!isConfirm) return;
-
-  try {
-    await feedStore.deleteComment(commentId, selectedFeedId.value);
-  } catch (e) {
-    console.error('댓글 삭제 실패', e);
-  }
-};
-
-//-- 좋아요
-
-const handleLike = async (feedId) => {
-  try {
-    await feedStore.toggleLike({
-      feedId: feedId,
-      userId: userId.value,
-    });
-  } catch (e) {
-    console.log(e);
-  }
-};
-
-//-- 더보기
-const handleEdit = () => {
-  console.log('수정할 피드:', selectedFeedId.value);
-  router.push(`/feed/edit/${selectedFeedId.value}`);
-};
-
-const handleDelete = async () => {
-  const isConfirm = await modalStore.showConfirm('피드를 삭제하시겠습니까?');
-
-  if (!isConfirm) {
-    return;
-  }
-
-  try {
-    await feedStore.deleteFeed(selectedFeedId.value);
-  } catch (e) {
-    console.log(e);
-  }
-};
-
-// 신고하기
-const isSelectedFeedMine = computed(() => {
-  const feed = feedStore.publicFeeds.find(
-    (feed) => feed.feedId === selectedFeedId.value,
-  );
-
-  return feed?.userId === userId.value;
-});
-
-const handleReport = async () => {
-  await modalStore.showAlert('신고가 완료되었습니다.', '신고하기');
-  console.log('신고할 피드:', selectedFeedId.value);
-};
-
-const initFeed = async () => {
-  page.value = 0;
-  hasMore.value = true;
-
-  await feedStore.getList({
-    page: page.value,
-    size: size,
-  });
-};
-
-defineExpose({
-  refreshFeed: initFeed,
-});
-
-// 위로 당겻을때
-
-let wasScrolled = false;
-
-const handleScroll = () => {
-  const content = document.querySelector('.app-content');
-
-  if (!content || isInitialLoad.value) {
-    return;
-  }
-
-  // 한 번이라도 아래로 스크롤했다는 기록
-  if (content.scrollTop > 20) {
-    wasScrolled = true;
-  }
-
-  // 아래로 갔다가 다시 최상단에 도착
-  if (content.scrollTop <= 0 && wasScrolled) {
-    wasScrolled = false;
-
-    feedStore.refreshList({
-      page: 0,
-      size: 3,
-    });
-  }
-};
-
-//이지가 처음 로드될 때 scrollTop이 0이니까 새로고침 API가 한 번 더 호출될 수 있다 방지
-const isInitialLoad = ref(true);
-
-onMounted(async () => {
-  await initFeed();
-  isInitialLoad.value = false;
-
-  observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0].isIntersecting) {
-        loadMoreFeeds();
-      }
-    },
-    {
-      root: document.querySelector('.app-content'),
-      rootMargin: '100px',
-      threshold: 0,
-    },
-  );
-
-  if (loadMoreTarget.value) {
-    observer.observe(loadMoreTarget.value);
-  }
-
-  const content = document.querySelector('.app-content');
-
-  if (content) {
-    content.addEventListener('scroll', handleScroll);
-  }
-});
-
-onBeforeUnmount(() => {
-  observer?.disconnect();
-
-  const content = document.querySelector('.app-content');
-
-  if (content) {
-    content.removeEventListener('scroll', handleScroll);
-  }
-});
 </script>
 
 <style scoped>
@@ -408,7 +131,202 @@ onBeforeUnmount(() => {
   font-weight: 500;
 }
 
+/* 2. 프로모션 배너 */
+.banner-section {
+  position: relative;
+
+  width: 100%;
+  min-height: 210px;
+
+  border-radius: 18px;
+
+  overflow: hidden;
+
+  box-sizing: border-box;
+
+  background: #f5f5f5;
+
+  display: flex;
+  align-items: center;
+}
+
+/* 배경 이미지 */
+.banner-bg-img {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  z-index: 0;
+}
+
+/* 배경 위 살짝 오버레이 */
+.banner-section::after {
+  content: '';
+
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(255, 255, 255, 0.55) 55%,
+    rgba(255, 255, 255, 0.15) 100%
+  );
+
+  z-index: 1;
+}
+
+/* 내용 */
+.banner-content {
+  position: relative;
+
+  z-index: 2;
+
+  width: 100%;
+
+  padding: 20px;
+
+  box-sizing: border-box;
+}
+
+/* KB 나만의 체크카드 배지 */
+.banner-badge {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 6px 12px;
+
+  margin-bottom: 12px;
+
+  border-radius: 10px;
+
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(255, 255, 255, 0.55) 55%,
+    rgba(255, 255, 255, 0.15) 100%
+  );
+
+  color: #6b4f00;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  border: 1px solid rgba(255, 193, 7, 0.35);
+
+  box-shadow:
+    0 3px 8px rgba(255, 193, 7, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+
+  backdrop-filter: blur(4px);
+}
+
+/* 제목 */
+.banner-title {
+  margin: 0;
+
+  color: #6b4f00;
+
+  font-size: 18px;
+  font-weight: 800;
+
+  line-height: 1.35;
+
+  letter-spacing: -0.4px;
+}
+
+/* 설명 */
+.banner-desc {
+  margin: 7px 0 12px;
+
+  color: #6b4f00;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  line-height: 1.45;
+}
+
+.banner-btn {
+  height: 40px;
+
+  padding: 0 18px;
+
+  border: none;
+  border-radius: 11px;
+
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(255, 255, 255, 0.55) 55%,
+    rgba(255, 255, 255, 0.15) 100%
+  );
+  color: #5c4300;
+
+  font-family: inherit;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 5px 14px rgba(255, 193, 7, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    filter 0.15s ease;
+}
+
+.banner-btn:hover {
+  filter: brightness(1.04);
+
+  box-shadow:
+    0 7px 18px rgba(255, 193, 7, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.banner-btn:active {
+  transform: scale(0.96);
+
+  box-shadow: 0 3px 8px rgba(255, 193, 7, 0.2);
+}
+.banner-section::after {
+  content: '';
+
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(
+    90deg,
+    rgba(255, 252, 235, 0.92) 0%,
+    rgba(255, 248, 215, 0.62) 50%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
+
+  z-index: 1;
+}
+/* 아래 설명 */
+.banner-subtext {
+  margin: 8px 4px 0;
+
+  color: #999;
+
+  font-size: 10px;
+
+  line-height: 1.4;
+}
+
+/* 새 알림 점 */
 .icon-square-btn {
+  position: relative; /* ⭐ 추가 */
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -427,109 +345,15 @@ onBeforeUnmount(() => {
   font-size: 18px;
 }
 
-/* 2. 프로모션 배너 */
-.banner-section {
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 24px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  position: relative;
-}
+.notification-dot {
+  position: absolute;
 
-.banner-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #111;
-  line-height: 1.35;
-  margin: 0 0 16px 0;
-}
+  top: 6px;
+  right: 6px;
 
-.banner-btn {
-  background: #0085ff;
-  color: #fff;
-  border: none;
-  border-radius: 20px;
-  padding: 10px 18px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.banner-illustration {
-  width: 80px;
-  height: 80px;
-  background: #e0f2fe;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-}
-
-.banner-subtext {
-  font-size: 11px;
-  color: #8892a0;
-  margin: 8px 4px 24px 4px;
-}
-
-/* 3. 인스타그램 스타일 피드 섹션 */
-.feed-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 12px;
-}
-
-.load-more-area {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  width: 100%;
-  height: 50px;
-}
-
-.loading-spinner {
-  width: 22px;
-  height: 22px;
-
-  border: 2px solid #e5e7eb;
-  border-top-color: #555;
-
+  width: 8px;
+  height: 8px;
+  background: #ff3b30;
   border-radius: 50%;
-
-  animation: feed-spinner 0.7s linear infinite;
-}
-.refresh-loading-area {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  width: 100%;
-  height: 40px;
-}
-
-@keyframes feed-spinner {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.load-more-area {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  width: 100%;
-  min-height: 50px;
-  padding: 10px 0;
-}
-
-.end-message {
-  font-size: 13px;
-  color: #9ca3af;
 }
 </style>

@@ -13,6 +13,7 @@ import org.scoula.friend.mapper.FriendMapper;
 import org.scoula.notification.dto.NotificationRequestDTO;
 import org.scoula.notification.service.NotificationService;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ public class FriendServiceImpl implements FriendService{
 
    private final FriendMapper friendMapper;
    private final NotificationService notificationService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     public List<FriendResponseDTO> getList(int userId) {
@@ -70,6 +72,13 @@ public class FriendServiceImpl implements FriendService{
         }
 
         friendMapper.deleteFriend(friendUserId, userId);
+
+        sendFriendEvent(
+                friendUserId,
+                "FRIEND_DELETE",
+                userId,
+                null
+        );
 
         return list.stream().map(FriendResponseDTO::of).toList();
     }
@@ -117,6 +126,13 @@ public class FriendServiceImpl implements FriendService{
                 friendRequestVO.getRequestId()
         );
 
+        sendFriendEvent(
+                friendRequestVO.getReceiverId(),
+                "FRIEND_REQUEST",
+                friendRequestVO.getRequesterId(),
+                friendRequestVO.getRequestId()
+        );
+
 
         return getRequest(friendRequestVO.getRequestId());
     }
@@ -154,6 +170,13 @@ public class FriendServiceImpl implements FriendService{
                 friendRequestVO.getRequestId()
         );
 
+        sendFriendEvent(
+                friendRequestVO.getRequesterId(),
+                "FRIEND_ACCEPT",
+                friendRequestVO.getReceiverId(),
+                friendRequestVO.getRequestId()
+        );
+
     }
 
     @Transactional
@@ -164,6 +187,13 @@ public class FriendServiceImpl implements FriendService{
 
         friendMapper.deleteRequest(friendRequestVO);
 
+        sendFriendEvent(
+                friendRequestVO.getReceiverId(),
+                "FRIEND_CANCEL",
+                friendRequestVO.getRequesterId(),
+                friendRequestVO.getRequestId()
+        );
+
     }
 
     @Transactional
@@ -173,6 +203,13 @@ public class FriendServiceImpl implements FriendService{
         FriendRequestVO friendRequestVO = validateFriendRequest(requestId);
 
         friendMapper.deleteRequest(friendRequestVO);
+
+        sendFriendEvent(
+                friendRequestVO.getRequesterId(),
+                "FRIEND_REJECT",
+                friendRequestVO.getReceiverId(),
+                friendRequestVO.getRequestId()
+        );
 
     }
 
@@ -185,6 +222,33 @@ public class FriendServiceImpl implements FriendService{
         }
         return friendRequestVO;
 
+    }
+
+    private void sendFriendEvent(
+            int receiverId,
+            String type,
+            int senderId,
+            Integer requestId
+    ) {
+
+        FriendEventDTO event = FriendEventDTO.builder()
+                .type(type)
+                .senderId(senderId)
+                .targetUserId(receiverId)
+                .requestId(requestId)
+                .build();
+
+        messagingTemplate.convertAndSendToUser(
+                String.valueOf(receiverId),
+                "/queue/friends",
+                event
+        );
+
+        log.info(
+                "친구 상태 웹소켓 전송 - receiverId: {}, type: {}",
+                receiverId,
+                type
+        );
     }
 
 }
