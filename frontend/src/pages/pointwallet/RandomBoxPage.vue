@@ -58,12 +58,17 @@
             </div>
           </div>
 
-          <button type="button" class="guide-row policy-row" :aria-expanded="showProbabilityPolicy" @click="showProbabilityPolicy = !showProbabilityPolicy">
-            <div class="guide-icon"><i class="fa-solid fa-circle-info"></i></div>
-            <div class="guide-copy">
+          <button
+              type="button"
+              class="guide-row policy-row"
+              :aria-expanded="showProbabilityPolicy"
+              @click="showProbabilityPolicy = !showProbabilityPolicy"
+          >
+            <span class="guide-icon"><i class="fa-solid fa-circle-info"></i></span>
+            <span class="guide-copy">
               <strong class="text-14-bold">보상 확률 정보</strong>
               <span class="text-12">어떤 포인트가 얼마나 자주 나오는지 확인해보세요.</span>
-            </div>
+            </span>
             <i :class="['fa-solid', showProbabilityPolicy ? 'fa-chevron-up' : 'fa-chevron-down', 'policy-arrow']"></i>
           </button>
 
@@ -117,7 +122,22 @@ import pointWalletApi from '@/api/pointWalletApi';
 import { formatNumber, getApiErrorMessage } from '@/util/pointWallet';
 
 const router = useRouter();
+/**
+ * @typedef {Object} RandomBox
+ * @property {number|string} userRandomBoxId
+ */
+
+/**
+ * @typedef {Object} OpenResult
+ * @property {number} [rewardPoint]
+ * @property {number} [totalRewardPoint]
+ * @property {number} [openedCount]
+ */
+
+/** @type {import('vue').Ref<RandomBox[]>} */
 const randomBoxes = ref([]);
+
+/** @type {import('vue').Ref<OpenResult|null>} */
 const lastOpenResult = ref(null);
 const loading = ref(false);
 const opening = ref(false);
@@ -132,9 +152,6 @@ const rewardProbabilities = [
   { range: '1,001 ~ 5,000P', rate: '0.09%' },
   { range: '10,000P', rate: '0.01%' },
 ];
-const issueReasonLabels = { PAYMENT: '결제', ATTENDANCE: '출석 체크', EVENT: '이벤트', FEED_SHARE: '피드 공유', TRANSFER: '송금' };
-const getIssueReasonLabel = (reason) => issueReasonLabels[reason] ?? reason ?? '-';
-const formatDate = (value) => value ? String(value).slice(0, 10) : '-';
 const goToPointWallet = () => router.push('/point-wallet');
 const loadRandomBoxes = async () => { randomBoxes.value = await pointWalletApi.getUnopenedRandomBoxes(); };
 const waitForOpenAnimation = (duration = 1050) => new Promise((resolve) => window.setTimeout(resolve, duration));
@@ -149,7 +166,11 @@ const openOne = async () => {
   message.value = '';
 
   try {
-    const [result] = await Promise.all([pointWalletApi.openRandomBox(oldestBox.userRandomBoxId), waitForOpenAnimation()]);
+    const [rawResult] = await Promise.all([
+      pointWalletApi.openRandomBox(oldestBox.userRandomBoxId),
+      waitForOpenAnimation(),
+    ]);
+    const result = /** @type {OpenResult} */ (rawResult);
     lastOpenResult.value = result;
     messageType.value = 'success';
     message.value = `${formatNumber(result.rewardPoint)}P가 적립되었습니다.`;
@@ -172,7 +193,11 @@ const openAll = async () => {
   message.value = '';
 
   try {
-    const [result] = await Promise.all([pointWalletApi.openAllRandomBoxes(), waitForOpenAnimation(1250)]);
+    const [rawResult] = await Promise.all([
+      pointWalletApi.openAllRandomBoxes(),
+      waitForOpenAnimation(1250),
+    ]);
+    const result = /** @type {OpenResult} */ (rawResult);
     lastOpenResult.value = result;
     messageType.value = 'success';
     message.value = result.openedCount > 0 ? `${result.openedCount}개를 열어 총 ${formatNumber(result.totalRewardPoint)}P를 받았습니다.` : '열 수 있는 랜덤박스가 없습니다.';
@@ -207,6 +232,7 @@ onMounted(initialize);
   background: var(--color-bg-screen);
 }
 
+/*noinspection CssUnusedSymbol*/
 .random-box-page :deep(.page-header) {
   position: sticky;
   top: 0;
@@ -381,10 +407,6 @@ onMounted(initialize);
   text-align: left;
 }
 
-.guide-row:last-of-type {
-  border-bottom: 0;
-}
-
 .guide-icon {
   width: 40px;
   height: 40px;
@@ -417,6 +439,7 @@ onMounted(initialize);
 
 .policy-row {
   cursor: pointer;
+  border-bottom: 0;
 }
 
 .policy-arrow {
@@ -535,6 +558,7 @@ onMounted(initialize);
   animation: open-glow 0.72s ease-out 0.5s both;
 }
 
+/*noinspection CssUnusedSymbol*/
 .opening-gift.opening-all {
   animation: box-shake-all 0.68s ease-in-out, box-open-pop-all 0.57s ease-out 0.68s;
 }
@@ -552,6 +576,7 @@ onMounted(initialize);
   animation: burst-out 0.62s ease-out 0.52s both;
 }
 
+/*noinspection CssUnusedSymbol*/
 .opening-all .burst {
   animation-delay: 0.66s;
 }
@@ -564,22 +589,26 @@ onMounted(initialize);
 .burst-6 { top: -2px; right: 10%; --burst-x: 30px; --burst-y: -42px; }
 .burst-7 { bottom: 4px; left: 8%; --burst-x: -34px; --burst-y: 34px; }
 
+/*noinspection CssUnusedSymbol*/
 .policy-slide-enter-active,
 .policy-slide-leave-active {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+/*noinspection CssUnusedSymbol*/
 .policy-slide-enter-from,
 .policy-slide-leave-to {
   opacity: 0;
   transform: translateY(-6px);
 }
 
+/*noinspection CssUnusedSymbol*/
 .opening-overlay-enter-active,
 .opening-overlay-leave-active {
   transition: opacity 0.2s ease;
 }
 
+/*noinspection CssUnusedSymbol*/
 .opening-overlay-enter-from,
 .opening-overlay-leave-to {
   opacity: 0;
