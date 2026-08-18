@@ -1,4 +1,3 @@
-
 <!--이 페이지는 Point 거래 내역을 재활용하기 위해 사용하였습니다. -->
 <template>
   <div class="point-transaction-list kb-card">
@@ -9,12 +8,12 @@
 
     <div v-else-if="transactions.length">
       <div
-        v-for="transaction in transactions"
-        :key="transaction.pointTransactionId"
-        class="point-row"
+          v-for="transaction in transactions"
+          :key="transaction.pointTransactionId"
+          class="point-row"
       >
         <div
-          :class="[
+            :class="[
             'point-icon',
             transaction.transactionType === 'EARN' ? 'earn' : 'use',
           ]"
@@ -34,8 +33,8 @@
 
         <div class="point-right">
           <strong
-            class="text-15-bold"
-            :class="
+              class="text-15-bold"
+              :class="
               transaction.transactionType === 'EARN'
                 ? 'kb-amount-positive'
                 : 'kb-amount-negative'
@@ -44,7 +43,7 @@
             {{ getPointSign(transaction.transactionType) }}{{ formatNumber(transaction.pointAmount) }}P
           </strong>
 
-          <span class="text-13">
+          <span v-if="selectedType === 'ALL'" class="text-13">
             {{ getTransactionTypeLabel(transaction.transactionType) }}
           </span>
         </div>
@@ -72,7 +71,11 @@ import {
 } from '@/util/pointWallet';
 
 defineProps({
-  transactions: {
+
+  selectedType: {
+    type: String,
+    default: 'ALL',
+  },transactions: {
     type: Array,
     default: () => [],
   },
@@ -98,17 +101,20 @@ const getReasonIcon = (reason) => ({
 }[reason] ?? 'fa-solid fa-coins');
 
 const formatDateTime = (value) => (
-  value ? String(value).replace('T', ' ').slice(0, 16) : '-'
+    value ? String(value).replace('T', ' ').slice(0, 16) : '-'
 );
 </script>
 
 <style scoped>
 .point-transaction-list {
   overflow: hidden;
+  border: 1px solid var(--color-divider);
+  box-shadow: 0 4px 14px rgba(30, 30, 30, 0.03);
 }
 
 .point-row {
-  padding: 13px 15px;
+  min-height: 68px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
   gap: 11px;
@@ -120,14 +126,14 @@ const formatDateTime = (value) => (
 }
 
 .point-icon {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
-  font-size: 14px;
+  border-radius: 11px;
+  font-size: 13px;
 }
 
 .point-icon.earn {
@@ -153,8 +159,9 @@ const formatDateTime = (value) => (
 }
 
 .point-info span {
-  margin-top: 3px;
+  margin-top: 2px;
   color: var(--color-text-muted);
+  line-height: 1.35;
 }
 
 .point-right {
@@ -166,7 +173,8 @@ const formatDateTime = (value) => (
 }
 
 .point-right span {
-  margin-top: 3px;
+  margin-top: 2px;
   color: var(--color-text-muted);
+  line-height: 1.35;
 }
 </style>

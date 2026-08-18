@@ -39,7 +39,8 @@ export const getCardImagePath = (cardImage) => {
     return value;
   }
 
-  return CARD_IMAGE_MAP[value] ?? null;
+  // 크롤링 카드는 서버의 upload/card 폴더에 저장되므로 정적 이미지 매핑에 없으면 api에서 조회
+  return CARD_IMAGE_MAP[value] ?? `/api/cards/image/${value}`;
 };
 
 export const getCardRecommendationErrorMessage = (

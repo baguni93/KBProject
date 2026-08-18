@@ -2141,9 +2141,6 @@ CREATE TABLE kb_insurance_category_match_tbl
     priority                    INT          NOT NULL DEFAULT 1
         COMMENT '같은 카테고리 내 표시 순서',
 
-    active_yn                   CHAR(1)      NOT NULL DEFAULT 'Y'
-        COMMENT '추천 관계 사용 여부',
-
     created_at                  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
         COMMENT '생성 일시',
 
@@ -2156,10 +2153,7 @@ CREATE TABLE kb_insurance_category_match_tbl
             REFERENCES spending_category_tbl (spending_category_id),
 
     CONSTRAINT uk_insurance_category_match
-        UNIQUE (insurance_product_id, spending_category_id),
-
-    CONSTRAINT chk_insurance_match_active
-        CHECK (active_yn IN ('Y', 'N'))
+        UNIQUE (insurance_product_id, spending_category_id)
 );
 
 SET FOREIGN_KEY_CHECKS = 1;

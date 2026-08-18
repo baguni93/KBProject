@@ -3,6 +3,8 @@ package org.scoula.cardpayment.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.scoula.cardpayment.dto.CardRegisterDTO;
+import org.scoula.cardpayment.dto.CrawledCardBenefitDTO;
+import org.scoula.cardpayment.dto.CrawledCardProductDTO;
 import org.scoula.cardpayment.dto.PrimaryCardResponseDTO;
 import org.scoula.wallet.dto.RegisteredCardDTO;
 
@@ -34,6 +36,15 @@ public interface CardPaymentMapper {
     Integer validateCard(CardRegisterDTO cardRegisterDTO);
 
     int insertOrUpdateCardProduct(@Param("cardName") String cardName, @Param("cardType") String cardType, @Param("cardImage") String cardImage, @Param("annualFee") int annualFee);
+
+    // 박준우: 카드 제품 입력
+    int insertCrawledCardProduct(CrawledCardProductDTO product);
+
+    // 박준우 : 카드 혜택 입력
+    int insertCrawledCardBenefit(CrawledCardBenefitDTO benefit);
+
+    // 박준우 : 카드
+    Integer findSpendingCategoryIdByName(@Param("categoryName") String categoryName);
 
     // 카드 결제 거래 상세 (card_transaction_detail_tbl) 관련
     int insertCardTransactionDetail(org.scoula.cardpayment.domain.CardTransactionDetailVO vo);

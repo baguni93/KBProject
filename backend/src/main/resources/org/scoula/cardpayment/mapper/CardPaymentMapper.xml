@@ -139,6 +139,62 @@
         )
     </insert>
 
+    <!--
+        서버 시작 카드 카탈로그 재구축용 INSERT.
+        TRUNCATE 이후 호출되므로 중복 검사 없이 저장하며, 생성된 상품 PK는
+        CrawledCardProductDTO.cardProductId에 담아 혜택 FK로 이어서 사용한다.
+    -->
+    <insert id="insertCrawledCardProduct"
+            parameterType="org.scoula.cardpayment.dto.CrawledCardProductDTO"
+            useGeneratedKeys="true"
+            keyProperty="cardProductId">
+        INSERT INTO kb_card_product_tbl (
+            card_name,
+            card_type,
+            card_description,
+            card_image,
+            application,
+            annual_fee
+        ) VALUES (
+            #{cardName},
+            #{cardType},
+            #{cardDescription},
+            #{cardImage},
+            #{application},
+            #{annualFee}
+        )
+    </insert>
+
+    <insert id="insertCrawledCardBenefit"
+            parameterType="org.scoula.cardpayment.dto.CrawledCardBenefitDTO">
+        INSERT INTO card_benefit_tbl (
+            card_product_id,
+            spending_category_id,
+            benefit_name,
+            benefit_amount,
+            benefit_rate,
+            monthly_limit,
+            minimum_spending_amount,
+            benefit_description
+        ) VALUES (
+            #{cardProductId},
+            #{spendingCategoryId},
+            #{benefitName},
+            #{benefitAmount},
+            #{benefitRate},
+            #{monthlyLimit},
+            #{minimumSpendingAmount},
+            #{benefitDescription}
+        )
+    </insert>
+
+    <select id="findSpendingCategoryIdByName" resultType="java.lang.Integer">
+        SELECT spending_category_id
+        FROM spending_category_tbl
+        WHERE category_name = #{categoryName}
+        LIMIT 1
+    </select>
+
     <!-- card_transaction_detail_tbl INSERT (PENDING) -->
     <insert id="insertCardTransactionDetail" useGeneratedKeys="true" keyProperty="cardTransactionId">
         INSERT INTO card_transaction_detail_tbl (

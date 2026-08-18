@@ -1,50 +1,50 @@
 <template>
   <div
-    class="analysis-donut"
-    :class="{ 'analysis-donut--detail': variant === 'detail' }"
-    @mouseleave="hoveredCategory = null"
+      class="analysis-donut"
+      :class="{ 'analysis-donut--detail': variant === 'detail' }"
+      @mouseleave="hoveredCategory = null"
   >
     <svg
-      class="analysis-donut__svg"
-      viewBox="0 0 220 220"
-      role="img"
-      :aria-label="`${formatAnalysisNumber(totalAmount)}원의 카테고리별 소비 비율`"
+        class="analysis-donut__svg"
+        viewBox="0 0 220 220"
+        role="img"
+        :aria-label="`${formatAnalysisNumber(totalAmount)}원의 카테고리별 소비 비율`"
     >
       <circle
-        class="analysis-donut__track"
-        cx="110"
-        cy="110"
-        r="82"
-        pathLength="100"
+          class="analysis-donut__track"
+          cx="110"
+          cy="110"
+          r="82"
+          pathLength="100"
       />
 
       <circle
-        v-for="segment in segments"
-        :key="segment.key"
-        class="analysis-donut__segment"
-        :class="{ 'is-active': activeCategory?.spendingCategoryId === segment.category.spendingCategoryId }"
-        cx="110"
-        cy="110"
-        r="82"
-        pathLength="100"
-        :stroke="segment.color"
-        :stroke-dasharray="`${segment.length} ${100 - segment.length}`"
-        :stroke-dashoffset="-segment.offset"
-        tabindex="0"
-        @mouseenter="hoveredCategory = segment.category"
-        @focus="hoveredCategory = segment.category"
-        @blur="hoveredCategory = null"
-        @click="toggleSelected(segment.category)"
-        @keydown.enter.prevent="toggleSelected(segment.category)"
-        @keydown.space.prevent="toggleSelected(segment.category)"
+          v-for="segment in segments"
+          :key="segment.key"
+          class="analysis-donut__segment"
+          :class="{ 'is-active': activeCategory?.spendingCategoryId === segment.category.spendingCategoryId }"
+          cx="110"
+          cy="110"
+          r="82"
+          pathLength="100"
+          :stroke="segment.color"
+          :stroke-dasharray="`${segment.length} ${100 - segment.length}`"
+          :stroke-dashoffset="-segment.offset"
+          tabindex="0"
+          @mouseenter="hoveredCategory = segment.category"
+          @focus="hoveredCategory = segment.category"
+          @blur="hoveredCategory = null"
+          @click="toggleSelected(segment.category)"
+          @keydown.enter.prevent="toggleSelected(segment.category)"
+          @keydown.space.prevent="toggleSelected(segment.category)"
       />
     </svg>
 
     <button
-      class="analysis-donut__center"
-      type="button"
-      :aria-label="selectedCategory ? '전체 소비 금액 보기' : '총 소비 금액'"
-      @click="selectedCategory = null"
+        class="analysis-donut__center"
+        type="button"
+        :aria-label="selectedCategory ? '전체 소비 금액 보기' : '총 소비 금액'"
+        @click="selectedCategory = null"
     >
       <template v-if="activeCategory">
         <span>{{ activeCategory.categoryName }}</span>
@@ -86,16 +86,16 @@ const props = defineProps({
 const selectedCategory = ref(null);
 const hoveredCategory = ref(null);
 const activeCategory = computed(
-  () => hoveredCategory.value ?? selectedCategory.value,
+    () => hoveredCategory.value ?? selectedCategory.value,
 );
 
 const normalizedCategories = computed(() =>
-  [...props.categories]
-    .filter((category) => Number(category?.spendingRatio) > 0)
-    .sort(
-      (left, right) =>
-        Number(right.spendingAmount ?? 0) - Number(left.spendingAmount ?? 0),
-    ),
+    [...props.categories]
+        .filter((category) => Number(category?.spendingRatio) > 0)
+        .sort(
+            (left, right) =>
+                Number(right.spendingAmount ?? 0) - Number(left.spendingAmount ?? 0),
+        ),
 );
 
 const segments = computed(() => {
@@ -117,9 +117,9 @@ const segments = computed(() => {
 
 const toggleSelected = (category) => {
   selectedCategory.value =
-    selectedCategory.value?.spendingCategoryId === category.spendingCategoryId
-      ? null
-      : category;
+      selectedCategory.value?.spendingCategoryId === category.spendingCategoryId
+          ? null
+          : category;
 };
 
 const formatRatio = (value) => {
@@ -128,18 +128,18 @@ const formatRatio = (value) => {
 };
 
 watch(
-  () => props.categories,
-  () => {
-    selectedCategory.value = null;
-    hoveredCategory.value = null;
-  },
+    () => props.categories,
+    () => {
+      selectedCategory.value = null;
+      hoveredCategory.value = null;
+    },
 );
 </script>
 
 <style scoped>
 .analysis-donut {
   position: relative;
-  width: min(100%, 250px);
+  width: min(100%, 190px);
   aspect-ratio: 1;
   margin: 0 auto;
 }
@@ -165,9 +165,9 @@ watch(
   cursor: pointer;
   transform-origin: 110px 110px;
   transition:
-    stroke-width 0.18s ease,
-    opacity 0.18s ease,
-    filter 0.18s ease;
+      stroke-width 0.18s ease,
+      opacity 0.18s ease,
+      filter 0.18s ease;
 }
 
 .analysis-donut__segment:hover,
@@ -220,16 +220,31 @@ watch(
   font-weight: 700;
 }
 
+/* 상세 화면은 기존 크기를 유지 */
+.analysis-donut--detail {
+  width: min(100%, 250px);
+}
+
 /* 상세 화면에서만 도넛 중앙 정보를 한 단계 크게 표시 */
-.analysis-donut--detail .analysis-donut__center span {
+.analysis-donut__center span {
+  /* 총 소비 */
   font-size: 10px;
+  font-weight: 700;
 }
 
-.analysis-donut--detail .analysis-donut__center strong {
+.analysis-donut__center strong {
+  /* 283,900원 */
+  margin-top: 3px;
   font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
 }
 
-.analysis-donut--detail .analysis-donut__center small {
+.analysis-donut__center small {
+  /* 100% */
+  margin-top: 3px;
   font-size: 11px;
+  font-weight: 600;
 }
 </style>

@@ -15,7 +15,7 @@ import analysisAgreementApi from '@/api/analysisAgreementApi';
 import InsuranceRecommendationPage from '@/pages/insuranceRecommendation/InsuranceRecommendationPage.vue';
 import InsuranceProductListPage from '@/pages/insuranceRecommendation/InsuranceProductListPage.vue';
 import InsuranceProductDetailPage from '@/pages/insuranceRecommendation/InsuranceProductDetailPage.vue';
-
+import AnalysisAgreementDetailPage from '@/pages/analysis/AnalysisAgreementDetailPage.vue';
 
 const requireAnalysisAgreement = async () => {
   try {
@@ -36,6 +36,11 @@ export default [
     path: '/analysis/agreement',
     name: 'analysis-agreement',
     component: AnalysisAgreementPage,
+  },
+  {
+    path: '/analysis/agreement/:agreementId',
+    name: 'analysis-agreement-detail',
+    component: AnalysisAgreementDetailPage,
   },
   {
     path: '/analysis/main',

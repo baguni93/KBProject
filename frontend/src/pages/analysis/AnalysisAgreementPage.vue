@@ -1,53 +1,65 @@
 <template>
-  <div class="analysis-agreement-page">
-    <main class="analysis-agreement-container">
-      <section class="agreement-header">
-        <h1>약관 동의</h1>
-        <p>소비 분석을 위해 약관에<br />동의해주세요.</p>
-      </section>
+  <div class="analysis-agreement-page page-layout">
+    <PageHeader
+        title=""
+        :custom-back="true"
+        :show-refresh="false"
+        @back="goBack"
+    />
 
-      <div v-if="message" class="error-message">{{ message }}</div>
+    <section class="analysis-header">
+      <h1 class="text-28-bold">약관 동의</h1>
+      <p class="text-15">소비 분석을 위해 약관에 동의해주세요.</p>
+    </section>
 
-      <div v-if="loading" class="loading-area">
-        <div class="spinner-border" role="status"></div>
-        <span>소비 분석 약관을 불러오는 중이에요.</span>
+    <section class="agreement-section page-content">
+      <div v-if="loading" class="status-message text-15">
+        소비 분석 약관을 불러오는 중이에요.
       </div>
 
-      <template v-else>
-        <section class="agreement-section">
-          <label class="all-agreement">
-            <input type="checkbox" :checked="allChecked" @change="toggleAll" />
-            <span class="check-box"></span>
-            <strong>전체 동의</strong>
-          </label>
+      <div v-else>
+        <label class="all-agreement">
+          <input
+              type="checkbox"
+              :checked="allChecked"
+              @change="toggleAll"
+          />
+          <span class="check-box"></span>
+          <strong class="text-18-bold">전체 동의</strong>
+        </label>
 
-          <div class="divider"></div>
+        <div class="divider"></div>
 
-          <AgreementCheckItem
-            v-for="agreement in agreements"
+        <AgreementCheckItem
+            v-for="(agreement, index) in agreements"
             :key="agreement.agreementId"
             :model-value="Boolean(checkedMap[agreement.agreementId])"
             :title="agreement.agreementName"
-            :detail="agreement.agreementContent"
             :required="agreement.requiredYn === 'Y'"
-            :expanded="expandedIds.has(agreement.agreementId)"
-            @update:model-value="(checked) => { checkedMap[agreement.agreementId] = checked; }"
-            @toggle-detail="toggleExpanded(agreement.agreementId)"
-          />
+            :last="index === agreements.length - 1"
+            detail-mode="navigate"
+            @update:model-value="(checked) => changeAgreement(agreement.agreementId, checked)"
+            @open-detail="showAgreementDetail(agreement.agreementId)"
+        />
 
-          <div class="divider bottom-divider"></div>
-        </section>
+        <div class="divider bottom-divider"></div>
 
-        <button
+        <p v-if="message" class="error-message text-13">
+          {{ message }}
+        </p>
+      </div>
+    </section>
+
+    <div class="bottom-btn-area single">
+      <button
           type="button"
-          class="submit-button"
-          :disabled="!requiredChecked || saving"
+          class="bottom-btn"
+          :disabled="!requiredChecked || saving || loading"
           @click="submitAgreement"
-        >
-          {{ saving ? '동의 처리 중...' : '동의하고 소비 분석 시작하기' }}
-        </button>
-      </template>
-    </main>
+      >
+        {{ saving ? '동의 처리 중...' : '소비 분석 서비스 시작' }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -56,25 +68,45 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import analysisAgreementApi from '@/api/analysisAgreementApi';
 import AgreementCheckItem from '@/components/common/AgreementCheckItem.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
 import { getAnalysisErrorMessage } from '@/util/analysis';
 
 const router = useRouter();
+
 const agreements = ref([]);
 const checkedMap = reactive({});
-const expandedIds = ref(new Set());
 const loading = ref(false);
 const saving = ref(false);
 const message = ref('');
 
+const DRAFT_KEY = 'analysisAgreementDraft';
+
+const readDraft = () => {
+  try {
+    return JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
+  } catch {
+    return {};
+  }
+};
+
+const saveDraft = () => {
+  sessionStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({ ...checkedMap }),
+  );
+};
+
 const requiredChecked = computed(() =>
-  agreements.value
-    .filter((agreement) => agreement.requiredYn === 'Y')
-    .every((agreement) => checkedMap[agreement.agreementId]),
+    agreements.value
+        .filter((agreement) => agreement.requiredYn === 'Y')
+        .every((agreement) => Boolean(checkedMap[agreement.agreementId])),
 );
 
 const allChecked = computed(() =>
-  agreements.value.length > 0 &&
-  agreements.value.every((agreement) => checkedMap[agreement.agreementId]),
+    agreements.value.length > 0 &&
+    agreements.value.every(
+        (agreement) => Boolean(checkedMap[agreement.agreementId]),
+    ),
 );
 
 const loadAgreements = async () => {
@@ -84,14 +116,24 @@ const loadAgreements = async () => {
   try {
     const result = await analysisAgreementApi.getAgreements();
     agreements.value = result.agreements ?? [];
+
+    const draft = readDraft();
+
     agreements.value.forEach((agreement) => {
-      checkedMap[agreement.agreementId] = agreement.agreedYn === 'Y';
+      const id = String(agreement.agreementId);
+
+      checkedMap[agreement.agreementId] =
+          Object.prototype.hasOwnProperty.call(draft, id)
+              ? Boolean(draft[id])
+              : agreement.agreedYn === 'Y';
     });
+
+    saveDraft();
   } catch (error) {
     agreements.value = [];
     message.value = getAnalysisErrorMessage(
-      error,
-      '소비 분석 약관을 불러오지 못했습니다.',
+        error,
+        '소비 분석 약관을 불러오지 못했습니다.',
     );
   } finally {
     loading.value = false;
@@ -100,16 +142,26 @@ const loadAgreements = async () => {
 
 const toggleAll = (event) => {
   const checked = event.target.checked;
+
   agreements.value.forEach((agreement) => {
     checkedMap[agreement.agreementId] = checked;
   });
+
+  saveDraft();
 };
 
-const toggleExpanded = (agreementId) => {
-  const next = new Set(expandedIds.value);
-  if (next.has(agreementId)) next.delete(agreementId);
-  else next.add(agreementId);
-  expandedIds.value = next;
+const changeAgreement = (agreementId, checked) => {
+  checkedMap[agreementId] = checked;
+  saveDraft();
+};
+
+const showAgreementDetail = (agreementId) => {
+  saveDraft();
+
+  router.push({
+    name: 'analysis-agreement-detail',
+    params: { agreementId },
+  });
 };
 
 const submitAgreement = async () => {
@@ -126,76 +178,68 @@ const submitAgreement = async () => {
       agreementId: agreement.agreementId,
       agreedYn: checkedMap[agreement.agreementId] ? 'Y' : 'N',
     }));
+
     await analysisAgreementApi.saveAgreements(payload);
+    sessionStorage.removeItem(DRAFT_KEY);
+
     await router.replace({ name: 'analysis-main' });
   } catch (error) {
     message.value = getAnalysisErrorMessage(
-      error,
-      '소비 분석 약관 동의 처리에 실패했습니다.',
+        error,
+        '소비 분석 약관 동의 처리에 실패했습니다.',
     );
   } finally {
     saving.value = false;
   }
 };
 
+const goBack = () => {
+  sessionStorage.removeItem(DRAFT_KEY);
+  router.back();
+};
+
 onMounted(loadAgreements);
 </script>
 
 <style scoped>
+@import "@/components/common/common/common.css";
+@import "@/components/common/common/layout.css";
+
 .analysis-agreement-page {
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 24px 0;
-  background: #f4f4f4;
-  overflow: visible;
+  background: var(--color-bg-page);
 }
 
-.analysis-agreement-container {
-  position: relative;
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  width: 390px;
-  min-height: 844px;
+.analysis-header {
+  flex-shrink: 0;
+  margin-top: 24px;
+}
+
+.analysis-header h1 {
+  margin: 0 0 16px;
+  color: var(--color-text-main);
+}
+
+.analysis-header p {
   margin: 0;
-  padding: 60px 28px 116px;
-  background: #ffffff;
-  overflow-y: visible;
-}
-
-.agreement-header h1 {
-  margin: 0 0 28px;
-  color: #111111;
-  font-size: 30px;
-  font-weight: 700;
-}
-
-.agreement-header p {
-  margin: 0;
-  color: #777777;
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.35;
+  color: var(--color-text-sub);
+  line-height: 1.4;
 }
 
 .agreement-section {
-  margin-top: 66px;
-}
-
-.all-agreement,
-.agreement-label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
+  margin-top: 28px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding-right: 2px;
 }
 
 .all-agreement {
+  display: flex;
+  align-items: center;
   min-height: 48px;
+  cursor: pointer;
 }
 
-.all-agreement input,
-.agreement-label input {
+.all-agreement input {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -204,96 +248,49 @@ onMounted(loadAgreements);
 
 .check-box {
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   margin-right: 14px;
   border: 1px solid #999999;
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--color-bg-page);
+  box-sizing: border-box;
 }
 
-.all-agreement input:checked + .check-box,
-.agreement-label input:checked + .check-box {
-  border-color: #ffbc2e;
-  background: #ffbc2e;
+.all-agreement input:checked + .check-box {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
 }
 
-.all-agreement input:checked + .check-box::after,
-.agreement-label input:checked + .check-box::after {
+.all-agreement input:checked + .check-box::after {
   display: block;
-  width: 8px;
-  height: 14px;
-  margin: 4px 0 0 9px;
+  width: 7px;
+  height: 13px;
+  margin: 4px 0 0 8px;
   border: solid #ffffff;
   border-width: 0 2px 2px 0;
   content: '';
   transform: rotate(45deg);
 }
 
-.all-agreement strong {
-  color: #111111;
-  font-size: 18px;
-  font-weight: 700;
-}
-
 .divider {
   height: 1px;
-  margin: 20px 0 12px;
-  background: #dddddd;
+  margin: 12px 0 8px;
+  background: var(--color-divider);
 }
 
 .bottom-divider {
-  margin-top: 12px;
+  margin-top: 8px;
+}
+
+.status-message {
+  padding-top: 80px;
+  color: var(--color-text-sub);
+  text-align: center;
 }
 
 .error-message {
-  margin-top: 20px;
-  color: #d32f2f;
-  font-size: 14px;
-}
-
-.loading-area {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 66px;
-  color: #777777;
-  font-size: 14px;
-}
-
-.submit-button {
-  position: absolute;
-  right: 28px;
-  bottom: 28px;
-  left: 28px;
-  width: auto;
-  height: 58px;
-  border: 1px solid #cc9200;
-  border-radius: 10px;
-  background: #ffbc2e;
-  color: #111111;
-  font-size: 17px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.submit-button:disabled {
-  border-color: #dddddd;
-  background: #eeeeee;
-  color: #999999;
-  cursor: not-allowed;
-}
-
-@media (max-width: 430px) {
-  .analysis-agreement-page {
-    padding: 0;
-    background: #ffffff;
-  }
-
-  .analysis-agreement-container {
-    width: 100%;
-    min-height: 100vh;
-  }
+  margin: 16px 0 0;
+  color: var(--color-error);
 }
 </style>

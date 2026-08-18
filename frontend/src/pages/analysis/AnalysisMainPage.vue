@@ -1,6 +1,12 @@
+```
 <template>
   <div class="kb-mobile-page analysis-page">
-    <PageHeader title="최근 소비 분석 결과" :showBack="false" />
+    <PageHeader
+        title="최근 소비 분석 결과"
+        :showBack="true"
+        :customBack="true"
+        @back="goToFinance"
+    />
 
     <div class="analysis-content-start">
 
@@ -22,7 +28,7 @@
       <section class="title-card kb-card">
         <div class="title-copy">
           <span class="ai-label text-13-bold">AI 칭호</span>
-          <h2 class="text-20-bold">{{ latestAnalysis.aiTitle }}</h2>
+          <h2 class="text-18-bold">{{ latestAnalysis.aiTitle }}</h2>
           <p class="text-13">{{ latestAnalysis.aiAnalysisSummary }}</p>
         </div>
         <div class="title-illustration" aria-hidden="true">
@@ -30,72 +36,36 @@
         </div>
       </section>
 
-      <section class="summary-card kb-card">
-        <div class="donut-column">
-          <AnalysisDonutChart
-              :categories="sortedCategories"
-              :total-amount="latestAnalysis.totalSpendingAmount"
-          />
-        </div>
-
-        <div class="representative-column">
-          <span class="text-13">대표 소비 카테고리</span>
-          <div class="representative-name">
-            <span
-                class="representative-icon"
-                :style="{
-                backgroundColor: `${representativeColor}20`,
-                color: representativeColor,
-              }"
-            >
-              <i :class="getCategoryIcon(latestAnalysis.representativeCategoryName)"></i>
-            </span>
-            <strong class="text-15-bold">{{ latestAnalysis.representativeCategoryName }}</strong>
-          </div>
-          <div v-if="representativeCategory" class="representative-amount">
-            <strong class="text-18-bold">{{ formatAnalysisNumber(representativeCategory.spendingAmount) }}원</strong>
-            <span class="text-13">{{ formatRatio(representativeCategory.spendingRatio) }}%</span>
-          </div>
-          <p class="text-13">{{ formatAnalysisExecutionDate(latestAnalysis.createdAt) }} 실행</p>
-        </div>
-
-        <div class="summary-stats">
-          <div>
-            <span class="text-13">총 소비 금액</span>
-            <strong class="text-13-bold">{{ formatAnalysisNumber(latestAnalysis.totalSpendingAmount) }}원</strong>
-          </div>
-          <div>
-            <span class="text-13">분석 거래</span>
-            <strong class="text-13-bold">{{ formatAnalysisNumber(latestAnalysis.classifiedTransactionCount) }}건</strong>
-          </div>
-          <div>
-            <span class="text-13">분석 기간</span>
-            <strong class="summary-period-range text-13-bold">
-              <span>{{ formatAnalysisExecutionDate(latestAnalysis.analysisStartDate, false) }}</span>
-              <span>~ {{ formatAnalysisExecutionDate(latestAnalysis.analysisEndDate, false) }}</span>
-            </strong>
-          </div>
-        </div>
-
-        <div class="summary-actions">
-          <button type="button" class="content-btn secondary" @click="goToResult">
-            상세 분석 보기
-          </button>
+      <AnalysisSummaryCard
+          class="main-summary-card"
+          :categories="sortedCategories"
+          :total-amount="latestAnalysis.totalSpendingAmount"
+          :transaction-count="latestAnalysis.classifiedTransactionCount"
+          :representative-category-id="latestAnalysis.representativeCategoryId"
+          :representative-category-name="latestAnalysis.representativeCategoryName"
+          :period="selectedPeriod"
+          :start-date="latestAnalysis.analysisStartDate"
+          :end-date="latestAnalysis.analysisEndDate"
+      >
+        <template #actions>
           <button
               type="button"
-              class="content-btn primary analysis-action-button"
+              class="content-btn secondary analysis-action-button"
               :disabled="analysisRunning"
               @click="goToCheck"
           >
             <span>{{ analysisRunning ? '분석 중' : '다시 분석하기' }}</span>
             <span v-if="analysisRunning" class="button-spinner" aria-hidden="true"></span>
           </button>
-        </div>
-      </section>
+          <button type="button" class="content-btn primary" @click="goToResult">
+            상세 분석 보기 <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </template>
+      </AnalysisSummaryCard>
 
       <section class="kb-section">
         <div class="kb-section-title-row">
-          <h2 class="kb-section-title text-20-bold">카테고리별 소비</h2>
+          <h2 class="kb-section-title text-18-bold">카테고리별 소비</h2>
           <button type="button" class="text-link text-13-bold" @click="goToCategorySummary">
             전체보기 <i class="fa-solid fa-chevron-right"></i>
           </button>
@@ -103,7 +73,7 @@
 
         <div class="category-breakdown kb-card">
           <div
-              v-for="(category, index) in sortedCategories.slice(0, 5)"
+              v-for="(category, index) in sortedCategories.slice(0, 3)"
               :key="category.spendingCategoryId"
               class="category-row"
           >
@@ -157,7 +127,7 @@
 
     <section class="kb-section recent-section">
       <div class="kb-section-title-row">
-        <h2 class="kb-section-title text-20-bold">최근 소비내역</h2>
+        <h2 class="kb-section-title text-18-bold">최근 소비내역</h2>
         <button type="button" class="text-link text-13-bold" @click="goToAllTransactions">
           전체보기 <i class="fa-solid fa-chevron-right"></i>
         </button>
@@ -205,13 +175,12 @@
 <script setup>
 import {computed, onBeforeUnmount, onMounted, ref} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
-import AnalysisDonutChart from '@/components/analysis/AnalysisDonutChart.vue';
+import AnalysisSummaryCard from '@/components/common/AnalysisSummaryCard.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import CommonTabBar from '@/components/common/CommonTabBar.vue';
 import analysisApi from '@/api/analysisApi';
 import {
   ANALYSIS_PERIODS,
-  formatAnalysisExecutionDate,
   formatAnalysisNumber,
   getAnalysisCategoryColor,
   getAnalysisErrorMessage,
@@ -239,24 +208,14 @@ const sortedCategories = computed(() =>
             Number(right.spendingAmount ?? 0) - Number(left.spendingAmount ?? 0),
     ),
 );
-const recentTransactions = computed(() => transactions.value.slice(0, 5));
-const representativeCategory = computed(() =>
-    sortedCategories.value.find(
-        (category) =>
-            Number(category.spendingCategoryId) ===
-            Number(latestAnalysis.value?.representativeCategoryId),
-    ),
-);
-const representativeColor = computed(() =>
-    getAnalysisCategoryColor(latestAnalysis.value?.representativeCategoryName, 0),
-);
+const recentTransactions = computed(() => transactions.value.slice(0, 3));
 
 const formatRatio = (value) => {
   const ratio = Number(value ?? 0);
   return Number.isInteger(ratio) ? ratio : ratio.toFixed(1);
 };
 const formatShortDate = (value) =>
-    value ? String(value).replace('T', ' ').slice(5, 16) : '-';
+    value ? String(value).replace('T', ' ').slice(0, 16) : '-';
 const categoryColor = (category, index) =>
     getAnalysisCategoryColor(category.categoryName, index);
 
@@ -378,6 +337,10 @@ const changePeriod = async (period) => {
   await loadPage();
 };
 
+const goToFinance = () => {
+  router.push('/finance');
+};
+
 const goToCheck = () => {
   if (analysisRunning.value) return;
   router.push({name: 'analysis-check', query: {period: selectedPeriod.value}});
@@ -425,32 +388,58 @@ onBeforeUnmount(stopStatusPolling);
 
 <style scoped>
 .analysis-page {
+  min-height: 100vh;
   padding-bottom: 34px;
   background: var(--color-bg-screen);
   color: var(--color-text-main);
 }
 
-/* 공용 헤더 다음 첫 콘텐츠는 14px 간격으로 시작 */
-.analysis-content-start {
-  //margin-top: 14px;
+.content-btn {
+  font-size: 15px;
+  font-weight: 600;
 }
 
+/* 포인트 전환 화면과 동일하게 헤더 좌우 24px 여백 적용 */
+.analysis-page :deep(.page-header) {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  padding: 0 24px;
+  background: var(--color-bg-page);
+}
 
 .analysis-tabs.is-loading {
   pointer-events: none;
   opacity: 0.65;
 }
 
-.content-loading {
-  margin-top: 14px;
+/* 소비 분석 화면에서만 선택선이 각 탭 너비 전체를 차지하도록 보정 */
+.analysis-tabs :deep(.common-tab-btn.active::after) {
+  right: 0;
+  left: 0;
+}
+
+.content-loading,
+.title-card,
+.empty-analysis,
+.kb-section {
+  margin-right: 24px;
+  margin-left: 24px;
+}
+
+.content-loading,
+.title-card,
+.empty-analysis {
+  margin-top: 16px;
 }
 
 .title-card {
-  margin-top: 14px;
-  padding: 16px;
+  padding: 18px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   overflow: hidden;
   border: 1px solid #ffe19a;
   background: linear-gradient(135deg, #fffaf0 0%, #fff4d2 100%);
@@ -460,6 +449,7 @@ onBeforeUnmount(stopStatusPolling);
 .title-copy {
   min-width: 0;
   flex: 1;
+  gap: 10px;
 }
 
 .ai-label {
@@ -471,139 +461,36 @@ onBeforeUnmount(stopStatusPolling);
 }
 
 .title-copy h2 {
-  margin: 9px 0 7px;
+  margin: 10px 0 8px;
   letter-spacing: -0.7px;
+  line-height: 1.25;
 }
 
+/* AI 설명은 내용과 줄 수를 제한하지 않고 그대로 노출 */
 .title-copy p {
   margin: 0;
-  display: -webkit-box;
-  overflow: hidden;
   color: var(--color-text-sub);
   line-height: 1.6;
+  word-break: keep-all;
 }
 
 .title-illustration {
-  position: relative;
   width: 54px;
   height: 54px;
-  margin-left: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 54px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.88);
   color: #e7a300;
   font-size: 22px;
-  box-shadow: 0 7px 18px rgba(153, 117, 0, 0.12);
+  box-shadow: 0 7px 18px rgba(153, 117, 0, 0.1);
 }
 
-.summary-card {
-  margin-top: 13px;
-  padding: 18px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(130px, 0.9fr);
-  align-items: center;
-  gap: 12px 18px;
-  border: 1px solid var(--color-divider);
-  background: var(--color-bg-page);
-  box-shadow: none;
-}
-
-.donut-column {
-  min-width: 0;
-  text-align: center;
-}
-
-.representative-column > span {
-  color: var(--color-text-muted);
-}
-
-.representative-name {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.representative-icon {
-  width: 30px;
-  height: 35px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 38px;
-  border-radius: 13px;
-  font-size: 10px;
-}
-
-.representative-amount {
-  margin-top: 11px;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.representative-amount span {
-  color: var(--color-text-sub);
-}
-
-.representative-column p {
-  margin: 6px 0 0;
-  color: var(--color-text-disabled);
-}
-
-.summary-stats {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  overflow: hidden;
-  border: 1px solid var(--color-divider);
-  border-radius: 13px;
-  background: var(--color-bg-page);
-}
-
-.summary-stats div {
-  position: relative;
-  min-width: 0;
-  padding: 12px 5px;
-  text-align: center;
-}
-
-.summary-stats div + div::before {
-  content: '';
-  position: absolute;
-  top: 12px;
-  bottom: 12px;
-  left: 0;
-  width: 1px;
-  background: var(--color-divider);
-}
-
-.summary-stats span,
-.summary-stats strong {
-  display: block;
-}
-
-.summary-stats span {
-  color: var(--color-text-muted);
-}
-
-.summary-stats strong {
-  margin-top: 4px;
-  min-width: 0;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-  word-break: keep-all;
-  white-space: normal;
-}
-
-.summary-actions {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+.main-summary-card {
+  margin-right: 24px;
+  margin-left: 24px;
 }
 
 .text-link {
@@ -612,26 +499,33 @@ onBeforeUnmount(stopStatusPolling);
   color: var(--color-text-sub);
 }
 
-.category-breakdown {
-  padding: 3px 15px;
+.kb-section {
+  margin-top: 28px;
+}
+
+.category-breakdown,
+.recent-spending {
+  padding: 4px 16px;
   border: 1px solid var(--color-divider);
   background: var(--color-bg-page);
   box-shadow: none;
 }
 
 .category-row {
-  min-height: 64px;
+  min-height: 68px;
   display: flex;
   align-items: center;
   gap: 10px;
   border-bottom: 1px solid var(--color-divider);
 }
 
-.category-row:last-child {
+.category-row:last-child,
+.spending-row:last-child {
   border-bottom: 0;
 }
 
-.category-icon {
+.category-icon,
+.spending-icon {
   width: 36px;
   height: 36px;
   display: flex;
@@ -672,23 +566,23 @@ onBeforeUnmount(stopStatusPolling);
 }
 
 .category-amount {
-  min-width: 72px;
+  min-width: 74px;
   text-align: right;
 }
 
 .category-amount strong,
 .category-amount span {
   display: block;
+  line-height: 1.35;
 }
 
 .category-amount span {
-  margin-top: 2px;
+  margin-top: 1px;
   color: var(--color-text-disabled);
 }
 
 .empty-analysis {
-  margin-top: 14px;
-  padding: 34px 20px;
+  padding: 32px 24px;
   text-align: center;
   border: 1px solid var(--color-divider);
   background: var(--color-bg-page);
@@ -696,16 +590,16 @@ onBeforeUnmount(stopStatusPolling);
 }
 
 .empty-analysis__icon {
-  width: 74px;
-  height: 74px;
-  margin: 0 auto 13px;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 26px;
+  border-radius: 24px;
   background: #fff3cf;
   color: #d99b00;
-  font-size: 30px;
+  font-size: 28px;
 }
 
 .empty-analysis > span {
@@ -730,33 +624,19 @@ onBeforeUnmount(stopStatusPolling);
   width: 100%;
 }
 
-.recent-spending {
-  padding: 3px 15px;
-  border: 1px solid var(--color-divider);
-  background: var(--color-bg-page);
-  box-shadow: none;
+.recent-section {
+  margin-top: 28px;
 }
 
 .spending-row {
-  min-height: 65px;
+  min-height: 68px;
   display: flex;
   align-items: center;
   gap: 10px;
   border-bottom: 1px solid var(--color-divider);
 }
 
-.spending-row:last-child {
-  border-bottom: 0;
-}
-
 .spending-icon {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 36px;
-  border-radius: 12px;
   background: #fff3cf;
   color: #d99b00;
   font-size: 13px;
@@ -779,6 +659,7 @@ onBeforeUnmount(stopStatusPolling);
 .spending-info strong,
 .spending-info span {
   display: block;
+  line-height: 1.35;
 }
 
 .spending-info strong {
@@ -788,7 +669,7 @@ onBeforeUnmount(stopStatusPolling);
 }
 
 .spending-info span {
-  margin-top: 3px;
+  margin-top: 1px;
   color: var(--color-text-disabled);
 }
 
@@ -798,10 +679,11 @@ onBeforeUnmount(stopStatusPolling);
 
 .spending-right > strong {
   display: block;
+  line-height: 1.35;
 }
 
 .spending-right button {
-  margin-top: 3px;
+  margin-top: 1px;
   border: 0;
   background: transparent;
   color: #a27800;
@@ -829,33 +711,19 @@ onBeforeUnmount(stopStatusPolling);
   animation: analysis-button-spin 0.75s linear infinite;
 }
 
-.summary-period-range span {
-  display: block;
-  white-space: nowrap;
-  color: inherit;
-}
-
 @media (max-width: 380px) {
-  .summary-card {
-    grid-template-columns: 1fr;
+  .content-loading,
+  .title-card,
+  .empty-analysis,
+  .kb-section,
+  .main-summary-card {
+    margin-right: 20px;
+    margin-left: 20px;
   }
 
-  .representative-column {
-    text-align: center;
-  }
-
-  .representative-name,
-  .representative-amount {
-    justify-content: center;
-  }
-
-  .summary-stats,
-  .summary-actions {
-    grid-column: 1;
-  }
-
-  .summary-actions {
-    grid-template-columns: 1fr;
+  .title-card {
+    padding-right: 20px;
+    padding-left: 20px;
   }
 }
 

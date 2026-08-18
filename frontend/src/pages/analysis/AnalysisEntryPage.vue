@@ -4,18 +4,18 @@
 
     <div class="entry-content-start">
       <section class="entry-card kb-card">
-      <div v-if="loading" class="kb-loading">
-        <div class="spinner-border kb-spinner" role="status"></div>
-        <div class="text-13">소비 분석 이용 정보를 확인하고 있어요.</div>
-      </div>
-      <template v-else>
-        <div class="entry-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
-        <h2 class="text-20-bold">소비 분석 화면으로 이동하지 못했어요</h2>
-        <p class="text-13">{{ message }}</p>
-        <button type="button" class="content-btn primary" @click="checkAgreement">
-          다시 확인하기
-        </button>
-      </template>
+        <div v-if="loading" class="kb-loading">
+          <div class="spinner-border kb-spinner" role="status"></div>
+          <div class="text-13">소비 분석 이용 정보를 확인하고 있어요.</div>
+        </div>
+        <template v-else>
+          <div class="entry-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+          <h2 class="text-20-bold">소비 분석 화면으로 이동하지 못했어요</h2>
+          <p class="text-13">{{ message }}</p>
+          <button type="button" class="content-btn primary" @click="checkAgreement">
+            다시 확인하기
+          </button>
+        </template>
       </section>
     </div>
   </div>
@@ -43,8 +43,8 @@ const checkAgreement = async () => {
     });
   } catch (error) {
     message.value = getAnalysisErrorMessage(
-      error,
-      '소비 분석 약관 상태를 확인하지 못했습니다.',
+        error,
+        '소비 분석 약관 상태를 확인하지 못했습니다.',
     );
   } finally {
     loading.value = false;
@@ -56,21 +56,32 @@ onMounted(checkAgreement);
 
 <style scoped>
 .entry-page {
-  padding-bottom: 34px;
+  min-height: 100dvh;
+  padding-bottom: 38px;
   background: var(--color-bg-screen);
   color: var(--color-text-main);
 }
 
+.entry-page :deep(.page-header) {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  padding: 0 24px;
+  background: var(--color-bg-page);
+}
+
 .entry-content-start {
-  /*
-   * 팀 협의 후 PageHeader와 첫 콘텐츠 사이 간격을 적용할 경우
-   * 아래 주석을 해제합니다.
-   * margin-top: 14px;
-   */
+  padding: 16px 24px 0;
+}
+
+.entry-content-start > * {
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .entry-card {
-  margin-top: 18px;
+  margin-top: 0;
   padding: 42px 22px;
   text-align: center;
   border: 1px solid var(--color-divider);
@@ -100,5 +111,15 @@ onMounted(checkAgreement);
   margin: 9px 0 20px;
   color: var(--color-text-sub);
   line-height: 1.6;
+}
+@media (max-width: 380px) {
+  .entry-page :deep(.page-header) {
+    padding: 0 20px;
+  }
+
+  .entry-content-start {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
 }
 </style>

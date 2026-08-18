@@ -1883,8 +1883,6 @@ CREATE TABLE kb_insurance_category_match_tbl
         COMMENT '추천 사유 기본 문구',
     priority                    INT          NOT NULL DEFAULT 1
         COMMENT '같은 카테고리 내 표시 순서',
-    active_yn                   CHAR(1)      NOT NULL DEFAULT 'Y'
-        COMMENT '추천 관계 사용 여부',
     created_at                  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
         COMMENT '생성 일시',
 
@@ -1897,10 +1895,7 @@ CREATE TABLE kb_insurance_category_match_tbl
             REFERENCES spending_category_tbl (spending_category_id),
 
     CONSTRAINT uk_insurance_category_match
-        UNIQUE (insurance_product_id, spending_category_id),
-
-    CONSTRAINT chk_insurance_match_active
-        CHECK (active_yn IN ('Y', 'N'))
+        UNIQUE (insurance_product_id, spending_category_id)
 );
 
 
@@ -3316,29 +3311,28 @@ INSERT INTO kb_insurance_category_match_tbl
 (insurance_product_id,
  spending_category_id,
  recommendation_reason,
- priority,
- active_yn)
+ priority)
 VALUES
     -- 병원 → 건강·실비
-    (1, 13, '최근 병원 이용 내역을 바탕으로 건강 보장 상품을 추천합니다.', 1, 'Y'),
-    (2, 13, '최근 병원 이용 내역을 바탕으로 실손의료비 보장 상품을 추천합니다.', 2, 'Y'),
-    (3, 13, '최근 병원 이용 내역을 바탕으로 간편가입 실손 상품을 추천합니다.', 3, 'Y'),
+    (1, 13, '최근 병원 이용 내역을 바탕으로 건강 보장 상품을 추천합니다.', 1),
+    (2, 13, '최근 병원 이용 내역을 바탕으로 실손의료비 보장 상품을 추천합니다.', 2),
+    (3, 13, '최근 병원 이용 내역을 바탕으로 간편가입 실손 상품을 추천합니다.', 3),
 
     -- 여행 → 여행자보험
-    (4, 10, '최근 여행 관련 소비가 있어 해외여행보험을 추천합니다.', 1, 'Y'),
-    (5, 10, '최근 여행 관련 소비가 있어 장기체류 보험을 함께 추천합니다.', 2, 'Y'),
-    (6, 10, '최근 여행 관련 소비가 있어 출장·주재원 보험을 함께 추천합니다.', 3, 'Y'),
+    (4, 10, '최근 여행 관련 소비가 있어 해외여행보험을 추천합니다.', 1),
+    (5, 10, '최근 여행 관련 소비가 있어 장기체류 보험을 함께 추천합니다.', 2),
+    (6, 10, '최근 여행 관련 소비가 있어 출장·주재원 보험을 함께 추천합니다.', 3),
 
     -- 자동차 → 자동차보험·운전자보험
-    (7, 7, '최근 자동차 관련 소비가 있어 자동차보험을 추천합니다.', 1, 'Y'),
-    (8, 7, '최근 자동차 관련 소비가 있어 운전자 상해보험을 추천합니다.', 2, 'Y'),
+    (7, 7, '최근 자동차 관련 소비가 있어 자동차보험을 추천합니다.', 1),
+    (8, 7, '최근 자동차 관련 소비가 있어 운전자 상해보험을 추천합니다.', 2),
 
     -- 치과 → 치아보험
-    (9, 19, '최근 치과 이용 내역이 있어 치아보험을 추천합니다.', 1, 'Y'),
+    (9, 19, '최근 치과 이용 내역이 있어 치아보험을 추천합니다.', 1),
 
     -- 반려동물 → 펫보험
-    (10, 12, '최근 반려동물 관련 소비가 있어 강아지 펫보험을 추천합니다.', 1, 'Y'),
-    (11, 12, '최근 반려동물 관련 소비가 있어 고양이 펫보험을 추천합니다.', 2, 'Y');
+    (10, 12, '최근 반려동물 관련 소비가 있어 강아지 펫보험을 추천합니다.', 1),
+    (11, 12, '최근 반려동물 관련 소비가 있어 고양이 펫보험을 추천합니다.', 2);
 
 COMMIT;
 

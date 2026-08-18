@@ -5,6 +5,72 @@
 
 <mapper namespace="org.scoula.insurancerecommendation.mapper.InsuranceRecommendationMapper">
 
+    <!-- 전체 보험 카탈로그 TRUNCATE 후 상품 PK를 다시 발급받아 저장한다. -->
+    <insert id="insertCrawledInsuranceProduct"
+            parameterType="org.scoula.insurancerecommendation.dto.CrawledInsuranceProductDTO"
+            useGeneratedKeys="true"
+            keyProperty="insuranceProductId"
+            keyColumn="insurance_product_id">
+        INSERT INTO kb_insurance_product_tbl
+        (
+            insurance_name,
+            insurance_category,
+            insurance_description,
+            monthly_premium,
+            insurance_image,
+            application_url
+        )
+        VALUES
+        (
+            #{insuranceName},
+            #{insuranceCategory},
+            #{insuranceDescription},
+            NULL,
+            #{insuranceImage},
+            #{applicationUrl}
+        )
+    </insert>
+
+    <insert id="insertCrawledInsuranceCoverage"
+            parameterType="org.scoula.insurancerecommendation.dto.CrawledInsuranceCoverageDTO">
+        INSERT INTO kb_insurance_coverage_tbl
+        (
+            insurance_product_id,
+            coverage_name,
+            coverage_amount,
+            coverage_description,
+            coverage_limit
+        )
+        VALUES
+        (
+            #{insuranceProductId},
+            #{coverageName},
+            NULL,
+            #{coverageDescription},
+            #{coverageLimit}
+        )
+    </insert>
+
+    <!-- 숫자 카테고리 ID를 코드에 고정하지 않고 카테고리명으로 현재 PK를 찾는다. -->
+    <insert id="insertCrawledInsuranceMatch">
+        INSERT INTO kb_insurance_category_match_tbl
+        (
+            insurance_product_id,
+            spending_category_id,
+            recommendation_reason,
+            priority
+        )
+        SELECT
+            #{insuranceProductId},
+            category.spending_category_id,
+            #{recommendationReason},
+            #{priority}
+        FROM spending_category_tbl category
+        WHERE category.category_name = #{spendingCategoryName}
+        ORDER BY category.spending_category_id ASC
+        LIMIT 1
+    </insert>
+
     <resultMap id="insuranceRecommendationCandidateResultMap"
                type="org.scoula.insurancerecommendation.domain.InsuranceRecommendationCandidateVO">
 
@@ -45,16 +111,15 @@
     </resultMap>
 
     <!--
-        12개월 소비분석의 "분석기간" 안에서 실제 결제 거래를 직접 조회한다.
+        12개월 소비분석의 "분석기간" 안에서 실제 결제/송금/정산 거래를 직접 조회한다.
         Mapper는 12개월이라는 정책 자체를 알지 않고 Service가 계산한 startAt/endAt만 사용한다.
 
         추천 조건:
         1. 현재 로그인 사용자의 거래
-        2. PAYMENT + SUCCESS 거래
+        2. PAYMENT/TRANSFER/SETTLEMENT + SUCCESS 거래
         3. 지정된 분석기간 내 거래
         4. 거래의 직접 소비카테고리 또는 부모카테고리가 보험 매핑과 일치
-        5. 활성화(Y)된 보험 매핑
-        6. 관련 거래가 최소 1건 존재하면 추천 후보
+        5. 관련 거래가 최소 1건 존재하면 추천 후보
     -->
     <select id="selectMatchedCandidates"
             resultMap="insuranceRecommendationCandidateResultMap">
@@ -75,8 +140,8 @@
             match_tbl.priority,
 
             /*
-             * 상품별 추천 사유에 사용할 대표 결제 1건.
-             * 가장 최근 PAYMENT + SUCCESS 거래를 선택한다.
+             * 상품별 추천 사유에 사용할 대표 거래 1건.
+             * 가장 최근 결제/송금/정산 SUCCESS 거래를 선택한다.
              */
             (
                 SELECT transaction_tbl.transaction_id
@@ -85,7 +150,8 @@
                        ON transaction_category.spending_category_id =
                           transaction_tbl.spending_category_id
                 WHERE transaction_tbl.user_id = #{userId}
-                  AND transaction_tbl.transaction_type = 'PAYMENT'
+                  AND transaction_tbl.transaction_type
+                      IN ('PAYMENT', 'TRANSFER', 'SETTLEMENT')
                   AND transaction_tbl.transaction_status = 'SUCCESS'
                   AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
                   AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}
@@ -102,13 +168,22 @@
             ) AS evidence_transaction_id,
 
             (
-                SELECT transaction_tbl.merchant_name
+                SELECT CASE
+                    WHEN transaction_tbl.transaction_type = 'PAYMENT'
+                        THEN COALESCE(NULLIF(TRIM(transaction_tbl.merchant_name), ''), '결제')
+                    WHEN transaction_tbl.transaction_type = 'TRANSFER'
+                        THEN '송금'
+                    WHEN transaction_tbl.transaction_type = 'SETTLEMENT'
+                        THEN '더치페이 정산'
+                    ELSE '거래'
+                END
                 FROM financial_transaction_tbl transaction_tbl
                 LEFT JOIN spending_category_tbl transaction_category
                        ON transaction_category.spending_category_id =
                           transaction_tbl.spending_category_id
                 WHERE transaction_tbl.user_id = #{userId}
-                  AND transaction_tbl.transaction_type = 'PAYMENT'
+                  AND transaction_tbl.transaction_type
+                      IN ('PAYMENT', 'TRANSFER', 'SETTLEMENT')
                   AND transaction_tbl.transaction_status = 'SUCCESS'
                   AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
                   AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}
@@ -131,7 +206,8 @@
                        ON transaction_category.spending_category_id =
                           transaction_tbl.spending_category_id
                 WHERE transaction_tbl.user_id = #{userId}
-                  AND transaction_tbl.transaction_type = 'PAYMENT'
+                  AND transaction_tbl.transaction_type
+                      IN ('PAYMENT', 'TRANSFER', 'SETTLEMENT')
                   AND transaction_tbl.transaction_status = 'SUCCESS'
                   AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
                   AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}
@@ -155,8 +231,7 @@
         INNER JOIN spending_category_tbl matched_category
                 ON matched_category.spending_category_id = match_tbl.spending_category_id
 
-        WHERE match_tbl.active_yn = 'Y'
-          AND EXISTS (
+        WHERE EXISTS (
               SELECT 1
               FROM financial_transaction_tbl transaction_tbl
 
@@ -165,7 +240,8 @@
                         transaction_tbl.spending_category_id
 
               WHERE transaction_tbl.user_id = #{userId}
-                AND transaction_tbl.transaction_type = 'PAYMENT'
+                AND transaction_tbl.transaction_type
+                    IN ('PAYMENT', 'TRANSFER', 'SETTLEMENT')
                 AND transaction_tbl.transaction_status = 'SUCCESS'
                 AND transaction_tbl.created_at <![CDATA[ >= ]]> #{startAt}
                 AND transaction_tbl.created_at <![CDATA[ < ]]> #{endAt}
@@ -261,7 +337,7 @@
         저장된 추천 결과 목록 조회.
         현재 DB 데이터는 보험상품 1개당 하나의 소비카테고리 매핑을 사용한다.
         향후 한 상품에 여러 매핑이 생기더라도 목록에서 한 상품이 중복되지 않도록
-        대표 매핑은 priority가 가장 낮은 활성 매핑 1건을 선택한다.
+        대표 매핑은 priority가 가장 낮은 매핑 1건을 선택한다.
     -->
     <select id="selectRecommendationList"
             resultType="org.scoula.insurancerecommendation.domain.InsuranceRecommendationListItemVO">
@@ -281,7 +357,6 @@
                 SELECT match_tbl.spending_category_id
                 FROM kb_insurance_category_match_tbl match_tbl
                 WHERE match_tbl.insurance_product_id = recommendation.insurance_product_id
-                  AND match_tbl.active_yn = 'Y'
                 ORDER BY match_tbl.priority ASC,
                          match_tbl.insurance_category_match_id ASC
                 LIMIT 1
@@ -293,7 +368,6 @@
                 INNER JOIN spending_category_tbl category
                         ON category.spending_category_id = match_tbl.spending_category_id
                 WHERE match_tbl.insurance_product_id = recommendation.insurance_product_id
-                  AND match_tbl.active_yn = 'Y'
                 ORDER BY match_tbl.priority ASC,
                          match_tbl.insurance_category_match_id ASC
                 LIMIT 1
@@ -306,7 +380,6 @@
                 SELECT match_tbl.priority
                 FROM kb_insurance_category_match_tbl match_tbl
                 WHERE match_tbl.insurance_product_id = recommendation.insurance_product_id
-                  AND match_tbl.active_yn = 'Y'
                 ORDER BY match_tbl.priority ASC,
                          match_tbl.insurance_category_match_id ASC
                 LIMIT 1
@@ -356,7 +429,6 @@
 
         LEFT JOIN kb_insurance_category_match_tbl match_tbl
                ON match_tbl.insurance_product_id = product.insurance_product_id
-              AND match_tbl.active_yn = 'Y'
 
         LEFT JOIN spending_category_tbl category
                ON category.spending_category_id = match_tbl.spending_category_id
@@ -393,7 +465,15 @@
             resultType="org.scoula.insurancerecommendation.domain.InsuranceRecommendationTransactionVO">
         SELECT DISTINCT
             transaction_tbl.transaction_id AS transactionId,
-            transaction_tbl.merchant_name AS merchantName,
+            CASE
+                WHEN transaction_tbl.transaction_type = 'PAYMENT'
+                    THEN COALESCE(NULLIF(TRIM(transaction_tbl.merchant_name), ''), '결제')
+                WHEN transaction_tbl.transaction_type = 'TRANSFER'
+                    THEN '송금'
+                WHEN transaction_tbl.transaction_type = 'SETTLEMENT'
+                    THEN '더치페이 정산'
+                ELSE '거래'
+            END AS merchantName,
             transaction_tbl.amount AS amount,
             transaction_tbl.created_at AS createdAt,
             transaction_tbl.spending_category_id AS spendingCategoryId,
@@ -420,7 +500,6 @@
               SELECT 1
               FROM kb_insurance_category_match_tbl match_tbl
               WHERE match_tbl.insurance_product_id = #{insuranceProductId}
-                AND match_tbl.active_yn = 'Y'
                 AND (
                     match_tbl.spending_category_id =
                         transaction_tbl.spending_category_id
@@ -453,7 +532,6 @@
             FROM kb_insurance_recommendation_tbl recommendation
             INNER JOIN kb_insurance_category_match_tbl match_tbl
                     ON match_tbl.insurance_product_id = recommendation.insurance_product_id
-                   AND match_tbl.active_yn = 'Y'
             WHERE recommendation.spending_analysis_id = #{spendingAnalysisId}
         ) matched
 

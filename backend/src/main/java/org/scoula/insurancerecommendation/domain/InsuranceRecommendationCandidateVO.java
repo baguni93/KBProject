@@ -39,7 +39,7 @@ public class InsuranceRecommendationCandidateVO {
     private String evidenceMerchantName;
     private LocalDateTime evidenceCreatedAt;
 
-    // 실제 결제 근거를 바탕으로 Service에서 생성하는 규칙 기반 추천 이유
+    // 실제 결제·송금·정산 근거를 바탕으로 Service에서 생성하는 규칙 기반 추천 이유
     private String recommendationReason;
 
     /*

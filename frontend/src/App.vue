@@ -14,10 +14,7 @@ import { computed } from 'vue';
 
 const route = useRoute();
 
-const showBottomNav = computed(() => {
-  if (route.meta.hideBottomNav === true) return false;
-  return route.meta.showBottomNav === true;
-});
+const showBottomNav = computed(() => route.meta.showBottomNav === true && !route.path.startsWith('/point-wallet'));
 </script>
 
 <style scoped></style>
