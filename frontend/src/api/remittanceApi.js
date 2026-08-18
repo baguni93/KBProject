@@ -19,7 +19,8 @@ export default {
   async sendMoney(remittanceData) {
     const formData = new FormData();
     formData.append('walletId', remittanceData.walletId || 1);
-    formData.append('receiverId', remittanceData.receiverId || 2);
+    if (remittanceData.receiverId) formData.append('receiverId', remittanceData.receiverId);
+    if (remittanceData.settlementId) formData.append('settlementId', remittanceData.settlementId);
     formData.append('amount', remittanceData.amount || 0);
     formData.append('spendingCategoryId', remittanceData.spendingCategoryId || 1);
     formData.append('memo', remittanceData.memo || '송금 완료');

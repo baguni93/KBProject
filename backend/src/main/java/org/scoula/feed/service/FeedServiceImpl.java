@@ -17,6 +17,7 @@ import org.scoula.feed.dto.FeedUpdateRequestDTO;
 import org.scoula.feed.mapper.FeedMapper;
 import org.scoula.like.service.LikeService;
 import org.scoula.settlement.mapper.SettlementMapper;
+import org.scoula.pointwallet.service.RandomBoxService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,6 +36,7 @@ public class FeedServiceImpl implements FeedService {
     private final SettlementMapper settlementMapper;
     private final LikeService likeService;
     private final EventService eventService;
+    private final RandomBoxService randomBoxService;
 
     @Transactional
     @Override
@@ -50,8 +52,15 @@ public class FeedServiceImpl implements FeedService {
             upload(feedVO.getFeedId(), files);
         }
 
-        // 박준우: 피드 작성 이벤트 기록 작성
+        // 피드 작성 미션 기록
         eventService.recordMissionProgress(request.getUserId(), "FEED");
+
+        // 피드 공유 보상: 랜덤박스 1개 자동 지급
+        try {
+            randomBoxService.issueForFeedShare(request.getUserId(), feedVO.getFeedId());
+        } catch (Exception e) {
+            log.warn("피드 작성 시 랜덤박스 지급 처리 예외: {}", e.getMessage());
+        }
 
         return get(feedVO.getFeedId());
     }

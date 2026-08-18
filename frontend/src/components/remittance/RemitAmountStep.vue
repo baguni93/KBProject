@@ -85,47 +85,8 @@
     </template>
 
     <template v-else>
-      <!-- Dutch 2번 화면: 슬림 카테고리 & 정산 금액 선택 및 정산 방식 선택 -->
+      <!-- Dutch 2번 화면: 정산 금액 입력 및 정산 방식 선택 -->
       <div class="form-field-group">
-        <div class="category-header-flex">
-          <label class="field-label text-15-bold" style="margin-bottom: 0; color: #111111;">
-            소비 카테고리 선택
-          </label>
-          <button
-            type="button"
-            class="category-toggle-sub-btn text-13-bold"
-            @click="isCategoryExpanded = !isCategoryExpanded"
-          >
-            <span>{{ isCategoryExpanded ? "접기 ▲" : "더보기 ▼" }}</span>
-          </button>
-        </div>
-
-        <!-- 기본 상태: 슬림 1줄 4개 카테고리 칩 -->
-        <div v-if="!isCategoryExpanded" class="dutch-cat-chip-row">
-          <button
-            v-for="cat in slimCategories"
-            :key="cat.id"
-            type="button"
-            class="dutch-cat-chip"
-            :class="{ active: (selectedCategoryId || 1) === cat.id }"
-            @click="selectSlimCategory(cat.id)"
-          >
-            <i :class="getCategoryIcon(cat.name)" class="cat-fa-ic"></i>
-            <span class="cat-name text-13-bold">{{ cat.name }}</span>
-          </button>
-        </div>
-
-        <!-- 더보기 클릭 시: 팀 공용 전체 카테고리 선택 컴포넌트 (선택 시 자동 접힘) -->
-        <SpendingCategorySelector
-          v-else
-          :model-value="selectedCategoryId || 1"
-          @update:model-value="onSelectExpandedCategory"
-          :categories="categoryList"
-          compact
-        />
-      </div>
-
-      <div class="form-field-group" style="margin-top: 20px">
         <label class="field-label text-20-bold" style="color: #111111; margin-bottom: 10px;">
           얼마를 정산할까요?
         </label>

@@ -21,7 +21,7 @@
         <!-- 헤더 -->
         <div class="modal-header">
           <div class="header-title-flex">
-            <span class="kb-badge text-13-bold">KB Pay</span>
+            <span class="kb-badge text-13-bold">Social Wallet</span>
             <h5 class="text-18-bold modal-title">1회용 보안 결제 코드</h5>
           </div>
           <button type="button" class="close-btn" @click="$emit('close')">

@@ -19,7 +19,7 @@
 
           <div v-else-if="transaction" class="receipt-body">
             <div class="receipt-badge-wrap text-center">
-              <span class="receipt-badge text-13-bold">KB Pay 영수증</span>
+              <span class="receipt-badge text-13-bold">Social Wallet 영수증</span>
             </div>
 
             <!-- 금액 -->

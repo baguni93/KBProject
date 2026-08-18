@@ -64,24 +64,94 @@
       </div>
     </template>
 
-    <!-- 2. 지갑 충전 화면 -->
-    <WalletChargeSection
-      v-else-if="currentView === 'CHARGE'"
-      :charge-success="chargeSuccess"
-      :last-charged-amount="lastChargedAmount"
-      :primary-account="primaryAccount"
-      :account-balance="accountBalance"
-      :charge-amount="chargeAmount"
-      :charge-amount-display="chargeAmountDisplay"
-      :charge-error="chargeError"
-      :charge-loading="chargeLoading"
-      :format-currency="formatCurrency"
-      :get-bank-logo-file-name="getBankLogoFileName"
-      @back-to-main="currentView = 'MAIN'"
-      @on-amount-input="onChargeAmountInput"
-      @add-amount="addChargeAmount"
-      @submit="submitWalletCharge"
-    />
+    <!-- 2. 지갑 충전 화면 (PIN 인증 시 풀페이지 적용) -->
+    <template v-else-if="currentView === 'CHARGE'">
+      <!-- 충전 전용 풀페이지 PIN 인증 단독 화면 (모달 팝업 아님! 100% PinLoginPage 규격) -->
+      <div v-if="isChargePinPage" class="charge-pin-full-page">
+        <!-- 헤더 -->
+        <div class="pin-page-header">
+          <button type="button" class="back-btn" @click="cancelChargePin">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <h3 class="text-18-bold header-title">간편비밀번호 인증</h3>
+          <div class="header-right-empty"></div>
+        </div>
+
+        <!-- 본문 -->
+        <div class="pin-page-body text-center">
+          <!-- 비주얼 (PinLoginPage 100% 동일) -->
+          <div class="login-visual mt-3">
+            <div class="visual-glow"></div>
+            <div class="visual-icon">
+              <i class="fa-solid fa-lock"></i>
+            </div>
+            <span class="visual-dot dot-one"></span>
+            <span class="visual-dot dot-two"></span>
+            <span class="visual-dot dot-three"></span>
+          </div>
+
+          <!-- 타이틀 -->
+          <div class="login-header mt-3">
+            <h2 class="text-24-bold m-0">간편비밀번호 입력</h2>
+            <p class="text-14 text-sub mt-2 mb-0">
+              충전 금액 <strong class="text-main text-16-bold">{{ formatCurrency(chargeAmount) }}원</strong> 승인을 위해<br/>PIN 6자리를 입력해주세요.
+            </p>
+          </div>
+
+          <!-- 6자리 PIN Box (보안 카드 박스 100% 삭제) -->
+          <div class="pin-boxes mt-4">
+            <div
+              v-for="index in 6"
+              :key="index"
+              class="pin-box"
+              :class="{
+                filled: inputPinCode.length >= index,
+                active: inputPinCode.length === index - 1
+              }"
+            >
+              <span v-if="inputPinCode.length >= index" class="pin-dot"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 하단 키패드 -->
+        <div class="pin-keypad-bottom">
+          <div class="keypad-row">
+            <button v-for="n in [1, 2, 3]" :key="n" type="button" class="pin-num-btn text-20-bold" @click="enterPin(n)">{{ n }}</button>
+          </div>
+          <div class="keypad-row">
+            <button v-for="n in [4, 5, 6]" :key="n" type="button" class="pin-num-btn text-20-bold" @click="enterPin(n)">{{ n }}</button>
+          </div>
+          <div class="keypad-row">
+            <button v-for="n in [7, 8, 9]" :key="n" type="button" class="pin-num-btn text-20-bold" @click="enterPin(n)">{{ n }}</button>
+          </div>
+          <div class="keypad-row">
+            <button type="button" class="pin-num-btn action-text-btn text-14-bold" @click="inputPinCode = ''">C</button>
+            <button type="button" class="pin-num-btn text-20-bold" @click="enterPin(0)">0</button>
+            <button type="button" class="pin-num-btn del-icon-btn text-16" @click="inputPinCode = inputPinCode.slice(0, -1)"><i class="fa-solid fa-delete-left"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 충전 입력 양식 / 성공 화면 -->
+      <WalletChargeSection
+        v-else
+        :charge-success="chargeSuccess"
+        :last-charged-amount="lastChargedAmount"
+        :primary-account="primaryAccount"
+        :account-balance="accountBalance"
+        :charge-amount="chargeAmount"
+        :charge-amount-display="chargeAmountDisplay"
+        :charge-error="chargeError"
+        :charge-loading="chargeLoading"
+        :format-currency="formatCurrency"
+        :get-bank-logo-file-name="getBankLogoFileName"
+        @back-to-main="currentView = 'MAIN'"
+        @on-amount-input="onChargeAmountInput"
+        @add-amount="addChargeAmount"
+        @submit="submitWalletCharge"
+      />
+    </template>
 
     <!-- 3. NFC 결제 애니메이션 오버레이 (Teleport to body 적용) -->
     <WalletNfcPaymentOverlay
@@ -107,8 +177,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import api from "@/api";
 import { getCards, requestCardPayment, cancelCardPayment, getCardTransactionStatus, approveCardPayment } from "@/api/cardApi";
 import walletApi from "@/api/walletApi";
@@ -123,9 +193,23 @@ import WalletPinAuthModal from "@/components/wallet/WalletPinAuthModal.vue";
 import WalletPushNotificationBanner from "@/components/wallet/WalletPushNotificationBanner.vue";
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 
 const currentView = ref("MAIN");
+
+watch(currentView, (newVal) => {
+  if (newVal === "CHARGE") {
+    route.meta.hideBottomNav = true;
+  } else {
+    route.meta.hideBottomNav = false;
+  }
+}, { immediate: true });
+
+onUnmounted(() => {
+  route.meta.hideBottomNav = false;
+});
+
 const isWalletModeActive = ref(false);
 const walletBalance = ref(0);
 
@@ -547,7 +631,13 @@ const barcodeLines = computed(() => {
 });
 
 const showPinAuthModal = ref(false);
+const isChargePinPage = ref(false);
 const inputPinCode = ref("");
+
+const cancelChargePin = () => {
+  isChargePinPage.value = false;
+  inputPinCode.value = "";
+};
 
 const openPinModal = () => {
   inputPinCode.value = "";
@@ -586,6 +676,7 @@ const enterPin = async (num) => {
       }
 
       showPinAuthModal.value = false;
+      isChargePinPage.value = false;
       inputPinCode.value = "";
 
       if (pinTarget.value === "CARD") {
@@ -663,7 +754,8 @@ const submitWalletCharge = () => {
   }
 
   pinTarget.value = "CHARGE";
-  openPinModal();
+  inputPinCode.value = "";
+  isChargePinPage.value = true;
 };
 
 const executeWalletCharge = async () => {
@@ -846,7 +938,27 @@ const handleLongPressPaymentEvent = () => {
   startNfcTimer();
 };
 
+const checkViewModeFromQuery = () => {
+  if (route.query?.view === "CHARGE" || route.query?.mode === "charge") {
+    currentView.value = "CHARGE";
+  } else {
+    currentView.value = "MAIN";
+  }
+};
+
+watch(
+  () => route.query?.view,
+  (newView) => {
+    if (newView === "CHARGE") {
+      currentView.value = "CHARGE";
+    } else {
+      currentView.value = "MAIN";
+    }
+  }
+);
+
 onMounted(() => {
+  checkViewModeFromQuery();
   loadData();
   window.addEventListener('notification-received', handleRealtimeNotification);
   window.addEventListener('TRIGGER_LONG_PRESS_PAYMENT', handleLongPressPaymentEvent);
@@ -972,5 +1084,164 @@ textarea {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+/* 충전 전용 풀페이지 PIN 인증 단독 화면 (PinLoginPage 100% 동일 규격 - 모달 팝업 아님) */
+.charge-pin-full-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  padding: 16px;
+  position: relative;
+  overflow-y: auto;
+}
+
+.pin-page-header {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.pin-page-header .back-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #111111;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.header-right-empty {
+  width: 24px;
+}
+
+.pin-page-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 12px;
+}
+
+.login-visual {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+}
+
+.visual-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255, 188, 46, 0.15);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.visual-icon {
+  position: absolute;
+  inset: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ffca52 0%, #ffbc2e 65%, #f3a711 100%);
+  box-shadow: 0 8px 18px rgba(255, 188, 46, 0.3);
+  color: #ffffff;
+  font-size: 24px;
+}
+
+.visual-dot {
+  position: absolute;
+  z-index: 3;
+  border-radius: 50%;
+}
+
+.dot-one { top: 2px; right: 6px; width: 7px; height: 7px; background: #8f81f5; }
+.dot-two { bottom: 4px; left: 2px; width: 6px; height: 6px; background: #6fd0bd; }
+.dot-three { right: 2px; bottom: 12px; width: 5px; height: 5px; background: #ff9aa7; }
+
+.pin-boxes {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.pin-box {
+  display: flex;
+  height: 52px;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fafafa;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.pin-box.active {
+  border-color: #ffbc2e;
+  background: #fffaf0;
+  box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.18);
+}
+
+.pin-box.filled {
+  border-color: #ffbc2e;
+  background: #fff8e5;
+}
+
+.pin-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #111111;
+}
+
+.pin-keypad-bottom {
+  margin-top: auto;
+  padding-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.keypad-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.pin-num-btn {
+  height: 52px;
+  border: none;
+  background-color: #f8f9fa;
+  border-radius: 14px;
+  color: #111111;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.pin-num-btn:hover {
+  background-color: #edf2f7;
+}
+
+.action-text-btn { color: #d97706; }
+.del-icon-btn { color: #718096; }
+
+@keyframes pulse-glow {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.8; }
 }
 </style>

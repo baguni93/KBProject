@@ -6,9 +6,11 @@ import walletApi from '@/api/walletApi';
 import analysisApi from '@/api/analysisApi';
 import transactionApi from '@/api/transactionApi';
 import { useAuthStore } from '@/stores/auth';
+import { useProfileStore } from '@/stores/profile';
 
 export const useRemittanceStore = defineStore('remittance', () => {
   const authStore = useAuthStore();
+  const profileStore = useProfileStore();
 
   // 1. 송금 기본 상태
   const remitType = ref('ACCOUNT'); // 'ACCOUNT' | 'FRIEND' | 'DUTCH'
@@ -27,16 +29,19 @@ export const useRemittanceStore = defineStore('remittance', () => {
   const friendSearchKeyword = ref('');
 
   const filteredFriends = computed(() => {
-    if (!friendSearchKeyword.value) return friendList.value;
+    if (!friendSearchKeyword.value.trim()) return friendList.value;
+    const kw = friendSearchKeyword.value.toLowerCase();
     return friendList.value.filter(
       (f) =>
-        (f.name && f.name.includes(friendSearchKeyword.value)) ||
-        (f.username && f.username.includes(friendSearchKeyword.value))
+        (f.name && f.name.toLowerCase().includes(kw)) ||
+        (f.nickname && f.nickname.toLowerCase().includes(kw)) ||
+        (f.username && f.username.toLowerCase().includes(kw))
     );
   });
 
   const getProfileImageUrl = (friend) => {
     if (!friend) return "/api/feeds/profile/unknown.png";
+    if (friend.url) return friend.url;
     const imgName =
       friend.profileImageName ||
       friend.profileImage ||
@@ -54,12 +59,15 @@ export const useRemittanceStore = defineStore('remittance', () => {
   };
 
   const myProfileImageUrl = computed(() => {
-    const pName = authStore.user?.profileImageName || authStore.user?.profileImage || authStore.user?.profileImg;
+    const pUrl = profileStore.profile?.url || profileStore.profile?.profileImageUrl || profileStore.profile?.imageUrl;
+    if (pUrl) return pUrl;
+
+    const pName = profileStore.profile?.imageName || profileStore.profile?.profileImageName || profileStore.profile?.image || authStore.user?.profileImageName || authStore.user?.profileImage || authStore.user?.profileImg;
     if (pName) {
       if (pName.startsWith("http") || pName.startsWith("/")) return pName;
       return `/api/feeds/profile/${pName}`;
     }
-    return "/api/feeds/profile/unknown.png";
+    return "/api/feeds/profile/character1.png";
   });
 
   const getFriendObj = (fId) => {
@@ -171,6 +179,13 @@ export const useRemittanceStore = defineStore('remittance', () => {
   const loadInitData = async () => {
     try {
       const userId = authStore.userId || 1;
+
+      // 내 프로필 로드
+      try {
+        await profileStore.getProfile(userId);
+      } catch (pErr) {
+        console.log("프로필 로드 예외", pErr);
+      }
 
       // 카테고리 목록
       try {

@@ -131,11 +131,8 @@
                     <div class="tx-item-title text-15-bold">
                       {{ getItemTitle(item) }}
                     </div>
-                    <div class="tx-item-sub text-13">
-                      {{ formatTime(item.createdAt) }}
-                      <span v-if="item.memo" class="memo-badge text-13"
-                        >"{{ item.memo }}"</span
-                      >
+                    <div v-if="getItemSubText(item)" class="tx-item-sub text-13">
+                      <span>{{ getItemSubText(item) }}</span>
                     </div>
                   </div>
                 </div>
@@ -249,8 +246,17 @@ const changeTypeTab = (val) => {
 
 const openReceiptModal = (item) => {
   if (item && item.transactionId) {
-    selectedTransactionId.value = item.transactionId;
-    showReceiptModal.value = true;
+    const tType = (item.transactionType || item.type || "PAYMENT").toUpperCase();
+    const title = getItemTitle(item);
+    router.push({
+      path: `/transactions/receipt/${item.transactionId}`,
+      query: {
+        type: tType,
+        title: title,
+        amount: item.amount || 0,
+        createdAt: item.createdAt || ""
+      }
+    });
   }
 };
 
@@ -382,18 +388,51 @@ const formatTime = (dateStr) => {
 
 const getItemTitle = (item) => {
   const type = (item.transactionType || item.type || "").toUpperCase();
-  if (type === "CHARGE") return item.merchantName || item.merchant_name || item.memo || "KB Pay 머니 충전";
+  if (type === "CHARGE") return item.merchantName || item.merchant_name || item.memo || "소셜 월렛 충전";
   if (type === "TRANSFER" || type === "REMIT") {
     let name = item.merchantName || item.merchant_name || item.receiverName || item.ownerName || item.memo || item.title || "";
     if (name.startsWith("송금 (") && name.endsWith(")")) {
       name = name.substring(4, name.length - 1);
     }
     if (name === "송금 완료" || name === "송금" || !name) {
-      name = "수취인";
+      name = "수취인 송금";
     }
     return name;
   }
-  return item.merchantName || item.merchant_name || item.memo || "가맹점 현장 결제";
+  if (type === "SETTLEMENT") {
+    return item.merchantName || item.merchant_name || item.memo || item.title || "더치페이 정산";
+  }
+  return item.merchantName || item.merchant_name || item.title || item.memo || "가맹점 결제";
+};
+
+const getItemSubText = (item) => {
+  if (
+    item.memo &&
+    item.memo.trim() &&
+    item.memo !== "송금 완료" &&
+    item.memo !== "결제 완료" &&
+    item.memo !== "상세 내역 피드 남기기" &&
+    item.memo !== "기본 피드"
+  ) {
+    return item.memo;
+  }
+  if (
+    item.content &&
+    item.content.trim() &&
+    item.content !== "송금 완료" &&
+    item.content !== "결제 완료" &&
+    item.content !== "상세 내역 피드 남기기" &&
+    item.content !== "기본 피드"
+  ) {
+    return item.content;
+  }
+  if (item.categoryName && item.categoryName !== "기타") {
+    return item.categoryName;
+  }
+  if (item.spendingCategoryName && item.spendingCategoryName !== "기타") {
+    return item.spendingCategoryName;
+  }
+  return null;
 };
 
 const getTypeIcon = (item) => {

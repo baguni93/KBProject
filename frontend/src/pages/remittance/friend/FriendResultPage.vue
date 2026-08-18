@@ -4,6 +4,7 @@
       remit-type="FRIEND"
       :remit-amount="remittanceStore.remitAmount"
       :receiver-name="remittanceStore.selectedFriendObj?.name || remittanceStore.getFriendName(remittanceStore.selectedFriendId)"
+      :remit-memo="remittanceStore.remitMemo"
       :format-currency="remittanceStore.formatCurrency"
       @reset-all="resetAndGoHome"
     />

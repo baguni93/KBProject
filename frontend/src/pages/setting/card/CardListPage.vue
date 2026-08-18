@@ -74,6 +74,7 @@
                     :alt="card.cardName"
                     :src="card.cardImageUrl"
                     class="card-image"
+                    @error="card.cardImageUrl = null"
                 />
 
                 <div v-else class="card-image-fallback">
@@ -172,6 +173,7 @@
                   v-if="disconnectTarget.cardImageUrl"
                   :alt="disconnectTarget.cardName"
                   :src="disconnectTarget.cardImageUrl"
+                  @error="disconnectTarget.cardImageUrl = null"
               />
 
               <span v-else>

@@ -16,9 +16,13 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useAuthStore } from '@/stores/auth';
 import WalletSection from '@/components/wallet/WalletSection.vue';
 import ReceiptDetailModal from '@/components/transaction/ReceiptDetailModal.vue';
 import CardPaymentPendingModal from '@/components/wallet/CardPaymentPendingModal.vue';
+
+const authStore = useAuthStore();
+const userId = computed(() => authStore.userId || 1);
 
 const showReceiptModal = ref(false);
 const showPendingModal = ref(false);

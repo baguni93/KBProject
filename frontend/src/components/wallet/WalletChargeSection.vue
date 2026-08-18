@@ -64,22 +64,22 @@
         </section>
       </main>
 
-      <!-- 하단 2개 버튼 (결제 / 송금 2개 버튼 구성) -->
+      <!-- 하단 2개 버튼 (좌측: 결제하기(흰색) / 우측: 확인(노란색)) -->
       <div class="bottom-btn-area double complete-button-area">
         <button
           class="bottom-btn secondary-button complete-button text-16-bold"
           type="button"
           @click="$emit('backToMain')"
         >
-          결제
+          결제하기
         </button>
 
         <button
           class="bottom-btn primary-button complete-button text-16-bold"
           type="button"
-          @click="$router.push('/remittance/account')"
+          @click="$emit('backToMain')"
         >
-          송금
+          확인
         </button>
       </div>
     </div>

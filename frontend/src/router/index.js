@@ -60,6 +60,12 @@ const router = createRouter({
       meta: { requiresAuth: true, showBottomNav: true },
     },
     {
+      path: '/transactions/receipt/:transactionId',
+      name: 'receipt-detail',
+      component: () => import('@/pages/transaction/ReceiptDetailPage.vue'),
+      meta: { requiresAuth: true, showBottomNav: false },
+    },
+    {
       path: '/wallet/card/add',
       name: 'card-add',
       component: () => import('@/pages/wallet/CardAddPage.vue'),

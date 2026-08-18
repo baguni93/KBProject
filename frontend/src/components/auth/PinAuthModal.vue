@@ -7,7 +7,7 @@
       <!-- 헤더 -->
       <div class="d-flex justify-content-between align-items-center mb-2 px-1">
         <div class="d-flex align-items-center gap-2">
-          <span class="badge bg-dark text-warning font-outfit px-2.5 py-1 fw-bold rounded-pill">KB Pay</span>
+          <span class="badge bg-dark text-warning font-outfit px-2.5 py-1 fw-bold rounded-pill">Social Wallet</span>
           <span class="fw-extrabold text-dark fs-6 font-outfit">보안 인증</span>
         </div>
         <button type="button" class="btn-close shadow-none" @click="closeModal"></button>

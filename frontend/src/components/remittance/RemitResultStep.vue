@@ -31,22 +31,23 @@
 
         <!-- 완료 메시지 -->
         <div class="complete-message">
-          <h1 class="text-30-bold">
-            {{
-              remitType === "DUTCH"
-                ? "정산 요청이 완료되었어요!"
-                : "송금이 완료되었어요!"
-            }}
+          <h1 class="text-24-bold complete-title">
+            {{ getCompleteTitle }}
           </h1>
 
           <p class="complete-description text-20-bold" style="margin-top: 8px; color: #111111;">
-            +{{ formatCurrency(remitAmount || 10000) }} 원
+            {{ getFormattedAmountText }}
           </p>
         </div>
 
         <!-- 상세 내역 요약 카드 -->
         <div class="complete-detail-card">
-          <template v-if="remitType === 'DUTCH'">
+          <!-- 1. 더치페이 요청 생성 -->
+          <template v-if="remitType === 'DUTCH_CREATE' || remitType === 'DUTCH'">
+            <div v-if="dutchRoomTitle" class="detail-row text-14">
+              <span class="lbl text-14">정산 모임</span>
+              <span class="val text-15-bold">{{ dutchRoomTitle }}</span>
+            </div>
             <div class="detail-row text-14">
               <span class="lbl text-14">정산 멤버</span>
               <span class="val text-15-bold">
@@ -56,49 +57,77 @@
             <div class="detail-row text-14">
               <span class="lbl text-14">1인당 요청 금액</span>
               <span class="val text-15-bold">
-                {{ formatCurrency(Math.floor((remitAmount || 10000) / ((selectedDutchFriends?.length || 1) + 1))) }} 원
+                {{ formatCurrency(Math.floor((remitAmount || 0) / ((selectedDutchFriends?.length || 1) + 1))) }} 원
               </span>
             </div>
           </template>
 
+          <!-- 2. 더치페이 지불/송금 -->
+          <template v-else-if="remitType === 'DUTCH_PAY' || remitType === 'DUTCH_REMIT'">
+            <div class="detail-row text-14">
+              <span class="lbl text-14">정산 요청자</span>
+              <span class="val text-15-bold">{{ receiverName || '방장' }}</span>
+            </div>
+            <div v-if="dutchRoomTitle" class="detail-row text-14">
+              <span class="lbl text-14">정산 모임</span>
+              <span class="val text-15-bold">{{ dutchRoomTitle }}</span>
+            </div>
+          </template>
+
+          <!-- 3. 친구 송금 -->
+          <template v-else-if="remitType === 'FRIEND'">
+            <div class="detail-row text-14">
+              <span class="lbl text-14">받는 친구</span>
+              <span class="val text-15-bold">{{ receiverName || '친구' }}</span>
+            </div>
+            <div v-if="remitMemo" class="detail-row text-14">
+              <span class="lbl text-14">송금 메모</span>
+              <span class="val text-15-bold">{{ remitMemo }}</span>
+            </div>
+          </template>
+
+          <!-- 4. 계좌 송금 (기본) -->
           <template v-else>
             <div class="detail-row text-14">
               <span class="lbl text-14">받는 사람</span>
-              <span class="val text-15-bold">{{ receiverName }}</span>
+              <span class="val text-15-bold">{{ receiverName || '수취인' }}</span>
             </div>
             <div v-if="accountNumber" class="detail-row text-14">
               <span class="lbl text-14">입금 계좌</span>
-              <span class="val text-15-bold"
-                >{{ bankName }} {{ accountNumber }}</span
-              >
+              <span class="val text-15-bold">
+                {{ bankName }} {{ accountNumber }}
+              </span>
             </div>
           </template>
         </div>
       </section>
     </main>
 
-    <!-- 하단 2개 버튼 (결제 / 내 정산) -->
-    <div class="bottom-btn-area double complete-button-area">
+    <!-- 하단 2개 버튼: 좌측(흰색 배경 - 피드 보기) / 우측(노란색 배경 - 확인) -->
+    <div class="complete-button-area">
+      <!-- 서브 기능 버튼 (순수 흰색 배경 + 테두리) -->
       <button
-        class="bottom-btn secondary-button complete-button text-16-bold"
+        class="complete-btn-secondary text-16-bold"
         type="button"
-        @click="handleGoWallet"
+        @click="handleSecondaryAction"
       >
-        결제
+        {{ getSecondaryBtnText }}
       </button>
 
+      <!-- 주 확인 버튼 (노란색 배경) -->
       <button
-        class="bottom-btn primary-button complete-button text-16-bold"
+        class="complete-btn-primary text-16-bold"
         type="button"
-        @click="handleGoDutchHistory"
+        @click="handleGoHome"
       >
-        내 정산
+        확인
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -132,24 +161,70 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  dutchRoomTitle: {
+    type: String,
+    default: "",
+  },
+  remitMemo: {
+    type: String,
+    default: "",
+  },
   formatCurrency: {
     type: Function,
-    required: true,
+    default: (val) => (val === undefined || val === null ? "0" : Number(val).toLocaleString("ko-KR")),
   },
 });
 
 const emit = defineEmits(["resetAll"]);
 
-// 1. 결제 화면으로 이동
-const handleGoWallet = () => {
+// 1. 완료 제목
+const getCompleteTitle = computed(() => {
+  switch (props.remitType) {
+    case "DUTCH_CREATE":
+    case "DUTCH":
+      return "더치페이 요청이 완료되었어요!";
+    case "DUTCH_PAY":
+    case "DUTCH_REMIT":
+      return "정산 지불이 완료되었어요!";
+    case "FRIEND":
+      return "친구 송금이 완료되었어요!";
+    case "ACCOUNT":
+    default:
+      return "계좌 송금이 완료되었어요!";
+  }
+});
+
+// 2. 금액 표시 텍스트 (+/-)
+const getFormattedAmountText = computed(() => {
+  const formatted = props.formatCurrency(props.remitAmount || 0);
+  if (props.remitType === "DUTCH_CREATE" || props.remitType === "DUTCH") {
+    return `총 ${formatted} 원`;
+  }
+  return `-${formatted} 원`;
+});
+
+// 3. 좌측 서브 버튼 텍스트 (흰색 버튼)
+const getSecondaryBtnText = computed(() => {
+  if (props.remitType === "DUTCH_CREATE" || props.remitType === "DUTCH") {
+    return "정산 내역";
+  }
+  return "피드 보기";
+});
+
+// 4. 서브 액션 동작 (피드 보기 또는 정산 내역 페이지 이동)
+const handleSecondaryAction = () => {
   emit("resetAll");
-  router.push("/wallet");
+  if (props.remitType === "DUTCH_CREATE" || props.remitType === "DUTCH") {
+    router.push("/settlement");
+  } else {
+    router.push("/feed");
+  }
 };
 
-// 2. 내 정산 내역 / 계좌 관리로 이동
-const handleGoDutchHistory = () => {
+// 5. 메인 확인 동작 (지갑 페이지 이동) -> 노란색 버튼
+const handleGoHome = () => {
   emit("resetAll");
-  router.push("/setting/accounts");
+  router.push("/wallet");
 };
 </script>
 
@@ -158,35 +233,14 @@ const handleGoDutchHistory = () => {
 
 .complete-page {
   position: relative;
-  overflow: hidden;
-  width: 100%;
   height: 100%;
+  width: 100%;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   box-sizing: border-box;
-}
-
-.complete-container {
-  position: relative;
-  z-index: 2;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
   overflow: hidden;
-  padding: 20px 16px;
-}
-
-.complete-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  width: 100%;
-  max-width: 360px;
-  margin: 0 auto;
 }
 
 .background-decoration {
@@ -196,39 +250,59 @@ const handleGoDutchHistory = () => {
 }
 
 .decoration-left {
-  top: -100px;
-  left: -120px;
-  width: 240px;
-  height: 240px;
-  background: rgba(255, 188, 46, 0.1);
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(255, 243, 199, 0.6) 0%, rgba(255, 255, 255, 0) 70%);
+  top: -40px;
+  left: -40px;
   animation: background-float-left 6s ease-in-out infinite;
 }
 
 .decoration-right {
-  top: 280px;
-  right: -110px;
-  width: 210px;
-  height: 210px;
-  background: rgba(176, 164, 255, 0.05);
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(243, 235, 255, 0.5) 0%, rgba(255, 255, 255, 0) 70%);
+  bottom: 80px;
+  right: -60px;
   animation: background-float-right 7s ease-in-out infinite;
 }
 
+.complete-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.complete-content {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* 폭죽 / 완료 비주얼 (모션 애니메이션 완전 복원) */
 .success-visual {
   position: relative;
-  width: 180px;
-  height: 180px;
-  margin: 0 auto 22px;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
 }
 
 .success-glow {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 126px;
-  height: 126px;
+  inset: -10px;
+  background: radial-gradient(circle, rgba(255, 188, 46, 0.3) 0%, rgba(255, 188, 46, 0) 70%);
   border-radius: 50%;
-  background: rgba(255, 188, 46, 0.16);
-  transform: translate(-50%, -50%);
   animation: glow 2.2s ease-in-out 0.8s infinite;
 }
 
@@ -238,17 +312,15 @@ const handleGoDutchHistory = () => {
   top: 50%;
   left: 50%;
   display: flex;
-  width: 102px;
-  height: 102px;
+  width: 72px;
+  height: 72px;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: linear-gradient(145deg, #ffd15c, var(--color-primary, #ffbc2e));
-  box-shadow:
-    0 16px 34px rgba(255, 188, 46, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  background: linear-gradient(145deg, #ffd15c, #ffbc2e);
+  box-shadow: 0 10px 24px rgba(255, 188, 46, 0.28);
   color: #ffffff;
-  font-size: 42px;
+  font-size: 32px;
   transform: translate(-50%, -50%) scale(0);
   animation: success-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
@@ -263,63 +335,19 @@ const handleGoDutchHistory = () => {
   position: absolute;
   z-index: 1;
   display: block;
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: var(--color-primary, #ffbc2e);
+  background: #ffbc2e;
   opacity: 0;
 }
 
-.particle-1 {
-  top: 28px;
-  left: 28px;
-  animation: particle-pop 0.55s ease 0.35s forwards;
-}
-
-.particle-2 {
-  top: 14px;
-  right: 28px;
-  width: 6px;
-  height: 6px;
-  background: #9d90ff;
-  animation: particle-pop 0.55s ease 0.5s forwards;
-}
-
-.particle-3 {
-  top: 70px;
-  right: 6px;
-  width: 9px;
-  height: 9px;
-  background: #7bd6c7;
-  animation: particle-pop 0.55s ease 0.4s forwards;
-}
-
-.particle-4 {
-  right: 24px;
-  bottom: 18px;
-  width: 7px;
-  height: 7px;
-  background: #ff9eaa;
-  animation: particle-pop 0.55s ease 0.6s forwards;
-}
-
-.particle-5 {
-  bottom: 20px;
-  left: 24px;
-  width: 6px;
-  height: 6px;
-  background: #9d90ff;
-  animation: particle-pop 0.55s ease 0.48s forwards;
-}
-
-.particle-6 {
-  top: 78px;
-  left: 4px;
-  width: 8px;
-  height: 8px;
-  background: #7bd6c7;
-  animation: particle-pop 0.55s ease 0.58s forwards;
-}
+.particle-1 { top: 12px; left: 12px; animation: particle-pop 0.55s ease 0.35s forwards; }
+.particle-2 { top: 6px; right: 14px; background: #9d90ff; animation: particle-pop 0.55s ease 0.5s forwards; }
+.particle-3 { top: 40px; right: 0px; background: #7bd6c7; animation: particle-pop 0.55s ease 0.4s forwards; }
+.particle-4 { right: 12px; bottom: 10px; background: #ff9eaa; animation: particle-pop 0.55s ease 0.6s forwards; }
+.particle-5 { bottom: 10px; left: 12px; background: #9d90ff; animation: particle-pop 0.55s ease 0.48s forwards; }
+.particle-6 { top: 44px; left: 0px; background: #7bd6c7; animation: particle-pop 0.55s ease 0.58s forwards; }
 
 .spark {
   position: absolute;
@@ -328,22 +356,11 @@ const handleGoDutchHistory = () => {
   opacity: 0;
 }
 
-.spark-1 {
-  top: 14px;
-  left: 60px;
-  font-size: 12px;
-  animation: spark-pop 0.55s ease 0.55s forwards;
-}
-
-.spark-2 {
-  right: 38px;
-  bottom: 14px;
-  color: #a99df7;
-  font-size: 10px;
-  animation: spark-pop 0.55s ease 0.7s forwards;
-}
+.spark-1 { top: 4px; left: 34px; font-size: 10px; animation: spark-pop 0.55s ease 0.55s forwards; }
+.spark-2 { right: 20px; bottom: 8px; color: #a99df7; font-size: 10px; animation: spark-pop 0.55s ease 0.7s forwards; }
 
 .complete-message {
+  width: 100%;
   opacity: 0;
   transform: translateY(16px);
   animation: content-up 0.5s ease 0.55s forwards;
@@ -353,13 +370,12 @@ const handleGoDutchHistory = () => {
   margin: 0;
   color: var(--color-text-main, #111111);
   line-height: 1.3;
-  letter-spacing: -0.7px;
 }
 
 .complete-detail-card {
   width: 100%;
-  margin-top: 20px;
-  padding: 16px 18px;
+  margin-top: 16px;
+  padding: 16px;
   background-color: var(--color-bg-screen, #f8f9fa);
   border-radius: 16px;
   box-sizing: border-box;
@@ -383,48 +399,48 @@ const handleGoDutchHistory = () => {
   color: #111111;
 }
 
+/* 하단 버튼 영역 (상단 분리선 제거 + 좌측 흰색, 우측 노란색 100% 보장) */
 .complete-button-area {
-  position: relative;
-  z-index: 3;
+  flex-shrink: 0;
+  padding: 16px 20px 24px;
+  background-color: transparent;
+  border-top: none !important;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
   width: 100%;
-}
-
-.complete-button {
+  box-sizing: border-box;
   opacity: 0;
   transform: translateY(10px);
-  animation: button-show 0.45s ease forwards;
+  animation: button-show 0.45s ease 0.8s forwards;
 }
 
-.complete-button:nth-child(1) {
-  animation-delay: 0.82s;
-}
-
-.complete-button:nth-child(2) {
-  animation-delay: 0.9s;
-}
-
-.complete-button-area .bottom-btn.secondary-button,
-.secondary-button {
-  border: 1px solid #e0e0e0 !important;
-  background: #ffffff !important;
+.complete-btn-secondary {
+  height: 48px;
+  border-radius: 12px;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e0 !important;
   color: #111111 !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.complete-button-area .bottom-btn.secondary-button:active,
-.secondary-button:active {
-  background: #f8f9fa !important;
+.complete-btn-secondary:hover {
+  background-color: #f8f9fa !important;
 }
 
-.complete-button-area .bottom-btn.primary-button,
-.primary-button {
+.complete-btn-primary {
+  height: 48px;
+  border-radius: 12px;
+  background-color: #ffbc2e !important;
   border: none !important;
-  background: #ffbc2e !important;
   color: #111111 !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.complete-button-area .bottom-btn.primary-button:active,
-.primary-button:active {
-  background: #e5a900 !important;
+.complete-btn-primary:hover {
+  background-color: #e5a900 !important;
 }
 
 @keyframes success-pop {

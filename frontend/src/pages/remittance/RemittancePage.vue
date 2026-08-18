@@ -25,6 +25,9 @@
           :receiver-name="accountForm.receiverName || selectedFriendObj?.name || '수취인'"
           :bank-name="getBankName(accountForm.bankCode)"
           :account-number="accountForm.accountNumber"
+          :dutch-room-title="dutchRoomTitle"
+          :selected-dutch-friends="selectedDutchFriends"
+          :remit-memo="remitMemo"
           :format-currency="formatCurrency"
           @reset-all="resetAllRemitForm"
         />

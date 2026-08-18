@@ -3,8 +3,8 @@
     <!-- 메인 배너 -->
     <div class="p-4 mb-4 bg-dark text-white rounded-4 shadow-sm position-relative overflow-hidden">
       <div class="position-relative z-1">
-        <span class="badge bg-warning text-dark px-3 py-1.5 rounded-pill fw-bold mb-2">KB Pay</span>
-        <h3 class="fw-bold mb-0">KB Pay 메인</h3>
+        <span class="badge bg-warning text-dark px-3 py-1.5 rounded-pill fw-bold mb-2">Social Wallet</span>
+        <h3 class="fw-bold mb-0">Social Wallet 메인</h3>
       </div>
     </div>
 
@@ -18,7 +18,7 @@
                 <i class="bi bi-wallet2 fs-4"></i>
               </div>
               <div>
-                <h5 class="fw-bold text-dark mb-0">KB Pay 지갑</h5>
+                <h5 class="fw-bold text-dark mb-0">Social Wallet 지갑</h5>
               </div>
             </div>
             <div class="d-flex justify-content-between align-items-center mt-3 text-warning fw-bold small">

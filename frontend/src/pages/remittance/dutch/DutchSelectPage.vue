@@ -76,7 +76,7 @@ const proceedToTransactions = async () => {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 16px 24px 32px;
+  padding: 16px 0 24px;
   background: #ffffff;
   z-index: 100;
   box-sizing: border-box;

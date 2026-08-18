@@ -11,9 +11,6 @@
           <h5 class="text-18-bold title-m0">
             {{ remitType === 'DUTCH' ? '정산 요청 확인' : '송금 정보 최종 확인' }}
           </h5>
-          <button type="button" class="close-btn" @click="$emit('close')">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
         </div>
 
         <div class="confirm-body">

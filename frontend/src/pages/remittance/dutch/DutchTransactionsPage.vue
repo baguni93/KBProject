@@ -6,7 +6,7 @@
       <p class="text-13 sub">정산하고 싶은 결제 내역을 터치하여 선택해 주세요.</p>
     </div>
 
-    <!-- 2. 스크롤 가능한 내역 리스트 전용 영역 -->
+    <!-- 2. 모던 스크롤 가능한 내역 리스트 전용 영역 (기본 스크롤바 숨김 처리) -->
     <div class="tx-list-scroll-area">
       <div
         v-for="tx in formattedTxList"
@@ -15,17 +15,17 @@
         :class="{ active: remittanceStore.selectedTxIds.includes(tx.id) }"
         @click="toggleTxSelection(tx.id)"
       >
-        <div class="tx-merchant-icon-wrap">
-          <i :class="tx.faIcon" class="merchant-fa-ic"></i>
+        <div :class="['tx-merchant-icon-wrap', getCategoryBgClass(tx.merchantName)]">
+          <i :class="tx.faIcon"></i>
         </div>
 
         <div class="tx-info-left">
           <span class="tx-merchant text-15-bold">{{ tx.merchantName }}</span>
-          <span class="tx-date text-13">{{ tx.formattedDate }}</span>
+          <span class="tx-date text-12">{{ tx.formattedDate }}</span>
         </div>
 
         <div class="tx-amount-right">
-          <span class="tx-amt text-16-bold">{{ remittanceStore.formatCurrency(tx.amount) }}원</span>
+          <span class="tx-amt text-15-bold">{{ remittanceStore.formatCurrency(tx.amount) }}원</span>
           <i
             v-if="remittanceStore.selectedTxIds.includes(tx.id)"
             class="fa-solid fa-circle-check sel-ic"
@@ -38,7 +38,8 @@
         v-if="formattedTxList.length === 0"
         class="empty-tx-box text-center text-muted"
       >
-        <p class="text-13">최근 결제 내역이 없습니다.</p>
+        <i class="fa-solid fa-receipt empty-ic"></i>
+        <p class="text-13 mt-2">최근 결제 내역이 없습니다.</p>
       </div>
     </div>
 
@@ -99,6 +100,15 @@ const selectedTotalAmount = computed(() => {
     .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
 });
 
+const getCategoryBgClass = (merchantName) => {
+  const name = merchantName || "";
+  if (name.includes("커피") || name.includes("카페") || name.includes("스타벅스") || name.includes("투썸") || name.includes("메가")) return "bg-green";
+  if (name.includes("한식") || name.includes("국수") || name.includes("식당") || name.includes("배달") || name.includes("치킨")) return "bg-amber";
+  if (name.includes("택시") || name.includes("카카오") || name.includes("버스")) return "bg-blue";
+  if (name.includes("쿠팡") || name.includes("쇼핑") || name.includes("마트")) return "bg-purple";
+  return "bg-amber";
+};
+
 const toggleTxSelection = (id) => {
   const idx = remittanceStore.selectedTxIds.indexOf(id);
   if (idx > -1) {
@@ -148,7 +158,7 @@ const proceedToAmount = () => {
   color: #718096;
 }
 
-/* 내역 리스트 전용 독립 스크롤 영역 */
+/* 내역 리스트 전용 스크롤 영역 (기본 스크롤바 숨김) */
 .tx-list-scroll-area {
   flex: 1;
   overflow-y: auto;
@@ -158,14 +168,20 @@ const proceedToAmount = () => {
   padding-right: 2px;
   padding-bottom: 8px;
   box-sizing: border-box;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.tx-list-scroll-area::-webkit-scrollbar {
+  display: none;
 }
 
 .tx-item-card {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: 14px;
   background-color: #ffffff;
   border: 1px solid #edf2f7;
   cursor: pointer;
@@ -176,29 +192,39 @@ const proceedToAmount = () => {
 
 .tx-item-card.active {
   border-color: #ffbc2e;
-  background-color: #fffdf8;
-  box-shadow: 0 4px 12px rgba(255, 188, 46, 0.12);
+  background-color: #fffdf5;
+  box-shadow: 0 4px 12px rgba(255, 188, 46, 0.15);
 }
 
 .tx-merchant-icon-wrap {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background-color: #f7fafc;
-  border: 1px solid #edf2f7;
+  font-size: 16px;
 }
 
-.merchant-fa-ic {
-  font-size: 18px;
-  color: #4a5568;
+.tx-merchant-icon-wrap.bg-green {
+  background-color: #e6fffa;
+  color: #10b981;
 }
 
-.tx-item-card.active .merchant-fa-ic {
-  color: #ffbc2e;
+.tx-merchant-icon-wrap.bg-amber {
+  background-color: #fffbe6;
+  color: #d97706;
+}
+
+.tx-merchant-icon-wrap.bg-blue {
+  background-color: #ebf8ff;
+  color: #3182ce;
+}
+
+.tx-merchant-icon-wrap.bg-purple {
+  background-color: #faf5ff;
+  color: #8b5cf6;
 }
 
 .tx-info-left {
@@ -246,6 +272,11 @@ const proceedToAmount = () => {
   color: #a0aec0;
 }
 
+.empty-ic {
+  font-size: 28px;
+  color: #cbd5e0;
+}
+
 /* 화면 극하단 고정 도킹 영역 */
 .fixed-bottom-btn-wrap {
   flex-shrink: 0;
@@ -268,11 +299,5 @@ const proceedToAmount = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.fixed-bottom-btn-wrap .bottom-btn:disabled {
-  background-color: #e2e8f0;
-  color: #a0aec0;
-  cursor: not-allowed;
 }
 </style>

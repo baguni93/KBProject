@@ -51,15 +51,14 @@ defineEmits(['update:modelValue']);
   border: none;
   background: transparent;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 700;
   color: #999;
   cursor: pointer;
   transition: color 0.2s;
 }
 
 .tab-item.active {
-  color: #222;
-  font-weight: 700;
+  color: #111;
 }
 
 .indicator {
@@ -68,7 +67,7 @@ defineEmits(['update:modelValue']);
   left: 0;
   width: 50%;
   height: 3px;
-  background: #ffcc00;
-  transition: transform 0.25s ease;
+  background-color: #ffbc2e;
+  transition: transform 0.25s ease-in-out;
 }
 </style>

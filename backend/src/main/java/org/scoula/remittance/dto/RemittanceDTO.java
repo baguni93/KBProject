@@ -28,6 +28,7 @@ public class RemittanceDTO {
 
     private Integer transactionId;
     private Integer spendingCategoryId;
+    private Integer settlementId; // 정산 ID 연동용
 
     // 피드 연동용 필드
     private String feedType;    // REMITTANCE

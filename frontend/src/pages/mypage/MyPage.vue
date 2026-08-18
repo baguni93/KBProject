@@ -43,7 +43,7 @@ const route = useRoute();
 const friendStore = useFriendStore();
 const profileStore = useProfileStore();
 
-const currentTab = ref(route.query.tab || 'feed');
+const currentTab = ref(route.query.tab || 'wallet');
 
 // URL query 변경 감지
 watch(

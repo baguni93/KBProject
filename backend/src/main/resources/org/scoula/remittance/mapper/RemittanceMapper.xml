@@ -35,10 +35,10 @@
         VALUES (#{walletId}, 1, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', #{amount}, NOW())
     </insert>
 
-    <!-- 송금 거래 내역 저장 (spendingCategoryId 전달값 반영, 선택 안 시 기본값 1) -->
+    <!-- 송금 거래 내역 저장 (spendingCategoryId 및 settlementId 반영) -->
     <insert id="insertRemittance" useGeneratedKeys="true" keyProperty="transactionId">
-        INSERT INTO financial_transaction_tbl (user_id, receive_id, spending_category_id, transaction_type, source_type, target_type, transaction_status, amount, merchant_name, created_at)
-        VALUES (#{walletId}, #{receiverId}, COALESCE(#{spendingCategoryId}, 1), 'TRANSFER', 'WALLET', #{receiverType}, 'SUCCESS', #{amount}, #{merchantName}, NOW())
+        INSERT INTO financial_transaction_tbl (user_id, receive_id, spending_category_id, settlement_id, transaction_type, source_type, target_type, transaction_status, amount, merchant_name, created_at)
+        VALUES (#{walletId}, #{receiverId}, COALESCE(#{spendingCategoryId}, 1), #{settlementId}, 'TRANSFER', 'WALLET', #{receiverType}, 'SUCCESS', #{amount}, #{merchantName}, NOW())
     </insert>
 
     <!-- 최신 init.sql 기준 피드 데이터 저장 (target_id & feed_status 반영) -->
