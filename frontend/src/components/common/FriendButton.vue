@@ -37,7 +37,9 @@ import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFriendStore } from '@/stores/friend';
 import { useModalStore } from '@/stores/userModalStore.js';
+import { useRemittanceStore } from '@/stores/remittance';
 
+const remittanceStore = useRemittanceStore();
 const modalStroe = useModalStore();
 
 const friendStore = useFriendStore();
@@ -141,12 +143,16 @@ const deleteFriend = async () => {
 // =====================================================
 
 const goSend = () => {
-  router.push({
-    name: 'remittance',
-    query: {
-      receiverId: props.memberUserId,
-    },
-  });
+  console.log(props.memberUserId);
+  remittanceStore.selectedFriendId = props.memberUserId;
+  const fObj = remittanceStore.friendList.find(
+    (f) => (f.id || f.friendId) === props.memberUserId,
+  );
+  remittanceStore.selectedFriendObj = fObj;
+  remittanceStore.accountForm.receiverName = fObj
+    ? fObj.name || fObj.nickname || fObj.username
+    : '친구';
+  router.push('/remittance/friend/amount');
 };
 
 // =====================================================

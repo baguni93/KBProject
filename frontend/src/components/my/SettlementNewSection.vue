@@ -279,7 +279,9 @@ import { useAuthStore } from '@/stores/auth.js';
 import { useSettlementStore } from '@/stores/settlement';
 import { formatRelativeDate } from '@/util/data';
 import { useModalStore } from '@/stores/userModalStore';
+import { useRemittanceStore } from '@/stores/remittance';
 
+const remittanceStore = useRemittanceStore();
 /* =========================
  * Props
  * ========================= */
@@ -548,13 +550,21 @@ const handleRemindAll = async () => {
  * ========================= */
 
 const goToPayment = () => {
-  router.push({
-    name: 'settlement/payment/:settlementId',
+  console.log(props.settlement.requesterId);
+  remittanceStore.selectedFriendId = props.settlement.requesterId;
+  const fObj = remittanceStore.friendList.find(
+    (f) => (f.id || f.friendId) === props.settlement.requesterId,
+  );
+  remittanceStore.selectedFriendObj = fObj;
+  remittanceStore.accountForm.receiverName = fObj
+    ? fObj.name || fObj.nickname || fObj.username
+    : '친구';
+  const member = members.value.find((x) => x.userId == props.userId);
 
-    params: {
-      settlementId: props.settlement.settlementId,
-    },
-  });
+  if (member) {
+    remittanceStore.remitAmount = member.amount;
+  }
+  router.push('/remittance/friend/amount');
 };
 
 /* =========================
