@@ -57,6 +57,8 @@ public class KbInsuranceCatalogScraper implements InitializingBean {
     private static final String BASE_URL = "https://www.kbinsure.co.kr/";
     private static final String CATALOG_SEED_URL =
             BASE_URL + "CG302130001.ec";
+    private static final String FLOOD_EARTHQUAKE_PRODUCT_CODE =
+            "CG305060001";
     private static final String USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                     + "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -408,15 +410,13 @@ public class KbInsuranceCatalogScraper implements InitializingBean {
     ) {
         Elements headings = document.select(
                 "h4.tit_num, h3.tit_num, .new_prdt_inform h4, "
-                        + ".prdt_inform_cont h4, .product_info h3, "
-                        + ".prod-intro-wrap .section h3.title, "
-                        + ".kbCar .carBox .carBoxTitle"
+                        + ".prdt_inform_cont h4, .product_info h3"
         );
         Map<String, CrawledInsuranceCoverageDTO> unique = new LinkedHashMap<>();
 
         for (Element heading : headings) {
-            String coverageName = extractCoverageHeading(heading);
-            if (!isUsefulCoverageHeading(coverageName, heading)) {
+            String coverageName = cleanCoverageHeading(heading.text());
+            if (!isUsefulCoverageHeading(coverageName)) {
                 continue;
             }
 
@@ -450,43 +450,6 @@ public class KbInsuranceCatalogScraper implements InitializingBean {
     }
 
     private String findCoverageDescription(Element heading) {
-        /*
-         * 건강·실손·운전자 상품의 신규 안내 구조.
-         * 제목(.tit-area)과 설명(.cont)이 형제 요소이므로 제목의 부모만
-         * 검색하지 않고 상품 안내 section 전체에서 설명 목록을 찾는다.
-         */
-        Element productIntroSection = heading.closest(
-                ".prod-intro-wrap .section"
-        );
-        if (productIntroSection != null) {
-            String description = joinDescriptionItems(
-                    productIntroSection.select(
-                            ".cont > .chk-list > li"
-                    )
-            );
-            if (!description.isBlank()) {
-                return description;
-            }
-        }
-
-        /*
-         * KB자동차보험(CG301010012)은 상세 섹션 대신 일반/다이렉트 상품을
-         * 각각 carBox로 안내한다. carBox의 제목과 추천 문구를 한 건의
-         * 상품 주요 안내로 저장한다.
-         */
-        Element carBox = heading.closest(".kbCar .carBox");
-        if (carBox != null) {
-            String description = joinDescriptionItems(
-                    carBox.select(
-                            ".carBoxText .bulBox > li"
-                    )
-            );
-            if (!description.isBlank()) {
-                return description;
-            }
-        }
-
-        // 기존 상품 페이지 구조를 계속 지원한다.
         Element container = heading.parent();
         if (container == null) {
             return "";
@@ -499,40 +462,6 @@ public class KbInsuranceCatalogScraper implements InitializingBean {
             return "";
         }
         return cleanProductText(candidate.text(), "");
-    }
-
-    private String joinDescriptionItems(Elements items) {
-        StringBuilder description = new StringBuilder();
-
-        for (Element item : items) {
-            /*
-             * 체크 표시가 붙은 1차 안내 문장만 저장한다.
-             * li 내부의 txt-list/small 목록은 지급 조건·제외 조건 같은
-             * 상세 주의사항이므로 복제본에서 제거한 뒤 본문을 읽는다.
-             */
-            Element primaryItem = item.clone();
-            primaryItem.select("ul, ol").remove();
-            String text = cleanProductText(primaryItem.text(), "");
-            if (text.isBlank()) {
-                continue;
-            }
-            if (description.length() > 0) {
-                description.append(" ");
-            }
-            description.append(text);
-        }
-        return description.toString();
-    }
-
-    private String extractCoverageHeading(Element heading) {
-        /*
-         * 큰 제목 안에 들어 있는 특약 가입 조건용 txt-list는 제외한다.
-         * em/strong 등 제목 강조 태그는 유지하므로 화면의 큰 제목 전체는
-         * 그대로 수집된다.
-         */
-        Element primaryHeading = heading.clone();
-        primaryHeading.select("ul, ol").remove();
-        return cleanCoverageHeading(primaryHeading.text());
     }
 
     private CrawledInsuranceCoverageDTO createFallbackCoverage(String insuranceName) {
@@ -548,6 +477,28 @@ public class KbInsuranceCatalogScraper implements InitializingBean {
     }
 
     private String downloadProductImage(Document document, String sourceCode) {
+        /*
+         * 풍수해·지진재해보험 페이지는 대표 집 그림을 CSS background로
+         * 제공하고, 가입문의 전화기 아이콘을 일반 img 태그로 먼저 노출한다.
+         * 공통 img 우선 탐색을 적용하면 전화기 아이콘이 대표 이미지로
+         * 저장되므로 이 상품만 대표 visual의 CSS 배경을 먼저 확인한다.
+         */
+        if (FLOOD_EARTHQUAKE_PRODUCT_CODE.equals(sourceCode)) {
+            String backgroundImageUrl = resolveBackgroundImageUrl(document);
+            if (isAllowedInsuranceImage(backgroundImageUrl)) {
+                String saved = downloadAndSaveImage(
+                        backgroundImageUrl,
+                        sourceCode
+                );
+                if (saved != null) {
+                    return saved;
+                }
+            }
+
+            /* 대표 배경 수집에 실패해도 전화기/본문 아이콘으로 대체하지 않는다. */
+            return null;
+        }
+
         Elements images = document.select(
                 ".prdt_inform_visual img, .product_visual img, "
                         + "img[src*=/images/ins_prdt/]"
@@ -750,7 +701,13 @@ public class KbInsuranceCatalogScraper implements InitializingBean {
             String fileName = sanitizeFileName(sourceCode) + extension;
             File target = new File(directory, fileName);
 
-            if (target.isFile() && target.length() > 1_000) {
+            /*
+             * 과거 실행에서 전화기 아이콘이 같은 상품 코드 파일명으로
+             * 저장됐을 수 있으므로 해당 상품은 올바른 배경 이미지로 덮어쓴다.
+             */
+            if (!FLOOD_EARTHQUAKE_PRODUCT_CODE.equals(sourceCode)
+                    && target.isFile()
+                    && target.length() > 1_000) {
                 return fileName;
             }
 
@@ -1018,24 +975,10 @@ public class KbInsuranceCatalogScraper implements InitializingBean {
                 .trim();
     }
 
-    private boolean isUsefulCoverageHeading(
-            String value,
-            Element heading
-    ) {
+    private boolean isUsefulCoverageHeading(String value) {
         if (value == null || value.length() < 6 || value.length() > 200) {
             return false;
         }
-
-        /*
-         * 상품 소개 전용 section/carBox 안에서 찾은 제목은 이미 범위가
-         * 제한되어 있으므로 "보험료"가 포함돼도 유효한 주요 안내로 본다.
-         * 예: "건강할수록 저렴한 보험료", "다음 보험료는 더 저렴하게".
-         */
-        if (heading.closest(".prod-intro-wrap .section") != null
-                || heading.closest(".kbCar .carBox") != null) {
-            return true;
-        }
-
         return !value.contains("보험료")
                 && !value.contains("유의사항")
                 && !value.contains("가입예시")
