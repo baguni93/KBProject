@@ -25,8 +25,8 @@
           {{ getMerchantTitle }}
         </h3>
 
-        <div class="amount-display-row text-28-bold" :class="getAmountClass">
-          {{ getAmountPrefix }}{{ formatCurrency(transaction.amount) }}원
+        <div class="amount-display-row text-28-bold">
+          {{ formatCurrency(transaction.amount) }}원
         </div>
 
         <div class="dashed-divider"></div>
@@ -647,14 +647,7 @@ onMounted(loadReceiptData);
 
 .amount-display-row {
   margin-bottom: 16px;
-}
-
-.amount-minus {
   color: #111111;
-}
-
-.amount-plus {
-  color: #10b981;
 }
 
 .dashed-divider {
