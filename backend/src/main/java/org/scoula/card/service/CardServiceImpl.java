@@ -67,33 +67,17 @@ public class CardServiceImpl implements CardService {
     @Transactional
     public boolean disconnectCard(Long userId, Long linkedCardId) {
         LinkedCardVO card = cardMapper.findCardById(userId, linkedCardId);
-        if (card == null) {
-            throw new IllegalArgumentException("연결된 카드를 찾을 수 없습니다.");
-        }
-
-        int linkedCardCount = cardMapper.countLinkedCards(userId);
-        if (linkedCardCount <= 1) {
-            throw new IllegalArgumentException("마지막 카드는 연결 해제할 수 없습니다.");
-        }
+        if (card == null) throw new IllegalArgumentException("연결된 카드를 찾을 수 없습니다.");
 
         LinkedCardVO nextRepresentCard = null;
-        if ("Y".equals(card.getRepresentYn())) {
-            nextRepresentCard = cardMapper.findAnotherLinkedCard(userId, linkedCardId);
-            if (nextRepresentCard == null) {
-                throw new IllegalStateException("대표카드로 설정할 다른 카드를 찾을 수 없습니다.");
-            }
-        }
+        if ("Y".equals(card.getRepresentYn())) nextRepresentCard = cardMapper.findAnotherLinkedCard(userId, linkedCardId);
 
         int result = cardMapper.deleteLinkedCard(userId, linkedCardId);
-        if (result != 1) {
-            throw new IllegalStateException("카드 연결 해제에 실패했습니다.");
-        }
+        if (result != 1) throw new IllegalStateException("카드 연결 해제에 실패했습니다.");
 
         if (nextRepresentCard != null) {
             int representResult = cardMapper.setRepresentCard(userId, nextRepresentCard.getLinkedCardId());
-            if (representResult != 1) {
-                throw new IllegalStateException("대표카드 재설정에 실패했습니다.");
-            }
+            if (representResult != 1) throw new IllegalStateException("대표카드 재설정에 실패했습니다.");
         }
 
         log.info("카드 연결 해제 완료: userId={}, linkedCardId={}", userId, linkedCardId);

@@ -101,7 +101,6 @@
               </div>
 
               <button
-                  v-if="cardStore.cards.length > 1"
                   class="menu-button"
                   type="button"
                   aria-label="카드 관리 메뉴"
@@ -111,7 +110,7 @@
               </button>
 
               <div
-                  v-if="cardStore.cards.length > 1 && openedCardId === card.linkedCardId"
+                  v-if="openedCardId === card.linkedCardId"
                   class="card-menu"
                   @click.stop
               >
@@ -305,8 +304,6 @@ const changePrimary = async (card) => {
 
 // 카드 연결 해제 모달 열기
 const openDisconnectModal = (card) => {
-  if (cardStore.cards.length <= 1) return;
-
   openedCardId.value = null;
   disconnectTarget.value = card;
 };
@@ -320,7 +317,7 @@ const closeDisconnectModal = () => {
 
 // 카드 연결 해제
 const removeCard = async () => {
-  if (!disconnectTarget.value || cardStore.cards.length <= 1) return;
+  if (!disconnectTarget.value) return;
 
   try {
     disconnecting.value = true;
