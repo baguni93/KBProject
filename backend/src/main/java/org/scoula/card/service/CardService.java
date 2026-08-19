@@ -32,4 +32,9 @@ public interface CardService {
      * - 16자리 카드번호, CVV, 유효기간 자동 생성
      */
     CardVO createCardMasterCustom(CardCustomCreateDTO dto);
+
+    /**
+     * 53개 전체 카드 마스터 일괄 자동 등록 (Admin/개발용)
+     */
+    List<CardVO> createAllCardMasters();
 }

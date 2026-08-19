@@ -185,6 +185,8 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         }
 
         String cleanBin = binNumber.replaceAll("\\D", "");
+
+        // 1. catalogRepository 및 BIN_MAPPING_MAP 조회
         org.scoula.card.controller.CardController.CardInfo info = null;
         if (cleanBin.length() >= 8) {
             info = org.scoula.card.controller.CardController.BIN_MAPPING_MAP.get(cleanBin.substring(0, 8));
@@ -195,6 +197,17 @@ public class CardPaymentServiceImpl implements CardPaymentService {
 
         String cardName = (info != null) ? info.getCardName() : "KB국민 신용/체크카드";
         String imageName = (info != null) ? info.getImageUrl() : "09297_img.png";
+
+        // 2. 크롤링 카탈로그에서 더 최신의 정확한 이미지 파일명이 있으면 갱신
+        if (catalogRepository != null && cardName != null) {
+            String catalogImg = catalogRepository.getImageUrlByCardName(cardName);
+            if (catalogImg != null && !catalogImg.isBlank()) {
+                String fileOnly = catalogImg.substring(catalogImg.lastIndexOf('/') + 1);
+                if (!fileOnly.isBlank()) {
+                    imageName = fileOnly;
+                }
+            }
+        }
 
         CardBinResponseDTO responseDTO = CardBinResponseDTO.builder()
                 .binNumber(binNumber)

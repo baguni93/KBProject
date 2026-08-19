@@ -155,11 +155,11 @@
         </div>
       </template>
 
-      <!-- Step 2: 약관 동의 (2단계: 회원가입 AgreementPage.vue 디자인 100% 반영) -->
+      <!-- Step 2: 약관 동의 -->
       <template v-else-if="currentStep === 2">
         <section class="signup-header">
           <h1 class="text-28-bold">약관 동의</h1>
-          <p class="text-15">가입을 위해 약관에 동의해주세요.</p>
+          <p class="text-15">카드 등록을 위해 약관에 동의해주세요.</p>
         </section>
 
         <section class="agreement-section page-content">
@@ -350,12 +350,48 @@ const proceedToAgreement = () => {
   }
 };
 
-// 카드 약관 목록
+// 카드 약관 목록 (CHECK_CARD 전용 약관 5종)
 const cardAgreements = ref([
-  { agreementId: 1, agreementName: '서비스 이용약관', agreementContent: '', requiredYn: 'Y', agreed: false },
-  { agreementId: 2, agreementName: '개인정보 수집 및 이용 동의', agreementContent: '', requiredYn: 'Y', agreed: false },
-  { agreementId: 3, agreementName: '전자금융거래 이용약관', agreementContent: '', requiredYn: 'Y', agreed: false },
-  { agreementId: 4, agreementName: '마케팅 정보 수신 동의', agreementContent: '', requiredYn: 'N', agreed: false },
+  {
+    agreementId: 7,
+    agreementType: 'CHECK_CARD',
+    agreementName: '개인정보 수집·이용 동의',
+    agreementContent: '1. 수집·이용 목적: 체크카드 발급 적격 심사, 회원 가입 및 회원 관리, 본인 식별, 실물 카드 배송, 고객 상담 및 민원 처리, 부정이용 방지\n\n2. 수집 항목: [필수] 성명, 생년월일, 휴대전화번호, 이메일, 주소, 직장 정보\n\n3. 보유 및 이용 기간: 회원 탈퇴 및 카드 유효기간 만료 후 5년까지 보유',
+    requiredYn: 'Y',
+    agreed: false,
+  },
+  {
+    agreementId: 8,
+    agreementType: 'CHECK_CARD',
+    agreementName: '고유식별정보 처리 동의',
+    agreementContent: '1. 수집·이용 목적: 여신전문금융업법 및 관련 법령에 따른 본인 확인, 실명 확인 및 체크카드 발급 심사\n\n2. 수집 항목: [주민등록번호/외국인등록번호/여권번호] 등 고유식별정보\n\n3. 보유 및 이용 기간: 동의일로부터 회원 탈퇴 및 카드 발급 계약 종료 후 관계 법령이 정하는 기간까지',
+    requiredYn: 'Y',
+    agreed: false,
+  },
+  {
+    agreementId: 9,
+    agreementType: 'CHECK_CARD',
+    agreementName: '개인정보 제3자 제공 동의',
+    agreementContent: '1. 제공받는 자: 주식회사 OO택배, 코리아결제네트워크(VAN사), 신용카드사, 제휴 브랜드사(VISA/Mastercard 등)\n\n2. 제공받는 자의 이용 목적: 체크카드 실물 배송, 결제 승인 및 매입 처리, 제휴 서비스 제공\n\n3. 제공하는 항목: 성명, 휴대전화번호, 배송지 주소, 카드 승인 정보\n\n4. 보유 및 이용 기간: 개인정보 이용 목적 달성 시까지',
+    requiredYn: 'Y',
+    agreed: false,
+  },
+  {
+    agreementId: 10,
+    agreementType: 'CHECK_CARD',
+    agreementName: '직불/체크카드 회원 표준약관',
+    agreementContent: '제1조(목적) 이 약관은 직불/체크카드 회원이 카드를 이용함에 있어 회사와 회원 사이의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.\n\n제2조(이용 한도 및 이용 시간) 1. 체크카드는 회원의 지정 계좌 잔액 범위 내에서 이용할 수 있습니다.\n\n제3조(분실·도난 신고 및 책임) 회원이 카드의 분실 또는 도난 등의 사유로 회사에 신고한 경우, 회사는 신고 접수 시점 이후 발생한 부정사용 금액에 대하여 책임을 부담합니다.',
+    requiredYn: 'Y',
+    agreed: false,
+  },
+  {
+    agreementId: 11,
+    agreementType: 'CHECK_CARD',
+    agreementName: '출금계좌 이용약관 (금융거래 기본약관)',
+    agreementContent: '제1조(목적) 본 약관은 체크카드 이용 시 결제 대금을 회원의 지정 계좌에서 실시간으로 인출(출금)하는 자동이체 거래에 관하여 정함을 목적으로 합니다.\n\n제2조(출금 처리) 체크카드 사용 승인이 이루어지는 즉시 회원의 지정 계좌에서 해당 결제 금액이 출금되며, 계좌 잔액 부족 시 거래가 거절될 수 있습니다.\n\n제3조(계좌 변경 및 해지) 지정 계좌의 변경 또는 해지는 회사의 앱 또는 고객센터를 통해 처리할 수 있습니다.',
+    requiredYn: 'Y',
+    agreed: false,
+  },
 ]);
 
 const loadAgreements = async () => {
@@ -363,16 +399,18 @@ const loadAgreements = async () => {
     if (agreementApi && agreementApi.getAgreements) {
       const list = await agreementApi.getAgreements();
       if (list && Array.isArray(list) && list.length > 0) {
-        const cardList = list.filter((a) => (a.agreementType || '').startsWith('CARD_'));
-        const targetList = cardList.length > 0 ? cardList : list;
-
-        cardAgreements.value = targetList.map((a) => ({
-          agreementId: a.agreementId || a.id,
-          agreementName: a.agreementName || a.title || '약관',
-          agreementContent: a.agreementContent || a.content || '',
-          requiredYn: a.requiredYn || (a.required ? 'Y' : 'N'),
-          agreed: false,
-        }));
+        // 서버에서 CHECK_CARD 및 CARD_ 관련 약관이 내려올 때만 덮어쓰기
+        const cardList = list.filter((a) => (a.agreementType || '') === 'CHECK_CARD' || (a.agreementType || '').startsWith('CARD_'));
+        if (cardList.length > 0) {
+          cardAgreements.value = cardList.map((a) => ({
+            agreementId: a.agreementId || a.id,
+            agreementType: a.agreementType || 'CHECK_CARD',
+            agreementName: a.agreementName || a.title || '약관',
+            agreementContent: a.agreementContent || a.content || '',
+            requiredYn: a.requiredYn || (a.required ? 'Y' : 'N'),
+            agreed: false,
+          }));
+        }
       }
     }
   } catch (err) {
@@ -513,6 +551,10 @@ const goBack = () => {
 
 .card-add-page {
   background: var(--color-bg-page);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  box-sizing: border-box;
 }
 
 .signup-header h1 {
@@ -527,6 +569,7 @@ const goBack = () => {
 }
 
 .agreement-section {
+  flex: 1;
   margin-top: 28px;
   overflow-y: auto;
   box-sizing: border-box;
