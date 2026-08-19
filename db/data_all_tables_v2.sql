@@ -1837,7 +1837,7 @@ CREATE TABLE card_transaction_detail_tbl
             REFERENCES financial_transaction_tbl (transaction_id),
 
     CONSTRAINT chk_card_tx_detail_status
-        CHECK (status IN ('PENDING', 'SUCCESS', 'FAIL', 'CANCEL'))
+        CHECK (status IN ('PENDING', 'SUCCESS', 'FAILED'))
 ) COMMENT = '카드 결제 거래 상세';
 
 -- 56. 계좌인증 테이블
