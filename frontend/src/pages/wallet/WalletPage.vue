@@ -358,17 +358,58 @@ const checkPaymentInProgressAndWarn = () => {
   return false;
 };
 
+const walletPayPendingTxId = ref(null);
+
+const startWalletPaySession = async () => {
+  stopWalletPaySession();
+  try {
+    const res = await requestCardPayment(1);
+    if (res && res.cardTransactionId) {
+      walletPayPendingTxId.value = res.cardTransactionId;
+    }
+  } catch (e) {
+    console.error("지갑 QR/바코드 결제 대기 세션 생성 실패:", e);
+  }
+};
+
+const stopWalletPaySession = async () => {
+  try {
+    const uId = authStore.userId || 1;
+    walletApi.expirePaymentToken(uId).catch(() => {});
+  } catch (e) {}
+
+  if (walletPayPendingTxId.value) {
+    const txId = walletPayPendingTxId.value;
+    walletPayPendingTxId.value = null;
+    try {
+      await cancelCardPayment(txId);
+    } catch (e) {
+      console.warn("지갑 결제 대기 세션 취소 실패:", e);
+    }
+  }
+};
+
 const toggleStartMode = () => {
   if (checkPaymentInProgressAndWarn()) return;
   isWalletModeActive.value = !isWalletModeActive.value;
   const newMode = isWalletModeActive.value ? "WALLET" : "CARD";
   localStorage.setItem("user_default_pay_mode", newMode);
+  if (isWalletModeActive.value) {
+    startWalletPaySession();
+  } else {
+    stopWalletPaySession();
+  }
 };
 
 const switchWalletMode = (mode) => {
   if (checkPaymentInProgressAndWarn()) return;
   isWalletModeActive.value = mode;
   localStorage.setItem("user_default_pay_mode", mode ? "WALLET" : "CARD");
+  if (mode) {
+    startWalletPaySession();
+  } else {
+    stopWalletPaySession();
+  }
 };
 
 const registeredCards = ref([]);
@@ -962,15 +1003,19 @@ watch(
   }
 );
 
-onMounted(() => {
+onMounted(async () => {
   checkViewModeFromQuery();
-  loadData();
+  await loadData();
+  if (isWalletModeActive.value && currentView.value === 'MAIN') {
+    startWalletPaySession();
+  }
   window.addEventListener('notification-received', handleRealtimeNotification);
   window.addEventListener('TRIGGER_LONG_PRESS_PAYMENT', handleLongPressPaymentEvent);
 });
 
 onUnmounted(() => {
   stopNfcPayment();
+  stopWalletPaySession();
   window.removeEventListener('notification-received', handleRealtimeNotification);
   window.removeEventListener('TRIGGER_LONG_PRESS_PAYMENT', handleLongPressPaymentEvent);
 });

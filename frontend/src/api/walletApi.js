@@ -21,6 +21,12 @@ export default {
     return data;
   },
 
+  // wallet-003: 1회용 결제 토큰 즉시 만료 처리
+  async expirePaymentToken(userId = 1) {
+    const { data } = await api.post(`${BASE_URL}/me/payment-token/expire?userId=${userId}`);
+    return data;
+  },
+
   // charge-001: 지갑 머니 수동 충전 신청
   async chargeWallet(chargeData) {
     const { data } = await api.post(`${BASE_URL}/charges`, chargeData);

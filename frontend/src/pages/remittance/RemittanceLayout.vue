@@ -57,6 +57,7 @@ import PageHeader from "@/components/common/PageHeader.vue";
 import CommonTabBar from "@/components/common/CommonTabBar.vue";
 import RemitConfirmModal from "@/components/remittance/RemitConfirmModal.vue";
 import RemitPasswordModal from "@/components/remittance/RemitPasswordModal.vue";
+import walletApi from "@/api/walletApi";
 
 const route = useRoute();
 const router = useRouter();
@@ -149,15 +150,29 @@ const enterPinCode = async (n) => {
   if (remittanceStore.inputPinCode.length < 6) {
     remittanceStore.inputPinCode += String(n);
     if (remittanceStore.inputPinCode.length === 6) {
-      remittanceStore.showPasswordModal = false;
-      await remittanceStore.executeRemittance();
-      // 결과 페이지로 라우팅
-      if (remittanceStore.remitType === 'ACCOUNT') {
-        router.push('/remittance/account/result');
-      } else if (remittanceStore.remitType === 'FRIEND') {
-        router.push('/remittance/friend/result');
-      } else if (remittanceStore.remitType === 'DUTCH') {
-        router.push('/remittance/dutch/result');
+      try {
+        const userId = remittanceStore.authStore?.userId || 1;
+        const res = await walletApi.verifyPin(userId, remittanceStore.inputPinCode);
+        if (res && res.verified) {
+          remittanceStore.showPasswordModal = false;
+          await remittanceStore.executeRemittance();
+          if (remittanceStore.remitSuccess) {
+            if (remittanceStore.remitType === 'ACCOUNT') {
+              router.push('/remittance/account/result');
+            } else if (remittanceStore.remitType === 'FRIEND') {
+              router.push('/remittance/friend/result');
+            } else if (remittanceStore.remitType === 'DUTCH') {
+              router.push('/remittance/dutch/result');
+            }
+          }
+        } else {
+          alert("비밀번호가 일치하지 않습니다. 다시 입력해 주세요.");
+          remittanceStore.inputPinCode = "";
+        }
+      } catch (pinErr) {
+        console.error("PIN 인증 실패:", pinErr);
+        alert("비밀번호가 일치하지 않습니다. 다시 입력해 주세요.");
+        remittanceStore.inputPinCode = "";
       }
     }
   }
