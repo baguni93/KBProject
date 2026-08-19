@@ -156,22 +156,29 @@ public class SettlementServiceImpl implements SettlementService{
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND_MEMBER));
 
-//        WalletDTO walletDTO =
-//                walletService.getWalletByUserId(remittanceMember.getUserId());
-//
-//        remittanceService.sendMoney(
-//                RemittanceDTO.builder()
-//                        .walletId(walletDTO.getWalletId())
-//                        .receiverId(settlementVO.getRequesterId())
-//                        .amount(remittanceMember.getAmount())
-//                        .memo("정산 지불")
-//                        .receiverType("WALLET")
-//                        .isSettlement(true)
-//                        .settlementId(settlementVO.getSettlementId())
-//                        .build()
-//        );
+        // 1. 송금자 지갑 잔액 차감 & 수신자(정산 요청자) 지갑 입금 및 거래내역 기록
+        try {
+            WalletDTO senderWallet = walletService.getWalletByUserId(userId);
+            Integer actualWalletId = (senderWallet != null) ? senderWallet.getWalletId() : userId;
 
-        //송금 후 정산 완료 처리
+            remittanceService.sendMoney(
+                    RemittanceDTO.builder()
+                            .userId(userId)
+                            .walletId(actualWalletId)
+                            .receiverId(settlementVO.getRequesterId())
+                            .amount(remittanceMember.getAmount())
+                            .memo(settlementVO.getTitle() != null ? settlementVO.getTitle() + " 정산" : "더치페이 정산")
+                            .content(settlementVO.getTitle() != null ? settlementVO.getTitle() + " 정산" : "더치페이 정산")
+                            .receiverType("WALLET")
+                            .isSettlement(true)
+                            .settlementId(settlementVO.getSettlementId())
+                            .build()
+            );
+        } catch (Exception payErr) {
+            log.warn("정산 지불 송금 처리 예외: {}", payErr.getMessage());
+        }
+
+        // 2. 송금 후 정산 참여자 상태 완료 처리
         settlementMapper.completeMemberSettlement(settlementId , userId);
 
         //모든 참여자가 COMPLETE인지 확인

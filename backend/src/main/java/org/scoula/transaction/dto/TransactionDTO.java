@@ -22,10 +22,12 @@ public class TransactionDTO {
     private String transactionStatus;
     private Integer amount;
     private Integer spendingCategoryId;
+    private Integer settlementId;
     private Date createdAt;
 
     // 조인 정보 및 영수증 메모
     private String merchantName;
     private String memo;
     private String receiverName;
+    private String senderName;
 }

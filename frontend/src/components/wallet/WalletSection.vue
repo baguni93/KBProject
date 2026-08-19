@@ -127,8 +127,8 @@
           @click="openReceipt(item.transactionId)"
         >
           <div class="tx-item-left">
-            <div :class="['tx-icon-circle-md', getTypeIconBgClass(item.transactionType)]">
-              <i :class="getTypeIcon(item.transactionType)" :style="{ color: getTypeIconColor(item.transactionType) }"></i>
+            <div :class="['tx-icon-circle-md', getTypeIconBgClass(item)]">
+              <i :class="getTypeIcon(item)" :style="{ color: getTypeIconColor(item) }"></i>
             </div>
             <div class="tx-item-info">
               <span class="tx-item-title">{{ getItemTitleWithCategory(item) }}</span>
@@ -137,8 +137,8 @@
           </div>
 
           <div class="tx-item-right">
-            <span :class="['tx-item-amt', getAmountClass(item.transactionType)]">
-              {{ getAmountPrefix(item.transactionType) }}{{ formatCurrency(item.amount) }}
+            <span :class="['tx-item-amt', getAmountClass(item)]">
+              {{ getAmountPrefix(item) }}{{ formatCurrency(item.amount) }}
             </span>
           </div>
         </div>
@@ -256,7 +256,8 @@ const onCardImgError = () => {
 
 const loadPrimaryCard = async () => {
   try {
-    const targetUserId = props.userId || authStore.userId || 1;
+    const targetUserId = props.userId || Number(authStore.userId);
+    if (!targetUserId) return;
     let primaryCardObj = null;
 
     try {
@@ -347,19 +348,46 @@ const formatDate = (dateStr) => {
   return `${month}.${day} ${hours}:${minutes}`;
 };
 
+const isIncome = (item) => {
+  if (!item) return false;
+  const targetUid = props.userId || Number(authStore.userId);
+  const type = (item.transactionType || item.type || "").toUpperCase();
+  if (type.includes("CHARGE")) return true;
+  if ((type.includes("TRANSFER") || type.includes("REMIT")) && Number(item.receiveId) === Number(targetUid)) {
+    return true;
+  }
+  return false;
+};
+
+const isSettlement = (item) => {
+  if (!item) return false;
+  const type = (item.transactionType || item.type || "").toUpperCase();
+  return type.includes("SETTLEMENT") || (item.settlementId && Number(item.settlementId) > 0);
+};
+
 const getItemTitleWithCategory = (item) => {
   const tType = (item.transactionType || item.type || "").toUpperCase();
   let baseTitle = item.merchantName || item.merchant_name || item.receiverName || item.title || item.memo || "";
   
   if (tType === "CHARGE") {
-    return (baseTitle && baseTitle !== "충전") ? baseTitle : "연동계좌 충전";
+    return (baseTitle && baseTitle !== "충전") ? baseTitle : "전자지갑 충전";
   }
-  if (tType === "TRANSFER" || tType === "REMIT") {
+  if (tType === "TRANSFER" || tType === "REMIT" || isSettlement(item)) {
+    if (isSettlement(item)) {
+      if (isIncome(item)) {
+        return item.senderName ? `${item.senderName} (정산 받음)` : "더치페이 정산 받음";
+      }
+      const rec = item.receiverName || item.merchantName || "정산 요청자";
+      return `${rec} (정산 보냄)`;
+    }
+    if (isIncome(item)) {
+      return item.senderName ? `${item.senderName}에게 받음` : "송금 받음";
+    }
     if (baseTitle.startsWith("송금 (") && baseTitle.endsWith(")")) {
       baseTitle = baseTitle.substring(4, baseTitle.length - 1);
     }
-    if (!baseTitle || baseTitle === "송금 완료" || baseTitle === "송금") {
-      baseTitle = "수취인";
+    if (!baseTitle || baseTitle === "송금 완료" || baseTitle === "송금" || baseTitle === "수취인") {
+      baseTitle = (item.receiverName && item.receiverName !== "수취인") ? item.receiverName : (item.memo || "송금");
     }
     return baseTitle.endsWith("송금") ? baseTitle : `${baseTitle} 송금`;
   }
@@ -368,42 +396,51 @@ const getItemTitleWithCategory = (item) => {
 
 const getItemMethodSubtext = (item) => {
   const tType = (item.transactionType || item.type || "").toUpperCase();
-  if (tType === "CHARGE") return "KB국민은행";
-  if (tType === "TRANSFER" || tType === "REMIT") return "우리은행";
+  if (tType === "CHARGE") return item.bankName || "연동계좌";
+  if (isSettlement(item)) return "더치페이 정산";
+  if (tType === "TRANSFER" || tType === "REMIT") {
+    if (isIncome(item)) return "페이머니 입금";
+    return item.sourceType === "ACCOUNT" ? "연동계좌" : "페이머니";
+  }
   return "체크카드";
 };
 
-const getTypeIcon = (type) => {
+const getTypeIcon = (item) => {
+  if (isSettlement(item)) return "fa-solid fa-users";
+  if (isIncome(item)) return "fa-solid fa-wallet";
+  const type = typeof item === "object" ? item.transactionType : item;
   const tStr = (type || "").toUpperCase();
   if (tStr.includes("CHARGE")) return "fa-solid fa-wallet";
   if (tStr.includes("TRANSFER") || tStr.includes("REMIT")) return "fa-solid fa-paper-plane";
   return "fa-solid fa-mug-hot";
 };
 
-const getTypeIconBgClass = (type) => {
+const getTypeIconBgClass = (item) => {
+  if (isSettlement(item)) return "bg-purple";
+  if (isIncome(item)) return "bg-amber";
+  const type = typeof item === "object" ? item.transactionType : item;
   const tStr = (type || "").toUpperCase();
   if (tStr.includes("CHARGE")) return "bg-amber";
   if (tStr.includes("TRANSFER") || tStr.includes("REMIT")) return "bg-blue";
   return "bg-green";
 };
 
-const getTypeIconColor = (type) => {
+const getTypeIconColor = (item) => {
+  if (isSettlement(item)) return "#7c3aed";
+  if (isIncome(item)) return "#d97706";
+  const type = typeof item === "object" ? item.transactionType : item;
   const tStr = (type || "").toUpperCase();
   if (tStr.includes("CHARGE")) return "#d97706";
   if (tStr.includes("TRANSFER") || tStr.includes("REMIT")) return "#3182ce";
   return "#10b981";
 };
 
-const getAmountClass = (type) => {
-  const tStr = (type || "").toUpperCase();
-  if (tStr.includes("CHARGE")) return "+";
-  return "-";
+const getAmountClass = (item) => {
+  return isIncome(item) ? "+" : "-";
 };
 
-const getAmountPrefix = (type) => {
-  const tStr = (type || "").toUpperCase();
-  if (tStr.includes("CHARGE")) return "+";
-  return "-";
+const getAmountPrefix = (item) => {
+  return isIncome(item) ? "+" : "-";
 };
 
 const changeTab = (val) => {
@@ -414,7 +451,11 @@ const changeTab = (val) => {
 const fetchTransactions = async () => {
   loading.value = true;
   try {
-    const targetUserId = props.userId || authStore.userId || 1;
+    const targetUserId = props.userId || Number(authStore.userId);
+    if (!targetUserId) {
+      transactions.value = [];
+      return;
+    }
     const list = await transactionApi.getTransactions(targetUserId);
     if (list && Array.isArray(list)) {
       let filtered = list;
@@ -864,6 +905,10 @@ onMounted(async () => {
 
 .tx-icon-circle-md.bg-blue {
   background-color: #ebf8ff;
+}
+
+.tx-icon-circle-md.bg-purple {
+  background-color: #f5f3ff;
 }
 
 .tx-item-info {

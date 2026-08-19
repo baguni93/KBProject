@@ -33,7 +33,7 @@ const authStore = useAuthStore();
 const profileStore = useProfileStore();
 
 const myProfileName = computed(() => {
-  return profileStore.profile?.nickname || authStore.userName || "노랑지갑";
+  return remittanceStore.myProfileName || profileStore.profile?.nickname || authStore.userName || "내 프로필";
 });
 
 const submitRemittance = () => {

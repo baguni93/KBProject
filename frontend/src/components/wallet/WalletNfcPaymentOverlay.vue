@@ -19,14 +19,29 @@
         <div class="spay-giant-card-container">
           <div class="spay-giant-card">
             <img
-              v-if="cardImg"
+              v-if="cardImg && !imgLoadError"
               :src="cardImg"
               class="giant-card-bg"
               :class="{ 'rotate-landscape': isLandscape }"
               alt="card plate"
               @load="onCardImgLoad"
-              @error="(e) => (e.target.src = 'http://localhost:8080/upload/card/00236_img.png')"
+              @error="onCardImgError"
             />
+            <div v-else class="giant-card-fallback-content">
+              <div class="fallback-top-row">
+                <div class="fallback-chip-icon"></div>
+                <span class="fallback-badge-kb text-12-bold">
+                  <i class="fa-solid fa-shield-halved"></i> KB Pay
+                </span>
+              </div>
+              <div class="fallback-center-symbol">
+                <i class="fa-solid fa-credit-card"></i>
+              </div>
+              <div class="fallback-bottom-info">
+                <p class="fallback-card-name text-16-bold">{{ card?.cardName || card?.cardAlias || 'KB국민카드' }}</p>
+                <p class="fallback-card-num text-14-bold">{{ formatMaskedCardNum(card?.cardNum || card?.cardNumber) }}</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -45,9 +60,9 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
-defineProps({
+const props = defineProps({
   isNfcActive: {
     type: Boolean,
     default: false,
@@ -60,18 +75,44 @@ defineProps({
     type: String,
     default: null,
   },
+  card: {
+    type: Object,
+    default: () => ({}),
+  },
 });
 
 defineEmits(["cancel"]);
 
 const isLandscape = ref(false);
+const imgLoadError = ref(false);
+
+watch(
+  () => props.cardImg,
+  () => {
+    imgLoadError.value = false;
+    isLandscape.value = false;
+  }
+);
 
 const onCardImgLoad = (e) => {
   const img = e.target;
   if (img && img.naturalWidth && img.naturalHeight) {
-    // 가로가 더 긴 누워있는 이미지인 경우 90도 회전시켜 세로 카드로 직립
     isLandscape.value = img.naturalWidth > img.naturalHeight;
   }
+};
+
+const onCardImgError = () => {
+  imgLoadError.value = true;
+};
+
+const formatMaskedCardNum = (num) => {
+  if (!num) return "•••• •••• •••• ••••";
+  const clean = String(num).replace(/\D/g, "");
+  if (clean.length >= 4) {
+    const last4 = clean.slice(-4);
+    return `•••• •••• •••• ${last4}`;
+  }
+  return String(num);
 };
 </script>
 
@@ -242,6 +283,63 @@ const onCardImgLoad = (e) => {
   height: 100%;
   object-fit: fill;
   border-radius: 14px;
+}
+
+.giant-card-fallback-content {
+  width: 100%;
+  height: 100%;
+  padding: 24px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(145deg, #1e2024 0%, #121316 50%, #2a2820 100%);
+  color: #ffffff;
+  border-radius: 14px;
+}
+
+.fallback-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fallback-chip-icon {
+  width: 38px;
+  height: 28px;
+  background: linear-gradient(135deg, #e6b800, #ffd700);
+  border-radius: 5px;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.3);
+}
+
+.fallback-badge-kb {
+  color: #ffbc2e;
+}
+
+.fallback-center-symbol {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 40px;
+  color: rgba(255, 188, 46, 0.25);
+}
+
+.fallback-bottom-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fallback-card-name {
+  margin: 0;
+  color: #f8fafc;
+  word-break: keep-all;
+}
+
+.fallback-card-num {
+  margin: 0;
+  color: #94a3b8;
+  letter-spacing: 1.5px;
 }
 
 /* 가로형 누워있는 이미지는 90도 회전시켜 세로 카드 프레임에 1:1 완벽 밀착 */

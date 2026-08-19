@@ -34,10 +34,11 @@
 
 <script setup>
 import { ref, onBeforeUnmount } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import config from '@/config';
 
 const route = useRoute();
+const router = useRouter();
 
 const isActive = (url) => {
   // 홈은 정확히 일치
@@ -84,13 +85,14 @@ const startLongPress = () => {
     isLongPressing.value = false;
     longPressComplete.value = true;
 
-    console.log('결제 버튼 롱프레스 완료');
+    console.log('결제 버튼 롱프레스 완료 - 결제 화면 진입');
+    router.push({ path: '/wallet', query: { triggerPay: '1' } });
 
     // 완료 애니메이션 종료
     setTimeout(() => {
       longPressComplete.value = false;
     }, 500);
-  }, 3000);
+  }, 1200);
 };
 
 const endLongPress = () => {

@@ -21,6 +21,7 @@ import java.util.Map;
 public class RemittanceController {
 
     private final RemittanceService remittanceService;
+    private final org.scoula.remittance.mapper.RemittanceMapper remittanceMapper;
     private final JwtProcessor jwtProcessor;
 
     // 사용자 인증 토큰 처리
@@ -56,10 +57,21 @@ public class RemittanceController {
         String bankCode = body.get("bankCode");
         String accountNumber = body.get("accountNumber");
 
+        String ownerName = null;
+        try {
+            ownerName = remittanceMapper.getAccountOwnerName(bankCode, accountNumber);
+        } catch (Exception e) {
+            log.warn("계좌 예금주 조회 예외: {}", e.getMessage());
+        }
+
+        if (ownerName == null || ownerName.trim().isEmpty()) {
+            ownerName = "수취인";
+        }
+
         Map<String, Object> result = new HashMap<>();
         result.put("bankCode", bankCode);
         result.put("accountNumber", accountNumber);
-        result.put("ownerName", "이KB");
+        result.put("ownerName", ownerName);
         result.put("isValid", true);
 
         return ResponseEntity.ok(result);
@@ -69,10 +81,31 @@ public class RemittanceController {
     @PostMapping("/friends/verify")
     public ResponseEntity<Map<String, Object>> verifyFriendAccount(@RequestBody Map<String, Object> body) {
         Object receiverIdObj = body.get("receiverId");
+        Integer receiverId = null;
+        if (receiverIdObj instanceof Number) {
+            receiverId = ((Number) receiverIdObj).intValue();
+        } else if (receiverIdObj instanceof String) {
+            try {
+                receiverId = Integer.parseInt((String) receiverIdObj);
+            } catch (Exception ignored) {}
+        }
+
+        String receiverName = null;
+        if (receiverId != null) {
+            try {
+                receiverName = remittanceMapper.getUserNicknameOrName(receiverId);
+            } catch (Exception e) {
+                log.warn("수신자 닉네임 조회 예외: {}", e.getMessage());
+            }
+        }
+
+        if (receiverName == null || receiverName.trim().isEmpty()) {
+            receiverName = "친구";
+        }
 
         Map<String, Object> result = new HashMap<>();
-        result.put("receiverId", receiverIdObj);
-        result.put("receiverName", "김국민");
+        result.put("receiverId", receiverId);
+        result.put("receiverName", receiverName);
         result.put("isValid", true);
 
         return ResponseEntity.ok(result);

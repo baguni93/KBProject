@@ -58,8 +58,10 @@ export const useRemittanceStore = defineStore('remittance', () => {
     );
   });
 
+  const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+
   const getProfileImageUrl = (friend) => {
-    if (!friend) return "/api/feeds/profile/unknown.png";
+    if (!friend) return DEFAULT_AVATAR;
     if (friend.url) return friend.url;
     const imgName =
       friend.profileImageName ||
@@ -69,12 +71,12 @@ export const useRemittanceStore = defineStore('remittance', () => {
       friend.receiver?.profileImage ||
       friend.friend?.profileImageName ||
       friend.user?.profileImageName;
-    if (imgName) {
+    if (imgName && imgName !== 'character1.png') {
       if (imgName.startsWith("http") || imgName.startsWith("/")) return imgName;
       return `/api/feeds/profile/${imgName}`;
     }
     if (friend.avatarUrl && !friend.avatarUrl.includes("default_profile")) return friend.avatarUrl;
-    return "/api/feeds/profile/unknown.png";
+    return DEFAULT_AVATAR;
   };
 
   const myProfileImageUrl = computed(() => {
@@ -82,11 +84,24 @@ export const useRemittanceStore = defineStore('remittance', () => {
     if (pUrl) return pUrl;
 
     const pName = profileStore.profile?.imageName || profileStore.profile?.profileImageName || profileStore.profile?.image || authStore.user?.profileImageName || authStore.user?.profileImage || authStore.user?.profileImg;
-    if (pName) {
+    if (pName && pName !== 'character1.png') {
       if (pName.startsWith("http") || pName.startsWith("/")) return pName;
       return `/api/feeds/profile/${pName}`;
     }
-    return "/api/feeds/profile/character1.png";
+    return DEFAULT_AVATAR;
+  });
+
+  const myProfileName = computed(() => {
+    const authNick = authStore.user?.nickname || authStore.nickname;
+    if (authNick && authNick !== '김국민') return authNick;
+
+    const authName = authStore.userName || authStore.user?.userName;
+    if (authName && authName !== '김국민') return authName;
+
+    const profNick = profileStore.profile?.nickname;
+    if (profNick && profNick !== '김국민') return profNick;
+
+    return authNick || authName || profNick || "내 프로필";
   });
 
   const getFriendObj = (fId) => {
@@ -186,7 +201,7 @@ export const useRemittanceStore = defineStore('remittance', () => {
   const getBankName = (code) => {
     const found = bankOptions.find((b) => b.code === code);
     if (found) return found.name;
-    if (!code) return "은행 미선택";
+    if (!code) return "";
     const str = String(code);
     if (str.includes("신한")) return "신한";
     if (str.includes("국민") || str.includes("KB")) return "KB국민";
@@ -221,10 +236,10 @@ export const useRemittanceStore = defineStore('remittance', () => {
 
   const formatCurrency = (val) => new Intl.NumberFormat("ko-KR").format(val || 0);
 
-  // 2. 초기 데이터 로드
   const loadInitData = async () => {
     try {
-      const userId = authStore.userId || 1;
+      const userId = Number(authStore.userId);
+      if (!userId) return;
 
       // 내 프로필 로드
       try {
@@ -378,7 +393,11 @@ export const useRemittanceStore = defineStore('remittance', () => {
   // 거래 내역 로드 (더치페이용)
   const loadUserTransactions = async () => {
     try {
-      const userId = authStore.userId || 1;
+      const userId = Number(authStore.userId);
+      if (!userId) {
+        userTxList.value = [];
+        return;
+      }
       if (transactionApi && transactionApi.getTransactions) {
         const data = await transactionApi.getTransactions(userId);
         if (data && Array.isArray(data)) {
@@ -434,7 +453,10 @@ export const useRemittanceStore = defineStore('remittance', () => {
   const executeRemittance = async () => {
     isSubmitting.value = true;
     try {
-      const userId = authStore.userId || 1;
+      const userId = Number(authStore.userId);
+      if (!userId) {
+        throw new Error('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
+      }
 
       // ── DUTCH(정산) 분기 ──────────────────────────
       if (remitType.value === 'DUTCH') {
@@ -494,7 +516,7 @@ export const useRemittanceStore = defineStore('remittance', () => {
 
       // ── ACCOUNT / FRIEND / DUTCH_PAY 송금 분기 ───────────────
       const isAccount = remitType.value === 'ACCOUNT';
-      const friendNick = selectedFriendObj.value?.nickname || selectedFriendObj.value?.name || selectedFriendObj.value?.username || '노랑지갑';
+      const friendNick = selectedFriendObj.value?.nickname || selectedFriendObj.value?.name || selectedFriendObj.value?.username || '친구';
       const receiverNameVal = isAccount
         ? (accountForm.receiverName || '수취인')
         : (accountForm.receiverName || friendNick);
@@ -502,6 +524,7 @@ export const useRemittanceStore = defineStore('remittance', () => {
       const targetSettlementId = settlementId.value;
 
       const payload = {
+        userId: userId,
         walletId: userId,
         receiverId: isAccount ? null : selectedFriendId.value,
         receiverName: receiverNameVal,
@@ -577,7 +600,41 @@ export const useRemittanceStore = defineStore('remittance', () => {
   };
 
   const recentFriends = computed(() => {
-    return friendList.value.slice(0, 2);
+    if (!userTxList.value || userTxList.value.length === 0 || !friendList.value || friendList.value.length === 0) {
+      return [];
+    }
+
+    const transferTxs = userTxList.value.filter(
+      (tx) => (tx.transactionType === "TRANSFER" || tx.type === "TRANSFER") && (tx.receiverId || tx.receiveId)
+    );
+
+    if (transferTxs.length === 0) {
+      return [];
+    }
+
+    const seenIds = new Set();
+    const result = [];
+
+    for (const tx of transferTxs) {
+      const recId = tx.receiverId || tx.receiveId;
+      if (recId && !seenIds.has(recId)) {
+        seenIds.add(recId);
+        const f = friendList.value.find(
+          (item) =>
+            item.id === recId ||
+            item.friendId === recId ||
+            item.friendUserId === recId ||
+            item.userId === recId ||
+            item.receiver?.id === recId
+        );
+        if (f) {
+          result.push(f);
+        }
+      }
+      if (result.length >= 5) break;
+    }
+
+    return result;
   });
 
   return {
@@ -590,6 +647,7 @@ export const useRemittanceStore = defineStore('remittance', () => {
     filteredFriends,
     getProfileImageUrl,
     myProfileImageUrl,
+    myProfileName,
     getFriendObj,
     selectedDutchFriends,
     dutchRoomTitle,

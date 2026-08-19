@@ -27,7 +27,7 @@
           <div class="item-title-text text-16-bold">{{ dutchRoomTitle || '더치페이 정산' }}</div>
           <div class="item-amount-text text-20-bold">{{ formatCurrency(remitAmount || 0) }}원</div>
           <div class="item-members-text text-13">
-            {{ myProfileName || '노랑지갑' }} 외 {{ selectedDutchFriends ? selectedDutchFriends.length : 0 }}명
+            {{ myProfileName || '내 프로필' }} 외 {{ selectedDutchFriends ? selectedDutchFriends.length : 0 }}명
           </div>
         </div>
       </div>
@@ -153,7 +153,7 @@ const props = defineProps({
   },
   myProfileName: {
     type: String,
-    default: "노랑지갑",
+    default: "내 프로필",
   },
   getFriendName: {
     type: Function,

@@ -9,7 +9,7 @@
         <div class="venmo-header-text">
           <h3 class="text-16-bold m-0 venmo-header-title">
             <template v-if="remitType === 'FRIEND' || remitType === 'DUTCH_PAY'">
-              {{ selectedFriendObj?.name || selectedFriendObj?.nickname || accountForm.receiverName || "노랑지갑" }}님에게
+              {{ selectedFriendObj?.name || selectedFriendObj?.nickname || accountForm.receiverName || "친구" }}님에게
             </template>
             <template v-else>
               {{ accountForm.receiverName || "수취인" }}님에게

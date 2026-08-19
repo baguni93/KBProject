@@ -162,7 +162,8 @@
     <WalletNfcPaymentOverlay
       :is-nfc-active="isNfcActive"
       :formatted-timer="formattedNfcTimer"
-      :card-img="getCardImg(registeredCards[currentCardIdx])"
+      :card-img="getCardImg(registeredCards[currentCardIdx] || registeredCards[0])"
+      :card="registeredCards[currentCardIdx] || registeredCards[0] || {}"
       @cancel="stopNfcPayment"
     />
 
@@ -260,7 +261,11 @@ const cardPaymentApi = { approveWalletTransaction: approveCardPayment };
 // 1. 바코드 결제 승인
 const approveBarcodePayment = async () => {
   try {
-    const uId = Number(authStore.userId || 1);
+    const uId = Number(authStore.userId);
+    if (!uId) {
+      modalStore.showAlert('로그인이 필요합니다.', '결제 안내');
+      return;
+    }
     const payAmount = 15000;
     const res = await cardPaymentApi.approveWalletTransaction({
       userId: uId,
@@ -283,7 +288,6 @@ const approveBarcodePayment = async () => {
     } else {
       walletBalance.value = Math.max(0, walletBalance.value - payAmount);
     }
-    localStorage.setItem(`user_wallet_balance_${uId}`, walletBalance.value);
 
     closeFullScreen();
     triggerMobilePush(
@@ -295,9 +299,9 @@ const approveBarcodePayment = async () => {
     console.error("바코드 결제 오류:", err);
     closeFullScreen();
     triggerMobilePush(
-      "바코드 결제 승인 완료",
-      "15,000원이 바코드 현장결제로 처리되었습니다.",
-      "fa-solid fa-barcode"
+      "결제 처리 실패",
+      err.response?.data?.message || err.message || "바코드 결제 처리 중 오류가 발생했습니다.",
+      "fa-solid fa-triangle-exclamation"
     );
   }
 };
@@ -305,7 +309,11 @@ const approveBarcodePayment = async () => {
 // 2. QR 결제 승인
 const approveQrPayment = async () => {
   try {
-    const uId = Number(authStore.userId || 1);
+    const uId = Number(authStore.userId);
+    if (!uId) {
+      modalStore.showAlert('로그인이 필요합니다.', '결제 안내');
+      return;
+    }
     const payAmount = 25000;
     const res = await cardPaymentApi.approveWalletTransaction({
       userId: uId,
@@ -328,7 +336,6 @@ const approveQrPayment = async () => {
     } else {
       walletBalance.value = Math.max(0, walletBalance.value - payAmount);
     }
-    localStorage.setItem(`user_wallet_balance_${uId}`, walletBalance.value);
 
     closeFullScreen();
     triggerMobilePush(
@@ -340,9 +347,9 @@ const approveQrPayment = async () => {
     console.error("QR 결제 오류:", err);
     closeFullScreen();
     triggerMobilePush(
-      "QR 결제 승인 완료",
-      "25,000원이 QR 현장결제로 처리되었습니다.",
-      "fa-solid fa-qrcode"
+      "결제 처리 실패",
+      err.response?.data?.message || err.message || "QR 결제 처리 중 오류가 발생했습니다.",
+      "fa-solid fa-triangle-exclamation"
     );
   }
 };
@@ -499,6 +506,10 @@ const selectDotCard = (idx) => {
 
 const onCardClick = (index) => {
   if (checkPaymentInProgressAndWarn()) return;
+  if (!registeredCards.value || registeredCards.value.length === 0) {
+    router.push("/wallet/card/add");
+    return;
+  }
   if (currentCardIdx.value === index) {
     pinTarget.value = "CARD";
     openPinModal();
@@ -526,12 +537,41 @@ const currentPendingTxId = ref(null);
 
 const startNfcTimer = async () => {
   stopNfcPayment();
+
+  if (!registeredCards.value || registeredCards.value.length === 0) {
+    triggerMobilePush(
+      "결제 불가",
+      "등록된 카드가 없습니다. 카드를 먼저 등록해주세요.",
+      "fa-solid fa-credit-card"
+    );
+    router.push("/wallet/card/add");
+    return;
+  }
+
+  const selectedCard = registeredCards.value[currentCardIdx.value] || registeredCards.value[0];
+  if (!selectedCard) {
+    triggerMobilePush(
+      "결제 불가",
+      "결제할 카드가 지정되지 않았습니다.",
+      "fa-solid fa-credit-card"
+    );
+    return;
+  }
+
+  const linkedCardId = selectedCard.cardId || selectedCard.linkedCardId;
+  if (!linkedCardId) {
+    triggerMobilePush(
+      "결제 불가",
+      "카드 고유번호(ID)를 찾을 수 없습니다.",
+      "fa-solid fa-credit-card"
+    );
+    return;
+  }
+
   nfcTimerSeconds.value = 50;
   isNfcActive.value = true;
 
   try {
-    const selectedCard = registeredCards.value[currentCardIdx.value];
-    const linkedCardId = selectedCard?.cardId || selectedCard?.linkedCardId || 1;
     const res = await requestCardPayment(linkedCardId);
     if (res && res.cardTransactionId) {
       currentPendingTxId.value = res.cardTransactionId;
@@ -845,7 +885,11 @@ const executeWalletCharge = async () => {
   chargeLoading.value = true;
 
   try {
-    const uId = Number(authStore.userId || 1);
+    const uId = Number(authStore.userId);
+    if (!uId) {
+      modalStore.showAlert('로그인이 필요합니다.', '충전 안내');
+      return;
+    }
     const { data: chargeResult } = await api.post("/api/wallets/charges", {
       userId: uId,
       walletId: uId,
@@ -868,7 +912,6 @@ const executeWalletCharge = async () => {
       }
     }
 
-    localStorage.setItem(`user_wallet_balance_${uId}`, walletBalance.value);
     lastChargedAmount.value = amtToCharge;
     chargeSuccess.value = true;
   } catch (err) {
@@ -920,7 +963,8 @@ const formatCurrency = (val) => new Intl.NumberFormat("ko-KR").format(val || 0);
 
 const loadData = async () => {
   try {
-    const userId = authStore.userId || 1;
+    const userId = Number(authStore.userId);
+    if (!userId) return;
     const cardsData = await getCards(userId);
     if (cardsData && Array.isArray(cardsData)) {
       registeredCards.value = cardsData;
@@ -933,19 +977,14 @@ const loadData = async () => {
       isWalletModeActive.value = false;
     }
 
-    const savedBal = localStorage.getItem(`user_wallet_balance_${userId}`);
-    let currentBal = savedBal !== null ? Number(savedBal) : 0;
-
     try {
       const wInfo = await walletApi.getWalletByUserId(userId);
       if (wInfo) {
-        const dbBal = wInfo.balance ?? wInfo.amount ?? wInfo.pointMoney ?? 0;
-        currentBal = dbBal;
+        walletBalance.value = wInfo.balance ?? wInfo.amount ?? wInfo.pointMoney ?? 0;
       }
     } catch (wErr) {
       console.log("지갑 조회 예외:", wErr);
     }
-    walletBalance.value = currentBal;
 
     try {
       const { data: accList } = await api.get('/api/users/accounts');
@@ -978,37 +1017,42 @@ const loadData = async () => {
 };
 
 const handleRealtimeNotification = async (event) => {
-  const notif = event.detail;
-  let pushTitle = "지갑 결제 승인 완료";
-  let pushMsg = notif.message || "";
+  const notif = event?.detail || {};
+  const notifType = (notif.notificationType || notif.type || "").toUpperCase();
 
-  if (!pushMsg && notif.targetId && notif.notificationType === 'CARD_PAYMENT') {
-    try {
-      const { data: txInfo } = await api.get(`/api/cards/payments/transactions/${notif.targetId}`);
-      if (txInfo && txInfo.merchantName) {
-        pushMsg = `${txInfo.merchantName}에서 ${(txInfo.amount || 0).toLocaleString()}원 결제가 성공적으로 완료되었습니다.`;
+  // 사용자의 명확한 지침: 결제(CARD_PAYMENT, PAYMENT)를 제외하면 푸시 알림을 띄우지 않음
+  if (notifType.includes("CARD_PAYMENT") || notifType.includes("PAYMENT")) {
+    const pushTitle = "카드 결제 승인 완료";
+    const pushIcon = "fa-solid fa-credit-card";
+    let pushMsg = notif.message || "";
+
+    if (!pushMsg && notif.targetId) {
+      try {
+        const { data: txInfo } = await api.get(`/api/cards/payments/transactions/${notif.targetId}`);
+        if (txInfo && txInfo.merchantName) {
+          pushMsg = `${txInfo.merchantName}에서 ${(txInfo.amount || 0).toLocaleString()}원 결제가 성공적으로 완료되었습니다.`;
+        }
+      } catch (txErr) {
+        console.log("실시간 거래 정보 조회 예외:", txErr);
       }
-    } catch (txErr) {
-      console.log("실시간 거래 정보 조회 예외:", txErr);
     }
+    if (!pushMsg) pushMsg = "결제가 성공적으로 승인되었습니다.";
+
+    triggerMobilePush(
+      pushTitle,
+      pushMsg,
+      pushIcon
+    );
   }
 
-  if (!pushMsg) {
-    pushMsg = "스타벅스에서 5,000원 결제가 성공적으로 완료되었습니다.";
-  }
-
-  triggerMobilePush(
-    pushTitle,
-    pushMsg,
-    "fa-solid fa-credit-card"
-  );
-
+  // 송금/정산/충전/결제 후 실시간 지갑 잔액 갱신
   try {
-    const uId = Number(authStore.userId || 1);
-    const wInfo = await walletApi.getWalletByUserId(uId);
-    if (wInfo) {
-      walletBalance.value = wInfo.balance ?? wInfo.amount ?? wInfo.pointMoney ?? 0;
-      localStorage.setItem(`user_wallet_balance_${uId}`, walletBalance.value);
+    const uId = Number(authStore.userId);
+    if (uId) {
+      const wInfo = await walletApi.getWalletByUserId(uId);
+      if (wInfo) {
+        walletBalance.value = wInfo.balance ?? wInfo.amount ?? wInfo.pointMoney ?? 0;
+      }
     }
   } catch (err) {
     console.error("실시간 지갑 잔액 재조회 실패:", err);
@@ -1016,7 +1060,15 @@ const handleRealtimeNotification = async (event) => {
 };
 
 const handleLongPressPaymentEvent = () => {
-  console.log("하단 결제 버튼 롱프레스 감지 -> 지갑 정식 NFC 결제 서비스 구동!");
+  if (!registeredCards.value || registeredCards.value.length === 0) {
+    triggerMobilePush(
+      "결제 불가",
+      "등록된 카드가 없습니다. 카드를 먼저 등록해주세요.",
+      "fa-solid fa-credit-card"
+    );
+    router.push("/wallet/card/add");
+    return;
+  }
   startNfcTimer();
 };
 

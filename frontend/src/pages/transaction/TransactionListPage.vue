@@ -123,7 +123,7 @@
                 <div class="tx-item-left">
                   <div
                     class="icon-circle text-15-bold"
-                    :class="getTypeIconClass(item.transactionType)"
+                    :class="getTypeIconClass(item)"
                   >
                     <i :class="getTypeIcon(item)"></i>
                   </div>
@@ -140,9 +140,9 @@
                 <div class="tx-item-right">
                   <div
                     class="tx-amount text-15-bold"
-                    :class="getAmountClass(item.transactionType)"
+                    :class="getAmountClass(item)"
                   >
-                    {{ getAmountPrefix(item.transactionType)
+                    {{ getAmountPrefix(item)
                     }}{{ formatCurrency(item.amount) }}
                   </div>
                   <div class="expand-indicator text-13">
@@ -260,39 +260,21 @@ const openReceiptModal = (item) => {
   }
 };
 
-const defaultFallbackTransactions = [];
-
 const fetchTransactions = async () => {
   loading.value = true;
   try {
+    if (!userId.value) {
+      rawTransactions.value = [];
+      return;
+    }
     const list = await transactionApi.getTransactions(
       userId.value,
       selectedType.value,
     );
-    const apiList =
-      list && list.length > 0 ? list : defaultFallbackTransactions;
-    const savedCharges = JSON.parse(
-      localStorage.getItem("user_charges") || "[]",
-    );
-
-    const merged = [...savedCharges, ...apiList];
-    const seen = new Set();
-    rawTransactions.value = merged.filter((t) => {
-      if (seen.has(t.transactionId)) return false;
-      seen.add(t.transactionId);
-      return true;
-    });
+    rawTransactions.value = Array.isArray(list) ? list : [];
   } catch (err) {
-    const savedCharges = JSON.parse(
-      localStorage.getItem("user_charges") || "[]",
-    );
-    const merged = [...savedCharges, ...defaultFallbackTransactions];
-    const seen = new Set();
-    rawTransactions.value = merged.filter((t) => {
-      if (seen.has(t.transactionId)) return false;
-      seen.add(t.transactionId);
-      return true;
-    });
+    console.error("거래 내역 조회 실패:", err);
+    rawTransactions.value = [];
   } finally {
     loading.value = false;
   }
@@ -337,15 +319,25 @@ const filteredTransactions = computed(() => {
   });
 });
 
+const isIncome = (item) => {
+  if (!item) return false;
+  const type = (item.transactionType || item.type || "").toUpperCase();
+  if (type === "CHARGE") return true;
+  if (type === "TRANSFER" && Number(item.receiveId) === Number(userId.value)) {
+    return true;
+  }
+  return false;
+};
+
 const summaryExpense = computed(() => {
   return filteredTransactions.value
-    .filter((t) => t.transactionType !== "CHARGE")
+    .filter((t) => !isIncome(t))
     .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 });
 
 const summaryIncome = computed(() => {
   return filteredTransactions.value
-    .filter((t) => t.transactionType === "CHARGE")
+    .filter((t) => isIncome(t))
     .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 });
 
@@ -386,26 +378,42 @@ const formatTime = (dateStr) => {
   return d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
 };
 
+const isSettlement = (item) => {
+  if (!item) return false;
+  const type = (item.transactionType || item.type || "").toUpperCase();
+  return type === "SETTLEMENT" || (item.settlementId && Number(item.settlementId) > 0);
+};
+
 const getItemTitle = (item) => {
   const type = (item.transactionType || item.type || "").toUpperCase();
-  if (type === "CHARGE") return item.merchantName || item.merchant_name || item.memo || "소셜 월렛 충전";
-  if (type === "TRANSFER" || type === "REMIT") {
+  if (type === "CHARGE") return item.merchantName || item.merchant_name || item.memo || "전자지갑 충전";
+  if (type === "TRANSFER" || type === "REMIT" || type === "SETTLEMENT") {
+    if (isSettlement(item)) {
+      if (isIncome(item)) {
+        return item.senderName ? `${item.senderName} (정산 받음)` : "더치페이 정산 받음";
+      }
+      const rec = item.receiverName || item.merchantName || "정산 요청자";
+      return `${rec} (정산 보냄)`;
+    }
+    if (isIncome(item)) {
+      return item.senderName ? `${item.senderName}에게 받음` : "송금 받음";
+    }
     let name = item.merchantName || item.merchant_name || item.receiverName || item.ownerName || item.memo || item.title || "";
     if (name.startsWith("송금 (") && name.endsWith(")")) {
       name = name.substring(4, name.length - 1);
     }
-    if (name === "송금 완료" || name === "송금" || !name) {
-      name = "수취인 송금";
+    if (name === "송금 완료" || name === "송금" || !name || name === "수취인") {
+      name = (item.receiverName && item.receiverName !== "수취인") ? `${item.receiverName}` : (item.memo && item.memo !== "송금 완료" ? item.memo : "송금");
     }
     return name;
-  }
-  if (type === "SETTLEMENT") {
-    return item.merchantName || item.merchant_name || item.memo || item.title || "더치페이 정산";
   }
   return item.merchantName || item.merchant_name || item.title || item.memo || "가맹점 결제";
 };
 
 const getItemSubText = (item) => {
+  if (isSettlement(item)) {
+    return item.memo && item.memo !== "송금 완료" && item.memo !== "정산 완료" ? `더치페이 정산 · ${item.memo}` : "더치페이 정산";
+  }
   if (
     item.memo &&
     item.memo.trim() &&
@@ -431,6 +439,10 @@ const getItemSubText = (item) => {
   }
   if (item.spendingCategoryName && item.spendingCategoryName !== "기타") {
     return item.spendingCategoryName;
+  }
+  const type = (item.transactionType || item.type || "").toUpperCase();
+  if (type === "TRANSFER" || type === "REMIT") {
+    return item.targetType === "ACCOUNT" || item.sourceType === "ACCOUNT" ? "계좌 송금" : "친구 송금";
   }
   return null;
 };
@@ -473,6 +485,14 @@ const getTypeIcon = (item) => {
   )
     return "fa-solid fa-store";
 
+  if (isSettlement(item)) {
+    return "fa-solid fa-users";
+  }
+
+  if (isIncome(item)) {
+    return "fa-solid fa-plus";
+  }
+
   switch (type) {
     case "CHARGE":
       return "fa-solid fa-plus";
@@ -485,7 +505,10 @@ const getTypeIcon = (item) => {
   }
 };
 
-const getTypeIconClass = (type) => {
+const getTypeIconClass = (item) => {
+  if (isSettlement(item)) return "icon-settlement";
+  if (isIncome(item)) return "icon-charge";
+  const type = typeof item === "object" ? item.transactionType : item;
   switch (type) {
     case "CHARGE":
       return "icon-charge";
@@ -498,13 +521,13 @@ const getTypeIconClass = (type) => {
   }
 };
 
-const getAmountClass = (type) => {
-  if (type === "CHARGE") return "amount-plus";
+const getAmountClass = (item) => {
+  if (isIncome(item)) return "amount-plus";
   return "amount-minus";
 };
 
-const getAmountPrefix = (type) => {
-  if (type === "CHARGE") return "+";
+const getAmountPrefix = (item) => {
+  if (isIncome(item)) return "+";
   return "-";
 };
 
@@ -796,6 +819,11 @@ onMounted(() => {
 .icon-transfer {
   background-color: #eff6ff;
   color: #2563eb;
+}
+
+.icon-settlement {
+  background-color: #f5f3ff;
+  color: #7c3aed;
 }
 
 .icon-payment {

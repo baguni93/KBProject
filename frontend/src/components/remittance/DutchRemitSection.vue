@@ -9,7 +9,7 @@
             <img
               :src="myProfileImageUrl"
               class="participant-avatar-img"
-              @error="$event.target.src = '/api/feeds/profile/default_profile.png'"
+              @error="(e) => { e.target.onerror = null; e.target.style.display = 'none'; }"
             />
           </div>
           <span class="participant-name-text text-12-bold">{{ myProfileName }}</span>
@@ -25,7 +25,7 @@
             <img
               :src="getProfileImageUrl(getFriendObj(fId))"
               class="participant-avatar-img"
-              @error="$event.target.src = '/api/feeds/profile/default_profile.png'"
+              @error="(e) => { e.target.onerror = null; e.target.style.display = 'none'; }"
             />
             <button
               type="button"
@@ -66,7 +66,7 @@
             <img
               :src="myProfileImageUrl"
               class="toss-friend-avatar-img"
-              @error="$event.target.src = '/api/feeds/profile/default_profile.png'"
+              @error="(e) => { e.target.onerror = null; e.target.style.display = 'none'; }"
             />
           </div>
           <div class="toss-friend-text-area">
@@ -102,7 +102,7 @@
             <img
               :src="getProfileImageUrl(friend)"
               class="toss-friend-avatar-img"
-              @error="$event.target.src = '/api/feeds/profile/default_profile.png'"
+              @error="(e) => { e.target.onerror = null; e.target.style.display = 'none'; }"
             />
           </div>
           <div class="toss-friend-text-area">
@@ -146,7 +146,7 @@ defineProps({
   },
   myProfileName: {
     type: String,
-    default: "노랑지갑",
+    default: "내 프로필",
   },
   getProfileImageUrl: {
     type: Function,
