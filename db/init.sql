@@ -8,9 +8,9 @@ DROP TABLE IF EXISTS `card_company_tbl`;
 
 DROP TABLE IF EXISTS `event_challenge_user_tbl`;
 
-DROP TABLE IF EXISTS `event_challenge_tbl`;
-
 DROP TABLE IF EXISTS `event_challenge_level_tbl`;
+
+DROP TABLE IF EXISTS `event_challenge_tbl`;
 
 DROP TABLE IF EXISTS `event_reward_receive_tbl`;
 
@@ -1732,9 +1732,9 @@ CREATE TABLE event_tbl
             event_type IN ('ATTENDANCE', 'PERMANENT', 'LIMITED', 'SEASON', 'PROMOTION', 'LUCKYDRAW' )
             ),
 
-	CONSTRAINT chk_event_category
+    CONSTRAINT chk_event_category
         CHECK (
-            event_category IN ('ATTENDANCE', 'FEED', 'CARD', 'REMITTANCE', 'WALLET', 'ANALYSIS', 'RANDOMBOX', 'ETC')
+            event_category IN ('ATTENDANCE', 'FEED', 'CARD', 'REMITTANCE', 'WALLET', 'ANALYSIS', 'RANDOMBOX', 'ETC', 'SETTLEMENT')
             ),
             
     CONSTRAINT chk_event_status
@@ -1760,7 +1760,7 @@ CREATE TABLE event_reward_tbl
 
     reward_point INT     NULL     DEFAULT 0 COMMENT '리워드포인트',
 
-    reward_exe   INT     NULL COMMENT '리워드경험치',
+    reward_exp   INT     NULL COMMENT '리워드경험치',
 
     CONSTRAINT fk_event_reward_event
         FOREIGN KEY (event_id)
@@ -1771,9 +1771,9 @@ CREATE TABLE event_reward_tbl
             reward_point >= 0
             ),
 
-    CONSTRAINT chk_event_reward_exe
+    CONSTRAINT chk_event_reward_exp
         CHECK (
-            reward_exe >= 0
+            reward_exp >= 0
             )
 
 );
@@ -1798,10 +1798,7 @@ CREATE TABLE event_participation_tbl
 
     CONSTRAINT fk_event_participation_user
         FOREIGN KEY (user_id)
-            REFERENCES user_tbl (user_id),
-
-    CONSTRAINT uk_event_participation
-        UNIQUE (event_id, user_id)
+            REFERENCES user_tbl (user_id)
 );
 
 DROP TABLE IF EXISTS event_user_tbl;
@@ -1874,6 +1871,8 @@ CREATE TABLE event_attendance_tbl (
 -- event_id	user_id	reward_id	결과
 -- 1	100	1	가능
 -- 1	100	2	불가능 (이미 해당 이벤트 보상 수령)
+DROP TABLE IF EXISTS event_reward_receive_tbl;
+
 CREATE TABLE event_reward_receive_tbl
 (
 
@@ -1909,6 +1908,7 @@ CREATE TABLE event_reward_receive_tbl
 ) COMMENT ='이벤트 리워드 수령이력';
 
 -- 52. 이벤트 챌린지 테이블 정의서
+DROP TABLE IF EXISTS event_challenge_tbl;
 
 CREATE TABLE event_challenge_tbl
 (
@@ -1937,23 +1937,30 @@ DROP TABLE IF EXISTS event_challenge_level_tbl;
 
 CREATE TABLE event_challenge_level_tbl
 (
-	challenge_level_id   INT 	AUTO_INCREMENT PRIMARY KEY COMMENT '챌린지 레벨 ID',
-    
-	challenge_id   		 INT	NOT NULL COMMENT '챌린지 ID',
+    challenge_level_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '챌린지 레벨 ID',
+    challenge_id       INT NOT NULL COMMENT '챌린지 ID',
+    level              INT NOT NULL COMMENT '챌린지 레벨',
+    required_exp       INT NOT NULL COMMENT '해당 레벨 보상 수령에 필요한 누적 경험치',
+    reward_point       INT NOT NULL COMMENT '레벨 달성 보상 포인트',
 
-    level		 		 INT    NOT NULL COMMENT '챌린지 목표 난이도',
+    CONSTRAINT uk_event_challenge_level
+        UNIQUE (challenge_id, level),
 
-    required_exp     	 INT    NOT NULL COMMENT '챌린지 요구 경험치',
-    
-    reward_point     	 INT    NOT NULL COMMENT '레벨 보상 포인트',
-    
-     CONSTRAINT fk_event_challenge_level_challenge
-		FOREIGN KEY (challenge_id)
-			REFERENCES event_challenge_tbl (challenge_id)
+    CONSTRAINT fk_event_challenge_level_challenge
+        FOREIGN KEY (challenge_id)
+            REFERENCES event_challenge_tbl (challenge_id),
+
+    CONSTRAINT chk_event_challenge_level_required_exp
+        CHECK (required_exp >= 0),
+
+    CONSTRAINT chk_event_challenge_level_reward_point
+        CHECK (reward_point >= 0)
 
 ) COMMENT ='이벤트 챌린지 레벨 관리';
 
 -- 53. 이벤트 챌린지 참여이력 테이블 정의서
+DROP TABLE IF EXISTS event_challenge_user_tbl;
+
 CREATE TABLE event_challenge_user_tbl
 (
 
@@ -1966,6 +1973,8 @@ CREATE TABLE event_challenge_user_tbl
     current_level     INT         NOT NULL COMMENT '현재 달성 레벨',
 
     current_target    INT         NOT NULL COMMENT '현재 누적 수치',
+
+    exp               INT         NOT NULL DEFAULT 0 COMMENT '현재 누적 경험치',
 
     status            VARCHAR(20) NOT NULL DEFAULT 'PROCESS' COMMENT '현재 상태',
 
@@ -1994,7 +2003,10 @@ CREATE TABLE event_challenge_user_tbl
                        'COMPLETE',
                        'REWARDED'
                 )
-            )
+            ),
+
+    CONSTRAINT chk_event_challenge_exp
+        CHECK (exp >= 0)
 
 ) COMMENT ='이벤트 챌린지 참여이력';
 
