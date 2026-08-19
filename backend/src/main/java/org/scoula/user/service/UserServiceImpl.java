@@ -35,8 +35,8 @@ public class UserServiceImpl implements UserService {
     private final PointWalletService pointWalletService;
     private final PasswordEncoder passwordEncoder;
 
-    // private static final long REJOIN_WAIT_HOURS = 24L;
-    private static final long REJOIN_WAIT_MINUTES = 1L;
+//     private static final long REJOIN_WAIT_HOURS = 24L;
+    private static final long REJOIN_WAIT_MINUTES = 3L;
 
     // 닉네임 형식
     private static final String NICKNAME_PATTERN = "^[가-힣a-z0-9_]{1,15}$";
@@ -526,7 +526,7 @@ public class UserServiceImpl implements UserService {
             throw new IllegalStateException("탈퇴 일시를 확인할 수 없습니다.");
         }
 
-        // LocalDateTime rejoinAvailableAt = withdrawnAt.plusHours(REJOIN_WAIT_HOURS);
+//         LocalDateTime rejoinAvailableAt = withdrawnAt.plusHours(REJOIN_WAIT_HOURS);
 
         LocalDateTime rejoinAvailableAt = withdrawnAt.plusMinutes(REJOIN_WAIT_MINUTES);
         LocalDateTime now = LocalDateTime.now();

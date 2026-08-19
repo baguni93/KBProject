@@ -64,14 +64,8 @@ public class LoginController {
 
     // AUTH-004 가입 여부 확인
     @PostMapping("/signup/check")
-    public ResponseEntity<Map<String, Object>> checkSignupStatus(@RequestBody SignupCheckDTO checkDTO) {
-        String memberStatus = loginService.checkSignupStatus(checkDTO);
-
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("memberStatus", memberStatus);
-        response.put("existingMember", "EXISTING".equals(memberStatus));
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<SignupStatusResponseDTO> checkSignupStatus(@RequestBody SignupCheckDTO checkDTO) {
+        return ResponseEntity.ok(loginService.checkSignupStatus(checkDTO));
     }
 
     // AUTH-005 로그인

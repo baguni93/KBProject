@@ -314,29 +314,23 @@ const handlePhoneChange = async () => {
 
 // 회원가입 인증 완료
 const handleSignup = async () => {
-  const signupResponse =
-      await loginApi.checkSignupStatus({
-        phoneNumber:
-        signupStore.phoneAuth.phoneNumber,
-      });
+  const signupResponse = await loginApi.checkSignupStatus({ phoneNumber: signupStore.phoneAuth.phoneNumber });
 
-  signupStore.setMemberStatus(
-      signupResponse.memberStatus,
-  );
+  signupStore.setMemberStatus(signupResponse.memberStatus);
 
-  if (signupResponse.existingMember) {
-    sessionStorage.setItem(
-        'pinLoginPhoneNumber',
-        signupStore.phoneAuth.phoneNumber,
-    );
-
-    await router.push(
-        '/signup/existing-member',
-    );
-
+  if (signupResponse.memberStatus === 'EXISTING') {
+    sessionStorage.setItem('pinLoginPhoneNumber', signupStore.phoneAuth.phoneNumber);
+    await router.push('/signup/existing-member');
     return;
   }
 
+  if (signupResponse.memberStatus === 'WITHDRAWN_WAIT') {
+    sessionStorage.setItem('rejoinAvailableAt', signupResponse.rejoinAvailableAt);
+    await router.push('/signup/withdrawn-member');
+    return;
+  }
+
+  sessionStorage.removeItem('rejoinAvailableAt');
   await router.push('/signup/new-member');
 };
 
