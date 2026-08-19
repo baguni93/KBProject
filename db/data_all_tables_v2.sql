@@ -10,6 +10,8 @@ DROP TABLE IF EXISTS `card_company_tbl`;
 
 DROP TABLE IF EXISTS `event_challenge_user_tbl`;
 
+DROP TABLE IF EXISTS `event_challenge_level_tbl`;
+
 DROP TABLE IF EXISTS `event_challenge_tbl`;
 
 DROP TABLE IF EXISTS `event_reward_receive_tbl`;
@@ -1616,7 +1618,7 @@ CREATE TABLE event_reward_tbl
     reward_id    INT AUTO_INCREMENT PRIMARY KEY COMMENT '리워드ID',
     event_id     INT     NOT NULL COMMENT '이벤트ID',
     reward_point INT     NULL     DEFAULT 0 COMMENT '리워드포인트',
-    reward_exe   INT     NULL COMMENT '리워드경험치',
+    reward_exp   INT     NULL COMMENT '리워드경험치',
 
     CONSTRAINT fk_event_reward_event
         FOREIGN KEY (event_id)
@@ -1627,9 +1629,9 @@ CREATE TABLE event_reward_tbl
             reward_point >= 0
             ),
 
-    CONSTRAINT chk_event_reward_exe
+    CONSTRAINT chk_event_reward_exp
         CHECK (
-            reward_exe >= 0
+            reward_exp >= 0
             )
 );
 
@@ -1738,6 +1740,31 @@ CREATE TABLE event_challenge_tbl
     created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록일시'
 ) COMMENT ='이벤트 챌린지';
 
+-- 52-1. 이벤트 챌린지 레벨 관리 테이블
+DROP TABLE IF EXISTS event_challenge_level_tbl;
+
+CREATE TABLE event_challenge_level_tbl
+(
+    challenge_level_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '챌린지 레벨 ID',
+    challenge_id       INT NOT NULL COMMENT '챌린지 ID',
+    level              INT NOT NULL COMMENT '챌린지 레벨',
+    required_exp       INT NOT NULL COMMENT '해당 레벨 보상 수령에 필요한 누적 경험치',
+    reward_point       INT NOT NULL COMMENT '레벨 달성 보상 포인트',
+
+    CONSTRAINT uk_event_challenge_level
+        UNIQUE (challenge_id, level),
+
+    CONSTRAINT fk_event_challenge_level_challenge
+        FOREIGN KEY (challenge_id)
+            REFERENCES event_challenge_tbl (challenge_id),
+
+    CONSTRAINT chk_event_challenge_level_required_exp
+        CHECK (required_exp >= 0),
+
+    CONSTRAINT chk_event_challenge_level_reward_point
+        CHECK (reward_point >= 0)
+) COMMENT ='이벤트 챌린지 레벨 관리';
+
 -- 53. 이벤트 챌린지 참여이력 테이블
 DROP TABLE IF EXISTS event_challenge_user_tbl;
 
@@ -1748,6 +1775,7 @@ CREATE TABLE event_challenge_user_tbl
     challenge_id      INT         NOT NULL COMMENT '챌린지ID',
     current_level     INT         NOT NULL COMMENT '현재 달성 레벨',
     current_target    INT         NOT NULL COMMENT '현재 누적 수치',
+    exp               INT         NOT NULL DEFAULT 0 COMMENT '현재 누적 경험치',
     status            VARCHAR(20) NOT NULL DEFAULT 'PROCESS' COMMENT '현재 상태',
     updated_at        DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP COMMENT '마지막 갱신시간',
@@ -1770,7 +1798,10 @@ CREATE TABLE event_challenge_user_tbl
                        'COMPLETE',
                        'REWARDED'
                 )
-            )
+            ),
+
+    CONSTRAINT chk_event_challenge_exp
+        CHECK (exp >= 0)
 ) COMMENT ='이벤트 챌린지 참여이력';
 
 -- 54. 카드사 테이블
@@ -2129,9 +2160,7 @@ VALUES (1,
     'Y', 
     'Y'
 );
-select * from feed_tbl;
-select * from user_tbl;
-select * from card_tbl;
+
             -- ---------------------------------------------------------------------
 -- 5. user_agreement_tbl (6건)
 -- ---------------------------------------------------------------------
@@ -3198,7 +3227,7 @@ INSERT INTO event_reward_tbl (
     reward_id,
     event_id,
     reward_point,
-    reward_exe
+    reward_exp
 )
 VALUES
     (1, 1, 100, 10),   -- 이벤트 출석
@@ -3253,16 +3282,33 @@ INSERT INTO event_challenge_tbl (challenge_id,
 VALUES (1, 'SUMMER SEASON 이벤트 챌린지', 5000, 5, 20, '2026-07-01 00:00:00', '2026-08-31 23:59:59', '2026-07-01 00:00:00');
 
 -- ---------------------------------------------------------------------
+-- 52-1. event_challenge_level_tbl (5건)
+-- EXP는 차감하지 않는 누적 방식이므로 required_exp는 누적 기준값이다.
+-- ---------------------------------------------------------------------
+INSERT INTO event_challenge_level_tbl (challenge_level_id,
+                                       challenge_id,
+                                       level,
+                                       required_exp,
+                                       reward_point)
+VALUES (1, 1, 1, 100, 1000),
+       (2, 1, 2, 250, 1500),
+       (3, 1, 3, 500, 2000),
+       (4, 1, 4, 800, 2500),
+       (5, 1, 5, 1200, 3000);
+
+-- ---------------------------------------------------------------------
 -- 53. event_challenge_user_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO event_challenge_user_tbl (user_challenge_id,
-                                      user_id,
-                                      challenge_id,
-                                      current_level,
-                                      current_target,
-                                      status,
-                                      updated_at)
-VALUES (1, 1, 1, 2, 12, 'PROCESS', '2026-07-24 08:00:00');
+-- 사용자 챌린지 데이터는 이벤트 메인 최초 조회 시 자동 생성된다.
+-- INSERT INTO event_challenge_user_tbl (user_challenge_id,
+--                                       user_id,
+--                                       challenge_id,
+--                                       current_level,
+--                                       current_target,
+--                                       exp,
+--                                       status,
+--                                       updated_at)
+-- VALUES (1, 1, 1, 1, 0, 0, 'PROCESS', '2026-07-24 08:00:00');
 
 
 -- ---------------------------------------------------------------------
