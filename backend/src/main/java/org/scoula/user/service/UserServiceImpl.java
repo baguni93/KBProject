@@ -104,38 +104,18 @@ public class UserServiceImpl implements UserService {
         List<AccountVO> accountList = new ArrayList<>();
         for(var bank : list){
 
-            if(bank.getBankCode().equals("004")){
+            String randomAccountNumber = generateRandomAccountNumber(bank.getBankCode(), random);
 
-                for(int i =0; i < 10; i++){
-                    String randomAccountNumber = generateRandomAccountNumber(bank.getBankCode(), random);
-
-                    var accountVo = AccountVO.builder().
-                            userId(user.getUserId().intValue()).
-                            bankCode(bank.getBankCode()).
-                            accountNumber(randomAccountNumber).
-                            ownerName(user.getUserName()).
-                            balance(100000).
-                            accountPassword("1234").
-                            build();
-                    accountList.add(accountVo);
-                }
+            var accountVo = AccountVO.builder().
+                    userId(user.getUserId().intValue()).
+                    bankCode(bank.getBankCode()).
+                    accountNumber(randomAccountNumber).
+                    ownerName(user.getUserName()).
+                    balance(100000).
+                    accountPassword("1234").
+                    build();
+            accountList.add(accountVo);
             }
-            else{
-
-                String randomAccountNumber = generateRandomAccountNumber(bank.getBankCode(), random);
-
-                var accountVo = AccountVO.builder().
-                        userId(user.getUserId().intValue()).
-                        bankCode(bank.getBankCode()).
-                        accountNumber(randomAccountNumber).
-                        ownerName(user.getUserName()).
-                        balance(100000).
-                        accountPassword("1234").
-                        build();
-                accountList.add(accountVo);
-            }
-        }
-
 
         if (!accountList.isEmpty()) {
             userMapper.insertAccount(accountList);
