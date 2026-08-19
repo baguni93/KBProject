@@ -2,7 +2,8 @@ package org.scoula.cardpayment.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.scoula.card.controller.CardController;
+import org.scoula.analysis.dto.MerchantCategoryClassificationResultDTO;
+import org.scoula.analysis.service.MerchantCategoryService;
 import org.scoula.cardpayment.dto.CardAgreementDTO;
 import org.scoula.cardpayment.dto.CardBinResponseDTO;
 import org.scoula.cardpayment.dto.CardRegisterDTO;
@@ -26,6 +27,8 @@ public class CardPaymentServiceImpl implements CardPaymentService {
     private final KbCardCatalogRepository catalogRepository;
     private final org.scoula.notification.service.NotificationService notificationService;
     private final org.scoula.pointwallet.service.RandomBoxService randomBoxService;
+    // 자동 AI 카테고리 분류 서비스 연결완료
+    private final MerchantCategoryService merchantCategoryService;
 
     private final Map<String, CardBinResponseDTO> binMemoryCache = new ConcurrentHashMap<>();
 
@@ -344,12 +347,16 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         }
         Integer receiveId = cardPaymentMapper.getMerchantUserIdByAccountId(merchantAccountId);
 
+        // 결제 가맹점 자동 카테고리 분류: 기존 매핑 우선, 없으면 AI 분류
+        Integer spendingCategoryId = classifyMerchantCategory(merchantName);
+
         // 통합 금융 원장(financial_transaction_tbl) 생성
         org.scoula.cardpayment.dto.CardTransactionApproveDTO insertParam = org.scoula.cardpayment.dto.CardTransactionApproveDTO.builder()
                 .userId(targetUserId)
                 .receiveId(receiveId)
                 .merchantName(merchantName)
                 .amount(amount)
+                .spendingCategoryId(spendingCategoryId)
                 .build();
 
         cardPaymentMapper.insertFinancialTransactionForCard(insertParam);
@@ -436,11 +443,15 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         }
         Integer receiveId = cardPaymentMapper.getMerchantUserIdByAccountId(merchantAccountId);
 
+        // 박준우: 결제 가맹점 자동 카테고리 분류: 기존 매핑 우선, 없으면 AI 분류
+        Integer spendingCategoryId = classifyMerchantCategory(merchantName);
+
         org.scoula.cardpayment.dto.CardTransactionApproveDTO insertParam = org.scoula.cardpayment.dto.CardTransactionApproveDTO.builder()
                 .userId(targetUserId)
                 .receiveId(receiveId)
                 .merchantName(merchantName)
                 .amount(amount)
+                .spendingCategoryId(spendingCategoryId)
                 .build();
 
         cardPaymentMapper.insertFinancialTransactionForCard(insertParam);
@@ -476,6 +487,34 @@ public class CardPaymentServiceImpl implements CardPaymentService {
                 .updatedWalletBalance(updatedWalletBalance)
                 .message("전자지갑 결제가 성공적으로 승인되었습니다.")
                 .build();
+    }
+
+    /**
+     * 박준우: 결제 가맹점의 소비 카테고리를 자동 결정한다.
+     * 기존 가맹점 매핑을 먼저 사용하고, 매핑(임시테이블 저장)이 없을 때만 AI를 호출한다.
+     * AI 분류가 실패하면 null을 반환하여 미분류 상태로 거래는 정상 저장한다.
+     */
+    private Integer classifyMerchantCategory(String merchantName) {
+        if (merchantName == null || merchantName.isBlank()) {
+            return null;
+        }
+
+        MerchantCategoryClassificationResultDTO result =
+                merchantCategoryService.classify(merchantName.trim());
+
+        if (result == null || result.getSpendingCategoryId() == null) {
+            log.warn("결제 가맹점 카테고리 자동 분류 실패 - merchantName={}", merchantName);
+            return null;
+        }
+
+        log.info(
+                "결제 가맹점 카테고리 자동 분류 완료 - merchantName={}, categoryId={}, source={}",
+                merchantName,
+                result.getSpendingCategoryId(),
+                result.getClassificationSource()
+        );
+
+        return result.getSpendingCategoryId();
     }
 
     @Override
