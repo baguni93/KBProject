@@ -104,7 +104,47 @@ const handleTabChange = (newVal) => {
   else if (newVal === "DUTCH") router.replace('/remittance/dutch');
 };
 
+const restoreSettlementFromQuery = (q) => {
+  if (q && q.settlementId) {
+    const sId = Number(q.settlementId);
+    const reqId = Number(q.requesterId || 1);
+    const amount = Number(q.amount || 0);
+    const name = q.name || '노랑지갑';
+    const title = q.title || '정산 송금';
+
+    remittanceStore.settlementId = sId;
+    remittanceStore.settlementRequesterId = reqId;
+    remittanceStore.selectedFriendId = reqId;
+    remittanceStore.remitType = 'DUTCH_PAY';
+    if (amount > 0) remittanceStore.remitAmount = amount;
+    remittanceStore.accountForm.receiverName = name;
+    remittanceStore.dutchRoomTitle = title;
+    remittanceStore.remitMemo = `${title} 정산`;
+
+    if (!remittanceStore.selectedFriendObj || remittanceStore.selectedFriendObj.id !== reqId) {
+      remittanceStore.selectedFriendObj = {
+        id: reqId,
+        userId: reqId,
+        nickname: name,
+        name: name,
+        username: name,
+      };
+    }
+  }
+};
+
+onMounted(() => {
+  restoreSettlementFromQuery(route.query);
+});
+
+watch(() => route.query, (newQ) => {
+  restoreSettlementFromQuery(newQ);
+}, { immediate: true });
+
 const syncRemitTypeFromRoute = (path) => {
+  if (route.query.settlementId || remittanceStore.remitType === 'DUTCH_PAY' || remittanceStore.settlementId) {
+    return;
+  }
   if (path.includes('/dutch')) {
     remittanceStore.remitType = 'DUTCH';
   } else if (path.includes('/friend')) {
@@ -117,11 +157,11 @@ const syncRemitTypeFromRoute = (path) => {
 watch(() => route.path, (newPath, oldPath) => {
   syncRemitTypeFromRoute(newPath);
 
-  // Step 1 메인 탭 전환 시에만 폼 데이터 초기화
+  // Step 1 메인 탭 전환 시에만 폼 데이터 초기화 (정산 송금 아닐 때만)
   const isStepOnePath = newPath === '/remittance/account' || newPath === '/remittance/friend' || newPath === '/remittance/dutch' || newPath === '/remittance';
   const wasStepOnePath = oldPath === '/remittance/account' || oldPath === '/remittance/friend' || oldPath === '/remittance/dutch' || oldPath === '/remittance';
 
-  if (isStepOnePath && wasStepOnePath && newPath !== oldPath) {
+  if (isStepOnePath && wasStepOnePath && newPath !== oldPath && !route.query.settlementId) {
     remittanceStore.resetAll();
     syncRemitTypeFromRoute(newPath);
   }
@@ -193,14 +233,15 @@ const enterPinCode = async (n) => {
         if (res && res.verified) {
           pinErrorMessage.value = "";
           remittanceStore.showPasswordModal = false;
+          const isDutch = remittanceStore.remitType === 'DUTCH' || remittanceStore.remitType === 'DUTCH_PAY' || !!remittanceStore.settlementId;
           await remittanceStore.executeRemittance();
           if (remittanceStore.remitSuccess) {
-            if (remittanceStore.remitType === 'ACCOUNT') {
-              router.push('/remittance/account/result');
-            } else if (remittanceStore.remitType === 'FRIEND') {
-              router.push('/remittance/friend/result');
-            } else if (remittanceStore.remitType === 'DUTCH') {
+            if (isDutch) {
               router.push('/remittance/dutch/result');
+            } else if (remittanceStore.remitType === 'ACCOUNT') {
+              router.push('/remittance/account/result');
+            } else {
+              router.push('/remittance/friend/result');
             }
           }
         } else {

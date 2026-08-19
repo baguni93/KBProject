@@ -104,37 +104,43 @@ public class CardController {
         String cleanBin = binNumber.replaceAll("\\D", "");
         log.info("[BIN 매핑] 조회 요청된 BIN: {}", cleanBin);
 
+        // 공식 299개 BIN 명세서 또는 커스텀 풀에 속하지 않는 번호는 즉시 차단
+        if (!org.scoula.card.util.KbCardBinRegistry.isOfficialBin(cleanBin)) {
+            log.info("[BIN 매핑] KB국민카드 공식 BIN 목록(299건)에 없는 번호 차단: {}", cleanBin);
+            return ResponseEntity.ok(new CardInfo(null, null));
+        }
+
         CardInfo info = null;
-        if (cleanBin.length() >= 8) {
+
+        // 1. card_tbl 에서 8자리 또는 6자리 BIN prefix 로 등록된 카드 우선 조회 (크롤링/커스텀 통합)
+        try {
+            if (cleanBin.length() >= 8) {
+                java.util.Map<String, String> row = cardMapper.findByBinPrefix(cleanBin.substring(0, 8));
+                if (row != null && row.get("imageUrl") != null) {
+                    info = new CardInfo(row.getOrDefault("cardName", "KB국민카드"), row.get("imageUrl"));
+                }
+            }
+            if (info == null && cleanBin.length() >= 6) {
+                java.util.Map<String, String> row = cardMapper.findByBinPrefix(cleanBin.substring(0, 6));
+                if (row != null && row.get("imageUrl") != null) {
+                    info = new CardInfo(row.getOrDefault("cardName", "KB국민카드"), row.get("imageUrl"));
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[BIN 매핑] card_tbl 조회 중 예외 (폴백 진행): {}", e.getMessage());
+        }
+
+        // 2. 기본 BIN_MAPPING_MAP 폴백
+        if (info == null && cleanBin.length() >= 8) {
             info = BIN_MAPPING_MAP.get(cleanBin.substring(0, 8));
         }
         if (info == null && cleanBin.length() >= 6) {
             info = BIN_MAPPING_MAP.get(cleanBin.substring(0, 6));
         }
 
-        // 커스텀 BIN 풀에 속하는 경우에만 card_tbl에서 조회 (임의 번호로 잘못 매칭 방지)
-        if (info == null && cleanBin.length() >= 6) {
-            String prefix6 = cleanBin.substring(0, 6);
-            boolean isCustomBin = CUSTOM_BIN_SET.contains(prefix6);
-            if (isCustomBin) {
-                try {
-                    java.util.Map<String, String> row = cardMapper.findByBinPrefix(prefix6);
-                    if (row != null && row.get("imageUrl") != null) {
-                        info = new CardInfo(
-                                row.getOrDefault("cardName", "커스텀 카드"),
-                                row.get("imageUrl")
-                        );
-                        log.info("[BIN 매핑] 커스텀 card_tbl 조회 성공: BIN={}, img={}", prefix6, row.get("imageUrl"));
-                    }
-                } catch (Exception e) {
-                    log.warn("[BIN 매핑] 커스텀 card_tbl 조회 실패: {}", e.getMessage());
-                }
-            }
-        }
-
-        // 완전히 인식되지 않는 BIN → imageUrl=null 반환 (프론트에서 이미지 미표시)
+        // 3. 공식 BIN이지만 개별 매핑이 없는 경우 기본 KB국민카드 정보 반환
         if (info == null) {
-            info = new CardInfo(null, null);
+            info = new CardInfo("KB국민카드", "card_default.png");
         }
 
         return ResponseEntity.ok(info);

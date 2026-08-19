@@ -297,7 +297,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from "vue";
+import { ref, computed, onMounted, reactive, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useProfileStore } from "@/stores/profile";
@@ -362,6 +362,16 @@ const accountForm = reactive({
   bankCode: "",
   receiverName: "",
 });
+
+// 계좌번호가 비어있으면 선택된 은행도 자동 초기화
+watch(
+  () => accountForm.accountNumber,
+  (newVal) => {
+    if (!newVal || newVal.trim() === "") {
+      accountForm.bankCode = "";
+    }
+  }
+);
 
 const bankOptions = [
   { code: "004", name: "KB국민", fileName: "kb.png" },

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed, reactive } from 'vue';
+import { ref, computed, reactive, watch } from 'vue';
 import remittanceApi from '@/api/remittanceApi';
 import friendApi from '@/api/friend';
 import walletApi from '@/api/walletApi';
@@ -27,11 +27,25 @@ export const useRemittanceStore = defineStore('remittance', () => {
     receiverName: '',
   });
 
+  // 계좌번호가 지워지면 은행 선택도 자동으로 초기화
+  watch(
+    () => accountForm.accountNumber,
+    (newVal) => {
+      if (!newVal || newVal.trim() === '') {
+        accountForm.bankCode = '';
+      }
+    }
+  );
+
   // 친구 송금 폼
   const selectedFriendId = ref(null);
   const selectedFriendObj = ref(null);
   const friendList = ref([]);
   const friendSearchKeyword = ref('');
+
+  // 정산 송금 관련 상태
+  const settlementId = ref(null);
+  const settlementRequesterId = ref(null);
 
   const filteredFriends = computed(() => {
     if (!friendSearchKeyword.value.trim()) return friendList.value;
@@ -278,25 +292,13 @@ export const useRemittanceStore = defineStore('remittance', () => {
                 receiverName: r.ownerName || r.receiverName || r.name || "수취인",
               }));
             } else {
-              recentAccounts.value = [
-                { id: 1, receiverName: "이성호", bankCode: "003", bankName: "IBK기업", accountNumber: "010-62081656" },
-                { id: 2, receiverName: "장동숙", bankCode: "003", bankName: "IBK기업", accountNumber: "010-62811656" },
-                { id: 3, receiverName: "이현지", bankCode: "088", bankName: "신한", accountNumber: "110-469-847710" },
-                { id: 4, receiverName: "이성호", bankCode: "004", bankName: "KB국민", accountNumber: "937101-01-090747" },
-              ];
+              recentAccounts.value = [];
             }
           }
         }
       } catch (bankErr) {
         console.log("은행 정보 조회 예외", bankErr);
-        if (recentAccounts.value.length === 0) {
-          recentAccounts.value = [
-            { id: 1, receiverName: "이성호", bankCode: "003", bankName: "IBK기업", accountNumber: "010-62081656" },
-            { id: 2, receiverName: "장동숙", bankCode: "003", bankName: "IBK기업", accountNumber: "010-62811656" },
-            { id: 3, receiverName: "이현지", bankCode: "088", bankName: "신한", accountNumber: "110-469-847710" },
-            { id: 4, receiverName: "이성호", bankCode: "004", bankName: "KB국민", accountNumber: "937101-01-090747" },
-          ];
-        }
+        recentAccounts.value = [];
       }
 
       // 친구 목록
@@ -490,12 +492,14 @@ export const useRemittanceStore = defineStore('remittance', () => {
         return;
       }
 
-      // ── ACCOUNT / FRIEND 송금 분기 ───────────────
+      // ── ACCOUNT / FRIEND / DUTCH_PAY 송금 분기 ───────────────
       const isAccount = remitType.value === 'ACCOUNT';
-      const friendNick = selectedFriendObj.value?.nickname || selectedFriendObj.value?.name || selectedFriendObj.value?.username || '친구';
+      const friendNick = selectedFriendObj.value?.nickname || selectedFriendObj.value?.name || selectedFriendObj.value?.username || '노랑지갑';
       const receiverNameVal = isAccount
         ? (accountForm.receiverName || '수취인')
-        : friendNick;
+        : (accountForm.receiverName || friendNick);
+
+      const targetSettlementId = settlementId.value;
 
       const payload = {
         walletId: userId,
@@ -510,6 +514,8 @@ export const useRemittanceStore = defineStore('remittance', () => {
         bankCode: accountForm.bankCode || '004',
         accountNumber: accountForm.accountNumber || '',
         visibility: remitVisibility.value || 'PUBLIC',
+        settlementId: targetSettlementId || null,
+        isSettlement: !!targetSettlementId,
         files: selectedFiles.value.length > 0 ? selectedFiles.value : (selectedFile.value ? [selectedFile.value] : []),
         file: selectedFile.value,
       };
@@ -517,6 +523,21 @@ export const useRemittanceStore = defineStore('remittance', () => {
       if (remittanceApi && remittanceApi.sendMoney) {
         await remittanceApi.sendMoney(payload);
       }
+
+      // 정산 송금인 경우 정산 상태 갱신 트리거
+      if (targetSettlementId) {
+        try {
+          console.log('Triggering settlement payment PATCH for settlementId:', targetSettlementId, 'userId:', userId);
+          await settlementStore.payment({
+            settlementId: targetSettlementId,
+            userId,
+          });
+          await settlementStore.getMyList({ userId });
+        } catch (sErr) {
+          console.warn('정산 완료 API 호출 결과:', sErr);
+        }
+      }
+
       remitSuccess.value = true;
     } catch (err) {
       console.error('송금/정산 처리 중 예외 발생:', err);
@@ -536,6 +557,8 @@ export const useRemittanceStore = defineStore('remittance', () => {
     accountForm.receiverName = "";
     selectedFriendId.value = null;
     selectedFriendObj.value = null;
+    settlementId.value = null;
+    settlementRequesterId.value = null;
     selectedDutchFriends.value = [];
     dutchRoomTitle.value = "";
     selectedTxIds.value = [];

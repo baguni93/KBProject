@@ -137,6 +137,10 @@ const detectBankByAccountNumber = (accNo) => {
 
 const handleAccountNumberInput = (val) => {
   emit("update:accountNumber", val);
+  if (!val || val.trim() === "") {
+    emit("update:bankCode", "");
+    return;
+  }
   const detected = detectBankByAccountNumber(val);
   if (detected) {
     emit("update:bankCode", detected);

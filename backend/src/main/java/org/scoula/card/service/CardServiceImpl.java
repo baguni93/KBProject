@@ -27,8 +27,8 @@ public class CardServiceImpl implements CardService {
 
     private final CardMapper cardMapper;
 
-    /** 커스텀 카드 전용 BIN 풀 (기존 BIN_MAPPING_MAP 과 겹치지 않음) */
-    private static final String[] CUSTOM_BINS = {"421029", "463654", "484404", "463652"};
+    /** 커스텀 카드 전용 BIN 풀 (KbCardBinRegistry 준수) */
+    private static final List<String> CUSTOM_BINS = org.scoula.card.util.KbCardBinRegistry.CUSTOM_BINS;
 
     // ──────────────────────────────────────────────────────────────
     // 기존 기능
@@ -193,7 +193,7 @@ public class CardServiceImpl implements CardService {
     @Transactional
     public CardVO createCardMasterCustom(CardCustomCreateDTO dto) {
         // 1. 커스텀 BIN 풀에서 랜덤 선택
-        String bin = CUSTOM_BINS[ThreadLocalRandom.current().nextInt(CUSTOM_BINS.length)];
+        String bin = CUSTOM_BINS.get(ThreadLocalRandom.current().nextInt(CUSTOM_BINS.size()));
 
         // 2. 카드번호: 선택된 BIN(6자리) + 랜덤(10자리)
         String cardNum = generateCardNumber(bin);
@@ -227,15 +227,21 @@ public class CardServiceImpl implements CardService {
         List<Map<String, Object>> allProducts = cardMapper.findAllCardProducts();
 
         if (allProducts != null && !allProducts.isEmpty()) {
-            int idx = 1;
+            int checkIdx = 0;
+            int creditIdx = 0;
+
             for (Map<String, Object> prod : allProducts) {
                 String cardName = String.valueOf(prod.get("cardName"));
                 String cardImage = String.valueOf(prod.get("cardImage"));
                 String cardType = String.valueOf(prod.get("cardType"));
 
-                String binPrefix = "CHECK".equalsIgnoreCase(cardType)
-                        ? "9445" + String.format("%02d", (idx % 90) + 10)
-                        : "5399" + String.format("%02d", (idx % 90) + 10);
+                boolean isCheck = "CHECK".equalsIgnoreCase(cardType)
+                        || (cardName != null && cardName.contains("체크"));
+
+                // 공식 299개 BIN 풀에서 신용/체크 타입별 1:1 고유 BIN 할당
+                String binPrefix = isCheck
+                        ? org.scoula.card.util.KbCardBinRegistry.getBinForCard(checkIdx++, "CHECK", cardName)
+                        : org.scoula.card.util.KbCardBinRegistry.getBinForCard(creditIdx++, "CREDIT", cardName);
 
                 String cardNum = generateCardNumber(binPrefix);
                 String expiry = generateExpiry();
@@ -258,9 +264,8 @@ public class CardServiceImpl implements CardService {
                 if (insertRes == 1) {
                     resultList.add(cardVO);
                 }
-                idx++;
             }
-            log.info("크롤링 카탈로그(kb_card_product_tbl) 기반 카드 마스터 일괄 등록 완료: 총 {}건", resultList.size());
+            log.info("크롤링 카탈로그(kb_card_product_tbl) 기반 공식 BIN 1:1 매핑 카드 마스터 등록 완료: 총 {}건", resultList.size());
         } else {
             // fallback: BIN_MAPPING_MAP
             for (Map.Entry<String, CardController.CardInfo> entry : CardController.BIN_MAPPING_MAP.entrySet()) {

@@ -1,7 +1,7 @@
 <template>
   <div class="step-content-wrap">
     <RemitStep3FeedForm
-      remit-type="FRIEND"
+      :remit-type="remittanceStore.remitType || 'FRIEND'"
       :selected-friend-obj="remittanceStore.selectedFriendObj"
       :remit-amount="remittanceStore.remitAmount"
       :remit-memo="remittanceStore.remitMemo"

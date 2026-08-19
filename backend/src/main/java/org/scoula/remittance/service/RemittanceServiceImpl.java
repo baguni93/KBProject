@@ -11,6 +11,7 @@ import org.scoula.remittance.dto.BankRemittanceInfoDTO;
 import org.scoula.remittance.dto.RecentAccountDTO;
 import org.scoula.remittance.dto.RemittanceDTO;
 import org.scoula.remittance.mapper.RemittanceMapper;
+import org.scoula.settlement.mapper.SettlementMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ public class RemittanceServiceImpl implements RemittanceService {
     private final RemittanceMapper remittanceMapper;
     private final FeedService feedService;
     private final RandomBoxService randomBoxService;
+    private final SettlementMapper settlementMapper;
 
     @Override
     @Transactional
@@ -56,7 +58,6 @@ public class RemittanceServiceImpl implements RemittanceService {
 
 
         // 수신처 입금 (계좌 vs 지갑)
-        // 박우진 추가 정산은 바로 돈이 입급되지않는다.
         if ("ACCOUNT".equals(remittanceDTO.getReceiverType())) {
 
             try {
@@ -91,6 +92,20 @@ public class RemittanceServiceImpl implements RemittanceService {
                 recId = 2; // 테스트용 기본 친구 ID
                 remittanceDTO.setReceiverId(recId);
             }
+
+            // 친구/상대방 실제 닉네임 조회 (수취인 대체)
+            if (remittanceDTO.getReceiverName() == null || remittanceDTO.getReceiverName().trim().isEmpty() || "수취인".equals(remittanceDTO.getReceiverName().trim()) || "친구".equals(remittanceDTO.getReceiverName().trim())) {
+                try {
+                    String realNick = remittanceMapper.getUserNicknameOrName(recId);
+                    if (realNick != null && !realNick.trim().isEmpty()) {
+                        remittanceDTO.setReceiverName(realNick);
+                        remittanceDTO.setMerchantName(realNick);
+                    }
+                } catch (Exception nickErr) {
+                    log.warn("수취인 닉네임 조회 예외: {}", nickErr.getMessage());
+                }
+            }
+
             try {
                 remittanceMapper.addBalance(recId, amount);
             } catch (Exception balErr) {
@@ -106,6 +121,21 @@ public class RemittanceServiceImpl implements RemittanceService {
         }
         remittanceDTO.setStatus("SUCCESS");
         remittanceMapper.insertRemittance(remittanceDTO);
+
+        // 정산 송금인 경우 정산 테이블 상태 완료(COMPLETE) 연동 처리
+        if (remittanceDTO.getSettlementId() != null && remittanceDTO.getSettlementId() > 0) {
+            try {
+                int sId = remittanceDTO.getSettlementId();
+                settlementMapper.completeMemberSettlement(sId, walletId);
+                boolean allCompleted = settlementMapper.isAllMemberCompleted(sId);
+                if (allCompleted) {
+                    settlementMapper.completeSettlement(sId);
+                }
+                log.info("정산 송금 연동 완료: settlementId={}, userId={}, allCompleted={}", sId, walletId, allCompleted);
+            } catch (Exception sErr) {
+                log.warn("정산 멤버 완료 처리 예외: {}", sErr.getMessage());
+            }
+        }
 
         if(remittanceDTO.isSettlement()){
             //정산 지불일떄는 피드와 ,랜덤 박스는 지급하지않는다.

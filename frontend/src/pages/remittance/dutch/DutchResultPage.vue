@@ -1,10 +1,12 @@
 <template>
   <div class="step-content-wrap">
     <RemitResultStep
-      remit-type="DUTCH_CREATE"
+      :remit-type="remittanceStore.remitType === 'DUTCH_PAY' ? 'DUTCH_PAY' : 'DUTCH_CREATE'"
       :remit-amount="remittanceStore.remitAmount"
       :selected-dutch-friends="remittanceStore.selectedDutchFriends"
       :dutch-room-title="remittanceStore.dutchRoomTitle"
+      :receiver-name="remittanceStore.accountForm.receiverName || remittanceStore.selectedFriendObj?.nickname || '노랑지갑'"
+      :remit-memo="remittanceStore.remitMemo"
       :get-friend-name="remittanceStore.getFriendName"
       :format-currency="remittanceStore.formatCurrency"
       @reset-all="resetAndGoHome"

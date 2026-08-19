@@ -8,8 +8,8 @@
         </div>
         <div class="venmo-header-text">
           <h3 class="text-16-bold m-0 venmo-header-title">
-            <template v-if="remitType === 'FRIEND'">
-              {{ selectedFriendObj?.name || "선택한 친구" }}님에게
+            <template v-if="remitType === 'FRIEND' || remitType === 'DUTCH_PAY'">
+              {{ selectedFriendObj?.name || selectedFriendObj?.nickname || accountForm.receiverName || "노랑지갑" }}님에게
             </template>
             <template v-else>
               {{ accountForm.receiverName || "수취인" }}님에게
@@ -21,7 +21,7 @@
         </div>
       </div>
       <span class="venmo-tag-badge text-12-bold">
-        {{ remitType === "FRIEND" ? "친구 송금" : "계좌 송금" }}
+        {{ remitType === "DUTCH_PAY" ? "정산 송금" : (remitType === "FRIEND" ? "친구 송금" : "계좌 송금") }}
       </span>
     </div>
 

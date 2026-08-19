@@ -26,6 +26,8 @@ export default {
     formData.append('memo', remittanceData.memo || '송금 완료');
     formData.append('content', remittanceData.content || remittanceData.memo || '송금 완료');
     formData.append('receiverType', remittanceData.receiverType || 'WALLET');
+    if (remittanceData.receiverName) formData.append('receiverName', remittanceData.receiverName);
+    if (remittanceData.merchantName) formData.append('merchantName', remittanceData.merchantName);
     formData.append('bankCode', remittanceData.bankCode || '004');
     formData.append('accountNumber', remittanceData.accountNumber || '');
     formData.append('visibility', remittanceData.visibility || 'PUBLIC');

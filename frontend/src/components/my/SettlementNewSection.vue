@@ -269,6 +269,19 @@
         </div>
       </Transition>
     </div>
+
+    <!-- 정산 간편비밀번호/PIN 모달 -->
+    <RemitPasswordModal
+      :show="showPinModal"
+      :input-pin="inputPin"
+      :error-message="pinErrorMessage"
+      :pin-locked="pinLocked"
+      @close="closePinModal"
+      @enter-pin="enterPin"
+      @clear-pin="clearPin"
+      @delete-pin="deletePin"
+      @forgot-pin="goPinReset"
+    />
   </div>
 </template>
 
@@ -277,11 +290,13 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.js';
 import { useSettlementStore } from '@/stores/settlement';
+import { useRemittanceStore } from '@/stores/remittance';
+import { useSignupStore } from '@/stores/signup';
 import { formatRelativeDate } from '@/util/data';
 import { useModalStore } from '@/stores/userModalStore';
-import { useRemittanceStore } from '@/stores/remittance';
+import RemitPasswordModal from '@/components/remittance/RemitPasswordModal.vue';
+import walletApi from '@/api/walletApi';
 
-const remittanceStore = useRemittanceStore();
 /* =========================
  * Props
  * ========================= */
@@ -300,6 +315,7 @@ const props = defineProps({
 const modalStore = useModalStore();
 const authStore = useAuthStore();
 const settlementStore = useSettlementStore();
+const remittanceStore = useRemittanceStore();
 const router = useRouter();
 
 /* =========================
@@ -546,25 +562,90 @@ const handleRemindAll = async () => {
 };
 
 /* =========================
- * 정산 결제 페이지 이동
+ * 정산 결제 (PIN 인증 기반 원클릭 결제)
  * ========================= */
 
-const goToPayment = () => {
-  console.log(props.settlement.requesterId);
-  remittanceStore.selectedFriendId = props.settlement.requesterId;
-  const fObj = remittanceStore.friendList.find(
-    (f) => (f.id || f.friendId) === props.settlement.requesterId,
-  );
-  remittanceStore.selectedFriendObj = fObj;
-  remittanceStore.accountForm.receiverName = fObj
-    ? fObj.name || fObj.nickname || fObj.username
-    : '친구';
-  const member = members.value.find((x) => x.userId == props.userId);
+const showPinModal = ref(false);
+const inputPin = ref("");
+const pinErrorMessage = ref("");
+const pinLocked = ref(false);
+const isPaying = ref(false);
 
-  if (member) {
-    remittanceStore.remitAmount = member.amount;
+const goToPayment = () => {
+  if (isPaid.value) return;
+  inputPin.value = "";
+  pinErrorMessage.value = "";
+  pinLocked.value = false;
+  showPinModal.value = true;
+};
+
+const enterPin = async (n) => {
+  if (pinLocked.value || isPaying.value) return;
+  pinErrorMessage.value = "";
+
+  if (inputPin.value.length < 6) {
+    inputPin.value += String(n);
+    if (inputPin.value.length === 6) {
+      try {
+        isPaying.value = true;
+        const res = await walletApi.verifyPin(userId, inputPin.value);
+        if (res && res.verified) {
+          pinErrorMessage.value = "";
+          showPinModal.value = false;
+
+          // 1. 백엔드 정산 결제 API 호출 (지갑 차감 + 상대 입금 + 거래내역 + 멤버 상태 COMPLETE)
+          await settlementStore.payment({
+            settlementId: props.settlement.settlementId,
+            userId,
+          });
+
+          // 2. 정산 목록 즉시 최신화
+          await settlementStore.getMyList({ userId });
+
+          modalStore.showAlert(
+            `${props.settlement.title || '정산'} 분담금 송금이 완료되었습니다!`,
+            "정산 송금 완료"
+          );
+        } else {
+          pinErrorMessage.value = res?.message || "간편비밀번호가 일치하지 않습니다.";
+          inputPin.value = "";
+          if (res?.pinLocked || pinErrorMessage.value.includes("초과") || pinErrorMessage.value.includes("잠겼습니다")) {
+            pinLocked.value = true;
+          }
+        }
+      } catch (err) {
+        console.error("정산 결제 처리 오류:", err);
+        const errMsg = err.response?.data?.message || err.message || "정산 결제 처리에 실패했습니다.";
+        pinErrorMessage.value = errMsg;
+        inputPin.value = "";
+      } finally {
+        isPaying.value = false;
+      }
+    }
   }
-  router.push('/remittance/friend/amount');
+};
+
+const closePinModal = () => {
+  showPinModal.value = false;
+  inputPin.value = "";
+  pinErrorMessage.value = "";
+};
+
+const clearPin = () => {
+  inputPin.value = "";
+  pinErrorMessage.value = "";
+};
+
+const deletePin = () => {
+  inputPin.value = inputPin.value.slice(0, -1);
+  pinErrorMessage.value = "";
+};
+
+const goPinReset = () => {
+  showPinModal.value = false;
+  inputPin.value = "";
+  signupStore.setVerificationPurpose('PIN_RESET');
+  router.push('/signup/check');
 };
 
 /* =========================
