@@ -29,10 +29,12 @@
 <script setup>
 import { useRouter } from "vue-router";
 import { useRemittanceStore } from "@/stores/remittance";
+import { useModalStore } from "@/stores/userModalStore";
 import DutchRemitSection from "@/components/remittance/DutchRemitSection.vue";
 
 const router = useRouter();
 const remittanceStore = useRemittanceStore();
+const modalStore = useModalStore();
 
 const toggleDutchFriend = (fId) => {
   const idx = remittanceStore.selectedDutchFriends.indexOf(fId);
@@ -52,7 +54,7 @@ const removeDutchFriend = (fId) => {
 
 const proceedToTransactions = async () => {
   if (remittanceStore.selectedDutchFriends.length === 0) {
-    alert("정산에 함께할 친구를 선택해주세요.");
+    modalStore.showAlert("정산에 함께할 친구를 선택해주세요.", "친구 선택 안내");
     return;
   }
   router.push('/remittance/dutch/amount');

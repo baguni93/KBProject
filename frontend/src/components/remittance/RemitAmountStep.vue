@@ -17,16 +17,16 @@
           />
           <div class="receiver-info-col">
             <h3 class="receiver-name text-22-bold">
-              <template v-if="remitType === 'FRIEND'">
-                {{ selectedFriendObj?.name || "선택한 친구" }}님에게
+              <template v-if="remitType === 'FRIEND' || remitType === 'DUTCH_PAY'">
+                {{ selectedFriendObj?.name || selectedFriendObj?.nickname || accountForm.receiverName || "노랑지갑" }}님에게
               </template>
               <template v-else>
                 {{ accountForm.receiverName || "수취인" }}님에게
               </template>
             </h3>
             <p class="sub-handle text-13">
-              <template v-if="remitType === 'FRIEND'">
-                @{{ selectedFriendObj?.username || selectedFriendObj?.nickname || "친구" }}
+              <template v-if="remitType === 'FRIEND' || remitType === 'DUTCH_PAY'">
+                @{{ selectedFriendObj?.username || selectedFriendObj?.nickname || "노랑지갑" }}
               </template>
               <template v-else>
                 {{ getBankName(accountForm.bankCode) }} {{ accountForm.accountNumber }}

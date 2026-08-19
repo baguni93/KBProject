@@ -93,6 +93,15 @@
         LIMIT 1
     </select>
 
+    <!-- 회원 닉네임 또는 이름 조회 (profile_tbl 우선, 없으면 user_tbl) -->
+    <select id="getUserNicknameOrName" resultType="string">
+        SELECT COALESCE(p.nickname, u.user_name, '친구')
+        FROM user_tbl u
+        LEFT JOIN profile_tbl p ON u.user_id = p.user_id
+        WHERE u.user_id = #{userId}
+        LIMIT 1
+    </select>
+
     <!-- 송금 피드 이미지 등록 (feed_image_tbl) -->
     <insert id="insertFeedImage">
         INSERT INTO feed_image_tbl(feed_id, image_name)

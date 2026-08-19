@@ -17,10 +17,12 @@
 <script setup>
 import { useRouter } from "vue-router";
 import { useRemittanceStore } from "@/stores/remittance";
+import { useModalStore } from "@/stores/userModalStore";
 import AccountRemitSection from "@/components/remittance/AccountRemitSection.vue";
 
 const router = useRouter();
 const remittanceStore = useRemittanceStore();
+const modalStore = useModalStore();
 
 const selectRecentAccount = (acc) => {
   remittanceStore.accountForm.bankCode = acc.bankCode || "004";
@@ -31,7 +33,7 @@ const selectRecentAccount = (acc) => {
 
 const proceedToAmount = () => {
   if (!remittanceStore.accountForm.accountNumber || !remittanceStore.accountForm.bankCode) {
-    alert("은행과 계좌번호를 입력해주세요.");
+    modalStore.showAlert("은행과 계좌번호를 입력해주세요.", "계좌 입력 안내");
     return;
   }
   router.push('/remittance/account/amount');

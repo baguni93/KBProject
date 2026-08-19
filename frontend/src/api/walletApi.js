@@ -51,9 +51,9 @@ export default {
     return data;
   },
 
-  // PIN-001: 백엔드 DB 유저 간편비밀번호(PIN) 검증 API
+  // PIN-001: 백엔드 DB 유저 간편비밀번호(PIN) 검증 API (5회 연속 오류 시 차단 및 잔여 횟수 연동)
   async verifyPin(userId, pinPassword) {
-    const { data } = await api.post('/api/users/pin/verify', {
+    const { data } = await api.post(`${BASE_URL}/pin/verify?userId=${userId || 1}`, {
       pinPassword: pinPassword,
     });
     return data;

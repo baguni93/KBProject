@@ -1,7 +1,7 @@
 <template>
   <div class="step-content-wrap">
     <RemitAmountStep
-      remit-type="FRIEND"
+      :remit-type="remittanceStore.remitType || 'FRIEND'"
       :selected-friend-obj="remittanceStore.selectedFriendObj"
       :my-balance="remittanceStore.myBalance"
       :my-account-name="remittanceStore.myAccountName || '페이머니'"
@@ -35,12 +35,15 @@
 </template>
 
 <script setup>
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useRemittanceStore } from "@/stores/remittance";
+import { useModalStore } from "@/stores/userModalStore";
 import RemitAmountStep from "@/components/remittance/RemitAmountStep.vue";
 
+const route = useRoute();
 const router = useRouter();
 const remittanceStore = useRemittanceStore();
+const modalStore = useModalStore();
 
 const handleAmountInput = (e) => {
   const raw = e.target.value.replace(/[^0-9]/g, "");
@@ -57,11 +60,14 @@ const setAllBalance = () => {
 
 const proceedToFeed = () => {
   if (remittanceStore.isExceedBalance) {
-    alert("출금 가능 잔액을 초과했습니다.");
+    modalStore.showAlert("출금 가능 잔액을 초과했습니다.", "잔액 초과");
     return;
   }
   if (remittanceStore.remitAmount > 0) {
-    router.push('/remittance/friend/feed');
+    router.push({
+      path: '/remittance/friend/feed',
+      query: route.query,
+    });
   }
 };
 </script>

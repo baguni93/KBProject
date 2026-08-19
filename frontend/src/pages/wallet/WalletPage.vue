@@ -170,10 +170,13 @@
     <WalletPinAuthModal
       :show="showPinAuthModal"
       :input-pin-code="inputPinCode"
-      @close="showPinAuthModal = false"
+      :error-message="pinErrorMessage"
+      :pin-locked="pinLocked"
+      @close="closePinModal"
       @enter-pin="enterPin"
-      @clear-pin="inputPinCode = ''"
-      @delete-pin="inputPinCode = inputPinCode.slice(0, -1)"
+      @clear-pin="clearPinCode"
+      @delete-pin="deletePinCode"
+      @forgot-pin="goPinReset"
     />
 
     <!-- 5. 모바일 푸시 알림 배너 (Teleport to body 적용) -->
@@ -188,6 +191,7 @@ import api from "@/api";
 import { getCards, requestCardPayment, cancelCardPayment, getCardTransactionStatus, approveCardPayment } from "@/api/cardApi";
 import walletApi from "@/api/walletApi";
 import { useAuthStore } from "@/stores/auth";
+import { useSignupStore } from "@/stores/signup";
 
 import PageHeader from "@/components/common/PageHeader.vue";
 import WalletCardSliderSection from "@/components/wallet/WalletCardSliderSection.vue";
@@ -200,6 +204,10 @@ import WalletPushNotificationBanner from "@/components/wallet/WalletPushNotifica
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const signupStore = useSignupStore();
+
+const pinErrorMessage = ref("");
+const pinLocked = ref(false);
 
 const currentView = ref("MAIN");
 
@@ -683,14 +691,44 @@ const inputPinCode = ref("");
 const cancelChargePin = () => {
   isChargePinPage.value = false;
   inputPinCode.value = "";
+  pinErrorMessage.value = "";
 };
 
 const openPinModal = () => {
   inputPinCode.value = "";
+  pinErrorMessage.value = "";
+  pinLocked.value = false;
   showPinAuthModal.value = true;
 };
 
+const closePinModal = () => {
+  showPinAuthModal.value = false;
+  inputPinCode.value = "";
+  pinErrorMessage.value = "";
+};
+
+const clearPinCode = () => {
+  inputPinCode.value = "";
+  pinErrorMessage.value = "";
+};
+
+const deletePinCode = () => {
+  inputPinCode.value = inputPinCode.value.slice(0, -1);
+  pinErrorMessage.value = "";
+};
+
+const goPinReset = () => {
+  showPinAuthModal.value = false;
+  inputPinCode.value = "";
+  pinErrorMessage.value = "";
+  signupStore.setVerificationPurpose('PIN_RESET');
+  router.push('/signup/check');
+};
+
 const enterPin = async (num) => {
+  if (pinLocked.value) return;
+
+  pinErrorMessage.value = "";
   if (inputPinCode.value.length < 6) {
     inputPinCode.value += String(num);
     if (inputPinCode.value.length === 6) {
@@ -700,27 +738,25 @@ const enterPin = async (num) => {
       try {
         const verifyResult = await walletApi.verifyPin(uId, enteredPin);
         if (!verifyResult || !verifyResult.verified) {
-          triggerMobilePush(
-            "비밀번호 오류",
-            verifyResult?.message || "간편 비밀번호(PIN) 6자리가 일치하지 않습니다.",
-            "fa-solid fa-lock"
-          );
+          pinErrorMessage.value = verifyResult?.message || "간편비밀번호가 일치하지 않습니다.";
           inputPinCode.value = "";
+          if (verifyResult?.pinLocked || pinErrorMessage.value.includes("초과") || pinErrorMessage.value.includes("잠겼습니다")) {
+            pinLocked.value = true;
+          }
           return;
         }
       } catch (err) {
-        const validPin = localStorage.getItem("user_pin") || "123456";
-        if (enteredPin !== validPin && enteredPin !== "000000") {
-          triggerMobilePush(
-            "비밀번호 오류",
-            "간편 비밀번호(PIN) 6자리가 일치하지 않습니다.",
-            "fa-solid fa-lock"
-          );
-          inputPinCode.value = "";
-          return;
+        console.error("PIN 인증 실패:", err);
+        const errData = err.response?.data;
+        pinErrorMessage.value = (typeof errData === 'string' ? errData : errData?.message) || err.message || "간편비밀번호가 일치하지 않습니다.";
+        inputPinCode.value = "";
+        if (pinErrorMessage.value.includes("초과") || pinErrorMessage.value.includes("잠겼습니다")) {
+          pinLocked.value = true;
         }
+        return;
       }
 
+      pinErrorMessage.value = "";
       showPinAuthModal.value = false;
       isChargePinPage.value = false;
       inputPinCode.value = "";

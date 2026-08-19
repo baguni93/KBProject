@@ -75,4 +75,6 @@ public interface CardPaymentMapper {
     Long getWalletBalanceByUserId(@Param("userId") Integer userId);
 
     int insertFinancialTransactionForCard(org.scoula.cardpayment.dto.CardTransactionApproveDTO approveDTO);
+
+    java.util.Map<String, Object> getUserPinAuthInfo(@Param("userId") Integer userId);
 }

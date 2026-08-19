@@ -41,18 +41,22 @@
     <RemitPasswordModal
       :show="remittanceStore.showPasswordModal"
       :input-pin="remittanceStore.inputPinCode"
-      @close="remittanceStore.showPasswordModal = false"
+      :error-message="pinErrorMessage"
+      :pin-locked="pinLocked"
+      @close="closePinModal"
       @enter-pin="enterPinCode"
-      @clear-pin="remittanceStore.inputPinCode = ''"
-      @delete-pin="remittanceStore.inputPinCode = remittanceStore.inputPinCode.slice(0, -1)"
+      @clear-pin="clearPinCode"
+      @delete-pin="deletePinCode"
+      @forgot-pin="goPinReset"
     />
   </div>
 </template>
 
 <script setup>
-import { computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useRemittanceStore } from "@/stores/remittance";
+import { useSignupStore } from "@/stores/signup";
 import PageHeader from "@/components/common/PageHeader.vue";
 import CommonTabBar from "@/components/common/CommonTabBar.vue";
 import RemitConfirmModal from "@/components/remittance/RemitConfirmModal.vue";
@@ -62,6 +66,10 @@ import walletApi from "@/api/walletApi";
 const route = useRoute();
 const router = useRouter();
 const remittanceStore = useRemittanceStore();
+const signupStore = useSignupStore();
+
+const pinErrorMessage = ref("");
+const pinLocked = ref(false);
 
 const tabOptions = [
   { label: "계좌 송금", value: "ACCOUNT" },
@@ -96,7 +104,47 @@ const handleTabChange = (newVal) => {
   else if (newVal === "DUTCH") router.replace('/remittance/dutch');
 };
 
+const restoreSettlementFromQuery = (q) => {
+  if (q && q.settlementId) {
+    const sId = Number(q.settlementId);
+    const reqId = Number(q.requesterId || 1);
+    const amount = Number(q.amount || 0);
+    const name = q.name || '노랑지갑';
+    const title = q.title || '정산 송금';
+
+    remittanceStore.settlementId = sId;
+    remittanceStore.settlementRequesterId = reqId;
+    remittanceStore.selectedFriendId = reqId;
+    remittanceStore.remitType = 'DUTCH_PAY';
+    if (amount > 0) remittanceStore.remitAmount = amount;
+    remittanceStore.accountForm.receiverName = name;
+    remittanceStore.dutchRoomTitle = title;
+    remittanceStore.remitMemo = `${title} 정산`;
+
+    if (!remittanceStore.selectedFriendObj || remittanceStore.selectedFriendObj.id !== reqId) {
+      remittanceStore.selectedFriendObj = {
+        id: reqId,
+        userId: reqId,
+        nickname: name,
+        name: name,
+        username: name,
+      };
+    }
+  }
+};
+
+onMounted(() => {
+  restoreSettlementFromQuery(route.query);
+});
+
+watch(() => route.query, (newQ) => {
+  restoreSettlementFromQuery(newQ);
+}, { immediate: true });
+
 const syncRemitTypeFromRoute = (path) => {
+  if (route.query.settlementId || remittanceStore.remitType === 'DUTCH_PAY' || remittanceStore.settlementId) {
+    return;
+  }
   if (path.includes('/dutch')) {
     remittanceStore.remitType = 'DUTCH';
   } else if (path.includes('/friend')) {
@@ -109,11 +157,11 @@ const syncRemitTypeFromRoute = (path) => {
 watch(() => route.path, (newPath, oldPath) => {
   syncRemitTypeFromRoute(newPath);
 
-  // Step 1 메인 탭 전환 시에만 폼 데이터 초기화
+  // Step 1 메인 탭 전환 시에만 폼 데이터 초기화 (정산 송금 아닐 때만)
   const isStepOnePath = newPath === '/remittance/account' || newPath === '/remittance/friend' || newPath === '/remittance/dutch' || newPath === '/remittance';
   const wasStepOnePath = oldPath === '/remittance/account' || oldPath === '/remittance/friend' || oldPath === '/remittance/dutch' || oldPath === '/remittance';
 
-  if (isStepOnePath && wasStepOnePath && newPath !== oldPath) {
+  if (isStepOnePath && wasStepOnePath && newPath !== oldPath && !route.query.settlementId) {
     remittanceStore.resetAll();
     syncRemitTypeFromRoute(newPath);
   }
@@ -143,10 +191,39 @@ const handleBack = () => {
 const confirmRemittanceWithPassword = () => {
   remittanceStore.showConfirmModal = false;
   remittanceStore.inputPinCode = "";
+  pinErrorMessage.value = "";
+  pinLocked.value = false;
   remittanceStore.showPasswordModal = true;
 };
 
+const closePinModal = () => {
+  remittanceStore.showPasswordModal = false;
+  remittanceStore.inputPinCode = "";
+  pinErrorMessage.value = "";
+};
+
+const clearPinCode = () => {
+  remittanceStore.inputPinCode = "";
+  pinErrorMessage.value = "";
+};
+
+const deletePinCode = () => {
+  remittanceStore.inputPinCode = remittanceStore.inputPinCode.slice(0, -1);
+  pinErrorMessage.value = "";
+};
+
+const goPinReset = () => {
+  remittanceStore.showPasswordModal = false;
+  remittanceStore.inputPinCode = "";
+  pinErrorMessage.value = "";
+  signupStore.setVerificationPurpose('PIN_RESET');
+  router.push('/signup/check');
+};
+
 const enterPinCode = async (n) => {
+  if (pinLocked.value) return;
+
+  pinErrorMessage.value = "";
   if (remittanceStore.inputPinCode.length < 6) {
     remittanceStore.inputPinCode += String(n);
     if (remittanceStore.inputPinCode.length === 6) {
@@ -154,25 +231,34 @@ const enterPinCode = async (n) => {
         const userId = remittanceStore.authStore?.userId || 1;
         const res = await walletApi.verifyPin(userId, remittanceStore.inputPinCode);
         if (res && res.verified) {
+          pinErrorMessage.value = "";
           remittanceStore.showPasswordModal = false;
+          const isDutch = remittanceStore.remitType === 'DUTCH' || remittanceStore.remitType === 'DUTCH_PAY' || !!remittanceStore.settlementId;
           await remittanceStore.executeRemittance();
           if (remittanceStore.remitSuccess) {
-            if (remittanceStore.remitType === 'ACCOUNT') {
-              router.push('/remittance/account/result');
-            } else if (remittanceStore.remitType === 'FRIEND') {
-              router.push('/remittance/friend/result');
-            } else if (remittanceStore.remitType === 'DUTCH') {
+            if (isDutch) {
               router.push('/remittance/dutch/result');
+            } else if (remittanceStore.remitType === 'ACCOUNT') {
+              router.push('/remittance/account/result');
+            } else {
+              router.push('/remittance/friend/result');
             }
           }
         } else {
-          alert("비밀번호가 일치하지 않습니다. 다시 입력해 주세요.");
+          pinErrorMessage.value = res?.message || "간편비밀번호가 일치하지 않습니다.";
           remittanceStore.inputPinCode = "";
+          if (res?.pinLocked || pinErrorMessage.value.includes("초과") || pinErrorMessage.value.includes("잠겼습니다")) {
+            pinLocked.value = true;
+          }
         }
       } catch (pinErr) {
         console.error("PIN 인증 실패:", pinErr);
-        alert("비밀번호가 일치하지 않습니다. 다시 입력해 주세요.");
+        const errData = pinErr.response?.data;
+        pinErrorMessage.value = (typeof errData === 'string' ? errData : errData?.message) || pinErr.message || "간편비밀번호가 일치하지 않습니다.";
         remittanceStore.inputPinCode = "";
+        if (pinErrorMessage.value.includes("초과") || pinErrorMessage.value.includes("잠겼습니다")) {
+          pinLocked.value = true;
+        }
       }
     }
   }

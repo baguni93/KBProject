@@ -213,9 +213,11 @@ import AgreementCheckItem from '@/components/common/AgreementCheckItem.vue';
 import agreementApi from '@/api/agreementApi';
 import { registerCard, saveCardAgreements } from '@/api/cardApi';
 import { useAuthStore } from '@/stores/auth';
+import { useModalStore } from '@/stores/userModalStore';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const modalStore = useModalStore();
 
 const currentStep = ref(1); // 1: 카드 정보 입력, 2: 약관 동의
 const inputSubStep = ref(1); // 1: 카드번호, 2: 만료일, 3: CVC, 4: 비밀번호
@@ -526,7 +528,7 @@ const submitCard = async () => {
   } catch (error) {
     console.error('카드 등록 실패:', error);
     const message = error.response?.data?.message || error.message || '카드 등록에 실패했습니다.';
-    alert(`카드 등록 실패: ${message}`);
+    modalStore.showAlert(`카드 등록 실패: ${message}`, '카드 등록 안내');
   } finally {
     submitting.value = false;
   }
