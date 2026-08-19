@@ -5,6 +5,10 @@
       :account-form="remittanceStore.accountForm"
       :my-balance="remittanceStore.myBalance"
       :my-account-name="remittanceStore.primaryAccountName || 'KB국민 주거래통장'"
+      :total-available-balance="remittanceStore.totalAvailableBalance"
+      :is-exceed-balance="remittanceStore.isExceedBalance"
+      :is-auto-charge-needed="remittanceStore.isAutoChargeNeeded"
+      :auto-charge-amount="remittanceStore.autoChargeAmount"
       :remit-amount="remittanceStore.remitAmount"
       :remit-amount-display="remittanceStore.remitAmount > 0 ? remittanceStore.formatCurrency(remittanceStore.remitAmount) : ''"
       :get-bank-logo-file-name="remittanceStore.getBankLogoFileName"
@@ -21,7 +25,7 @@
       <button
         type="button"
         class="bottom-btn primary-button text-17-bold"
-        :disabled="remittanceStore.remitAmount <= 0"
+        :disabled="remittanceStore.remitAmount <= 0 || remittanceStore.isExceedBalance"
         @click="proceedToFeed"
       >
         다음
@@ -52,6 +56,10 @@ const setAllBalance = () => {
 };
 
 const proceedToFeed = () => {
+  if (remittanceStore.isExceedBalance) {
+    alert("출금 가능 잔액을 초과했습니다.");
+    return;
+  }
   if (remittanceStore.remitAmount > 0) {
     router.push('/remittance/account/feed');
   }

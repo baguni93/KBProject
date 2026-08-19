@@ -2,6 +2,8 @@ USE kbproject;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS `card_transaction_detail_tbl`;
+
 DROP TABLE IF EXISTS `linked_card_tbl`;
 
 DROP TABLE IF EXISTS `card_company_tbl`;
@@ -1845,6 +1847,29 @@ CREATE TABLE linked_card_tbl
     CONSTRAINT chk_linked_card_delete_yn
         CHECK (delete_yn IN ('Y', 'N'))
 ) COMMENT = '사용자 연결 카드';
+
+-- 55-1. 카드 결제 상세 테이블
+DROP TABLE IF EXISTS card_transaction_detail_tbl;
+
+CREATE TABLE card_transaction_detail_tbl
+(
+    card_transaction_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '카드 거래 상세 ID',
+    linked_card_id      INT         NOT NULL COMMENT '연결카드번호',
+    status              VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '결제 상태',
+    created_at          DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    transaction_id      INT         NULL COMMENT '금융 거래 원장 ID',
+
+    CONSTRAINT fk_card_tx_detail_linked_card
+        FOREIGN KEY (linked_card_id)
+            REFERENCES linked_card_tbl (linked_card_id),
+
+    CONSTRAINT fk_card_tx_detail_transaction
+        FOREIGN KEY (transaction_id)
+            REFERENCES financial_transaction_tbl (transaction_id),
+
+    CONSTRAINT chk_card_tx_detail_status
+        CHECK (status IN ('PENDING', 'SUCCESS', 'FAILED'))
+) COMMENT = '카드 결제 거래 상세';
 
 -- 56. 계좌인증 테이블
 DROP TABLE IF EXISTS account_verification_tbl;

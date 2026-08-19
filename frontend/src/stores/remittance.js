@@ -5,6 +5,7 @@ import friendApi from '@/api/friend';
 import walletApi from '@/api/walletApi';
 import analysisApi from '@/api/analysisApi';
 import transactionApi from '@/api/transactionApi';
+import * as accountApi from '@/api/accountApi';
 import { useAuthStore } from '@/stores/auth';
 import { useProfileStore } from '@/stores/profile';
 import { useSettlementStore } from '@/stores/settlement';
@@ -108,9 +109,35 @@ export const useRemittanceStore = defineStore('remittance', () => {
   const imagePreviewUrls = ref([]);
 
   // 사용자 잔액 및 더미 데이터
-  const myBalance = ref(1540000);
+  const myBalance = ref(107000);
+  const walletBalance = ref(0);
+  const primaryAccountBalance = ref(107000);
+  const primaryAccountName = ref('KB국민 주거래통장');
   const bankList = ref([]);
   const recentAccounts = ref([]);
+
+  // 출금 가능한 총 잔액 (대표 계좌 잔액 기준)
+  const totalAvailableBalance = computed(() => {
+    return primaryAccountBalance.value || myBalance.value || 0;
+  });
+
+  // 지갑 잔액 부족으로 대표계좌에서 자동 충전이 필요한 금액
+  const autoChargeAmount = computed(() => {
+    if (remitAmount.value > walletBalance.value && remitAmount.value <= totalAvailableBalance.value) {
+      return remitAmount.value - walletBalance.value;
+    }
+    return 0;
+  });
+
+  // 자동 충전 필요 여부
+  const isAutoChargeNeeded = computed(() => {
+    return autoChargeAmount.value > 0;
+  });
+
+  // 출금 가능 잔액 초과 여부 (초과 시 다음 버튼 disabled)
+  const isExceedBalance = computed(() => {
+    return remitAmount.value > totalAvailableBalance.value;
+  });
 
   // 모달 및 완료 상태
   const showConfirmModal = ref(false);
@@ -201,12 +228,29 @@ export const useRemittanceStore = defineStore('remittance', () => {
         console.log("카테고리 목록 로드 예외", catErr);
       }
 
-      // 지갑 잔액
+      // 1. 대표 계좌 및 계좌 잔액 조회
+      try {
+        if (accountApi && accountApi.getAccounts) {
+          const accounts = await accountApi.getAccounts();
+          if (accounts && Array.isArray(accounts) && accounts.length > 0) {
+            const primary = accounts.find((a) => a.primaryYn === 'Y') || accounts[0];
+            if (primary) {
+              primaryAccountBalance.value = Number(primary.balance || 0);
+              primaryAccountName.value = `${primary.bankName || 'KB국민'} 주거래통장`;
+              myBalance.value = primaryAccountBalance.value;
+            }
+          }
+        }
+      } catch (accErr) {
+        console.log("연결 계좌 목록 로드 예외", accErr);
+      }
+
+      // 2. 지갑 잔액 조회
       try {
         if (walletApi && walletApi.getWalletByUserId) {
           const wInfo = await walletApi.getWalletByUserId(userId);
           if (wInfo) {
-            myBalance.value = wInfo.balance !== undefined ? wInfo.balance : wInfo.amount || 1540000;
+            walletBalance.value = Number(wInfo.balance !== undefined ? wInfo.balance : wInfo.amount || 0);
           }
         }
       } catch (wErr) {
@@ -530,6 +574,13 @@ export const useRemittanceStore = defineStore('remittance', () => {
     selectedFiles,
     imagePreviewUrls,
     myBalance,
+    walletBalance,
+    primaryAccountBalance,
+    primaryAccountName,
+    totalAvailableBalance,
+    isAutoChargeNeeded,
+    autoChargeAmount,
+    isExceedBalance,
     bankList,
     recentAccounts,
     recentFriends,
