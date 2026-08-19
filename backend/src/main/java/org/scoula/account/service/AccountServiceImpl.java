@@ -251,10 +251,7 @@ public class AccountServiceImpl implements AccountService {
             throw new IllegalArgumentException("계좌 인증 정보가 필요합니다.");
         }
 
-        AccountVerificationVO verification = accountMapper.findVerificationById(
-                connectDTO.getVerificationId(),
-                userId
-        );
+        AccountVerificationVO verification = accountMapper.findVerificationById(connectDTO.getVerificationId(), userId);
 
         if (verification == null) {
             throw new IllegalArgumentException("계좌 인증 요청을 찾을 수 없습니다.");
@@ -264,17 +261,28 @@ public class AccountServiceImpl implements AccountService {
             throw new IllegalArgumentException("계좌 인증이 완료되지 않았습니다.");
         }
 
-        int duplicateCount = accountMapper.countConnectedAccount(
-                userId,
-                verification.getBankCode(),
-                verification.getAccountNumber()
-        );
+        int duplicateCount = accountMapper.countConnectedAccount(userId, verification.getBankCode(), verification.getAccountNumber());
 
         if (duplicateCount > 0) {
             throw new IllegalArgumentException("이미 연결된 계좌입니다.");
         }
 
         boolean firstAccount = accountMapper.countConnectedAccounts(userId) == 0;
+        LinkedAccountVO existingAccount = accountMapper.findAccountByAccountInfo(userId, verification.getBankCode(), verification.getAccountNumber());
+
+        // 이전에 연결 해제한 동일 계좌가 있으면 기존 행을 재사용
+        if (existingAccount != null) {
+            int result = accountMapper.reconnectAccount(userId, existingAccount.getLinkedAccountId(), firstAccount ? "Y" : "N");
+
+            if (result == 0) {
+                throw new IllegalStateException("계좌 재연결에 실패했습니다.");
+            }
+
+            accountMapper.deleteVerification(connectDTO.getVerificationId(), userId);
+            LinkedAccountVO connectedAccount = accountMapper.findAccountById(userId, existingAccount.getLinkedAccountId());
+
+            return AccountDTO.of(connectedAccount);
+        }
 
         LinkedAccountVO account = LinkedAccountVO.builder()
                 .userId(userId)
@@ -292,11 +300,7 @@ public class AccountServiceImpl implements AccountService {
         }
 
         accountMapper.deleteVerification(connectDTO.getVerificationId(), userId);
-
-        LinkedAccountVO connectedAccount = accountMapper.findAccountById(
-                userId,
-                account.getLinkedAccountId()
-        );
+        LinkedAccountVO connectedAccount = accountMapper.findAccountById(userId, account.getLinkedAccountId());
 
         return AccountDTO.of(connectedAccount);
     }
