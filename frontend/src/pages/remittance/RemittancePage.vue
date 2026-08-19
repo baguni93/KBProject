@@ -104,6 +104,8 @@
             :remit-type="remitType"
             :account-form="accountForm"
             :selected-friend-obj="selectedFriendObj"
+            :my-balance="myBalance"
+            :my-account-name="'페이머니'"
             :remit-amount="remitAmount"
             :remit-amount-display="remitAmountDisplay"
             :is-category-expanded="isCategoryExpanded"
@@ -728,8 +730,21 @@ const enterPinCode = async (n) => {
   if (inputPinCode.value.length < 6) {
     inputPinCode.value += String(n);
     if (inputPinCode.value.length === 6) {
-      showPasswordModal.value = false;
-      await executeRemittance();
+      try {
+        const userId = authStore.userId || 1;
+        const res = await walletApi.verifyPin(userId, inputPinCode.value);
+        if (res && res.verified) {
+          showPasswordModal.value = false;
+          await executeRemittance();
+        } else {
+          alert("비밀번호가 일치하지 않습니다. 다시 입력해 주세요.");
+          inputPinCode.value = "";
+        }
+      } catch (pinErr) {
+        console.error("PIN 인증 실패:", pinErr);
+        alert("비밀번호가 일치하지 않습니다. 다시 입력해 주세요.");
+        inputPinCode.value = "";
+      }
     }
   }
 };

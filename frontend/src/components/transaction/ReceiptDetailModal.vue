@@ -52,10 +52,10 @@
                   {{ transaction.targetType || "ACCOUNT" }}</span
                 >
               </div>
-              <div v-if="transaction.receiverName" class="info-row">
+              <div v-if="transaction.merchantName || transaction.receiverName" class="info-row">
                 <span class="info-label text-13">수신자/가맹점</span>
                 <span class="info-value text-13-bold">{{
-                  transaction.receiverName
+                  transaction.merchantName || transaction.receiverName
                 }}</span>
               </div>
               <div class="info-row">

@@ -108,17 +108,18 @@ export const useRemittanceStore = defineStore('remittance', () => {
   const selectedFiles = ref([]);
   const imagePreviewUrls = ref([]);
 
-  // 사용자 잔액 및 더미 데이터
-  const myBalance = ref(107000);
+  // 사용자 잔액 및 전자지갑(페이머니) 데이터
   const walletBalance = ref(0);
-  const primaryAccountBalance = ref(107000);
+  const myBalance = ref(0);
+  const primaryAccountBalance = ref(0);
   const primaryAccountName = ref('KB국민 주거래통장');
+  const myAccountName = ref('페이머니');
   const bankList = ref([]);
   const recentAccounts = ref([]);
 
-  // 출금 가능한 총 잔액 (대표 계좌 잔액 기준)
+  // 출금 가능한 총 잔액 (전자지갑 잔액 + 대표계좌 자동충전 가능 잔액)
   const totalAvailableBalance = computed(() => {
-    return primaryAccountBalance.value || myBalance.value || 0;
+    return (walletBalance.value || 0) + (primaryAccountBalance.value || 0);
   });
 
   // 지갑 잔액 부족으로 대표계좌에서 자동 충전이 필요한 금액
@@ -134,7 +135,7 @@ export const useRemittanceStore = defineStore('remittance', () => {
     return autoChargeAmount.value > 0;
   });
 
-  // 출금 가능 잔액 초과 여부 (초과 시 다음 버튼 disabled)
+  // 출금 가능 총 잔액 초과 여부
   const isExceedBalance = computed(() => {
     return remitAmount.value > totalAvailableBalance.value;
   });
@@ -236,8 +237,7 @@ export const useRemittanceStore = defineStore('remittance', () => {
             const primary = accounts.find((a) => a.primaryYn === 'Y') || accounts[0];
             if (primary) {
               primaryAccountBalance.value = Number(primary.balance || 0);
-              primaryAccountName.value = `${primary.bankName || 'KB국민'} 주거래통장`;
-              myBalance.value = primaryAccountBalance.value;
+              primaryAccountName.value = `${primary.bankName || 'KB국민'} ${primary.accountNumber ? '(' + primary.accountNumber.slice(-4) + ')' : ''}`;
             }
           }
         }
@@ -245,12 +245,14 @@ export const useRemittanceStore = defineStore('remittance', () => {
         console.log("연결 계좌 목록 로드 예외", accErr);
       }
 
-      // 2. 지갑 잔액 조회
+      // 2. 지갑 잔액 조회 (송금 기본 출금처: 페이머니)
       try {
         if (walletApi && walletApi.getWalletByUserId) {
           const wInfo = await walletApi.getWalletByUserId(userId);
           if (wInfo) {
             walletBalance.value = Number(wInfo.balance !== undefined ? wInfo.balance : wInfo.amount || 0);
+            myBalance.value = walletBalance.value;
+            myAccountName.value = '페이머니';
           }
         }
       } catch (wErr) {
@@ -310,11 +312,11 @@ export const useRemittanceStore = defineStore('remittance', () => {
                 f.friend?.id ||
                 f.user?.id;
               const fName =
-                f.name ||
                 f.nickname ||
                 f.receiver?.nickname ||
-                f.receiver?.name ||
                 f.friend?.nickname ||
+                f.name ||
+                f.receiver?.name ||
                 f.friend?.name ||
                 f.user?.nickname ||
                 f.user?.name ||
@@ -488,9 +490,10 @@ export const useRemittanceStore = defineStore('remittance', () => {
 
       // ── ACCOUNT / FRIEND 송금 분기 ───────────────
       const isAccount = remitType.value === 'ACCOUNT';
+      const friendNick = selectedFriendObj.value?.nickname || selectedFriendObj.value?.name || selectedFriendObj.value?.username || '친구';
       const receiverNameVal = isAccount
         ? (accountForm.receiverName || '수취인')
-        : (selectedFriendObj.value?.name || selectedFriendObj.value?.nickname || '친구');
+        : friendNick;
 
       const payload = {
         walletId: userId,
@@ -515,7 +518,10 @@ export const useRemittanceStore = defineStore('remittance', () => {
       remitSuccess.value = true;
     } catch (err) {
       console.error('송금/정산 처리 중 예외 발생:', err);
-      remitSuccess.value = true;
+      remitSuccess.value = false;
+      const msg = err.response?.data?.message || err.message || '송금 처리에 실패했습니다.';
+      alert('송금 실패: ' + msg);
+      throw err;
     } finally {
       isSubmitting.value = false;
     }
@@ -577,6 +583,7 @@ export const useRemittanceStore = defineStore('remittance', () => {
     walletBalance,
     primaryAccountBalance,
     primaryAccountName,
+    myAccountName,
     totalAvailableBalance,
     isAutoChargeNeeded,
     autoChargeAmount,

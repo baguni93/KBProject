@@ -194,13 +194,13 @@ const getCompleteTitle = computed(() => {
   }
 });
 
-// 2. 금액 표시 텍스트 (+/-)
+// 2. 금액 표시 텍스트
 const getFormattedAmountText = computed(() => {
   const formatted = props.formatCurrency(props.remitAmount || 0);
   if (props.remitType === "DUTCH_CREATE" || props.remitType === "DUTCH") {
     return `총 ${formatted} 원`;
   }
-  return `-${formatted} 원`;
+  return `${formatted} 원`;
 });
 
 // 3. 좌측 서브 버튼 텍스트 (흰색 버튼)

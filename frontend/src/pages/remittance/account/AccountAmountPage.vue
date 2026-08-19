@@ -4,7 +4,7 @@
       remit-type="ACCOUNT"
       :account-form="remittanceStore.accountForm"
       :my-balance="remittanceStore.myBalance"
-      :my-account-name="remittanceStore.primaryAccountName || 'KB국민 주거래통장'"
+      :my-account-name="remittanceStore.myAccountName || '페이머니'"
       :total-available-balance="remittanceStore.totalAvailableBalance"
       :is-exceed-balance="remittanceStore.isExceedBalance"
       :is-auto-charge-needed="remittanceStore.isAutoChargeNeeded"

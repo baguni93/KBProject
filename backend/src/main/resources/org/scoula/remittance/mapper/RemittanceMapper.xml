@@ -84,6 +84,15 @@
         LIMIT #{limit}
     </select>
 
+    <!-- 계좌 예금주명 조회 (account_dummy_tbl) -->
+    <select id="getAccountOwnerName" resultType="string">
+        SELECT owner_name
+        FROM account_dummy_tbl
+        WHERE (bank_code = #{bankCode} OR #{bankCode} IS NULL OR #{bankCode} = '')
+          AND REPLACE(account_number, '-', '') = REPLACE(#{accountNumber}, '-', '')
+        LIMIT 1
+    </select>
+
     <!-- 송금 피드 이미지 등록 (feed_image_tbl) -->
     <insert id="insertFeedImage">
         INSERT INTO feed_image_tbl(feed_id, image_name)

@@ -69,10 +69,22 @@ public class RemittanceServiceImpl implements RemittanceService {
                 log.warn("더미 계좌 입금 처리 예외 (계좌 송금 계속 진행): {}", accErr.getMessage());
             }
 
+            // 계좌 예금주명 자동 조회 및 매핑
+            if (remittanceDTO.getReceiverName() == null || remittanceDTO.getReceiverName().trim().isEmpty() || "수취인".equals(remittanceDTO.getReceiverName().trim())) {
+                try {
+                    String ownerName = remittanceMapper.getAccountOwnerName(remittanceDTO.getBankCode(), remittanceDTO.getAccountNumber());
+                    if (ownerName != null && !ownerName.trim().isEmpty()) {
+                        remittanceDTO.setReceiverName(ownerName);
+                        remittanceDTO.setMerchantName(ownerName);
+                    }
+                } catch (Exception ownerErr) {
+                    log.warn("계좌 예금주명 조회 예외: {}", ownerErr.getMessage());
+                }
+            }
+
             remittanceDTO.setReceiverId(null);
 
         } else {
-
 
             Integer recId = remittanceDTO.getReceiverId();
             if (recId == null || recId <= 0) {
@@ -80,17 +92,17 @@ public class RemittanceServiceImpl implements RemittanceService {
                 remittanceDTO.setReceiverId(recId);
             }
             try {
-
                 remittanceMapper.addBalance(recId, amount);
-
             } catch (Exception balErr) {
                 log.warn("친구 지갑 입금 처리 예외 (송금 계속 진행): {}", balErr.getMessage());
             }
         }
 
-        // 거래 내역 기록
-        if (remittanceDTO.getReceiverName() != null && !remittanceDTO.getReceiverName().isEmpty()) {
+        // 거래 내역 기록 (merchantName 최종 보정)
+        if (remittanceDTO.getReceiverName() != null && !remittanceDTO.getReceiverName().trim().isEmpty() && !"수취인".equals(remittanceDTO.getReceiverName())) {
             remittanceDTO.setMerchantName(remittanceDTO.getReceiverName());
+        } else if (remittanceDTO.getMerchantName() == null || remittanceDTO.getMerchantName().trim().isEmpty()) {
+            remittanceDTO.setMerchantName("수취인");
         }
         remittanceDTO.setStatus("SUCCESS");
         remittanceMapper.insertRemittance(remittanceDTO);

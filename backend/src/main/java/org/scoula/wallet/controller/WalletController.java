@@ -87,6 +87,17 @@ public class WalletController {
         return ResponseEntity.ok(tokenDTO);
     }
 
+    // 1회용 결제 토큰 즉시 만료/취소 처리 (화면 이탈 시 호출)
+    @PostMapping("/me/payment-token/expire")
+    public ResponseEntity<Boolean> expirePaymentToken(
+            HttpServletRequest request,
+            @RequestParam(value = "userId", required = false) Integer userId) {
+        Integer targetUserId = resolveUserId(request, userId);
+        log.info("1회용 결제 토큰 즉시 만료 처리 - UserID: {}", targetUserId);
+        tokenStore.invalidateTokensByUserId(targetUserId);
+        return ResponseEntity.ok(true);
+    }
+
     // 지갑 충전
     @PostMapping("/charges")
     public ResponseEntity<WalletChargeDTO> chargeWallet(@RequestBody WalletChargeDTO chargeDTO) {

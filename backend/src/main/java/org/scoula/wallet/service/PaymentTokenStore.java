@@ -77,6 +77,11 @@ public class PaymentTokenStore {
         return entry.tokenDTO;
     }
 
+    public void invalidateTokensByUserId(Integer userId) {
+        if (userId == null) return;
+        tokenStore.entrySet().removeIf(e -> userId.equals(e.getValue().tokenDTO.getUserId()));
+    }
+
     @Scheduled(fixedRate = 10000)
     public void evictExpiredTokens() {
         tokenStore.entrySet().removeIf(e -> e.getValue().isExpired());
