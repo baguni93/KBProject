@@ -5,6 +5,7 @@ import lombok.extern.log4j.Log4j2;
 import org.scoula.common.util.Enum;
 import org.scoula.exception.CustomException;
 import org.scoula.exception.ErrorCode;
+import org.scoula.event.service.EventService;
 import org.scoula.feed.dto.FeedCreateRequestDTO;
 import org.scoula.feed.service.FeedService;
 import org.scoula.notification.dto.NotificationRequestDTO;
@@ -41,7 +42,7 @@ public class SettlementServiceImpl implements SettlementService{
     private final SimpMessagingTemplate messagingTemplate;
     private final RemittanceService remittanceService;
     private final WalletService walletService;
-    private final org.scoula.remittance.mapper.RemittanceMapper remittanceMapper;
+    private final EventService eventService;
 
     @Transactional
     @Override
@@ -90,6 +91,9 @@ public class SettlementServiceImpl implements SettlementService{
                             .build()
             );
         }
+
+        // 박준우: 정산 생성이 정상적으로 완료된 뒤, 요청자의 참여 중인 정산 이벤트 진행도 기록
+        eventService.recordMissionProgress(settlementVO.getRequesterId(), "SETTLEMENT");
 
         return settlementResponseDTO;
     }
@@ -140,20 +144,11 @@ public class SettlementServiceImpl implements SettlementService{
                                 member.getStatus() == Enum.SettlementStatus.REQUEST
                 );
 
-        boolean isAlreadyComplete = settlementVO.getMembers().stream()
-                .anyMatch(member ->
-                        member.getUserId() == userId &&
-                                member.getStatus() == Enum.SettlementStatus.COMPLETE
-                );
 
-        // 이미 완료된 경우 최신 상태 바로 반환
-        if (isAlreadyComplete) {
-            return get(settlementId);
-        }
-
-        // 요청 목록에도 없으면 예외
-        if (!isRequest) {
-            throw new CustomException(ErrorCode.SETTLEMENT_ALREADY_PAYMENT);
+        //이미 지불 -> 예외처리
+        if(!isRequest)
+        {
+            throw  new CustomException(ErrorCode.SETTLEMENT_ALREADY_PAYMENT);
         }
 
         SettlementMemberVO remittanceMember = settlementVO.getMembers().stream()
@@ -161,125 +156,118 @@ public class SettlementServiceImpl implements SettlementService{
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND_MEMBER));
 
-        // 1. 송금자 지갑 잔액 차감 & 수신자(정산 요청자) 지갑 입금 및 거래내역 기록
-        try {
-            String requesterNick = remittanceMapper.getUserNicknameOrName(settlementVO.getRequesterId());
-            if (requesterNick == null || requesterNick.trim().isEmpty()) requesterNick = "노랑지갑";
+//        WalletDTO walletDTO =
+//                walletService.getWalletByUserId(remittanceMember.getUserId());
+//
+//        remittanceService.sendMoney(
+//                RemittanceDTO.builder()
+//                        .walletId(walletDTO.getWalletId())
+//                        .receiverId(settlementVO.getRequesterId())
+//                        .amount(remittanceMember.getAmount())
+//                        .memo("정산 지불")
+//                        .receiverType("WALLET")
+//                        .isSettlement(true)
+//                        .settlementId(settlementVO.getSettlementId())
+//                        .build()
+//        );
 
-            remittanceService.sendMoney(
-                    RemittanceDTO.builder()
-                            .walletId(userId)
-                            .receiverId(settlementVO.getRequesterId())
-                            .receiverName(requesterNick)
-                            .merchantName(requesterNick)
-                            .amount(remittanceMember.getAmount())
-                            .memo(settlementVO.getTitle() != null ? settlementVO.getTitle() + " 정산" : "정산 송금")
-                            .content(settlementVO.getTitle() != null ? settlementVO.getTitle() + " 정산" : "정산 송금")
-                            .receiverType("WALLET")
-                            .isSettlement(true)
-                            .settlementId(settlementVO.getSettlementId())
-                            .build()
-            );
-        } catch (Exception payErr) {
-            log.warn("정산 지불 송금 처리 예외: {}", payErr.getMessage());
-        }
-
-        // 2. 송금 후 정산 참여자 상태 완료(COMPLETE) 처리
+        //송금 후 정산 완료 처리
         settlementMapper.completeMemberSettlement(settlementId , userId);
 
         //모든 참여자가 COMPLETE인지 확인
         boolean completed = settlementMapper.isAllMemberCompleted(settlementId);
 
         if (completed) {
+
             //settlement_tbl 상태 COMPLETE
             settlementMapper.completeSettlement(settlementId);
 
-            try {
+            notificationService.createSettlementNotification(
+                    settlementVO.getRequesterId(),
+                    settlementVO.getRequesterId(),
+                    settlementVO.getSettlementId(),
+                    Enum.NotificationType.SETTLEMENT_COMPLETE_OWNER
+            );
+
+
+            for(var member :settlementVO.getMembers()) {
+
                 notificationService.createSettlementNotification(
                         settlementVO.getRequesterId(),
-                        settlementVO.getRequesterId(),
+                        member.getUserId(),
                         settlementVO.getSettlementId(),
-                        Enum.NotificationType.SETTLEMENT_COMPLETE_OWNER
-                );
-
-                for(var member :settlementVO.getMembers()) {
-                    notificationService.createSettlementNotification(
-                            settlementVO.getRequesterId(),
-                            member.getUserId(),
-                            settlementVO.getSettlementId(),
-                            Enum.NotificationType.SETTLEMENT_COMPLETE
-                    );
-                }
-
-                //피드 생성
-                var feedCreateRequestDTO = FeedCreateRequestDTO.builder()
-                        .userId(settlementVO.getRequesterId())
-                        .targetId(settlementVO.getSettlementId())
-                        .feedType(Enum.FeedType.SETTLEMENT)
-                        .content(settlementVO.getContent())
-                        .visibility(Enum.VisibilityType.FRIEND)
-                        .build();
-
-                feedService.create(feedCreateRequestDTO);
-            } catch (Exception notiErr) {
-                log.warn("정산 완료 알림/피드 생성 예외 (정산 처리는 계속됨): {}", notiErr.getMessage());
+                        Enum.NotificationType.SETTLEMENT_COMPLETE
+                        );
             }
+
+
+            //피드 생성
+            var feedCreateRequestDTO = FeedCreateRequestDTO.builder()
+                    .userId(settlementVO.getRequesterId())
+                    .targetId(settlementVO.getSettlementId())
+                    .feedType(Enum.FeedType.SETTLEMENT)
+                    .content(settlementVO.getContent())
+                    .visibility(Enum.VisibilityType.FRIEND)
+                    .build();
+
+            feedService.create(feedCreateRequestDTO);
         }
         else{
-            try {
-                //지불한 부분을 요청자에게 알림
-                notificationService.createSettlementNotification(
-                        userId,
-                        settlementVO.getRequesterId(),
-                        settlementVO.getSettlementId(),
-                        Enum.NotificationType.SETTLEMENT_PAYMENT
-                );
-            } catch (Exception notiErr) {
-                log.warn("정산 지불 알림 생성 예외 (정산 처리는 계속됨): {}", notiErr.getMessage());
-            }
+
+            //지불한 부분을 요청자에게 알림
+            notificationService.createSettlementNotification(
+                    userId,
+                    settlementVO.getRequesterId(),
+                    settlementVO.getSettlementId(),
+                    Enum.NotificationType.SETTLEMENT_PAYMENT
+            );
+
+
         }
+
 
         var settlementResponseDTO = get(settlementId);
 
-        try {
-            messagingTemplate.convertAndSendToUser(
-                    String.valueOf(settlementResponseDTO.getRequesterId()),
-                    "/queue/settlements",
-                    SettlementWebSocketDTO.builder()
-                            .type("UPDATE")
-                            .settlement(settlementResponseDTO)
-                            .build()
-            );
+        messagingTemplate.convertAndSendToUser(
+                String.valueOf(settlementResponseDTO.getRequesterId()),
+                "/queue/settlements",
+                SettlementWebSocketDTO.builder()
+                        .type("UPDATE")
+                        .settlement(settlementResponseDTO)
+                        .build()
+        );
 
-            if(completed){
-                for(var member : settlementResponseDTO.getMembers()){
-                    messagingTemplate.convertAndSendToUser(
-                            String.valueOf(member.getUserId()),
-                            "/queue/settlements",
-                            SettlementWebSocketDTO.builder()
-                                    .type("UPDATE")
-                                    .settlement(settlementResponseDTO)
-                                    .build()
-                    );
-                }
-            }
-            else{
-                for(var member : settlementResponseDTO.getMembers()){
-                    if(member.getUserId() == userId)
-                        continue;
+        if(completed){
 
-                    messagingTemplate.convertAndSendToUser(
-                            String.valueOf(member.getUserId()),
-                            "/queue/settlements",
-                            SettlementWebSocketDTO.builder()
-                                    .type("UPDATE")
-                                    .settlement(settlementResponseDTO)
-                                    .build()
-                    );
-                }
+            for(var member : settlementResponseDTO.getMembers()){
+
+                messagingTemplate.convertAndSendToUser(
+                        String.valueOf(member.getUserId()),
+                        "/queue/settlements",
+                        SettlementWebSocketDTO.builder()
+                                .type("UPDATE")
+                                .settlement(settlementResponseDTO)
+                                .build()
+                );
+
             }
-        } catch (Exception wsErr) {
-            log.warn("정산 웹소켓 전송 예외 (정산 처리는 계속됨): {}", wsErr.getMessage());
+        }
+        else{
+
+            for(var member : settlementResponseDTO.getMembers()){
+
+                if(member.getUserId() == userId)
+                    continue;
+
+                messagingTemplate.convertAndSendToUser(
+                        String.valueOf(member.getUserId()),
+                        "/queue/settlements",
+                        SettlementWebSocketDTO.builder()
+                                .type("UPDATE")
+                                .settlement(settlementResponseDTO)
+                                .build()
+                );
+            }
         }
 
         return settlementResponseDTO;
