@@ -60,6 +60,8 @@ const goProfile = () => {
 
   padding: 14px 16px;
 
+  margin-bottom: 15px;
+
   background: white;
 
   border-radius: 14px;

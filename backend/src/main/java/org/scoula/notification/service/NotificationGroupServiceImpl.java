@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationGroupServiceImpl
         implements NotificationGroupService {
 
-    private static final int MAX_ACTOR_COUNT = 3;
+    private static final int MAX_ACTOR_COUNT = 1;
 
     private final NotificationGroupMapper notificationGroupMapper;
     private final NotificationService notificationService;
