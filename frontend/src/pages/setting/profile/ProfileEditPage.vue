@@ -6,11 +6,12 @@ import { deleteProfileImage, getProfile, getProfileImage, updateProfile, updateP
 
 const router = useRouter();
 
-const profile = reactive({ nickname: '', introduction: '' });
+const profile = reactive(/** @type {{ nickname: string, introduction: string }} */ ({ nickname: '', introduction: '' }));
 
-const originalProfile = reactive({ nickname: '', introduction: '' });
+const originalProfile = reactive(/** @type {{ nickname: string, introduction: string }} */ ({ nickname: '', introduction: '' }));
 
-const imageInput = ref(null);
+const imageInput = ref(/** @type {HTMLInputElement | null} */ (null));
+const nicknameInput = ref(/** @type {HTMLInputElement | null} */ (null));
 const profileImage = ref('');
 
 const loading = ref(false);
@@ -38,13 +39,13 @@ const confirmModal = reactive({
 });
 
 const openConfirmModal = ({
-  type,
-  title,
-  message,
-  confirmText = '확인',
-  cancelText = '취소',
-  danger = false,
-}) => {
+                            type,
+                            title,
+                            message,
+                            confirmText = '확인',
+                            cancelText = '취소',
+                            danger = false,
+                          }) => {
   confirmModal.type = type;
   confirmModal.title = title;
   confirmModal.message = message;
@@ -195,8 +196,8 @@ const confirmRemoveProfileImage = async () => {
     console.error(error);
 
     imageError.value =
-      error.response?.data?.message ||
-      '프로필 이미지 삭제에 실패했습니다.';
+        error.response?.data?.message ||
+        '프로필 이미지 삭제에 실패했습니다.';
   } finally {
     imageDeleting.value = false;
   }
@@ -276,7 +277,12 @@ const saveProfile = async () => {
   } catch (error) {
     console.error(error);
 
-    errorMessage.value = error.response?.data?.message || '프로필 수정에 실패했습니다.';
+    const message = error.response?.data?.message || '프로필 수정에 실패했습니다.';
+
+    if (message === '이미 사용 중인 닉네임입니다.') {
+      nicknameError.value = message;
+      nicknameInput.value?.setSelectionRange(profile.nickname.length, profile.nickname.length);
+    } else errorMessage.value = message;
   } finally {
     saving.value = false;
   }
@@ -355,34 +361,34 @@ onMounted(() => {
       <!-- 프로필 이미지 -->
       <section class="profile-image-section">
         <div
-          class="profile-image-wrap"
-          :class="{ disabled: imageProcessing }"
-          role="button"
-          aria-label="프로필 사진 수정 메뉴 열기"
-          @click="openImageActionSheet"
+            class="profile-image-wrap"
+            :class="{ disabled: imageProcessing }"
+            role="button"
+            aria-label="프로필 사진 수정 메뉴 열기"
+            @click="openImageActionSheet"
         >
           <img
-            :key="profileImage"
-            :src="profileImage"
-            alt="프로필 이미지"
-            class="profile-image"
+              :key="profileImage"
+              :src="profileImage"
+              alt="프로필 이미지"
+              class="profile-image"
           />
 
           <button
-            aria-label="프로필 사진 수정 메뉴 열기"
-            class="image-edit-button"
-            :disabled="imageProcessing"
-            type="button"
-            @click.stop="openImageActionSheet"
+              aria-label="프로필 사진 수정 메뉴 열기"
+              class="image-edit-button"
+              :disabled="imageProcessing"
+              type="button"
+              @click.stop="openImageActionSheet"
           >
             <span
-              v-if="imageProcessing"
-              class="mini-spinner"
+                v-if="imageProcessing"
+                class="mini-spinner"
             ></span>
 
             <i
-              v-else
-              class="fa-solid fa-camera"
+                v-else
+                class="fa-solid fa-camera"
             ></i>
           </button>
         </div>
@@ -429,6 +435,7 @@ onMounted(() => {
           >
             <input
                 id="nickname"
+                ref="nicknameInput"
                 v-model.trim="profile.nickname"
                 maxlength="15"
                 placeholder="닉네임을 입력해 주세요"
@@ -510,8 +517,8 @@ onMounted(() => {
           >
             {{
               saving
-                ? '저장 중...'
-                : '저장하기'
+                  ? '저장 중...'
+                  : '저장하기'
             }}
           </button>
         </div>
@@ -607,28 +614,28 @@ onMounted(() => {
     <!-- 공통 확인 모달 -->
     <transition name="confirm-modal">
       <div
-        v-if="confirmModal.open"
-        class="confirm-modal-overlay"
-        @click.self="closeConfirmModal"
+          v-if="confirmModal.open"
+          class="confirm-modal-overlay"
+          @click.self="closeConfirmModal"
       >
         <section
-          aria-modal="true"
-          class="confirm-modal"
-          role="dialog"
+            aria-modal="true"
+            class="confirm-modal"
+            role="dialog"
         >
           <div class="confirm-icon-wrap">
             <div
-              class="confirm-icon"
-              :class="{ danger: confirmModal.danger }"
+                class="confirm-icon"
+                :class="{ danger: confirmModal.danger }"
             >
               <i
-                v-if="confirmModal.type === 'DELETE_IMAGE'"
-                class="fa-regular fa-trash-can"
+                  v-if="confirmModal.type === 'DELETE_IMAGE'"
+                  class="fa-regular fa-trash-can"
               ></i>
 
               <i
-                v-else
-                class="fa-solid fa-exclamation"
+                  v-else
+                  class="fa-solid fa-exclamation"
               ></i>
             </div>
           </div>
@@ -645,26 +652,26 @@ onMounted(() => {
 
           <div class="confirm-buttons">
             <button
-              class="confirm-cancel-button text-15-bold"
-              :disabled="imageProcessing"
-              type="button"
-              @click="closeConfirmModal"
+                class="confirm-cancel-button text-15-bold"
+                :disabled="imageProcessing"
+                type="button"
+                @click="closeConfirmModal"
             >
               {{ confirmModal.cancelText }}
             </button>
 
             <button
-              class="confirm-action-button text-15-bold"
-              :class="{ danger: confirmModal.danger }"
-              :disabled="imageProcessing"
-              type="button"
-              @click="handleConfirmModal"
+                class="confirm-action-button text-15-bold"
+                :class="{ danger: confirmModal.danger }"
+                :disabled="imageProcessing"
+                type="button"
+                @click="handleConfirmModal"
             >
               {{
                 imageDeleting &&
                 confirmModal.type === 'DELETE_IMAGE'
-                  ? '삭제 중...'
-                  : confirmModal.confirmText
+                    ? '삭제 중...'
+                    : confirmModal.confirmText
               }}
             </button>
           </div>
@@ -897,6 +904,11 @@ onMounted(() => {
 
 .input-area.error {
   border-color: var(--color-error);
+}
+
+.input-area.error:focus-within {
+  border-color: var(--color-error);
+  box-shadow: none;
 }
 
 .input-area input {
@@ -1146,6 +1158,7 @@ onMounted(() => {
 }
 
 /* 액션시트 애니메이션 */
+/*noinspection CssUnusedSymbol*/
 .action-sheet-enter-active,
 .action-sheet-leave-active {
   transition: opacity 0.2s ease;
@@ -1156,6 +1169,7 @@ onMounted(() => {
   transition: transform 0.25s ease;
 }
 
+/*noinspection CssUnusedSymbol*/
 .action-sheet-enter-from,
 .action-sheet-leave-to {
   opacity: 0;
@@ -1212,7 +1226,7 @@ onMounted(() => {
   color: var(--color-primary-border);
   font-size: 25px;
   animation: success-icon-pop 0.4s
-    cubic-bezier(0.34, 1.56, 0.64, 1);
+  cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* 성공 문구 */
@@ -1240,8 +1254,8 @@ onMounted(() => {
   color: var(--color-text-main);
   cursor: pointer;
   transition:
-    background 0.15s ease,
-    transform 0.15s ease;
+      background 0.15s ease,
+      transform 0.15s ease;
 }
 
 .success-confirm-button:active {
@@ -1250,6 +1264,7 @@ onMounted(() => {
 }
 
 /* 성공 모달 애니메이션 */
+/*noinspection CssUnusedSymbol*/
 .success-modal-enter-active,
 .success-modal-leave-active {
   transition: opacity 0.2s ease;
@@ -1258,10 +1273,11 @@ onMounted(() => {
 .success-modal-enter-active .success-modal,
 .success-modal-leave-active .success-modal {
   transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
+      opacity 0.22s ease,
+      transform 0.22s ease;
 }
 
+/*noinspection CssUnusedSymbol*/
 .success-modal-enter-from,
 .success-modal-leave-to {
   opacity: 0;
@@ -1422,6 +1438,7 @@ onMounted(() => {
     animation: none;
   }
 
+  /*noinspection CssUnusedSymbol*/
   .success-modal-enter-active,
   .success-modal-leave-active,
   .success-modal-enter-active .success-modal,

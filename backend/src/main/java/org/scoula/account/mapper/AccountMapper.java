@@ -20,6 +20,12 @@ public interface AccountMapper {
     // 중복 연결 계좌 조회
     int countConnectedAccount(@Param("userId") Long userId, @Param("bankCode") String bankCode, @Param("accountNumber") String accountNumber);
 
+    // 동일 계좌 연결 이력 조회
+    LinkedAccountVO findAccountByAccountInfo(@Param("userId") Long userId, @Param("bankCode") String bankCode, @Param("accountNumber") String accountNumber);
+
+    // 연결 해제 계좌 재연결
+    int reconnectAccount(@Param("userId") Long userId, @Param("linkedAccountId") Long linkedAccountId, @Param("primaryYn") String primaryYn);
+
     // 은행 존재 여부 조회
     int countActiveBank(String bankCode);
 

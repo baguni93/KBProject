@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.scoula.login.dto.TokenDTO;
 import org.scoula.login.service.LoginService;
 import org.scoula.security.account.domain.CustomUser;
-import org.scoula.account.dto.AccountDTO;
 import org.scoula.user.dto.*;
 import org.scoula.user.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -96,6 +95,22 @@ public class UserController {
         TokenDTO tokenDTO = loginService.reissueTokenAfterPhoneChange(userId, changeDTO.getNewPhoneNumber().trim());
 
         return ResponseEntity.ok(tokenDTO);
+    }
+
+    // USER-005-1 휴대폰번호 변경 가능 여부 확인
+    @GetMapping("/phone/check")
+    public ResponseEntity<Map<String, Object>> checkPhoneNumber(
+            @AuthenticationPrincipal CustomUser customUser,
+            @RequestParam String phoneNumber
+    ) {
+        Long userId = customUser.getUser().getUserId();
+        boolean available = userService.checkPhoneNumber(userId, phoneNumber);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("available", available);
+        response.put("message", "사용 가능한 휴대폰번호입니다.");
+
+        return ResponseEntity.ok(response);
     }
 
     // USER-006 회원탈퇴

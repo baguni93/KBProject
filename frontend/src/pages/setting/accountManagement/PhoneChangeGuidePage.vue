@@ -31,6 +31,7 @@
 
           <input
               id="newPhoneNumber"
+              ref="newPhoneInput"
               v-model="newPhoneNumber"
               :class="{ error: !!phoneErrorMessage }"
               class="phone-box text-15"
@@ -78,8 +79,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import api from '@/api';
 import { getUserInfo } from '@/api/userApi';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useAuthStore } from '@/stores/auth';
@@ -94,6 +96,7 @@ const loading = ref(false);
 const phoneErrorMessage = ref('');
 const loadErrorMessage = ref('');
 const newPhoneNumber = ref('');
+const newPhoneInput = ref(null);
 
 // 현재 휴대폰번호 표시
 const formattedPhoneNumber = computed(() => {
@@ -124,6 +127,16 @@ const formatNewPhoneNumber = () => {
   newPhoneNumber.value = `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7)}`;
 };
 
+// 입력 선택 영역 해제
+const clearPhoneSelection = async () => {
+  await nextTick();
+
+  if (!newPhoneInput.value) return;
+
+  const length = newPhoneInput.value.value.length;
+  newPhoneInput.value.setSelectionRange(length, length);
+};
+
 // 새 휴대폰번호 유효성 검사
 const validatePhoneNumber = () => {
   const currentPhoneNumber = userInfo.phoneNumber.replace(/[^0-9]/g, '');
@@ -131,16 +144,19 @@ const validatePhoneNumber = () => {
 
   if (!phoneNumber) {
     phoneErrorMessage.value = '새 휴대폰 번호를 입력해주세요.';
+    clearPhoneSelection();
     return false;
   }
 
   if (!/^01[016789][0-9]{7,8}$/.test(phoneNumber)) {
     phoneErrorMessage.value = '휴대폰번호를 확인해주세요.';
+    clearPhoneSelection();
     return false;
   }
 
   if (phoneNumber === currentPhoneNumber) {
     phoneErrorMessage.value = '현재 휴대폰번호와 다른 번호를 입력해주세요.';
+    clearPhoneSelection();
     return false;
   }
 
@@ -178,17 +194,30 @@ const startVerification = async () => {
 
   const phoneNumber = newPhoneNumber.value.replace(/[^0-9]/g, '');
 
-  signupStore.setPhoneAuth({
-    userName: userInfo.userName,
-    birthDate: userInfo.birthDate,
-    carrierCode: '',
-    phoneNumber,
-    verificationPurpose: 'PHONE_CHANGE',
-    verificationCode: '',
-  });
+  try {
+    loading.value = true;
+    phoneErrorMessage.value = '';
 
-  signupStore.setVerificationPurpose('PHONE_CHANGE');
-  await router.push('/signup/check');
+    await api.get('/api/users/phone/check', { params: { phoneNumber } });
+
+    signupStore.setPhoneAuth({
+      userName: userInfo.userName,
+      birthDate: userInfo.birthDate,
+      carrierCode: '',
+      phoneNumber,
+      verificationPurpose: 'PHONE_CHANGE',
+      verificationCode: '',
+    });
+
+    signupStore.setVerificationPurpose('PHONE_CHANGE');
+    await router.push('/signup/check');
+  } catch (error) {
+    console.error(error);
+    phoneErrorMessage.value = error.response?.data?.message || '휴대폰번호를 확인해주세요.';
+    await clearPhoneSelection();
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 이전 화면

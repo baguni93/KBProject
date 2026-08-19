@@ -25,5 +25,7 @@ public interface UserService {
 
     void changePhoneNumber(Long userId, UserPhoneChangeDTO changeDTO); // 회원 휴대폰번호 변경
 
+    boolean checkPhoneNumber(Long userId, String phoneNumber); // 휴대폰번호 변경 가능 여부 확인
+
     AccountByBankCodeDTO getAccountByBankCode(int userId, String bankCode);
 }
