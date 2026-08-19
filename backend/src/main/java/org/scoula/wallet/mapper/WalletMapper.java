@@ -37,5 +37,7 @@ public interface WalletMapper {
             @Param("spendingCategoryId") Integer spendingCategoryId
     );
 
+    int insertWallet(@Param("userId") Integer userId);
+
     java.util.List<org.scoula.wallet.dto.RegisteredCardDTO> getUserRegisteredCards(@Param("userId") Integer userId);
 }

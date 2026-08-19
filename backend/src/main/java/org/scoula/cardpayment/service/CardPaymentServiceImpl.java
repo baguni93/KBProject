@@ -2,6 +2,7 @@ package org.scoula.cardpayment.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.scoula.card.controller.CardController;
 import org.scoula.cardpayment.dto.CardAgreementDTO;
 import org.scoula.cardpayment.dto.CardBinResponseDTO;
 import org.scoula.cardpayment.dto.CardRegisterDTO;
@@ -21,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CardPaymentServiceImpl implements CardPaymentService {
 
     private final CardPaymentMapper cardPaymentMapper;
+    private final org.scoula.card.mapper.CardMapper cardMapper;
     private final KbCardCatalogRepository catalogRepository;
     private final org.scoula.notification.service.NotificationService notificationService;
     private final org.scoula.pointwallet.service.RandomBoxService randomBoxService;
@@ -131,7 +133,47 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         // Validate that the card exists in card_tbl
         Integer validatedCardCode = cardPaymentMapper.validateCard(cardRegisterDTO);
         if (validatedCardCode == null) {
-            throw new IllegalArgumentException("카드 정보를 찾을 수 없습니다.");
+            // card_tbl에 카드가 사전 등록되어 있지 않은 경우, 즉시 자동 마스터 생성하여 등록 지원
+            String cleanNum = cardRegisterDTO.getCardNum().replaceAll("\\D", "");
+            String bin6 = cleanNum.length() >= 6 ? cleanNum.substring(0, 6) : "941012";
+            String bin8 = cleanNum.length() >= 8 ? cleanNum.substring(0, 8) : bin6;
+
+            String cardName = cardRegisterDTO.getCardName();
+            String cardImg = cardRegisterDTO.getCardImageName();
+
+            // 1) BIN 매핑에서 이름/이미지 조회
+            if (CardController.BIN_MAPPING_MAP.containsKey(bin8)) {
+                CardController.CardInfo info = CardController.BIN_MAPPING_MAP.get(bin8);
+                if (cardName == null || cardName.trim().isEmpty()) cardName = info.getCardName();
+                if (cardImg == null || cardImg.trim().isEmpty()) cardImg = info.getImageUrl();
+            } else if (CardController.BIN_MAPPING_MAP.containsKey(bin6)) {
+                CardController.CardInfo info = CardController.BIN_MAPPING_MAP.get(bin6);
+                if (cardName == null || cardName.trim().isEmpty()) cardName = info.getCardName();
+                if (cardImg == null || cardImg.trim().isEmpty()) cardImg = info.getImageUrl();
+            }
+
+            if (cardName == null || cardName.trim().isEmpty()) {
+                cardName = "KB국민카드";
+            }
+            if (cardImg == null || cardImg.trim().isEmpty()) {
+                cardImg = "card_default.png";
+            }
+
+            String rawPw = cardRegisterDTO.getCardPassword() != null ? cardRegisterDTO.getCardPassword() : "1234";
+            String hashedPw = hashCardPassword(rawPw);
+
+            org.scoula.card.domain.CardVO newCard = org.scoula.card.domain.CardVO.builder()
+                    .cardNum(cardRegisterDTO.getCardNum())
+                    .expiryDate(cardRegisterDTO.getExpiryDate())
+                    .cvv(cardRegisterDTO.getCvv())
+                    .cardPassword(hashedPw)
+                    .cardName(cardName)
+                    .cardImgFileName(cardImg)
+                    .build();
+
+            cardMapper.insertCard(newCard);
+            validatedCardCode = newCard.getCardCode();
+            log.info("신규 카드 마스터 자동 생성 완료: cardCode={}, cardName={}, cardImg={}", validatedCardCode, cardName, cardImg);
         }
         cardRegisterDTO.setCardCode(validatedCardCode);
 
@@ -141,8 +183,6 @@ public class CardPaymentServiceImpl implements CardPaymentService {
             cardRegisterDTO.setCardImageName(foundImg);
         }
 
-
-
         try {
             cardPaymentMapper.insertLinkedCard(cardRegisterDTO);
         } catch (Exception e) {
@@ -150,6 +190,20 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         }
 
         return getPrimaryCard(userId);
+    }
+
+    private String hashCardPassword(String raw) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return raw;
+        }
     }
 
     @Override

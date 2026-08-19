@@ -20,6 +20,23 @@ import javax.servlet.http.HttpServletRequest;
 public class CardPaymentController {
 
     private final CardPaymentService cardPaymentService;
+    private final org.scoula.security.util.JwtProcessor jwtProcessor;
+
+    private Integer resolveUserId(HttpServletRequest request, Integer paramUserId) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            try {
+                String token = authHeader.substring(7);
+                Long userId = jwtProcessor.getUserId(token);
+                if (userId != null) {
+                    return userId.intValue();
+                }
+            } catch (Exception e) {
+                log.warn("카드 결제 토큰 추출 실패, 파라미터 사용: {}", e.getMessage());
+            }
+        }
+        return paramUserId != null ? paramUserId : 1;
+    }
 
     @GetMapping("/api/card-payment/bin/{binNumber}")
     public ResponseEntity<CardBinResponseDTO> getCardInfoByBin(@PathVariable("binNumber") String binNumber) {
@@ -31,18 +48,20 @@ public class CardPaymentController {
     @GetMapping("/api/payments/cards/primary")
     public ResponseEntity<PrimaryCardResponseDTO> getPrimaryCard(
             HttpServletRequest request,
-            @RequestParam(value = "userId", required = false, defaultValue = "1") Integer userId) {
-        log.info("대표 카드 조회 요청 - UserID: {}", userId);
-        PrimaryCardResponseDTO primaryCard = cardPaymentService.getPrimaryCard(userId);
+            @RequestParam(value = "userId", required = false) Integer userId) {
+        Integer resolvedUserId = resolveUserId(request, userId);
+        log.info("대표 카드 조회 요청 - UserID: {}", resolvedUserId);
+        PrimaryCardResponseDTO primaryCard = cardPaymentService.getPrimaryCard(resolvedUserId);
         return ResponseEntity.ok(primaryCard);
     }
 
     @GetMapping("/api/payments/cards/status")
     public ResponseEntity<CardStatusResponseDTO> getCardStatus(
             HttpServletRequest request,
-            @RequestParam(value = "userId", required = false, defaultValue = "1") Integer userId) {
-        log.info("카드 상태 및 가이드 조회 요청 - UserID: {}", userId);
-        CardStatusResponseDTO status = cardPaymentService.getCardStatus(userId);
+            @RequestParam(value = "userId", required = false) Integer userId) {
+        Integer resolvedUserId = resolveUserId(request, userId);
+        log.info("카드 상태 및 가이드 조회 요청 - UserID: {}", resolvedUserId);
+        CardStatusResponseDTO status = cardPaymentService.getCardStatus(resolvedUserId);
         return ResponseEntity.ok(status);
     }
 
@@ -50,6 +69,8 @@ public class CardPaymentController {
     public ResponseEntity<PrimaryCardResponseDTO> registerCard(
             HttpServletRequest request,
             @RequestBody CardRegisterDTO cardRegisterDTO) {
+        Integer resolvedUserId = resolveUserId(request, cardRegisterDTO.getUserId());
+        cardRegisterDTO.setUserId(resolvedUserId);
         log.info("카드 등록 요청: {}", cardRegisterDTO);
         PrimaryCardResponseDTO response = cardPaymentService.registerCard(cardRegisterDTO);
         return ResponseEntity.ok(response);
@@ -59,6 +80,8 @@ public class CardPaymentController {
     public ResponseEntity<Boolean> saveAgreements(
             HttpServletRequest request,
             @RequestBody CardAgreementDTO cardAgreementDTO) {
+        Integer resolvedUserId = resolveUserId(request, cardAgreementDTO.getUserId());
+        cardAgreementDTO.setUserId(resolvedUserId);
         log.info("카드 약관 동의 저장 요청: {}", cardAgreementDTO);
         boolean result = cardPaymentService.saveCardAgreements(cardAgreementDTO);
         return ResponseEntity.ok(result);
@@ -68,9 +91,10 @@ public class CardPaymentController {
     public ResponseEntity<Boolean> setPrimaryCard(
             HttpServletRequest request,
             @PathVariable("cardId") Integer cardId,
-            @RequestParam(value = "userId", required = false, defaultValue = "1") Integer userId) {
-        log.info("대표 카드 변경 요청 - CardID: {}, UserID: {}", cardId, userId);
-        boolean result = cardPaymentService.setPrimaryCard(cardId, userId);
+            @RequestParam(value = "userId", required = false) Integer userId) {
+        Integer resolvedUserId = resolveUserId(request, userId);
+        log.info("대표 카드 변경 요청 - CardID: {}, UserID: {}", cardId, resolvedUserId);
+        boolean result = cardPaymentService.setPrimaryCard(cardId, resolvedUserId);
         return ResponseEntity.ok(result);
     }
 
@@ -89,7 +113,10 @@ public class CardPaymentController {
     // 1. 카드 결제 승인 요청 API (지갑 잔액 차감 X, 무조건 SUCCESS 기록 보존)
     @PostMapping("/api/cards/payments/approve")
     public ResponseEntity<org.scoula.cardpayment.dto.CardTransactionResponseDTO> approveCardTransaction(
+            HttpServletRequest request,
             @RequestBody org.scoula.cardpayment.dto.CardTransactionApproveDTO approveDTO) {
+        Integer resolvedUserId = resolveUserId(request, approveDTO.getUserId());
+        approveDTO.setUserId(resolvedUserId);
         log.info("카드 결제 승인 요청: {}", approveDTO);
         org.scoula.cardpayment.dto.CardTransactionResponseDTO response = cardPaymentService.approveTransaction(approveDTO);
         return ResponseEntity.ok(response);
@@ -98,7 +125,10 @@ public class CardPaymentController {
     // 2. 전자지갑 / QR / 바코드 결제 승인 요청 API (wallet_tbl 잔액 차감 O)
     @PostMapping({"/api/wallets/payments/approve", "/api/wallets/payments/qr/approve", "/api/wallets/payments/barcode/approve"})
     public ResponseEntity<org.scoula.cardpayment.dto.CardTransactionResponseDTO> approveWalletTransaction(
+            HttpServletRequest request,
             @RequestBody org.scoula.cardpayment.dto.CardTransactionApproveDTO approveDTO) {
+        Integer resolvedUserId = resolveUserId(request, approveDTO.getUserId());
+        approveDTO.setUserId(resolvedUserId);
         log.info("전자지갑/QR/바코드 결제 승인 요청: {}", approveDTO);
         org.scoula.cardpayment.dto.CardTransactionResponseDTO response = cardPaymentService.approveWalletTransaction(approveDTO);
         return ResponseEntity.ok(response);

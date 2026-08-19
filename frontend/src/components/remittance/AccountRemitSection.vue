@@ -7,6 +7,7 @@
         <input
           :value="accountNumber"
           @input="handleAccountNumberInput($event.target.value)"
+          @keyup.enter="handleEnterKey"
           type="text"
           class="toss-search-input text-15-bold"
           placeholder="'-' 없이 계좌번호 입력"
@@ -23,7 +24,7 @@
           :key="b.code"
           class="bank-chip-card"
           :class="{ active: bankCode === b.code }"
-          @click="$emit('update:bankCode', b.code)"
+          @click="handleBankClick(b.code)"
         >
           <div class="bank-logo-circle">
             <img
@@ -113,7 +114,31 @@ const emit = defineEmits([
   "update:accountNumber",
   "update:bankCode",
   "selectRecent",
+  "proceed",
 ]);
+
+const canProceed = computed(() => {
+  const clean = (props.accountNumber || "").replace(/[^0-9]/g, "");
+  return clean.length >= 7 && !!props.bankCode;
+});
+
+// 은행 칩 클릭 시 은행 설정 및 계좌번호가 이미 있으면 즉시 자동 다음 단계 전환
+const handleBankClick = (code) => {
+  emit("update:bankCode", code);
+  const clean = (props.accountNumber || "").replace(/[^0-9]/g, "");
+  if (clean.length >= 7) {
+    setTimeout(() => {
+      emit("proceed");
+    }, 150);
+  }
+};
+
+// 엔터 키 입력 시 즉시 다음 단계 진행
+const handleEnterKey = () => {
+  if (canProceed.value) {
+    emit("proceed");
+  }
+};
 
 // 계좌번호 앞자리 패턴 기반 은행 자동 감지
 const detectBankByAccountNumber = (accNo) => {
@@ -354,5 +379,39 @@ const uniqueRecentAccounts = computed(() => {
   color: #64748b;
   font-size: 13px;
   line-height: 1.2;
+}
+
+/* 하단 다음 버튼 */
+.account-bottom-cta-wrap {
+  margin-top: auto;
+  padding: 16px 0 8px 0;
+}
+
+.btn-submit {
+  width: 100%;
+  height: 52px;
+  border-radius: 14px;
+  background-color: #ffbc2e;
+  color: #1e293b;
+  border: none;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background-color: #f5ab16;
+  transform: translateY(-1px);
+}
+
+.btn-submit:disabled {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
 }
 </style>

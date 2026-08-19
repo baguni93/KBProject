@@ -456,7 +456,7 @@ const myProfileName = computed(() => {
     myProfile.value?.userName ||
     authStore.userName ||
     authStore.user?.userName ||
-    "노랑지갑"
+    "내 프로필"
   );
 });
 

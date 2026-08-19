@@ -164,14 +164,15 @@ public class SettlementServiceImpl implements SettlementService{
         // 1. 송금자 지갑 잔액 차감 & 수신자(정산 요청자) 지갑 입금 및 거래내역 기록
         try {
             String requesterNick = remittanceMapper.getUserNicknameOrName(settlementVO.getRequesterId());
-            if (requesterNick == null || requesterNick.trim().isEmpty()) requesterNick = "노랑지갑";
+            if (requesterNick == null || requesterNick.trim().isEmpty()) requesterNick = "정산 요청자";
 
             remittanceService.sendMoney(
                     RemittanceDTO.builder()
+                            .userId(userId)
                             .walletId(userId)
                             .receiverId(settlementVO.getRequesterId())
                             .receiverName(requesterNick)
-                            .merchantName(requesterNick)
+                            .merchantName(settlementVO.getTitle() != null ? settlementVO.getTitle() : requesterNick)
                             .amount(remittanceMember.getAmount())
                             .memo(settlementVO.getTitle() != null ? settlementVO.getTitle() + " 정산" : "정산 송금")
                             .content(settlementVO.getTitle() != null ? settlementVO.getTitle() + " 정산" : "정산 송금")

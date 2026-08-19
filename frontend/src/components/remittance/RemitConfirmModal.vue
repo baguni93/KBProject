@@ -44,7 +44,12 @@
                 {{ receiverName }}
               </h4>
               <p class="target-acc text-15">
-                {{ bankName }} {{ accountNumber }}
+                <template v-if="remitType === 'ACCOUNT'">
+                  {{ bankName }} {{ accountNumber }}
+                </template>
+                <template v-else>
+                  전자지갑 페이머니 송금
+                </template>
               </p>
             </div>
 

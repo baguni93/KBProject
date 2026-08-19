@@ -33,6 +33,7 @@ public class UserServiceImpl implements UserService {
     private final LoginMapper loginMapper;
     private final NotificationSettingMapper notificationSettingMapper;
     private final PointWalletService pointWalletService;
+    private final org.scoula.wallet.mapper.WalletMapper walletMapper;
     private final PasswordEncoder passwordEncoder;
 
     // private static final long REJOIN_WAIT_HOURS = 24L;
@@ -137,7 +138,12 @@ public class UserServiceImpl implements UserService {
             throw new IllegalStateException("알림 설정 저장 중 오류가 발생했습니다.");
         }
 
-        // 회원가입 시 포인트 지갑 자동 생성
+        // 회원가입 시 전자지갑(페이머니) 및 포인트 지갑 자동 생성
+        try {
+            walletMapper.insertWallet(user.getUserId().intValue());
+        } catch (Exception wErr) {
+            log.warn("회원가입 시 전자지갑 생성 예외: {}", wErr.getMessage());
+        }
         pointWalletService.createWallet(user.getUserId().intValue());
 
         log.info("회원가입 완료: userId={}", user.getUserId());

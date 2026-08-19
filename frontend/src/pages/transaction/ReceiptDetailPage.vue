@@ -26,7 +26,7 @@
         </h3>
 
         <div class="amount-display-row text-28-bold" :class="getAmountClass">
-          {{ getAmountPrefix }}{{ formatCurrency(transaction.amount) }} KRW
+          {{ getAmountPrefix }}{{ formatCurrency(transaction.amount) }}원
         </div>
 
         <div class="dashed-divider"></div>
@@ -263,29 +263,60 @@ const isPaymentTransaction = computed(() => {
   return true;
 });
 
-// 3. 가맹점 명칭 (DB merchant_name / merchantName 연동)
+// 2-B. 입금/수입 여부 판단
+const isIncome = computed(() => {
+  if (!transaction.value) {
+    const qType = (route.query.type || "").toUpperCase();
+    return qType === "CHARGE";
+  }
+  const myUid = Number(authStore.userId);
+  const tType = (transaction.value.transactionType || transaction.value.type || "").toUpperCase();
+  if (tType.includes("CHARGE")) return true;
+  if ((tType.includes("TRANSFER") || tType.includes("REMIT")) && Number(transaction.value.receiveId) === myUid) {
+    return true;
+  }
+  return false;
+});
+
+const isSettlement = computed(() => {
+  if (!transaction.value) return false;
+  const tType = (transaction.value.transactionType || transaction.value.type || "").toUpperCase();
+  return tType.includes("SETTLEMENT") || (transaction.value.settlementId && Number(transaction.value.settlementId) > 0);
+});
+
+// 3. 가맹점/송금자/수취인 명칭 (DB merchant_name / receiverName / senderName 연동)
 const getMerchantTitle = computed(() => {
   if (transaction.value) {
     const tType = (transaction.value.transactionType || transaction.value.type || "").toUpperCase();
     if (tType.includes("CHARGE")) {
-      return transaction.value.merchantName || transaction.value.merchant_name || route.query.title || "소셜 월렛 충전";
+      return transaction.value.merchantName || transaction.value.merchant_name || route.query.title || "전자지갑 충전";
     }
-    if (tType.includes("TRANSFER") || tType.includes("REMIT")) {
-      // merchantName(송금 시 저장한 닉네임/수취인명)을 최우선으로!
+    if (tType.includes("TRANSFER") || tType.includes("REMIT") || isSettlement.value) {
+      if (isSettlement.value) {
+        if (isIncome.value) {
+          return transaction.value.senderName ? `${transaction.value.senderName} (정산 받음)` : "더치페이 정산 받음";
+        }
+        const rec = transaction.value.receiverName || transaction.value.merchantName || "정산 요청자";
+        return `${rec} (정산 보냄)`;
+      }
+      if (isIncome.value) {
+        return transaction.value.senderName ? `${transaction.value.senderName}에게 받음` : "송금 받음";
+      }
       const mName = transaction.value.merchantName || transaction.value.merchant_name;
       const recName = transaction.value.receiverName;
-      let rName = "수취인";
-      if (mName && mName.trim() && mName !== "수취인") {
+      let rName = "";
+      if (mName && mName.trim() && mName !== "수취인" && mName !== "송금 완료") {
         rName = mName.trim();
-      } else if (recName && recName.trim()) {
+      } else if (recName && recName.trim() && recName !== "수취인") {
         rName = recName.trim();
       } else if (route.query.title) {
         rName = route.query.title;
+      } else if (transaction.value.memo && transaction.value.memo !== "송금 완료") {
+        rName = transaction.value.memo;
+      } else {
+        rName = "송금";
       }
       return rName.endsWith("송금") ? rName : `${rName} 송금`;
-    }
-    if (tType.includes("SETTLEMENT")) {
-      return transaction.value.merchantName || transaction.value.merchant_name || transaction.value.memo || route.query.title || "더치페이 정산";
     }
     return (
       transaction.value.merchantName ||
@@ -300,23 +331,11 @@ const getMerchantTitle = computed(() => {
 
 // 4. 금액 부호 및 클래스
 const getAmountPrefix = computed(() => {
-  if (!transaction.value) {
-    const qType = (route.query.type || "").toUpperCase();
-    return qType === "CHARGE" ? "+" : "-";
-  }
-  const tType = (transaction.value.transactionType || transaction.value.type || "").toUpperCase();
-  if (tType.includes("CHARGE")) return "+";
-  return "-";
+  return isIncome.value ? "+" : "-";
 });
 
 const getAmountClass = computed(() => {
-  if (!transaction.value) {
-    const qType = (route.query.type || "").toUpperCase();
-    return qType === "CHARGE" ? "amount-plus" : "amount-minus";
-  }
-  const tType = (transaction.value.transactionType || transaction.value.type || "").toUpperCase();
-  if (tType.includes("CHARGE")) return "amount-plus";
-  return "amount-minus";
+  return isIncome.value ? "amount-plus" : "amount-minus";
 });
 
 // 5. 결제 구분 텍스트 (핀테크 표준 연동)
@@ -329,15 +348,16 @@ const getPaymentMethodText = computed(() => {
   if (tType.includes("CHARGE")) {
     return "지갑 충전";
   }
-  if (tType.includes("TRANSFER") || tType.includes("REMIT")) {
-    const title = getMerchantTitle.value || "";
-    if (title.includes("회원") || title.includes("친구")) {
-      return "친구 송금";
-    }
-    return "계좌 송금";
+  if (isSettlement.value) {
+    return isIncome.value ? "더치페이 정산 입금" : "더치페이 정산 송금";
   }
-  if (tType.includes("SETTLEMENT")) {
-    return "더치페이 정산";
+  if (tType.includes("TRANSFER") || tType.includes("REMIT")) {
+    if (isIncome.value) {
+      return "송금 입금";
+    }
+    const target = transaction.value?.targetType;
+    if (target === "ACCOUNT") return "계좌 송금";
+    return "친구 송금";
   }
   return "지갑 결제";
 });
@@ -490,7 +510,7 @@ const loadReceiptData = async () => {
         else resolvedType = "PAYMENT";
       }
 
-      const defaultTitle = qTitle || (resolvedType === "CHARGE" ? "소셜 월렛 충전" : resolvedType === "TRANSFER" ? "수취인 송금" : resolvedType === "SETTLEMENT" ? "더치페이 정산" : "가맹점 결제");
+      const defaultTitle = qTitle || (resolvedType === "CHARGE" ? "전자지갑 충전" : resolvedType === "TRANSFER" ? "송금 완료" : resolvedType === "SETTLEMENT" ? "더치페이 정산" : "가맹점 결제");
 
       transaction.value = {
         transactionId: tIdNum,

@@ -501,7 +501,11 @@ const submitCard = async () => {
       rawExpiry = '12/28';
     }
 
-    const userIdVal = authStore.userId || 1;
+    const userIdVal = Number(authStore.userId);
+    if (!userIdVal) {
+      modalStore.showAlert('로그인 세션이 만료되었습니다. 다시 로그인해주세요.', '카드 등록 안내');
+      return;
+    }
 
     const payload = {
       userId: userIdVal,
