@@ -36,4 +36,10 @@ public interface CardMapper {
 
     // BIN prefix(6자리)로 card_tbl에서 카드명·이미지 조회 (커스텀 카드용)
     java.util.Map<String, String> findByBinPrefix(@Param("bin") String bin);
+
+    // 크롤링된 전체 카드 상품 목록 조회 (kb_card_product_tbl)
+    List<java.util.Map<String, Object>> findAllCardProducts();
+
+    // 카드명으로 크롤링된 카드 상품 단건 조회
+    java.util.Map<String, Object> findCardProductByName(@Param("cardName") String cardName);
 }

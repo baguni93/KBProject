@@ -101,12 +101,12 @@ public class CardServiceImpl implements CardService {
     }
 
     // ──────────────────────────────────────────────────────────────
-    // 카드 마스터 등록 (BIN 매핑 기반)
+    // 카드 마스터 등록 (크롤링 카탈로그 kb_card_product_tbl 우선 조회)
     // ──────────────────────────────────────────────────────────────
 
     /**
-     * BIN_MAPPING_MAP 에서 cardName 으로 역방향 조회하여
-     * BIN 6자리 + 이미지파일명을 자동으로 결정하고 card_tbl 에 INSERT.
+     * kb_card_product_tbl 에서 크롤링된 카드명으로 조회하여
+     * 실제 다운로드된 이미지파일명과 매핑하고 card_tbl 에 INSERT.
      * 카드번호, CVV, 유효기간, 비밀번호는 서버에서 자동 생성.
      */
     @Override
@@ -115,54 +115,47 @@ public class CardServiceImpl implements CardService {
         if (dto == null || dto.getCardName() == null) {
             throw new IllegalArgumentException("카드 이름이 입력되지 않았습니다.");
         }
-        // 1. 카드명 정규화: 모든 특수공백, 괄호, 콜론 제거 후 비교 (Fuzzy Match)
-        String rawInput = dto.getCardName();
-        String normalizedInput = rawInput.replaceAll("[\\p{Z}\\s]+", " ").trim();
+        String rawInput = dto.getCardName().trim();
+        String normalizedInput = rawInput.replaceAll("[\\p{Z}\\s]+", " ");
         String strippedInput = rawInput.replaceAll("[\\p{Z}\\s\\(\\):\\-_]+", "").toLowerCase();
 
-        String foundBin = null;
+        String foundCardName = rawInput;
         String foundImageFileName = null;
+        String foundBin = "944501";
 
-        // 1차: 정밀 매칭
-        for (Map.Entry<String, CardController.CardInfo> entry : CardController.BIN_MAPPING_MAP.entrySet()) {
-            String normalizedStored = entry.getValue().getCardName().replaceAll("[\\p{Z}\\s]+", " ").trim();
-            if (normalizedStored.equalsIgnoreCase(normalizedInput)) {
-                foundBin = entry.getKey();
-                foundImageFileName = entry.getValue().getImageUrl();
-                break;
-            }
-        }
+        // 1. 크롤링 DB (kb_card_product_tbl) 우선 검색
+        List<Map<String, Object>> allProducts = cardMapper.findAllCardProducts();
+        if (allProducts != null && !allProducts.isEmpty()) {
+            for (Map<String, Object> prod : allProducts) {
+                String pName = String.valueOf(prod.get("cardName"));
+                String pImg = String.valueOf(prod.get("cardImage"));
+                String pType = String.valueOf(prod.get("cardType"));
 
-        // 2차: 괄호/콜론/공백 무시 유연 매칭 (WE:SH All, nori(노리) 등)
-        if (foundBin == null) {
-            for (Map.Entry<String, CardController.CardInfo> entry : CardController.BIN_MAPPING_MAP.entrySet()) {
-                String strippedStored = entry.getValue().getCardName().replaceAll("[\\p{Z}\\s\\(\\):\\-_]+", "").toLowerCase();
-                if (strippedStored.equals(strippedInput) || strippedStored.contains(strippedInput) || strippedInput.contains(strippedStored)) {
-                    foundBin = entry.getKey();
-                    foundImageFileName = entry.getValue().getImageUrl();
+                String strippedProd = pName.replaceAll("[\\p{Z}\\s\\(\\):\\-_]+", "").toLowerCase();
+                if (pName.equalsIgnoreCase(rawInput) || strippedProd.equals(strippedInput) || strippedProd.contains(strippedInput) || strippedInput.contains(strippedProd)) {
+                    foundCardName = pName;
+                    foundImageFileName = pImg;
+                    foundBin = "CHECK".equalsIgnoreCase(pType) ? "944510" : "539910";
                     break;
                 }
             }
         }
 
-        // 3차: 괄호 주석문(예: (선불/기타))을 지운 순수 카드명만 추출하여 스마트 매칭
-        if (foundBin == null && rawInput.contains("(")) {
-            String baseTitle = rawInput.replaceAll("\\(.*\\)", "").replaceAll("[\\p{Z}\\s\\-_]+", "").toLowerCase();
-            if (!baseTitle.isEmpty()) {
-                for (Map.Entry<String, CardController.CardInfo> entry : CardController.BIN_MAPPING_MAP.entrySet()) {
-                    String strippedStored = entry.getValue().getCardName().replaceAll("[\\p{Z}\\s\\(\\):\\-_]+", "").toLowerCase();
-                    if (strippedStored.equals(baseTitle) || strippedStored.contains(baseTitle) || baseTitle.contains(strippedStored)) {
-                        foundBin = entry.getKey();
-                        foundImageFileName = entry.getValue().getImageUrl();
-                        break;
-                    }
+        // 2. 크롤링 DB 에 없으면 기존 BIN_MAPPING_MAP fallback 검색
+        if (foundImageFileName == null) {
+            for (Map.Entry<String, CardController.CardInfo> entry : CardController.BIN_MAPPING_MAP.entrySet()) {
+                String strippedStored = entry.getValue().getCardName().replaceAll("[\\p{Z}\\s\\(\\):\\-_]+", "").toLowerCase();
+                if (strippedStored.equals(strippedInput) || strippedStored.contains(strippedInput) || strippedInput.contains(strippedStored)) {
+                    foundBin = entry.getKey();
+                    foundImageFileName = entry.getValue().getImageUrl();
+                    foundCardName = entry.getValue().getCardName();
+                    break;
                 }
             }
         }
 
-        if (foundBin == null) {
-            throw new IllegalArgumentException(
-                    "BIN 매핑에서 찾을 수 없는 카드명입니다: " + dto.getCardName());
+        if (foundImageFileName == null) {
+            foundImageFileName = "card_default.png";
         }
 
         // 2. 카드번호 생성: BIN(6자리) + 랜덤(10자리)
@@ -180,22 +173,21 @@ public class CardServiceImpl implements CardService {
                 .cvv(cvv)
                 .cardPassword(password)
                 .cardImgFileName(foundImageFileName != null ? foundImageFileName.replace(".jpg", ".png") : "card_default.png")
-                .cardName(dto.getCardName())
+                .cardName(foundCardName)
                 .build();
 
         int result = cardMapper.insertCard(cardVO);
         if (result != 1) {
             throw new IllegalStateException("card_tbl 삽입에 실패했습니다.");
         }
-        log.info("BIN 기반 카드 마스터 등록 완료: cardCode={}, cardName={}, BIN={}",
-                cardVO.getCardCode(), cardVO.getCardName(), foundBin);
+        log.info("크롤링 기반 카드 마스터 등록 완료: cardCode={}, cardName={}, image={}",
+                cardVO.getCardCode(), cardVO.getCardName(), cardVO.getCardImgFileName());
         return cardVO;
     }
 
     // ──────────────────────────────────────────────────────────────
     // 커스텀 카드 등록
     // ──────────────────────────────────────────────────────────────
-
 
     @Override
     @Transactional
@@ -228,9 +220,83 @@ public class CardServiceImpl implements CardService {
         return cardVO;
     }
 
+    @Override
+    @Transactional
+    public List<CardVO> createAllCardMasters() {
+        List<CardVO> resultList = new java.util.ArrayList<>();
+        List<Map<String, Object>> allProducts = cardMapper.findAllCardProducts();
+
+        if (allProducts != null && !allProducts.isEmpty()) {
+            int idx = 1;
+            for (Map<String, Object> prod : allProducts) {
+                String cardName = String.valueOf(prod.get("cardName"));
+                String cardImage = String.valueOf(prod.get("cardImage"));
+                String cardType = String.valueOf(prod.get("cardType"));
+
+                String binPrefix = "CHECK".equalsIgnoreCase(cardType)
+                        ? "9445" + String.format("%02d", (idx % 90) + 10)
+                        : "5399" + String.format("%02d", (idx % 90) + 10);
+
+                String cardNum = generateCardNumber(binPrefix);
+                String expiry = generateExpiry();
+                String cvv = generateCvv(cardNum, expiry);
+                String password = String.format("%04d", ThreadLocalRandom.current().nextInt(0, 10000));
+                String imgName = (cardImage != null && !cardImage.isBlank() && !"null".equals(cardImage))
+                        ? cardImage.replace(".jpg", ".png")
+                        : "card_default.png";
+
+                CardVO cardVO = CardVO.builder()
+                        .cardNum(cardNum)
+                        .expiryDate(expiry)
+                        .cvv(cvv)
+                        .cardPassword(password)
+                        .cardImgFileName(imgName)
+                        .cardName(cardName)
+                        .build();
+
+                int insertRes = cardMapper.insertCard(cardVO);
+                if (insertRes == 1) {
+                    resultList.add(cardVO);
+                }
+                idx++;
+            }
+            log.info("크롤링 카탈로그(kb_card_product_tbl) 기반 카드 마스터 일괄 등록 완료: 총 {}건", resultList.size());
+        } else {
+            // fallback: BIN_MAPPING_MAP
+            for (Map.Entry<String, CardController.CardInfo> entry : CardController.BIN_MAPPING_MAP.entrySet()) {
+                String bin = entry.getKey();
+                CardController.CardInfo info = entry.getValue();
+
+                String cardNum = generateCardNumber(bin);
+                String expiry = generateExpiry();
+                String cvv = generateCvv(cardNum, expiry);
+                String password = String.format("%04d", ThreadLocalRandom.current().nextInt(0, 10000));
+                String imgName = info.getImageUrl() != null ? info.getImageUrl().replace(".jpg", ".png") : "card_default.png";
+
+                CardVO cardVO = CardVO.builder()
+                        .cardNum(cardNum)
+                        .expiryDate(expiry)
+                        .cvv(cvv)
+                        .cardPassword(password)
+                        .cardImgFileName(imgName)
+                        .cardName(info.getCardName())
+                        .build();
+
+                int insertRes = cardMapper.insertCard(cardVO);
+                if (insertRes == 1) {
+                    resultList.add(cardVO);
+                }
+            }
+            log.info("기본 BIN_MAPPING_MAP 기반 카드 마스터 일괄 등록 완료: 총 {}건", resultList.size());
+        }
+
+        return resultList;
+    }
+
     // ──────────────────────────────────────────────────────────────
     // 헬퍼 메서드
     // ──────────────────────────────────────────────────────────────
+
 
     /** BIN 6자리 + 랜덤 10자리 = 16자리 카드번호 생성 */
     private String generateCardNumber(String bin) {

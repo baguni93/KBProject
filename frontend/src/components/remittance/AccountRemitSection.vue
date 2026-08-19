@@ -6,7 +6,7 @@
         <i class="fa-solid fa-magnifying-glass search-icon"></i>
         <input
           :value="accountNumber"
-          @input="$emit('update:accountNumber', $event.target.value)"
+          @input="handleAccountNumberInput($event.target.value)"
           type="text"
           class="toss-search-input text-15-bold"
           placeholder="'-' 없이 계좌번호 입력"
@@ -109,11 +109,39 @@ const props = defineProps({
   },
 });
 
-defineEmits([
+const emit = defineEmits([
   "update:accountNumber",
   "update:bankCode",
   "selectRecent",
 ]);
+
+// 계좌번호 앞자리 패턴 기반 은행 자동 감지
+const detectBankByAccountNumber = (accNo) => {
+  if (!accNo) return null;
+  const clean = accNo.replace(/[^0-9]/g, "");
+  if (clean.length < 3) return null;
+
+  if (clean.startsWith("3333")) return "090"; // 카카오뱅크
+  if (clean.startsWith("010") || clean.startsWith("011") || clean.startsWith("016") || clean.startsWith("017") || clean.startsWith("018") || clean.startsWith("019")) return "003"; // IBK기업 평생계좌
+  if (clean.startsWith("110") || clean.startsWith("100") || clean.startsWith("150")) return "088"; // 신한은행
+  if (clean.startsWith("937") || clean.startsWith("04") || clean.startsWith("92") || clean.startsWith("94") || clean.startsWith("01")) return "004"; // KB국민은행
+  if (clean.startsWith("1002") || clean.startsWith("020")) return "020"; // 우리은행
+  if (clean.startsWith("081") || clean.startsWith("101") || clean.startsWith("102")) return "081"; // 하나은행
+  if (clean.startsWith("301") || clean.startsWith("302") || clean.startsWith("312") || clean.startsWith("351")) return "011"; // NH농협
+  if (clean.startsWith("089") || clean.startsWith("1000")) return "089"; // 케이뱅크
+  if (clean.startsWith("092") || clean.startsWith("10000")) return "092"; // 토스뱅크
+  if (clean.startsWith("023")) return "023"; // SC제일
+
+  return null;
+};
+
+const handleAccountNumberInput = (val) => {
+  emit("update:accountNumber", val);
+  const detected = detectBankByAccountNumber(val);
+  if (detected) {
+    emit("update:bankCode", detected);
+  }
+};
 
 // 중복된 최근 계좌 제거 (동일 계좌번호는 1개만 노출)
 const uniqueRecentAccounts = computed(() => {

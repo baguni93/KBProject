@@ -113,7 +113,7 @@
 
     <!-- 약관 동의 저장 -->
     <insert id="insertUserAgreement">
-        INSERT INTO user_agreements_tbl (
+        INSERT INTO user_agreement_tbl (
             user_id,
             agreement_id,
             agreed_yn,
@@ -124,9 +124,6 @@
             #{agreedYn},
             NOW()
         )
-        ON DUPLICATE KEY UPDATE
-            agreed_yn = #{agreedYn},
-            agreed_at = NOW()
     </insert>
 
     <!-- 마스터 테이블 kb_card_product_tbl 중복 방지 저장 -->
