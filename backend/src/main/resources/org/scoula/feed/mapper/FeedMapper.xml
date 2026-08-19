@@ -401,18 +401,13 @@
     </select>
     <select id="getEvent" resultType="org.scoula.feed.domain.EventVO">
         SELECT
-            a.recv_id as receiveId,
             a.event_id,
-            a.reward_id,
-            b.reward_point,
-            c.event_img_name as eventImageName,
-            c.event_name
-        FROM event_reward_receive_tbl a
+            a.event_name,
+            b.reward_point
+        FROM event_tbl a
                  join event_reward_tbl b
-                      on a.reward_id = b.reward_id
-        join event_tbl c
-            on a.event_id = c.event_id
-        WHERE a.recv_id = #{targetId}
+                      on a.event_id = b.event_id
+        WHERE a.event_id = #{targetId}
     </select>
 
 

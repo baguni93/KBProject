@@ -55,7 +55,8 @@ import PointView from '@/components/finance/PointView.vue';
 import EventMainCardBanner from '@/components/event/EventMainCardBanner.vue';
 import EventMainChallenge from '@/components/event/EventMainChallenge.vue';
 import EventItem from '@/components/event/EventItem.vue';
-
+import { useFeedStore } from '@/stores/feed';
+const feedStore = useFeedStore();
 // 유저 아이디
 import { useAuthStore } from '@/stores/auth';
 const authStore = useAuthStore();
@@ -198,14 +199,28 @@ const onEventAction = async ({
 
     // 5. 목표 달성 후 보상 수령 (rewardId 전달 추가)
     REWARD_CLAIM: {
-      action: () =>
-        isAttendance
-          ? eventApi.receiveAttendanceEventReward(
-              userId.value,
-              eventId,
-              rewardId,
-            )
-          : eventApi.receiveEventReward(userId.value, eventId, rewardId),
+      action: async () => {
+        // 1. 보상 수령
+        if (isAttendance) {
+          await eventApi.receiveAttendanceEventReward(
+            userId.value,
+            eventId,
+            rewardId,
+          );
+        } else {
+          await eventApi.receiveEventReward(userId.value, eventId, rewardId);
+        }
+
+        // 2. 보상 수령 후 피드 생성
+        const fromData = feedStore.createRequestDTO({
+          targetId: eventId,
+          feedType: 'EVENT',
+          visibility: 'PUBLIC',
+        });
+
+        await feedStore.createFeed(fromData);
+      },
+
       msg: `[${eventName}] 보상 수령이 완료되었습니다!`,
     },
   };
