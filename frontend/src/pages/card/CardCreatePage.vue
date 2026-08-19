@@ -30,6 +30,7 @@
             "
             @update:loading="(val) => (isAccountLoading = val)"
             @next="handleStepNext"
+            @failed="handleStepFailed"
             @select-benefit="handleBenefitSelected"
           />
         </KeepAlive>
@@ -184,7 +185,7 @@ const isNextButtonDisabled = computed(() => {
 });
 
 const handleGoBack = async () => {
-  if (stepIndex.value > 0 && stepIndex.value < 4) {
+  if (stepIndex.value > 0) {
     actionTrigger.value = 0;
     stepIndex.value--;
     return;
@@ -208,6 +209,11 @@ const handleStepNext = () => {
     stepIndex.value++;
     cardStore.saveStep();
   }
+};
+
+const handleStepFailed = () => {
+  actionTrigger.value = 0;
+  console.log('test');
 };
 
 //카드 데이터 저장

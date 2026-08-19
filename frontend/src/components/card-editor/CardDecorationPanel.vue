@@ -20,10 +20,15 @@
           <input
             v-model="inputText"
             type="text"
-            placeholder="카드에 넣을 문구 입력..."
+            :placeholder="
+              cardStore.texts?.length >= 3
+                ? '텍스트는 최대 3개까지 추가할 수 있습니다.'
+                : '카드에 넣을 문구 입력...'
+            "
             class="text-input"
             maxlength="8"
             @keyup.enter="handleAddText"
+            :disabled="cardStore.texts?.length >= 3"
           />
 
           <button
@@ -331,6 +336,10 @@ const handleAddText = async () => {
     size: selectedSize.value,
     isBold: isBold.value,
   };
+
+  // if (cardStore.texts.length >= 3) {
+  //   await modalStore.showAlert('텍스트는 최대 3개까지 등록할 수 있어요.');
+  // }
 
   cardStore.addText(newTextItem);
 

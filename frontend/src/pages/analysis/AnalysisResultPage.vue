@@ -619,11 +619,12 @@ watch(() => route.params.spendingAnalysisId, loadAnalysisDetail);
 import CardShareModal from '../feed/components/CardShareModal.vue';
 import { useModalStore } from '@/stores/userModalStore';
 import { useFeedStore } from '@/stores/feed.js';
+import { useWordFilterStore } from '@/stores/wordFilterStore.js';
+
+const wordFilterStore = useWordFilterStore();
 const feedStore = useFeedStore();
 const useModal = useModalStore();
 const isModalOpen = ref(false);
-const selectedScope = ref('PUBLIC');
-const feedContent = ref('');
 
 const openModal = () => {
   isModalOpen.value = true;
@@ -634,14 +635,25 @@ const closeModal = () => {
 };
 
 // 자랑하기 최종 제출
-const handleShareSubmit = async () => {
-  console.log('공개 범위:', selectedScope.value);
+// 자랑하기 최종 제출
+const handleShareSubmit = async (obj) => {
+  console.log('내용:', obj.content);
+  console.log('공개 범위:', obj.visibility);
+  const trimmedText = obj.content.trim();
+  if (!trimmedText) return;
+  // 💡 공통 필터 스토어의 검증 함수 사용
+  const validation = wordFilterStore.validateText(trimmedText);
+
+  if (!validation.isValid) {
+    await useModal.showAlert(validation.message);
+    return; // 추가 중단
+  }
 
   const fromData = feedStore.createRequestDTO({
     targetId: analysis.value.spendingAnalysisId,
     feedType: 'ANALYSIS',
-    visibility: selectedScope.value,
-    content: feedContent.value,
+    visibility: obj.visibility,
+    content: obj.content,
   });
 
   await feedStore.createFeed(fromData);
