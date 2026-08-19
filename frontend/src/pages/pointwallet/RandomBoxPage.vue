@@ -61,6 +61,35 @@
           <button
               type="button"
               class="guide-row policy-row"
+              :aria-expanded="showIssuePolicy"
+              @click="showIssuePolicy = !showIssuePolicy"
+          >
+            <span class="guide-icon"><i class="fa-solid fa-gift"></i></span>
+            <span class="guide-copy">
+              <strong class="text-14-bold">랜덤박스는 언제 받을 수 있나요?</strong>
+              <span class="text-12">현재 적용된 랜덤박스 지급 조건을 확인해보세요.</span>
+            </span>
+            <i :class="['fa-solid', showIssuePolicy ? 'fa-chevron-up' : 'fa-chevron-down', 'policy-arrow']"></i>
+          </button>
+
+          <transition name="policy-slide">
+            <div v-if="showIssuePolicy" class="issue-policy-panel">
+              <div class="issue-policy-list">
+                <div v-for="condition in issueConditions" :key="condition.title" class="issue-policy-item">
+                  <span class="issue-policy-icon"><i :class="['fa-solid', condition.icon]"></i></span>
+                  <div class="issue-policy-copy">
+                    <strong class="text-13-bold">{{ condition.title }}</strong>
+                    <span class="text-12">{{ condition.description }}</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </transition>
+
+          <button
+              type="button"
+              class="guide-row policy-row"
               :aria-expanded="showProbabilityPolicy"
               @click="showProbabilityPolicy = !showProbabilityPolicy"
           >
@@ -144,7 +173,25 @@ const opening = ref(false);
 const openingMode = ref('one');
 const message = ref('');
 const messageType = ref('success');
+const showIssuePolicy = ref(false);
 const showProbabilityPolicy = ref(false);
+const issueConditions = [
+  {
+    icon: 'fa-calendar-check',
+    title: '출석 체크',
+    description: '출석 체크를 완료하면 랜덤박스 1개가 발급돼요.',
+  },
+  {
+    icon: 'fa-share-nodes',
+    title: '피드 작성·공유',
+    description: '피드가 정상 등록되면 1개가 발급되며 하루 최대 10개까지 받을 수 있어요.',
+  },
+  {
+    icon: 'fa-paper-plane',
+    title: '일반 송금',
+    description: '정산이 아닌 일반 송금 성공 시 같은 수취 대상 기준 1회 랜덤박스가 발급돼요.',
+  },
+];
 const rewardProbabilities = [
   { range: '1 ~ 10P', rate: '90%' },
   { range: '11 ~ 100P', rate: '9%' },
@@ -448,11 +495,78 @@ onMounted(initialize);
   font-size: 11px;
 }
 
+.issue-policy-panel,
 .probability-panel {
   margin: 0 -4px 12px;
   padding: 16px;
   border-radius: 14px;
   background: var(--color-bg-screen);
+}
+
+.issue-policy-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.issue-policy-item {
+  min-height: 58px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.issue-policy-item:first-child {
+  padding-top: 0;
+}
+
+.issue-policy-icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: #fff5d3;
+  color: #d89400;
+  font-size: 13px;
+}
+
+.issue-policy-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.issue-policy-copy strong,
+.issue-policy-copy span {
+  display: block;
+}
+
+.issue-policy-copy span {
+  margin-top: 4px;
+  color: var(--color-text-sub);
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.issue-policy-note {
+  margin-top: 12px;
+  padding: 11px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-radius: 10px;
+  background: #fff8e6;
+  color: var(--color-text-sub);
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.issue-policy-note i {
+  margin-top: 2px;
+  color: #ef9c00;
 }
 
 .probability-head {
