@@ -215,4 +215,35 @@
 
     </select>
 
+    <!-- 크롤링된 전체 카드 상품 목록 조회 (kb_card_product_tbl) -->
+    <select id="findAllCardProducts"
+            resultType="map">
+
+        SELECT
+        card_product_id AS cardProductId,
+        card_name AS cardName,
+        card_type AS cardType,
+        card_image AS cardImage
+        FROM kb_card_product_tbl
+        ORDER BY card_product_id ASC
+
+    </select>
+
+    <!-- 카드명으로 크롤링된 카드 상품 단건 조회 (공백 무시 유연 매칭) -->
+    <select id="findCardProductByName"
+            parameterType="string"
+            resultType="map">
+
+        SELECT
+        card_product_id AS cardProductId,
+        card_name AS cardName,
+        card_type AS cardType,
+        card_image AS cardImage
+        FROM kb_card_product_tbl
+        WHERE card_name = #{cardName}
+           OR REPLACE(card_name, ' ', '') = REPLACE(#{cardName}, ' ', '')
+        LIMIT 1
+
+    </select>
+
 </mapper>

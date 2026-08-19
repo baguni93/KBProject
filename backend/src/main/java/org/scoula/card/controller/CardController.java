@@ -248,6 +248,25 @@ public class CardController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * CARD-006 53개 전체 카드 마스터 일괄 자동 등록 (Admin/개발용)
+     *
+     * 목적:
+     *  - BIN_MAPPING_MAP 에 등록된 53개 전체 카드를 일괄로 card_tbl 에 생성
+     *
+     * POST /api/admin/cards/all
+     */
+    @PostMapping("/api/admin/cards/all")
+    public ResponseEntity<Map<String, Object>> createAllCardMasters() {
+        List<CardVO> createdList = cardService.createAllCardMasters();
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("totalCount", createdList.size());
+        response.put("message", "53개 전체 카드가 card_tbl에 성공적으로 일괄 등록되었습니다.");
+        response.put("cards", createdList);
+        return ResponseEntity.ok(response);
+    }
+
     public static class CardInfo {
         private String cardName;
         private String imageUrl;
