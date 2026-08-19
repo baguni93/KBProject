@@ -1,10 +1,10 @@
 <template>
   <div class="kb-mobile-page analysis-page">
     <PageHeader
-        title="최근 소비 분석 결과"
-        :showBack="true"
-        :customBack="true"
-        @back="goToFinance"
+      title="최근 소비 분석 결과"
+      :showBack="true"
+      :customBack="true"
+      @back="goToFinance"
     />
 
     <div class="analysis-content-start">
@@ -18,9 +18,9 @@
     </div>
 
     <p
-        v-if="message"
-        :class="['analysis-message', 'text-13', messageType]"
-        role="status"
+      v-if="message"
+      :class="['analysis-message', 'text-13', messageType]"
+      role="status"
     >
       {{ message }}
     </p>
@@ -38,10 +38,10 @@
           <span class="ai-label text-13-bold">AI 칭호</span>
 
           <button
-              type="button"
-              class="title-share-button"
-              aria-label="소비 분석 결과 공유"
-              @click="shareResult"
+            type="button"
+            class="title-share-button"
+            aria-label="소비 분석 결과 공유"
+            @click="openModal"
           >
             <i class="fa-solid fa-share-nodes"></i>
             <span>공유</span>
@@ -55,28 +55,34 @@
           </div>
 
           <div class="title-illustration" aria-hidden="true">
-            <i :class="getCategoryIcon(latestAnalysis.representativeCategoryName)"></i>
+            <i
+              :class="
+                getCategoryIcon(latestAnalysis.representativeCategoryName)
+              "
+            ></i>
           </div>
         </div>
       </section>
 
       <AnalysisSummaryCard
-          class="main-summary-card"
-          :categories="sortedCategories"
-          :total-amount="latestAnalysis.totalSpendingAmount"
-          :transaction-count="latestAnalysis.classifiedTransactionCount"
-          :representative-category-id="latestAnalysis.representativeCategoryId"
-          :representative-category-name="latestAnalysis.representativeCategoryName"
-          :period="selectedPeriod"
-          :start-date="latestAnalysis.analysisStartDate"
-          :end-date="latestAnalysis.analysisEndDate"
+        class="main-summary-card"
+        :categories="sortedCategories"
+        :total-amount="latestAnalysis.totalSpendingAmount"
+        :transaction-count="latestAnalysis.classifiedTransactionCount"
+        :representative-category-id="latestAnalysis.representativeCategoryId"
+        :representative-category-name="
+          latestAnalysis.representativeCategoryName
+        "
+        :period="selectedPeriod"
+        :start-date="latestAnalysis.analysisStartDate"
+        :end-date="latestAnalysis.analysisEndDate"
       >
         <template #actions>
           <button
-              type="button"
-              class="content-btn secondary analysis-action-button"
-              :disabled="analysisRunning"
-              @click="goToCheck"
+            type="button"
+            class="content-btn secondary analysis-action-button"
+            :disabled="analysisRunning"
+            @click="goToCheck"
           >
             <span>{{ analysisRunning ? '분석 중' : '다시 분석하기' }}</span>
             <span
@@ -94,16 +100,20 @@
       <section class="kb-section">
         <div class="kb-section-title-row">
           <h2 class="kb-section-title text-18-bold">카테고리별 소비</h2>
-          <button type="button" class="text-link text-13-bold" @click="goToCategorySummary">
+          <button
+            type="button"
+            class="text-link text-13-bold"
+            @click="goToCategorySummary"
+          >
             전체보기 <i class="fa-solid fa-chevron-right"></i>
           </button>
         </div>
 
         <div class="category-breakdown kb-card">
           <div
-              v-for="(category, index) in sortedCategories.slice(0, 3)"
-              :key="category.spendingCategoryId"
-              class="category-row"
+            v-for="(category, index) in sortedCategories.slice(0, 3)"
+            :key="category.spendingCategoryId"
+            class="category-row"
           >
             <div
               class="category-icon"
@@ -173,7 +183,11 @@
     <section class="kb-section recent-section">
       <div class="kb-section-title-row">
         <h2 class="kb-section-title text-18-bold">최근 소비내역</h2>
-        <button type="button" class="text-link text-13-bold" @click="goToAllTransactions">
+        <button
+          type="button"
+          class="text-link text-13-bold"
+          @click="goToAllTransactions"
+        >
           전체보기 <i class="fa-solid fa-chevron-right"></i>
         </button>
       </div>
@@ -232,12 +246,18 @@
         </div>
       </div>
     </section>
+
+    <CardShareModal
+      v-model="isModalOpen"
+      @submit="handleShareSubmit"
+      title="AI가 분석한 소비 결과 자랑하기"
+    />
   </div>
 </template>
 
 <script setup>
-import {computed, onBeforeUnmount, onMounted, ref} from 'vue';
-import {useRoute, useRouter} from 'vue-router';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import AnalysisSummaryCard from '@/components/common/AnalysisSummaryCard.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import CommonTabBar from '@/components/common/CommonTabBar.vue';
@@ -278,7 +298,7 @@ const formatRatio = (value) => {
   return Number.isInteger(ratio) ? ratio : ratio.toFixed(1);
 };
 const formatShortDate = (value) =>
-    value ? String(value).replace('T', ' ').slice(0, 16) : '-';
+  value ? String(value).replace('T', ' ').slice(0, 16) : '-';
 const categoryColor = (category, index) =>
   getAnalysisCategoryColor(category.categoryName, index);
 
@@ -453,7 +473,46 @@ const goToCategoryEdit = (transaction) =>
       returnTo: router.currentRoute.value.fullPath,
     },
   });
+// 피드 공유 모달
+import CardShareModal from '../feed/components/CardShareModal.vue';
+import { useModalStore } from '@/stores/userModalStore';
+import { useFeedStore } from '@/stores/feed.js';
+const feedStore = useFeedStore();
+const useModal = useModalStore();
+const isModalOpen = ref(false);
+const selectedScope = ref('PUBLIC');
+const feedContent = ref('');
 
+const openModal = () => {
+  isModalOpen.value = true;
+};
+
+const closeModal = () => {
+  isModalOpen.value = false;
+};
+
+// 자랑하기 최종 제출
+const handleShareSubmit = async () => {
+  console.log('공개 범위:', selectedScope.value);
+
+  const fromData = feedStore.createRequestDTO({
+    targetId: latestAnalysis.value.spendingAnalysisId,
+    feedType: 'ANALYSIS',
+    visibility: selectedScope.value,
+    content: feedContent.value,
+  });
+
+  await feedStore.createFeed(fromData);
+
+  closeModal();
+
+  const result =
+    await useModal.showSuccess('피드에 성공적으로 공유되었습니다!');
+
+  if (result) {
+    router.push('/feed');
+  }
+};
 onMounted(loadPage);
 onBeforeUnmount(stopStatusPolling);
 </script>

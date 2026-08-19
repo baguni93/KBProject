@@ -1,10 +1,10 @@
 <template>
   <div class="kb-mobile-page result-page">
     <PageHeader
-        title="소비 분석 결과"
-        :showBack="true"
-        :customBack="true"
-        @back="goToMain"
+      title="소비 분석 결과"
+      :showBack="true"
+      :customBack="true"
+      @back="goToMain"
     />
 
     <div class="result-content-start">
@@ -24,11 +24,7 @@
           <div class="hero-top">
             <span class="ai-label text-13-bold">AI 칭호</span>
 
-            <button
-                type="button"
-                class="hero-share-button"
-                @click="shareResult"
-            >
+            <button type="button" class="hero-share-button" @click="openModal">
               <i class="fa-solid fa-share-nodes"></i>
               <span>공유</span>
             </button>
@@ -41,26 +37,32 @@
             </div>
 
             <div class="hero-icon" aria-hidden="true">
-              <i :class="getCategoryIcon(analysis.representativeCategoryName)"></i>
+              <i
+                :class="getCategoryIcon(analysis.representativeCategoryName)"
+              ></i>
             </div>
           </div>
         </section>
 
         <AnalysisSummaryCard
-            :categories="sortedCategories"
-            :total-amount="analysis.totalSpendingAmount"
-            :transaction-count="analysis.classifiedTransactionCount"
-            :representative-category-id="analysis.representativeCategoryId"
-            :representative-category-name="analysis.representativeCategoryName"
-            :period="analysis.analysisPeriod || analysis.period"
-            :start-date="analysis.analysisStartDate"
-            :end-date="analysis.analysisEndDate"
+          :categories="sortedCategories"
+          :total-amount="analysis.totalSpendingAmount"
+          :transaction-count="analysis.classifiedTransactionCount"
+          :representative-category-id="analysis.representativeCategoryId"
+          :representative-category-name="analysis.representativeCategoryName"
+          :period="analysis.analysisPeriod || analysis.period"
+          :start-date="analysis.analysisStartDate"
+          :end-date="analysis.analysisEndDate"
         />
 
         <section class="result-section">
           <div class="section-title-row">
             <h2>카테고리별 소비</h2>
-            <button type="button" class="section-more" @click="goToCategorySummary">
+            <button
+              type="button"
+              class="section-more"
+              @click="goToCategorySummary"
+            >
               전체보기
               <i class="fa-solid fa-chevron-right"></i>
             </button>
@@ -68,13 +70,13 @@
 
           <div class="result-list kb-card">
             <div
-                v-for="(category, index) in sortedCategories.slice(0, 3)"
-                :key="category.spendingCategoryId"
-                class="result-row"
+              v-for="(category, index) in sortedCategories.slice(0, 3)"
+              :key="category.spendingCategoryId"
+              class="result-row"
             >
               <div
-                  class="result-category-icon"
-                  :style="{
+                class="result-category-icon"
+                :style="{
                   backgroundColor: `${categoryColor(category, index)}20`,
                   color: categoryColor(category, index),
                 }"
@@ -84,13 +86,17 @@
 
               <div class="result-category-info">
                 <div class="result-category-head">
-                  <strong class="text-15-bold">{{ category.categoryName }}</strong>
-                  <span class="text-13">{{ formatRatio(category.spendingRatio) }}%</span>
+                  <strong class="text-15-bold">{{
+                    category.categoryName
+                  }}</strong>
+                  <span class="text-13"
+                    >{{ formatRatio(category.spendingRatio) }}%</span
+                  >
                 </div>
 
                 <div class="result-track">
                   <span
-                      :style="{
+                    :style="{
                       width: `${Math.min(Number(category.spendingRatio), 100)}%`,
                       backgroundColor: categoryColor(category, index),
                     }"
@@ -99,8 +105,14 @@
               </div>
 
               <div class="result-category-amount">
-                <strong class="text-15-bold">{{ formatAnalysisNumber(category.spendingAmount) }}원</strong>
-                <span class="text-13">{{ getCategoryTransactionCount(category.spendingCategoryId) }}건</span>
+                <strong class="text-15-bold"
+                  >{{ formatAnalysisNumber(category.spendingAmount) }}원</strong
+                >
+                <span class="text-13"
+                  >{{
+                    getCategoryTransactionCount(category.spendingCategoryId)
+                  }}건</span
+                >
               </div>
             </div>
           </div>
@@ -112,27 +124,39 @@
           </div>
 
           <div class="recommendation-list kb-card">
-            <button type="button" class="recommendation-row" @click="openCardRecommendation">
+            <button
+              type="button"
+              class="recommendation-row"
+              @click="openCardRecommendation"
+            >
               <span class="recommendation-icon card">
                 <i class="fa-regular fa-credit-card"></i>
               </span>
 
               <span class="recommendation-copy">
                 <strong class="text-15-bold">카드 추천</strong>
-                <small class="text-13">소비 패턴에 맞는 카드를 확인해보세요</small>
+                <small class="text-13"
+                  >소비 패턴에 맞는 카드를 확인해보세요</small
+                >
               </span>
 
               <i class="fa-solid fa-chevron-right"></i>
             </button>
 
-            <button type="button" class="recommendation-row" @click="openInsuranceRecommendation">
+            <button
+              type="button"
+              class="recommendation-row"
+              @click="openInsuranceRecommendation"
+            >
               <span class="recommendation-icon insurance">
                 <i class="fa-solid fa-shield-heart"></i>
               </span>
 
               <span class="recommendation-copy">
                 <strong class="text-15-bold">보험 추천</strong>
-                <small class="text-13">내 소비에 맞는 보험을 확인해보세요</small>
+                <small class="text-13"
+                  >내 소비에 맞는 보험을 확인해보세요</small
+                >
               </span>
 
               <i class="fa-solid fa-chevron-right"></i>
@@ -143,7 +167,11 @@
         <section class="result-section">
           <div class="section-title-row">
             <h2>최근 소비내역</h2>
-            <button type="button" class="section-more" @click="goToTransactionList">
+            <button
+              type="button"
+              class="section-more"
+              @click="goToTransactionList"
+            >
               전체보기
               <i class="fa-solid fa-chevron-right"></i>
             </button>
@@ -156,28 +184,47 @@
 
             <template v-else-if="recentTransactions.length">
               <div
-                  v-for="transaction in recentTransactions"
-                  :key="transaction.transactionId"
-                  class="transaction-row"
+                v-for="transaction in recentTransactions"
+                :key="transaction.transactionId"
+                class="transaction-row"
               >
                 <div class="transaction-icon">
-                  <i :class="getCategoryIcon(transaction.parentCategoryName || transaction.categoryName)"></i>
+                  <i
+                    :class="
+                      getCategoryIcon(
+                        transaction.parentCategoryName ||
+                          transaction.categoryName,
+                      )
+                    "
+                  ></i>
                 </div>
 
                 <button
-                    type="button"
-                    class="transaction-info transaction-info-button"
-                    @click="goToCategoryEdit(transaction)"
+                  type="button"
+                  class="transaction-info transaction-info-button"
+                  @click="goToCategoryEdit(transaction)"
                 >
                   <strong class="text-15-bold">
-                    {{ transaction.transactionLabel || transaction.merchantName || '거래 정보 없음' }}
+                    {{
+                      transaction.transactionLabel ||
+                      transaction.merchantName ||
+                      '거래 정보 없음'
+                    }}
                   </strong>
-                  <span class="text-13">{{ formatAnalysisDateTimeMinute(transaction.createdAt) }}</span>
+                  <span class="text-13">{{
+                    formatAnalysisDateTimeMinute(transaction.createdAt)
+                  }}</span>
                 </button>
 
                 <div class="transaction-right">
-                  <strong class="text-15-bold">-{{ formatAnalysisNumber(transaction.amount) }}원</strong>
-                  <button type="button" class="text-13" @click="goToCategoryEdit(transaction)">
+                  <strong class="text-15-bold"
+                    >-{{ formatAnalysisNumber(transaction.amount) }}원</strong
+                  >
+                  <button
+                    type="button"
+                    class="text-13"
+                    @click="goToCategoryEdit(transaction)"
+                  >
                     {{ transaction.categoryName || '미분류' }}
                     <i class="fa-solid fa-pen"></i>
                   </button>
@@ -206,8 +253,15 @@
 </template>
 
 <script setup>
-import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue';
-import {useRoute, useRouter} from 'vue-router';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import AnalysisSummaryCard from '@/components/common/AnalysisSummaryCard.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import analysisApi from '@/api/analysisApi';
@@ -256,9 +310,9 @@ const sortedCategories = computed(() =>
 );
 
 const recentTransactions = computed(() =>
-    [...transactions.value]
-        .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))
-        .slice(0, 3),
+  [...transactions.value]
+    .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))
+    .slice(0, 3),
 );
 
 const topCategories = computed(() =>
@@ -481,11 +535,10 @@ const goToCategoryEdit = (transaction) =>
   });
 
 const goToMain = () =>
-    router.push({
-      name: 'analysis-main',
-      query: {period: analysis.value?.period ?? 1},
-    });
-
+  router.push({
+    name: 'analysis-main',
+    query: { period: analysis.value?.period ?? 1 },
+  });
 
 const goToCategorySummary = () => {
   const id = analysis.value?.spendingAnalysisId;
