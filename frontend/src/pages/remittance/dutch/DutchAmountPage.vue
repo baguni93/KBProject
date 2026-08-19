@@ -40,12 +40,14 @@ import { useRouter } from "vue-router";
 import { useRemittanceStore } from "@/stores/remittance";
 import { useAuthStore } from "@/stores/auth";
 import { useProfileStore } from "@/stores/profile";
+import { useModalStore } from "@/stores/userModalStore";
 import RemitAmountStep from "@/components/remittance/RemitAmountStep.vue";
 
 const router = useRouter();
 const remittanceStore = useRemittanceStore();
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
+const modalStore = useModalStore();
 
 const handleAmountInput = (e) => {
   const raw = e.target.value.replace(/[^0-9]/g, "");
@@ -67,7 +69,7 @@ const openTxSelect = async () => {
 
 const proceedToSummary = () => {
   if (remittanceStore.remitAmount <= 0) {
-    alert("정산할 금액을 입력해주세요.");
+    modalStore.showAlert("정산할 금액을 입력해주세요.", "금액 입력 안내");
     return;
   }
 

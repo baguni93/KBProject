@@ -41,18 +41,22 @@
     <RemitPasswordModal
       :show="remittanceStore.showPasswordModal"
       :input-pin="remittanceStore.inputPinCode"
-      @close="remittanceStore.showPasswordModal = false"
+      :error-message="pinErrorMessage"
+      :pin-locked="pinLocked"
+      @close="closePinModal"
       @enter-pin="enterPinCode"
-      @clear-pin="remittanceStore.inputPinCode = ''"
-      @delete-pin="remittanceStore.inputPinCode = remittanceStore.inputPinCode.slice(0, -1)"
+      @clear-pin="clearPinCode"
+      @delete-pin="deletePinCode"
+      @forgot-pin="goPinReset"
     />
   </div>
 </template>
 
 <script setup>
-import { computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useRemittanceStore } from "@/stores/remittance";
+import { useSignupStore } from "@/stores/signup";
 import PageHeader from "@/components/common/PageHeader.vue";
 import CommonTabBar from "@/components/common/CommonTabBar.vue";
 import RemitConfirmModal from "@/components/remittance/RemitConfirmModal.vue";
@@ -62,6 +66,10 @@ import walletApi from "@/api/walletApi";
 const route = useRoute();
 const router = useRouter();
 const remittanceStore = useRemittanceStore();
+const signupStore = useSignupStore();
+
+const pinErrorMessage = ref("");
+const pinLocked = ref(false);
 
 const tabOptions = [
   { label: "계좌 송금", value: "ACCOUNT" },
@@ -143,10 +151,39 @@ const handleBack = () => {
 const confirmRemittanceWithPassword = () => {
   remittanceStore.showConfirmModal = false;
   remittanceStore.inputPinCode = "";
+  pinErrorMessage.value = "";
+  pinLocked.value = false;
   remittanceStore.showPasswordModal = true;
 };
 
+const closePinModal = () => {
+  remittanceStore.showPasswordModal = false;
+  remittanceStore.inputPinCode = "";
+  pinErrorMessage.value = "";
+};
+
+const clearPinCode = () => {
+  remittanceStore.inputPinCode = "";
+  pinErrorMessage.value = "";
+};
+
+const deletePinCode = () => {
+  remittanceStore.inputPinCode = remittanceStore.inputPinCode.slice(0, -1);
+  pinErrorMessage.value = "";
+};
+
+const goPinReset = () => {
+  remittanceStore.showPasswordModal = false;
+  remittanceStore.inputPinCode = "";
+  pinErrorMessage.value = "";
+  signupStore.setVerificationPurpose('PIN_RESET');
+  router.push('/signup/check');
+};
+
 const enterPinCode = async (n) => {
+  if (pinLocked.value) return;
+
+  pinErrorMessage.value = "";
   if (remittanceStore.inputPinCode.length < 6) {
     remittanceStore.inputPinCode += String(n);
     if (remittanceStore.inputPinCode.length === 6) {
@@ -154,6 +191,7 @@ const enterPinCode = async (n) => {
         const userId = remittanceStore.authStore?.userId || 1;
         const res = await walletApi.verifyPin(userId, remittanceStore.inputPinCode);
         if (res && res.verified) {
+          pinErrorMessage.value = "";
           remittanceStore.showPasswordModal = false;
           await remittanceStore.executeRemittance();
           if (remittanceStore.remitSuccess) {
@@ -166,13 +204,20 @@ const enterPinCode = async (n) => {
             }
           }
         } else {
-          alert("비밀번호가 일치하지 않습니다. 다시 입력해 주세요.");
+          pinErrorMessage.value = res?.message || "간편비밀번호가 일치하지 않습니다.";
           remittanceStore.inputPinCode = "";
+          if (res?.pinLocked || pinErrorMessage.value.includes("초과") || pinErrorMessage.value.includes("잠겼습니다")) {
+            pinLocked.value = true;
+          }
         }
       } catch (pinErr) {
         console.error("PIN 인증 실패:", pinErr);
-        alert("비밀번호가 일치하지 않습니다. 다시 입력해 주세요.");
+        const errData = pinErr.response?.data;
+        pinErrorMessage.value = (typeof errData === 'string' ? errData : errData?.message) || pinErr.message || "간편비밀번호가 일치하지 않습니다.";
         remittanceStore.inputPinCode = "";
+        if (pinErrorMessage.value.includes("초과") || pinErrorMessage.value.includes("잠겼습니다")) {
+          pinLocked.value = true;
+        }
       }
     }
   }

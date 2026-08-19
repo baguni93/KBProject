@@ -9,11 +9,13 @@ import * as accountApi from '@/api/accountApi';
 import { useAuthStore } from '@/stores/auth';
 import { useProfileStore } from '@/stores/profile';
 import { useSettlementStore } from '@/stores/settlement';
+import { useModalStore } from '@/stores/userModalStore';
 
 export const useRemittanceStore = defineStore('remittance', () => {
   const authStore = useAuthStore();
   const profileStore = useProfileStore();
   const settlementStore = useSettlementStore();
+  const modalStore = useModalStore();
 
   // 1. 송금 기본 상태
   const remitType = ref('ACCOUNT'); // 'ACCOUNT' | 'FRIEND' | 'DUTCH'
@@ -520,7 +522,7 @@ export const useRemittanceStore = defineStore('remittance', () => {
       console.error('송금/정산 처리 중 예외 발생:', err);
       remitSuccess.value = false;
       const msg = err.response?.data?.message || err.message || '송금 처리에 실패했습니다.';
-      alert('송금 실패: ' + msg);
+      modalStore.showAlert('송금 실패: ' + msg, '송금 처리 오류');
       throw err;
     } finally {
       isSubmitting.value = false;

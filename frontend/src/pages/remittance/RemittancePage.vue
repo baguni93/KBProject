@@ -285,10 +285,13 @@
     <RemitPasswordModal
       :show="showPasswordModal"
       :input-pin="inputPinCode"
-      @close="showPasswordModal = false"
+      :error-message="pinErrorMessage"
+      :pin-locked="pinLocked"
+      @close="closePinModal"
       @enter-pin="enterPinCode"
-      @clear-pin="inputPinCode = ''"
-      @delete-pin="inputPinCode = inputPinCode.slice(0, -1)"
+      @clear-pin="clearPinCode"
+      @delete-pin="deletePinCode"
+      @forgot-pin="goPinReset"
     />
   </div>
 </template>
@@ -298,6 +301,7 @@ import { ref, computed, onMounted, reactive } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useProfileStore } from "@/stores/profile";
+import { useSignupStore } from "@/stores/signup";
 import { getProfile as fetchUserProfile, getProfileImage } from "@/api/profileApi";
 import walletApi from "@/api/walletApi";
 import friendApi from "@/api/friend";
@@ -318,10 +322,16 @@ import DutchCreateSummaryStep from "@/components/remittance/DutchCreateSummarySt
 import RemitConfirmModal from "@/components/remittance/RemitConfirmModal.vue";
 import RemitPasswordModal from "@/components/remittance/RemitPasswordModal.vue";
 import RemitResultStep from "@/components/remittance/RemitResultStep.vue";
+import { useModalStore } from "@/stores/userModalStore";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const signupStore = useSignupStore();
+const modalStore = useModalStore();
+
+const pinErrorMessage = ref("");
+const pinLocked = ref(false);
 
 const currentStep = ref(1);
 const remitType = ref("ACCOUNT");
@@ -685,7 +695,7 @@ const containsProfanity = (text) => {
 const submitRemittance = () => {
   // 피드 메모 및 정산 제목 욕설/비속어 필터링 검증
   if (containsProfanity(remitMemo.value) || containsProfanity(dutchRoomTitle.value)) {
-    alert("⚠️ 입력하신 내용에 올바르지 않은 표현(비속어/욕설)이 포함되어 있습니다. 내용을 수정해주세요.");
+    modalStore.showAlert("⚠️ 입력하신 내용에 올바르지 않은 표현(비속어/욕설)이 포함되어 있습니다. 내용을 수정해주세요.", "입력 내용 안내");
     return;
   }
   showConfirmModal.value = true;
@@ -694,39 +704,39 @@ const submitRemittance = () => {
 const confirmRemittanceWithPassword = () => {
   showConfirmModal.value = false;
   inputPinCode.value = "";
+  pinErrorMessage.value = "";
+  pinLocked.value = false;
   showPasswordModal.value = true;
 };
 
-const executeRemittance = async () => {
-  try {
-    const userId = authStore.userId || 1;
-    const isAccount = remitType.value === "ACCOUNT";
+const closePinModal = () => {
+  showPasswordModal.value = false;
+  inputPinCode.value = "";
+  pinErrorMessage.value = "";
+};
 
-    const payload = {
-      walletId: userId,
-      receiverId: isAccount ? null : selectedFriendId.value,
-      amount: Number(remitAmount.value),
-      spendingCategoryId: selectedCategoryId.value || 1,
-      memo: remitMemo.value || "송금 완료",
-      content: remitMemo.value || "송금 완료",
-      receiverType: isAccount ? "ACCOUNT" : "WALLET",
-      bankCode: accountForm.bankCode || "004",
-      accountNumber: accountForm.accountNumber || "",
-      visibility: remitVisibility.value || "PUBLIC",
-      file: selectedFile.value,
-    };
+const clearPinCode = () => {
+  inputPinCode.value = "";
+  pinErrorMessage.value = "";
+};
 
-    if (remittanceApi && remittanceApi.sendMoney) {
-      await remittanceApi.sendMoney(payload);
-    }
-    remitSuccess.value = true;
-  } catch (err) {
-    console.error("송금 처리 중 예외 발생:", err);
-    remitSuccess.value = true;
-  }
+const deletePinCode = () => {
+  inputPinCode.value = inputPinCode.value.slice(0, -1);
+  pinErrorMessage.value = "";
+};
+
+const goPinReset = () => {
+  showPasswordModal.value = false;
+  inputPinCode.value = "";
+  pinErrorMessage.value = "";
+  signupStore.setVerificationPurpose('PIN_RESET');
+  router.push('/signup/check');
 };
 
 const enterPinCode = async (n) => {
+  if (pinLocked.value) return;
+
+  pinErrorMessage.value = "";
   if (inputPinCode.value.length < 6) {
     inputPinCode.value += String(n);
     if (inputPinCode.value.length === 6) {
@@ -734,16 +744,24 @@ const enterPinCode = async (n) => {
         const userId = authStore.userId || 1;
         const res = await walletApi.verifyPin(userId, inputPinCode.value);
         if (res && res.verified) {
+          pinErrorMessage.value = "";
           showPasswordModal.value = false;
           await executeRemittance();
         } else {
-          alert("비밀번호가 일치하지 않습니다. 다시 입력해 주세요.");
+          pinErrorMessage.value = res?.message || "간편비밀번호가 일치하지 않습니다.";
           inputPinCode.value = "";
+          if (res?.pinLocked || pinErrorMessage.value.includes("초과") || pinErrorMessage.value.includes("잠겼습니다")) {
+            pinLocked.value = true;
+          }
         }
       } catch (pinErr) {
         console.error("PIN 인증 실패:", pinErr);
-        alert("비밀번호가 일치하지 않습니다. 다시 입력해 주세요.");
+        const errData = pinErr.response?.data;
+        pinErrorMessage.value = (typeof errData === 'string' ? errData : errData?.message) || pinErr.message || "간편비밀번호가 일치하지 않습니다.";
         inputPinCode.value = "";
+        if (pinErrorMessage.value.includes("초과") || pinErrorMessage.value.includes("잠겼습니다")) {
+          pinLocked.value = true;
+        }
       }
     }
   }

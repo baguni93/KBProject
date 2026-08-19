@@ -354,4 +354,15 @@
         )
     </insert>
 
+    <!-- 회원 PIN 및 실패 횟수/잠금 상태 조회 -->
+    <select id="getUserPinAuthInfo" resultType="map">
+        SELECT user_id AS userId,
+               pin_password AS pinPassword,
+               IFNULL(pin_fail_count, 0) AS pinFailCount,
+               IFNULL(pin_locked_yn, 'N') AS pinLockedYn
+        FROM user_tbl
+        WHERE user_id = #{userId}
+        LIMIT 1
+    </select>
+
 </mapper>
