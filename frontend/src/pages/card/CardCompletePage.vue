@@ -56,9 +56,9 @@
         카드 자랑하기
       </button>
 
-      <button class="share-btn" @click="handleAddCard">
+      <!-- <button class="share-btn" @click="handleAddCard">
         간편 결제 연동하기
-      </button>
+      </button> -->
 
       <button class="confirm-btn" @click="handleConfirm">확인</button>
     </div>

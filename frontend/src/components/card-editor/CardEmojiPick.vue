@@ -5,7 +5,6 @@
       <button
         class="main-tab-btn"
         :class="{ active: activeMainTab === 'emoji' }"
-        :disabled="cardStore.emojis?.length >= 5"
         @click="activeMainTab = 'emoji'"
       >
         😊 이모지
@@ -13,7 +12,6 @@
       <button
         class="main-tab-btn"
         :class="{ active: activeMainTab === 'sticker' }"
-        :disabled="cardStore.emojis?.length >= 5"
         @click="activeMainTab = 'sticker'"
       >
         🎀 스티커
