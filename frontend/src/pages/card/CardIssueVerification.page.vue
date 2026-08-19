@@ -60,7 +60,12 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['update:isValid', 'update:loading', 'next']);
+const emit = defineEmits([
+  'update:isValid',
+  'update:loading',
+  'next',
+  'failed',
+]);
 
 // 인증 요청 가능 여부
 const canSubmit = computed(() => {
@@ -97,9 +102,9 @@ const changeVerificationCode = (event) => {
 
 const confirmAndConnect = async () => {
   console.log(verificationCode.value);
-  if (verificationCode.value === '') {
-    return;
-  }
+  // if (verificationCode.value === '') {
+  //   return;
+  // }
 
   const userId = authStore.userId;
   const verificationId = customCardStore.id;
@@ -125,8 +130,9 @@ const confirmAndConnect = async () => {
     await modalStore.showAlert(
       error.error || '알 수 없는 오류가 발생했습니다.',
     );
-
     await focusInput();
+
+    emit('failed');
   } finally {
     loading.value = false;
   }
@@ -136,7 +142,10 @@ const confirmAndConnect = async () => {
 watch(
   () => props.actionTrigger,
   async (newVal) => {
-    if (newVal !== 1) return;
+    if (newVal !== 1) {
+      console.log(newVal);
+      return;
+    }
 
     await confirmAndConnect();
   },

@@ -151,7 +151,7 @@
     </insert>
 
 
-    <!-- 회원 프로필 저장 -->
+    <!-- 회원 프로필 저장 박우진 추가, 디폴트 프로필 이미지 적용-->
     <insert id="insertProfile"
             parameterType="org.scoula.user.domain.UserVO">
 
@@ -159,6 +159,8 @@
         user_id,
         nickname,
         introduction,
+         stored_name ,
+         original_name,
         created_at,
         updated_at
         )
@@ -166,6 +168,8 @@
         #{userId},
         #{nickname},
         NULL,
+        'unknown.png',
+        'unknown.png',
         NOW(),
         NOW()
         )

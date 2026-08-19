@@ -1,7 +1,6 @@
 export const INSURANCE_CATEGORY_OPTIONS = [
   { value: '', label: '전체' },
   { value: '건강·실비', label: '건강·실비' },
-  { value: '여행자', label: '여행자' },
   { value: '운전자', label: '운전자' },
   { value: '치아', label: '치아' },
   { value: '펫', label: '펫' },

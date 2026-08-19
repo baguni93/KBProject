@@ -85,7 +85,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCustomCardStore } from '@/stores/customcard';
 import { useAuthStore } from '@/stores/auth.js';
@@ -150,7 +150,9 @@ const submitAgreement = async () => {
   router.push('/card/create');
 };
 
-customCardStore.load(userId);
+onMounted(() => {
+  customCardStore.load(userId);
+});
 </script>
 
 <style scoped>

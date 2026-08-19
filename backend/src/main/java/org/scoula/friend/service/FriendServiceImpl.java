@@ -164,11 +164,11 @@ public class FriendServiceImpl implements FriendService{
                 .build().toVo());
 
 
-        notificationService.createFriendAcceptNotification(
-                friendRequestVO.getReceiverId(),
-                friendRequestVO.getRequesterId(),
-                friendRequestVO.getRequestId()
-        );
+//        notificationService.createFriendAcceptNotification(
+//                friendRequestVO.getReceiverId(),
+//                friendRequestVO.getRequesterId(),
+//                friendRequestVO.getRequestId()
+//        );
 
         sendFriendEvent(
                 friendRequestVO.getRequesterId(),
