@@ -117,10 +117,12 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import pointWalletApi from '@/api/pointWalletApi';
 import walletApi from '@/api/walletApi';
 import { formatNumber, getApiErrorMessage } from '@/util/pointWallet';
+import { useModalStore } from '@/stores/userModalStore.js';
 
 const TEMPORARY_USER_ID = 1;
 const MINIMUM_POINT = 100;
 const router = useRouter();
+const modalStore = useModalStore();
 const pointWallet = ref(null);
 const wallet = ref(null);
 const pointAmount = ref(MINIMUM_POINT);
@@ -185,6 +187,7 @@ const submitConversion = async () => {
   if (validationMessage) {
     messageType.value = 'error';
     message.value = validationMessage;
+    modalStore.showAlert(validationMessage, '포인트 전환 안내');
     return;
   }
 
@@ -199,6 +202,7 @@ const submitConversion = async () => {
   } catch (error) {
     messageType.value = 'error';
     message.value = getApiErrorMessage(error, '포인트 전환에 실패했습니다.');
+    modalStore.showAlert(message.value, '포인트 전환 안내');
   } finally {
     loading.value = false;
   }
