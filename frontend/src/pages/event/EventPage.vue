@@ -89,6 +89,7 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import EventMainCardBanner from '@/components/event/EventMainCardBanner.vue';
 import EventMainChallenge from '@/components/event/EventMainChallenge.vue';
 import EventItem from '@/components/event/EventItem.vue';
+import { useModalStore } from '@/stores/userModalStore';
 
 // 유저 아이디
 import { useAuthStore } from '@/stores/auth';
@@ -96,6 +97,7 @@ const authStore = useAuthStore();
 const userId = computed(() => authStore.userId);
 
 const router = useRouter();
+const modalStore = useModalStore();
 
 const userPoint = ref(0);
 const challengeData = ref(null);
@@ -148,12 +150,12 @@ const handleClaimReward = async (challengeId) => {
     );
 
     if (response) {
-      alert('보상 수령이 완료되었습니다.');
+      modalStore.showSuccess('보상 수령이 완료되었습니다.');
       await fetchMainData(); // 화면 데이터 갱신
     }
   } catch (error) {
     console.error('보상 수령 오류:', error);
-    alert('보상 수령에 실패했습니다.');
+    modalStore.showAlert('보상 수령에 실패했습니다.');
   }
 };
 
@@ -169,12 +171,12 @@ const onEventAction = async ({
   if (!eventId) return;
 
   if (!userId.value) {
-    alert('올바른 사용자 정보가 아닙니다.');
+    modalStore.showAlert('올바른 사용자 정보가 아닙니다.');
     return;
   }
 
   if (buttonStatus === 'COMPLETED' || buttonStatus === 'DAILY_LIMIT') {
-    alert('이미 참여 완료된 이벤트입니다.');
+    modalStore.showAlert('이미 참여 완료된 이벤트입니다.');
     return;
   }
 
@@ -225,7 +227,7 @@ const onEventAction = async ({
     // 4. 오늘자 참여 완료
     DAILY_LIMIT: {
       action: async () => {
-        alert('이미 참여한 이벤트입니다.');
+        modalStore.showAlert('이미 참여한 이벤트입니다.');
       },
       msg: null,
     },
@@ -255,7 +257,7 @@ const onEventAction = async ({
     await targetAction.action();
 
     if (targetAction.msg) {
-      alert(targetAction.msg);
+      modalStore.showSuccess(targetAction.msg);
     }
 
     // 메인 데이터 갱신
@@ -265,7 +267,7 @@ const onEventAction = async ({
     const errorMsg =
       error.response?.data?.message ||
       '이벤트 참여 처리 요청 중 오류가 발생했습니다.';
-    alert(errorMsg);
+    modalStore.showAlert(errorMsg);
   }
 };
 
