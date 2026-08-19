@@ -271,7 +271,17 @@ const getMerchantTitle = computed(() => {
       return transaction.value.merchantName || transaction.value.merchant_name || route.query.title || "소셜 월렛 충전";
     }
     if (tType.includes("TRANSFER") || tType.includes("REMIT")) {
-      const rName = transaction.value.receiverName || transaction.value.merchantName || transaction.value.merchant_name || route.query.title || "수취인";
+      // merchantName(송금 시 저장한 닉네임/수취인명)을 최우선으로!
+      const mName = transaction.value.merchantName || transaction.value.merchant_name;
+      const recName = transaction.value.receiverName;
+      let rName = "수취인";
+      if (mName && mName.trim() && mName !== "수취인") {
+        rName = mName.trim();
+      } else if (recName && recName.trim()) {
+        rName = recName.trim();
+      } else if (route.query.title) {
+        rName = route.query.title;
+      }
       return rName.endsWith("송금") ? rName : `${rName} 송금`;
     }
     if (tType.includes("SETTLEMENT")) {

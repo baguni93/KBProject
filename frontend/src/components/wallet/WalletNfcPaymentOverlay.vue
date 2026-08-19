@@ -22,7 +22,9 @@
               v-if="cardImg"
               :src="cardImg"
               class="giant-card-bg"
+              :class="{ 'rotate-landscape': isLandscape }"
               alt="card plate"
+              @load="onCardImgLoad"
               @error="(e) => (e.target.src = 'http://localhost:8080/upload/card/00236_img.png')"
             />
           </div>
@@ -43,6 +45,8 @@
 </template>
 
 <script setup>
+import { ref } from "vue";
+
 defineProps({
   isNfcActive: {
     type: Boolean,
@@ -59,6 +63,16 @@ defineProps({
 });
 
 defineEmits(["cancel"]);
+
+const isLandscape = ref(false);
+
+const onCardImgLoad = (e) => {
+  const img = e.target;
+  if (img && img.naturalWidth && img.naturalHeight) {
+    // 가로가 더 긴 누워있는 이미지인 경우 90도 회전시켜 세로 카드로 직립
+    isLandscape.value = img.naturalWidth > img.naturalHeight;
+  }
+};
 </script>
 
 <style scoped>
@@ -203,26 +217,41 @@ defineEmits(["cancel"]);
 .spay-giant-card-container {
   z-index: 10;
   margin: auto 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .spay-giant-card {
   position: relative;
-  width: 210px;
-  height: 330px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  width: 220px;
+  height: 348px;
+  border-radius: 16px;
+  background: #111111;
   overflow: hidden;
   box-shadow: 0 0 35px rgba(255, 188, 46, 0.5), 0 10px 25px rgba(0, 0, 0, 0.5);
   border: 2px solid #ffbc2e;
   transform-origin: center center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .giant-card-bg {
-  position: absolute;
-  inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: fill;
+  border-radius: 14px;
+}
+
+/* 가로형 누워있는 이미지는 90도 회전시켜 세로 카드 프레임에 1:1 완벽 밀착 */
+.giant-card-bg.rotate-landscape {
+  width: 348px !important;
+  height: 220px !important;
+  max-width: none !important;
+  max-height: none !important;
+  transform: rotate(90deg);
+  object-fit: fill;
 }
 
 .spay-bottom-area {

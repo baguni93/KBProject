@@ -265,33 +265,17 @@ public class CardPaymentServiceImpl implements CardPaymentService {
             detailVO = cardPaymentMapper.getCardTransactionDetailById(cardTxId);
         } else {
             detailVO = cardPaymentMapper.getPendingTransactionByUserId(targetUserId);
-            if (detailVO == null) {
-                detailVO = cardPaymentMapper.getLatestPendingTransaction();
-            }
         }
 
-        if (detailVO == null) {
-            org.scoula.cardpayment.domain.CardTransactionDetailVO newPending = org.scoula.cardpayment.domain.CardTransactionDetailVO.builder()
-                    .linkedCardId(1)
-                    .status("PENDING")
+        if (detailVO == null || !"PENDING".equalsIgnoreCase(detailVO.getStatus())) {
+            log.warn("카드 결제 승인 실패: 유효한 결제 대기(PENDING) 건이 없습니다. UserID: {}", targetUserId);
+            return org.scoula.cardpayment.dto.CardTransactionResponseDTO.builder()
+                    .status("FAILED")
+                    .message("현재 활성화된 결제 대기 상태가 아닙니다. 카드 결제 화면을 열고 다시 시도해 주세요.")
                     .build();
-            cardPaymentMapper.insertCardTransactionDetail(newPending);
-            detailVO = newPending;
         }
 
         cardTxId = detailVO.getCardTransactionId();
-
-        if (!"PENDING".equalsIgnoreCase(detailVO.getStatus())) {
-            Long currentWalletBal = cardPaymentMapper.getWalletBalanceByUserId(targetUserId);
-            return org.scoula.cardpayment.dto.CardTransactionResponseDTO.builder()
-                    .cardTransactionId(detailVO.getCardTransactionId())
-                    .linkedCardId(detailVO.getLinkedCardId())
-                    .status(detailVO.getStatus())
-                    .transactionId(detailVO.getTransactionId())
-                    .updatedWalletBalance(currentWalletBal)
-                    .message("이미 처리된 결제 건입니다. 상태: " + detailVO.getStatus())
-                    .build();
-        }
 
         String merchantName = (approveDTO.getMerchantName() != null && !approveDTO.getMerchantName().isBlank())
                 ? approveDTO.getMerchantName().trim() : "스타벅스";
@@ -354,33 +338,17 @@ public class CardPaymentServiceImpl implements CardPaymentService {
             detailVO = cardPaymentMapper.getCardTransactionDetailById(cardTxId);
         } else {
             detailVO = cardPaymentMapper.getPendingTransactionByUserId(targetUserId);
-            if (detailVO == null) {
-                detailVO = cardPaymentMapper.getLatestPendingTransaction();
-            }
         }
 
-        if (detailVO == null) {
-            org.scoula.cardpayment.domain.CardTransactionDetailVO newPending = org.scoula.cardpayment.domain.CardTransactionDetailVO.builder()
-                    .linkedCardId(1)
-                    .status("PENDING")
+        if (detailVO == null || !"PENDING".equalsIgnoreCase(detailVO.getStatus())) {
+            log.warn("전자지갑/QR/바코드 결제 승인 실패: 유효한 결제 대기(PENDING) 건이 없습니다. UserID: {}", targetUserId);
+            return org.scoula.cardpayment.dto.CardTransactionResponseDTO.builder()
+                    .status("FAILED")
+                    .message("현재 활성화된 QR/바코드 결제 대기 상태가 아닙니다. 지갑 결제(QR/바코드) 화면을 열고 다시 시도해 주세요.")
                     .build();
-            cardPaymentMapper.insertCardTransactionDetail(newPending);
-            detailVO = newPending;
         }
 
         cardTxId = detailVO.getCardTransactionId();
-
-        if (!"PENDING".equalsIgnoreCase(detailVO.getStatus())) {
-            Long currentWalletBal = cardPaymentMapper.getWalletBalanceByUserId(targetUserId);
-            return org.scoula.cardpayment.dto.CardTransactionResponseDTO.builder()
-                    .cardTransactionId(detailVO.getCardTransactionId())
-                    .linkedCardId(detailVO.getLinkedCardId())
-                    .status(detailVO.getStatus())
-                    .transactionId(detailVO.getTransactionId())
-                    .updatedWalletBalance(currentWalletBal)
-                    .message("이미 처리된 결제 건입니다. 상태: " + detailVO.getStatus())
-                    .build();
-        }
 
         String merchantName = (approveDTO.getMerchantName() != null && !approveDTO.getMerchantName().isBlank())
                 ? approveDTO.getMerchantName().trim() : "스타벅스";

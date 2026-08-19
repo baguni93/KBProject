@@ -4,7 +4,7 @@
       <!-- 1. 수취 대상 확인 카드 (토스 style: 출금계좌 미니 캡슐 + 받으실 분 대형 강조) -->
       <div class="receiver-summary-box-v2">
         <div class="my-acc-capsule-badge">
-          <span class="capsule-bank-name text-13-bold">{{ myAccountName || 'KB국민 주거래통장' }}</span>
+          <span class="capsule-bank-name text-13-bold">{{ myAccountName || '페이머니' }}</span>
           <span class="capsule-dot">•</span>
           <span class="capsule-balance text-13">잔액 {{ formatCurrency(myBalance || 0) }}원</span>
         </div>
@@ -256,7 +256,7 @@ const props = defineProps({
   },
   myAccountName: {
     type: String,
-    default: "KB국민 주거래통장",
+    default: "페이머니",
   },
   myBalance: {
     type: Number,

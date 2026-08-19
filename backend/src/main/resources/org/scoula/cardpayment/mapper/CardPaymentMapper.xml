@@ -222,7 +222,7 @@
         WHERE c.card_transaction_id = #{cardTransactionId}
     </select>
 
-    <!-- 가장 최근 PENDING 결제건 조회 -->
+    <!-- 가장 최근 PENDING 결제건 조회 (최근 65초 이내 활성 대기 건만) -->
     <select id="getLatestPendingTransaction" resultType="org.scoula.cardpayment.domain.CardTransactionDetailVO">
         SELECT
             card_transaction_id AS cardTransactionId,
@@ -232,11 +232,12 @@
             transaction_id      AS transactionId
         FROM card_transaction_detail_tbl
         WHERE status = 'PENDING'
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 65 SECOND)
         ORDER BY card_transaction_id DESC
         LIMIT 1
     </select>
 
-    <!-- 특정 회원 ID(user_id)의 대기 중인(PENDING) 결제건 조회 -->
+    <!-- 특정 회원 ID(user_id)의 대기 중인(PENDING) 결제건 조회 (최근 65초 이내 활성 대기 건만) -->
     <select id="getPendingTransactionByUserId" resultType="org.scoula.cardpayment.domain.CardTransactionDetailVO">
         SELECT
             d.card_transaction_id AS cardTransactionId,
@@ -248,6 +249,7 @@
         INNER JOIN linked_card_tbl lc ON d.linked_card_id = lc.linked_card_id
         WHERE lc.user_id = #{userId}
           AND d.status = 'PENDING'
+          AND d.created_at >= DATE_SUB(NOW(), INTERVAL 65 SECOND)
         ORDER BY d.card_transaction_id DESC
         LIMIT 1
     </select>
