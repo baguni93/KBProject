@@ -308,6 +308,26 @@ public class UserServiceImpl implements UserService {
         log.info("회원 휴대폰번호 변경 완료: userId={}", userId);
     }
 
+    // 휴대폰번호 변경 가능 여부 확인
+    @Override
+    @Transactional(readOnly = true)
+    public boolean checkPhoneNumber(Long userId, String phoneNumber) {
+        UserVO user = getActiveUser(userId);
+
+        if (phoneNumber == null || phoneNumber.trim().isEmpty()) throw new IllegalArgumentException("새 휴대폰번호를 입력해주세요.");
+
+        String newPhoneNumber = phoneNumber.trim().replaceAll("[^0-9]", "");
+
+        if (!newPhoneNumber.matches("^01[016789]\\d{7,8}$")) throw new IllegalArgumentException("휴대폰번호를 확인해주세요.");
+        if (newPhoneNumber.equals(user.getPhoneNumber())) throw new IllegalArgumentException("현재 휴대폰번호와 다른 번호를 입력해주세요.");
+
+        UserVO existingUser = userMapper.findByPhoneNumber(newPhoneNumber);
+
+        if (existingUser != null && "ACTIVE".equals(existingUser.getUserStatus())) throw new IllegalArgumentException("이미 가입된 휴대폰번호입니다.");
+
+        return true;
+    }
+
 
     // 닉네임 중복 확인
     @Override
