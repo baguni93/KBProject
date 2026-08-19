@@ -84,6 +84,18 @@
             전액
           </button>
         </div>
+
+        <!-- 잔액 초과 경고 메시지 -->
+        <div v-if="isExceedBalance" class="balance-warning-msg text-13-bold">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          출금 가능 잔액을 초과했습니다. (출금 가능: {{ formatCurrency(totalAvailableBalance || myBalance || 0) }}원)
+        </div>
+
+        <!-- 자동 충전 안내 메시지 -->
+        <div v-else-if="isAutoChargeNeeded && autoChargeAmount > 0" class="auto-charge-info-msg text-13">
+          <i class="fa-solid fa-bolt" style="color: #ff9f00;"></i>
+          지갑 잔액 부족으로 대표계좌에서 <strong class="text-13-bold">{{ formatCurrency(autoChargeAmount) }}원</strong>이 자동 충전됩니다.
+        </div>
       </div>
 
       <!-- 3. 하단 네이티브 금융 가상 키패드 (계좌/친구 전용) -->
@@ -247,6 +259,22 @@ const props = defineProps({
     default: "KB국민 주거래통장",
   },
   myBalance: {
+    type: Number,
+    default: 0,
+  },
+  totalAvailableBalance: {
+    type: Number,
+    default: 0,
+  },
+  isExceedBalance: {
+    type: Boolean,
+    default: false,
+  },
+  isAutoChargeNeeded: {
+    type: Boolean,
+    default: false,
+  },
+  autoChargeAmount: {
     type: Number,
     default: 0,
   },
@@ -614,5 +642,36 @@ const backspaceKeypad = () => {
 
 .keypad-back-btn {
   color: #64748b;
+}
+
+.balance-warning-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background-color: #fef2f2;
+  color: #ef4444;
+  border-radius: 12px;
+  font-size: 13px;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.auto-charge-info-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background-color: #fffbeb;
+  color: #b45309;
+  border-radius: 12px;
+  font-size: 13px;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>
