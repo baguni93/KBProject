@@ -22,8 +22,16 @@ export const useCustomCardStore = defineStore('customcard', () => {
   const getAgreements = async () => {
     try {
       const data = await customCardApi.getAgreements();
-      agreements.value = data;
-      console.log(agreements.value);
+      agreements.value = data.map((agreement) => {
+        const existing = agreements.value.find(
+          (item) => item.agreementId === agreement.agreementId,
+        );
+
+        return {
+          ...agreement,
+          checked: existing?.checked ?? false,
+        };
+      });
     } catch (e) {
       console.log(e);
     }
@@ -43,6 +51,8 @@ export const useCustomCardStore = defineStore('customcard', () => {
     try {
       await checkAgreementAgree(userId);
       await getAgreements();
+
+      console.log(agreements);
     } catch (e) {
       console.log(e);
     }

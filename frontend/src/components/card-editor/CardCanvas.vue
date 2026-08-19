@@ -149,16 +149,8 @@ const cardRef = ref(null); // 캡처할 DOM 참조
 const liveCanvasRef = ref(null);
 let liveCtx = null;
 let isLiveDrawing = false;
-console.log(cardStore.isFeedLoad);
 onMounted(async () => {
-  if (
-    cardStore.backup &&
-    (cardStore.gradient !== '' || cardStore.image !== '') &&
-    cardStore.color !== '#1e40af' &&
-    cardStore.isFeedLoad == false
-  ) {
-    console.log(cardStore.backup);
-
+  if (cardStore.backup && cardStore.isFeedLoad == false) {
     const isConfirmed = await modalStore.showConfirm(
       '임시 저장된 카드가 있습니다. 카드를 불러오시겠습니까?',
       '카드 신청',

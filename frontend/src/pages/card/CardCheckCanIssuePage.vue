@@ -45,7 +45,6 @@
             class="text-input"
             @input="changeAccountNumber"
           />
-          <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
         </div>
         <p class="field-guide">
           * 인증을 위해 1원을 받을 계좌를 확인하고 계좌로 전송된 4자리 숫자로
@@ -87,7 +86,12 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['update:isValid', 'update:loading', 'next']);
+const emit = defineEmits([
+  'update:isValid',
+  'update:loading',
+  'next',
+  'failed',
+]);
 
 // 인증 요청 가능 여부
 const canSubmit = computed(() => {
@@ -136,9 +140,10 @@ const requestVerification = async () => {
 
     if (status === 'KB_ALREADY_HAS_CUSTOM') {
       await modalStore.showAlert(
-        '이미 KB MY WAY 체크 카드가 발급된 계좌입니다.',
+        '이미 KB MY CARD 체크 카드가 발급된 계좌입니다.',
         '발급 불가',
       );
+      emit('failed');
       return;
     }
 
@@ -147,6 +152,7 @@ const requestVerification = async () => {
         '국민은행 계좌로만 발급이 가능합니다.',
         '알림',
       );
+      emit('failed');
       return;
     }
 
@@ -158,6 +164,8 @@ const requestVerification = async () => {
   } catch (error) {
     errorMessage.value = error.error || '알 수 없는 오류가 발생했습니다.';
     await modalStore.showAlert(errorMessage.value);
+
+    emit('failed');
   } finally {
     loading.value = false;
   }

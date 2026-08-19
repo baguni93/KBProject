@@ -56,9 +56,9 @@
         카드 자랑하기
       </button>
 
-      <button class="share-btn" @click="handleAddCard">
+      <!-- <button class="share-btn" @click="handleAddCard">
         간편 결제 연동하기
-      </button>
+      </button> -->
 
       <button class="confirm-btn" @click="handleConfirm">확인</button>
     </div>
@@ -78,6 +78,9 @@ import CardCanvasPreview from '@/components/card-editor/CardCanvasPreview.vue';
 import CardShareModal from '../feed/components/CardShareModal.vue';
 import { useFeedStore } from '@/stores/feed';
 import { useModalStore } from '@/stores/userModalStore';
+import { useWordFilterStore } from '@/stores/wordFilterStore.js';
+
+const wordFilterStore = useWordFilterStore();
 const useModal = useModalStore();
 
 const feedStore = useFeedStore();
@@ -111,14 +114,24 @@ const handleAddCard = () => {
 };
 
 // 자랑하기 최종 제출
-const handleShareSubmit = async () => {
-  console.log('공개 범위:', selectedScope.value);
+const handleShareSubmit = async (obj) => {
+  console.log('내용:', obj.content);
+  console.log('공개 범위:', obj.visibility);
+  const trimmedText = obj.content.trim();
+  if (!trimmedText) return;
+  // 💡 공통 필터 스토어의 검증 함수 사용
+  const validation = wordFilterStore.validateText(trimmedText);
+
+  if (!validation.isValid) {
+    await useModal.showAlert(validation.message);
+    return; // 추가 중단
+  }
 
   const fromData = feedStore.createRequestDTO({
     targetId: cardStore.customCardId,
     feedType: 'CARD',
-    visibility: selectedScope.value,
-    content: feedContent.value,
+    visibility: obj.visibility,
+    content: obj.content,
   });
 
   await feedStore.createFeed(fromData);

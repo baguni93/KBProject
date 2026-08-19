@@ -1,7 +1,6 @@
 <template>
   <section class="profile-header">
     <img :src="profile.url" class="profile-image" />
-
     <div class="profile-info">
       <h2>
         {{ profile.nickname }}
@@ -17,11 +16,17 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue';
+
+const props = defineProps({
   profile: {
     type: Object,
     required: true,
   },
+});
+
+const profileImageUrl = computed(() => {
+  return props.profile.url ?? '/images/profile/unknown.png';
 });
 </script>
 

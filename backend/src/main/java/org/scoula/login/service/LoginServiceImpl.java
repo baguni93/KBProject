@@ -23,6 +23,7 @@ public class LoginServiceImpl implements LoginService {
     private static final int AUTH_EXPIRE_MINUTES = 3;
     private static final int SIGNUP_EXPIRE_MINUTES = 10;
     private static final int MAX_FAIL_COUNT = 5;
+    private static final long REJOIN_WAIT_HOURS = 24L;
 
     private final LoginMapper loginMapper;
     private final JwtProcessor jwtProcessor;
@@ -182,41 +183,43 @@ public class LoginServiceImpl implements LoginService {
     // AUTH-004 가입 여부 확인
     @Override
     @Transactional(readOnly = true)
-    public String checkSignupStatus(SignupCheckDTO checkDTO) {
-
-        if (checkDTO == null || isBlank(checkDTO.getPhoneNumber())) {
-            throw new IllegalArgumentException("휴대폰번호를 입력해주세요.");
-        }
+    public SignupStatusResponseDTO checkSignupStatus(SignupCheckDTO checkDTO) {
+        if (checkDTO == null || isBlank(checkDTO.getPhoneNumber())) throw new IllegalArgumentException("휴대폰번호를 입력해주세요.");
 
         String phoneNumber = normalizePhoneNumber(checkDTO.getPhoneNumber());
+        PhoneAuthVO phoneAuth = loginMapper.findLatestPhoneAuth(phoneNumber, "SIGN_UP");
 
-        PhoneAuthVO phoneAuth =
-                loginMapper.findLatestPhoneAuth(phoneNumber, "SIGN_UP");
+        if (phoneAuth == null) throw new IllegalArgumentException("휴대폰 인증 내역이 없습니다.");
+        if (!"Y".equals(phoneAuth.getVerifiedYn())) throw new IllegalArgumentException("휴대폰 인증이 완료되지 않았습니다.");
 
-        if (phoneAuth == null) {
-            throw new IllegalArgumentException("휴대폰 인증 내역이 없습니다.");
+        LocalDateTime signupExpiresAt = phoneAuth.getRequestedAt().plusMinutes(SIGNUP_EXPIRE_MINUTES);
+        if (LocalDateTime.now().isAfter(signupExpiresAt)) throw new IllegalArgumentException("휴대폰 인증 유효시간이 만료되었습니다. 다시 인증해주세요.");
+
+        UserVO user = loginMapper.findUserByPhoneNumber(phoneNumber);
+
+        if (user == null) return SignupStatusResponseDTO.builder().memberStatus("NEW").existingMember(false).build();
+
+        if ("ACTIVE".equals(user.getUserStatus())) {
+            return SignupStatusResponseDTO.builder().memberStatus("EXISTING").existingMember(true).build();
         }
 
-        if (!"Y".equals(phoneAuth.getVerifiedYn())) {
-            throw new IllegalArgumentException("휴대폰 인증이 완료되지 않았습니다.");
+        if ("WITHDRAWN".equals(user.getUserStatus())) {
+            if (user.getWithdrawnAt() == null) throw new IllegalStateException("탈퇴 일시를 확인할 수 없습니다.");
+
+            LocalDateTime rejoinAvailableAt = user.getWithdrawnAt().plusHours(REJOIN_WAIT_HOURS);
+
+            if (LocalDateTime.now().isBefore(rejoinAvailableAt)) {
+                return SignupStatusResponseDTO.builder()
+                        .memberStatus("WITHDRAWN_WAIT")
+                        .existingMember(false)
+                        .rejoinAvailableAt(rejoinAvailableAt)
+                        .build();
+            }
+
+            return SignupStatusResponseDTO.builder().memberStatus("NEW").existingMember(false).build();
         }
 
-        LocalDateTime signupExpiresAt =
-                phoneAuth.getRequestedAt().plusMinutes(SIGNUP_EXPIRE_MINUTES);
-
-        if (LocalDateTime.now().isAfter(signupExpiresAt)) {
-            throw new IllegalArgumentException(
-                    "휴대폰 인증 유효시간이 만료되었습니다. 다시 인증해주세요."
-            );
-        }
-
-        int userCount = loginMapper.countUserByPhoneNumber(phoneNumber);
-
-        if (userCount > 0) {
-            return "EXISTING";
-        }
-
-        return "NEW";
+        throw new IllegalStateException("현재 가입할 수 없는 회원 상태입니다.");
     }
 
     // AUTH-005 PIN 로그인

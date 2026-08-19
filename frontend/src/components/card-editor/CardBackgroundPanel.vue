@@ -127,7 +127,9 @@ import CardColorPick from './CardColorPick.vue';
 import CardGradientPick from './CardGradientPick.vue';
 import CardSpecialBackgroundPick from './CardSpecialBackgroundPick.vue';
 import { useCardEditorStore } from '@/stores/cardEditorStore';
+import { useModalStore } from '@/stores/userModalStore.js';
 
+const modalStroe = useModalStore();
 const cardStore = useCardEditorStore();
 
 const props = defineProps({
@@ -204,12 +206,37 @@ const selectPhoto = (event) => {
     return;
   }
 
+  // 허용 확장자
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+  // 이미지 형식 체크
+  if (!allowedTypes.includes(file.type)) {
+    modalStroe.showAlert(
+      'JPG, PNG, WEBP 형식의 이미지만 업로드할 수 있습니다.',
+    );
+
+    event.target.value = '';
+    return;
+  }
+
+  // 최대 용량 5MB
+  const maxSize = 5 * 1024 * 1024;
+
+  if (file.size > maxSize) {
+    modalStroe.showAlert('이미지는 최대 5MB까지 업로드할 수 있습니다.');
+
+    event.target.value = '';
+    return;
+  }
+
   // 미리보기 생성
   const imageUrl = URL.createObjectURL(file);
 
   previewImage.value = imageUrl;
   applyImage.value = true;
 
+  console.log('[selectPhoto] 파일명:', file.name);
+  console.log('[selectPhoto] 파일 크기:', file.size);
   console.log('[selectPhoto] imageUrl:', imageUrl);
 
   // 카드 배경 적용
@@ -229,6 +256,7 @@ const toggleApply = () => {
 
 // 이미지 제거
 const removeImage = () => {
+  cardStore.setImage('');
   previewImage.value = '';
   applyImage.value = false;
   cardStore.restoreSnapshot();

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.util.Objects;
 
 @RestController
 @Log4j2
@@ -28,7 +29,8 @@ public class ProfileTestController {
 
     @GetMapping("/image/{imageName}")
     public void viewProfileImage(@PathVariable String imageName, HttpServletResponse response) {
-        File file = new File(UploadPathName.getProfilePath()+imageName);
+        File file;
+        file = new File(UploadPathName.getProfilePath() + Objects.requireNonNullElse(imageName, "unknown.png"));
         UploadFiles.downloadImage(response, file);
     }
 }

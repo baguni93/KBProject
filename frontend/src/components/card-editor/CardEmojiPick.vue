@@ -46,9 +46,14 @@
     </div>
 
     <!-- 4. 하단 모두 제거 버튼 -->
-    <div class="remove-action-row" v-if="cardStore?.emojis?.length > 0">
-      <button class="remove-all-btn" @click="handleRemoveAllEmojis">
-        모두 제거 ({{ cardStore.emojis.length }})
+    <div class="remove-action-row">
+      <button
+        class="remove-all-btn"
+        :class="{ limit: (cardStore.emojis?.length ?? 0) === 5 }"
+        @click="handleRemoveAllEmojis"
+        :disabled="!cardStore.emojis?.length"
+      >
+        모두 제거 ({{ cardStore.emojis?.length ?? 0 }}/5)
       </button>
     </div>
   </div>
@@ -115,6 +120,10 @@ const filteredEmojiList = computed(() => {
 });
 
 const selectEmoji = (emojiPath) => {
+  if (cardStore.emojis?.length >= 5) {
+    return;
+  }
+
   emit('update:modelValue', emojiPath);
 };
 
@@ -288,5 +297,16 @@ const handleRemoveAllEmojis = () => {
   height: 80% !important;
   max-width: none !important;
   max-height: none !important;
+}
+.remove-all-btn:hover {
+  background-color: #f9f9f9;
+  color: #666;
+  border-color: #eaeaea;
+}
+
+.remove-all-btn.limit {
+  color: #ff4d4f;
+  border-color: #ff4d4f;
+  background-color: #fff5f5;
 }
 </style>
