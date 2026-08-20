@@ -483,6 +483,11 @@ const onEventAction = async ({
   border-radius: 20px;
   font-size: 13px;
   font-weight: 700;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .event-list-page :deep(.action-btn.bg-yellow) {
