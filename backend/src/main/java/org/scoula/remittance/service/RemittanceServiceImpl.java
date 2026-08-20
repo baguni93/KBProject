@@ -112,7 +112,14 @@ public class RemittanceServiceImpl implements RemittanceService {
                 }
             }
 
-            remittanceDTO.setReceiverId(null);
+            // 계좌 소유자 회원 ID 매핑 (받는 사람 거래내역 노출 연동)
+            try {
+                Integer recUserId = remittanceMapper.getUserIdByAccount(remittanceDTO.getBankCode(), remittanceDTO.getAccountNumber());
+                remittanceDTO.setReceiverId(recUserId);
+            } catch (Exception recErr) {
+                log.warn("계좌 소유자 회원 ID 조회 예외: {}", recErr.getMessage());
+                remittanceDTO.setReceiverId(null);
+            }
 
         } else {
             Integer recId = remittanceDTO.getReceiverId();
@@ -154,6 +161,16 @@ public class RemittanceServiceImpl implements RemittanceService {
         }
         remittanceDTO.setStatus("SUCCESS");
         remittanceMapper.insertRemittance(remittanceDTO);
+
+        // 계좌 송금 시 계좌 상세 정보 영수증 메모에 기록 (최근 보낸 계좌 정확도 보장)
+        if ("ACCOUNT".equals(remittanceDTO.getReceiverType()) && remittanceDTO.getAccountNumber() != null && !remittanceDTO.getAccountNumber().trim().isEmpty()) {
+            try {
+                String accMemo = remittanceDTO.getBankCode() + ":" + remittanceDTO.getAccountNumber() + ":" + (remittanceDTO.getReceiverName() != null ? remittanceDTO.getReceiverName() : "수취인");
+                remittanceMapper.insertReceiptMemo(remittanceDTO.getTransactionId(), accMemo);
+            } catch (Exception memoErr) {
+                log.warn("송금 계좌 정보 영수증 메모 기록 예외: {}", memoErr.getMessage());
+            }
+        }
 
         // 정산 송금인 경우 정산 테이블 상태 완료(COMPLETE) 연동 처리
         if (remittanceDTO.getSettlementId() != null && remittanceDTO.getSettlementId() > 0) {

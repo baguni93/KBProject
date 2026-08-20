@@ -47,6 +47,16 @@
         WHERE wallet_id = #{walletId}
     </update>
 
+    <!-- 충전 시 대표계좌 잔액 차감 -->
+    <update id="subtractPrimaryAccountBalance">
+        UPDATE account_dummy_tbl ad
+        INNER JOIN linked_account_tbl la
+            ON ((la.account_number = ad.account_number OR (la.user_id = ad.user_id AND la.bank_code = ad.bank_code))
+                AND la.primary_yn = 'Y'
+                AND la.user_id = #{userId})
+        SET ad.balance = CASE WHEN ad.balance >= #{amount} THEN ad.balance - #{amount} ELSE 0 END
+    </update>
+
     <!-- 충전 거래 내역 저장 (PK 번호를 DTO chargeId로 획득) -->
     <insert id="insertChargeTransaction" useGeneratedKeys="true" keyProperty="chargeId">
         INSERT INTO financial_transaction_tbl (

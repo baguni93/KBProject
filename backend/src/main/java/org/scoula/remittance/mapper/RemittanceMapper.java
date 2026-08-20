@@ -39,7 +39,11 @@ public interface RemittanceMapper {
 
     String getAccountOwnerName(@Param("bankCode") String bankCode, @Param("accountNumber") String accountNumber);
 
+    Integer getUserIdByAccount(@Param("bankCode") String bankCode, @Param("accountNumber") String accountNumber);
+
     String getUserNicknameOrName(@Param("userId") Integer userId);
 
     int insertFeedImage(@Param("feedId") int feedId, @Param("imageName") String imageName);
+
+    int insertReceiptMemo(@Param("transactionId") Integer transactionId, @Param("memo") String memo);
 }

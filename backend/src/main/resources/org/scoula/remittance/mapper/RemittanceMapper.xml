@@ -61,36 +61,21 @@
         ORDER BY bank_code ASC
     </select>
 
-    <!-- 최근 송금 계좌 조회 (1인 다수 계좌 뻥튀기 방지 및 최신 송금 이력 기준) -->
+    <!-- 최근 송금 계좌 조회 (실제 송금했던 대상 계좌만 1:1 정확히 조회) -->
     <select id="getRecentAccounts" resultType="org.scoula.remittance.dto.RecentAccountDTO">
         SELECT
-            accountNumber,
-            bankCode,
-            bankName,
-            ownerName,
-            MAX(lastTransferAt) AS lastTransferAt
-        FROM (
-            SELECT
-                COALESCE(la.account_number, ad.account_number, u.phone_number) AS accountNumber,
-                COALESCE(la.bank_code, ad.bank_code, '004') AS bankCode,
-                COALESCE(b.bank_name, b2.bank_name, 'KB국민') AS bankName,
-                COALESCE(u.user_name, ad.owner_name, t.merchant_name, '수취인') AS ownerName,
-                t.created_at AS lastTransferAt
-            FROM financial_transaction_tbl t
-            LEFT JOIN user_tbl u ON t.receive_id = u.user_id
-            LEFT JOIN linked_account_tbl la ON (u.user_id = la.user_id AND la.primary_yn = 'Y')
-            LEFT JOIN bank_tbl b ON la.bank_code = b.bank_code
-            LEFT JOIN (
-                SELECT owner_name, MAX(account_number) AS account_number, MAX(bank_code) AS bank_code
-                FROM account_dummy_tbl
-                GROUP BY owner_name
-            ) ad ON (t.receive_id IS NULL AND t.merchant_name = ad.owner_name)
-            LEFT JOIN bank_tbl b2 ON ad.bank_code = b2.bank_code
-            WHERE t.user_id = #{userId}
-              AND t.transaction_type = 'TRANSFER'
-              AND (t.target_type = 'ACCOUNT' OR t.receive_id IS NULL)
-        ) sub
-        WHERE accountNumber IS NOT NULL
+            SUBSTRING_INDEX(SUBSTRING_INDEX(rm.memo_content, ':', 2), ':', -1) AS accountNumber,
+            SUBSTRING_INDEX(rm.memo_content, ':', 1) AS bankCode,
+            COALESCE(b.bank_name, 'KB국민') AS bankName,
+            SUBSTRING_INDEX(SUBSTRING_INDEX(rm.memo_content, ':', 3), ':', -1) AS ownerName,
+            MAX(t.created_at) AS lastTransferAt
+        FROM financial_transaction_tbl t
+        INNER JOIN receipt_memo_tbl rm ON t.transaction_id = rm.transaction_id
+        LEFT JOIN bank_tbl b ON SUBSTRING_INDEX(rm.memo_content, ':', 1) = b.bank_code
+        WHERE t.user_id = #{userId}
+          AND t.transaction_type = 'TRANSFER'
+          AND t.target_type = 'ACCOUNT'
+          AND rm.memo_content LIKE '%:%:%'
         GROUP BY accountNumber, bankCode, bankName, ownerName
         ORDER BY lastTransferAt DESC
         LIMIT #{limit}
@@ -102,6 +87,17 @@
         FROM account_dummy_tbl
         WHERE (bank_code = #{bankCode} OR #{bankCode} IS NULL OR #{bankCode} = '')
           AND REPLACE(account_number, '-', '') = REPLACE(#{accountNumber}, '-', '')
+        LIMIT 1
+    </select>
+
+    <!-- 계좌 소유자 회원 ID 조회 (account_dummy_tbl 또는 linked_account_tbl) -->
+    <select id="getUserIdByAccount" resultType="java.lang.Integer">
+        SELECT COALESCE(ad.user_id, la.user_id)
+        FROM account_dummy_tbl ad
+        LEFT JOIN linked_account_tbl la
+            ON REPLACE(ad.account_number, '-', '') = REPLACE(la.account_number, '-', '')
+        WHERE (ad.bank_code = #{bankCode} OR #{bankCode} IS NULL OR #{bankCode} = '')
+          AND REPLACE(ad.account_number, '-', '') = REPLACE(#{accountNumber}, '-', '')
         LIMIT 1
     </select>
 
@@ -118,6 +114,13 @@
     <insert id="insertFeedImage">
         INSERT INTO feed_image_tbl(feed_id, image_name)
         VALUES (#{feedId}, #{imageName})
+    </insert>
+
+    <!-- 영수증 메모 등록 (receipt_memo_tbl) -->
+    <insert id="insertReceiptMemo">
+        INSERT INTO receipt_memo_tbl (transaction_id, memo_content, created_at, updated_at)
+        VALUES (#{transactionId}, #{memo}, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE memo_content = #{memo}, updated_at = NOW()
     </insert>
 
 </mapper>
