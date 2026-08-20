@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.analysis.dto.MerchantCategoryClassificationResultDTO;
 import org.scoula.analysis.service.MerchantCategoryService;
+import org.scoula.card.controller.CardController;
 import org.scoula.cardpayment.dto.CardAgreementDTO;
 import org.scoula.cardpayment.dto.CardBinResponseDTO;
 import org.scoula.cardpayment.dto.CardRegisterDTO;
