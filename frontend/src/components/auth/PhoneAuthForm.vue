@@ -9,22 +9,22 @@
 
           <div class="input-wrapper">
             <input
-              id="userName"
-              v-model="form.userName"
-              type="text"
-              maxlength="7"
-              :readonly="isNameChange"
-              @input="handleNameInput"
-              @compositionstart="handleCompositionStart"
-              @compositionend="handleCompositionEnd"
+                id="userName"
+                v-model="form.userName"
+                type="text"
+                maxlength="7"
+                :readonly="isNameChange"
+                @input="handleNameInput"
+                @compositionstart="handleCompositionStart"
+                @compositionend="handleCompositionEnd"
             />
 
             <button
-              v-if="form.userName && !isNameChange"
-              class="clear-input-button"
-              type="button"
-              aria-label="이름 전체 삭제"
-              @click="clearUserName"
+                v-if="form.userName && !isNameChange"
+                class="clear-input-button"
+                type="button"
+                aria-label="이름 전체 삭제"
+                @click="clearUserName"
             >
               <i class="fa-solid fa-xmark"></i>
             </button>
@@ -37,21 +37,21 @@
 
           <div class="input-wrapper">
             <input
-              id="birthDate"
-              v-model="birthDateInput"
-              type="text"
-              inputmode="numeric"
-              maxlength="10"
-              placeholder="YYYY-MM-DD"
-              @input="handleBirthDateInput"
+                id="birthDate"
+                v-model="birthDateInput"
+                type="text"
+                inputmode="numeric"
+                maxlength="10"
+                placeholder="YYYY-MM-DD"
+                @input="handleBirthDateInput"
             />
 
             <button
-              v-if="birthDateInput"
-              class="clear-input-button"
-              type="button"
-              aria-label="생년월일 전체 삭제"
-              @click="clearBirthDate"
+                v-if="birthDateInput"
+                class="clear-input-button"
+                type="button"
+                aria-label="생년월일 전체 삭제"
+                @click="clearBirthDate"
             >
               <i class="fa-solid fa-xmark"></i>
             </button>
@@ -63,26 +63,26 @@
           <label>통신사</label>
 
           <button
-            type="button"
-            class="carrier-select"
-            @click="openCarrierSheet"
+              type="button"
+              class="carrier-select"
+              @click="openCarrierSheet"
           >
             <span
-              v-if="form.carrierCode"
-              class="carrier-select-text"
+                v-if="form.carrierCode"
+                class="carrier-select-text"
             >
               {{ carrierName }}
             </span>
 
             <span
-              v-else
-              class="carrier-select-placeholder"
+                v-else
+                class="carrier-select-placeholder"
             >
               통신사 선택
             </span>
 
             <i
-              class="fa-solid fa-chevron-down carrier-arrow"
+                class="fa-solid fa-chevron-down carrier-arrow"
             ></i>
           </button>
         </template>
@@ -93,22 +93,22 @@
 
           <div class="input-wrapper">
             <input
-              id="phoneNumber"
-              v-model="phoneNumberInput"
-              type="text"
-              inputmode="numeric"
-              maxlength="13"
-              placeholder="'-' 없이 입력해주세요."
-              :readonly="isPhoneChange"
-              @input="handlePhoneNumberInput"
+                id="phoneNumber"
+                v-model="phoneNumberInput"
+                type="text"
+                inputmode="numeric"
+                maxlength="13"
+                placeholder="'-' 없이 입력해주세요."
+                :readonly="isPhoneChange"
+                @input="handlePhoneNumberInput"
             />
 
             <button
-              v-if="phoneNumberInput && !isPhoneChange"
-              class="clear-input-button"
-              type="button"
-              aria-label="휴대폰번호 전체 삭제"
-              @click="clearPhoneNumber"
+                v-if="phoneNumberInput && !isPhoneChange"
+                class="clear-input-button"
+                type="button"
+                aria-label="휴대폰번호 전체 삭제"
+                @click="clearPhoneNumber"
             >
               <i class="fa-solid fa-xmark"></i>
             </button>
@@ -119,15 +119,15 @@
 
     <!-- 이전 입력 완료 정보 -->
     <TransitionGroup
-      name="completed-field"
-      tag="div"
-      class="completed-fields"
+        name="completed-field"
+        tag="div"
+        class="completed-fields"
     >
       <!-- 통신사 -->
       <div
-        v-if="currentStep > 3 && form.carrierCode"
-        key="carrier"
-        class="completed-field"
+          v-if="currentStep > 3 && form.carrierCode"
+          key="carrier"
+          class="completed-field"
       >
         <span class="completed-label">
           통신사
@@ -137,9 +137,9 @@
 
       <!-- 생년월일 -->
       <div
-        v-if="currentStep > 2 && birthDateInput"
-        key="birthDate"
-        class="completed-field"
+          v-if="currentStep > 2 && birthDateInput"
+          key="birthDate"
+          class="completed-field"
       >
         <span class="completed-label">
           생년월일
@@ -149,9 +149,9 @@
 
       <!-- 이름 -->
       <div
-        v-if="currentStep > 1 && form.userName"
-        key="userName"
-        class="completed-field"
+          v-if="currentStep > 1 && form.userName"
+          key="userName"
+          class="completed-field"
       >
         <span class="completed-label">
           이름
@@ -162,8 +162,8 @@
 
     <!-- 에러 메시지 -->
     <p
-      v-if="errorMessage"
-      class="error-message"
+        v-if="errorMessage"
+        class="error-message"
     >
       {{ errorMessage }}
     </p>
@@ -172,9 +172,10 @@
     <Teleport to="body">
       <Transition name="sheet">
         <div
-          v-if="showCarrierSheet"
-          class="carrier-overlay"
-          @click.self="closeCarrierSheet"
+            v-if="showCarrierSheet"
+            class="carrier-overlay"
+            :style="carrierOverlayStyle"
+            @click.self="closeCarrierSheet"
         >
           <div class="carrier-sheet">
             <div class="sheet-handle"></div>
@@ -190,23 +191,23 @@
 
             <div class="carrier-list">
               <button
-                v-for="carrier in carriers"
-                :key="carrier.code"
-                type="button"
-                class="carrier-item"
-                :class="{
+                  v-for="carrier in carriers"
+                  :key="carrier.code"
+                  type="button"
+                  class="carrier-item"
+                  :class="{
                   selected:
                     form.carrierCode === carrier.code,
                 }"
-                @click="selectCarrier(carrier)"
+                  @click="selectCarrier(carrier)"
               >
                 <span>{{ carrier.name }}</span>
 
                 <i
-                  v-if="
+                    v-if="
                     form.carrierCode === carrier.code
                   "
-                  class="fa-solid fa-check"
+                    class="fa-solid fa-check"
                 ></i>
               </button>
             </div>
@@ -218,187 +219,89 @@
 </template>
 
 <script setup>
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  reactive,
-  ref,
-} from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
 const props = defineProps({
-  initialValue: {
-    type: Object,
-    default: () => ({}),
-  },
-  loading: {
-    type: Boolean,
-    default: false,
-  },
+  initialValue: { type: Object, default: () => ({}) },
+  loading: { type: Boolean, default: false },
 });
 
-const emit = defineEmits([
-  'submit',
-  'step-change',
-  'phone-valid-change',
-]);
+const emit = defineEmits(['submit', 'step-change', 'phone-valid-change']);
 
 const errorMessage = ref('');
 const showCarrierSheet = ref(false);
+const carrierOverlayStyle = ref({});
 const isComposing = ref(false);
 
 let nameTimer = null;
+let carrierPageObserver = null;
 
 // 인증 목적
-const verificationPurpose = computed(
-  () =>
-    props.initialValue.verificationPurpose ||
-    'SIGN_UP',
-);
+const verificationPurpose = computed(() => props.initialValue.verificationPurpose || 'SIGN_UP');
 
-const isPhoneChange = computed(
-  () =>
-    verificationPurpose.value ===
-    'PHONE_CHANGE',
-);
-
-const isNameChange = computed(
-  () =>
-    verificationPurpose.value ===
-    'NAME_CHANGE',
-);
-
-const isSettingChange = computed(
-  () =>
-    isPhoneChange.value ||
-    isNameChange.value,
-);
+const isPhoneChange = computed(() => verificationPurpose.value === 'PHONE_CHANGE');
+const isNameChange = computed(() => verificationPurpose.value === 'NAME_CHANGE');
+const isSettingChange = computed(() => isPhoneChange.value || isNameChange.value);
 
 // 폼
 const form = reactive({
-  userName:
-    props.initialValue.userName || '',
-  birthDate:
-    props.initialValue.birthDate || '',
-  carrierCode:
-    props.initialValue.carrierCode || '',
-  phoneNumber:
-    props.initialValue.phoneNumber || '',
+  userName: props.initialValue.userName || '',
+  birthDate: props.initialValue.birthDate || '',
+  carrierCode: props.initialValue.carrierCode || '',
+  phoneNumber: props.initialValue.phoneNumber || '',
 });
 
 // 통신사 목록
 const carriers = [
-  {
-    code: 'SKT',
-    name: 'SKT',
-  },
-  {
-    code: 'KT',
-    name: 'KT',
-  },
-  {
-    code: 'LGU',
-    name: 'LG U+',
-  },
-  {
-    code: 'SKT_MVNO',
-    name: 'SKT 알뜰폰',
-  },
-  {
-    code: 'KT_MVNO',
-    name: 'KT 알뜰폰',
-  },
-  {
-    code: 'LGU_MVNO',
-    name: 'LG U+ 알뜰폰',
-  },
+  { code: 'SKT', name: 'SKT' },
+  { code: 'KT', name: 'KT' },
+  { code: 'LGU', name: 'LG U+' },
+  { code: 'SKT_MVNO', name: 'SKT 알뜰폰' },
+  { code: 'KT_MVNO', name: 'KT 알뜰폰' },
+  { code: 'LGU_MVNO', name: 'LG U+ 알뜰폰' },
 ];
 
 // 생년월일 화면 입력값
-const birthDateInput = ref(
-  formatBirthDate(
-    props.initialValue.birthDate || '',
-  ),
-);
+const birthDateInput = ref(formatBirthDate(props.initialValue.birthDate || ''));
 
 // 휴대폰번호 화면 입력값
-const phoneNumberInput = ref(
-  formatPhoneNumber(
-    props.initialValue.phoneNumber || '',
-  ),
-);
+const phoneNumberInput = ref(formatPhoneNumber(props.initialValue.phoneNumber || ''));
 
 // PIN 재설정 여부
-const isPinReset = computed(
-    () =>
-        verificationPurpose.value ===
-        'PIN_RESET',
-);
+const isPinReset = computed(() => verificationPurpose.value === 'PIN_RESET');
 
 // 초기 단계
 const getInitialStep = () => {
-  if (isSettingChange.value) {
-    return form.carrierCode ? 4 : 3;
-  }
+  if (isSettingChange.value) return form.carrierCode ? 4 : 3;
 
   // PIN 재설정 시 이미 전달받은 정보는 건너뜀
   if (isPinReset.value) {
-    if (form.carrierCode) {
-      return 4;
-    }
-
-    if (form.birthDate) {
-      return 3;
-    }
-
-    if (form.userName) {
-      return 2;
-    }
+    if (form.carrierCode) return 4;
+    if (form.birthDate) return 3;
+    if (form.userName) return 2;
   }
 
   return 1;
 };
 
-const currentStep = ref(
-    getInitialStep(),
-);
+const currentStep = ref(getInitialStep());
 
 // 통신사 표시 이름
 const carrierName = computed(() => {
-  const carrier = carriers.find(
-    (item) =>
-      item.code === form.carrierCode,
-  );
-
+  const carrier = carriers.find((item) => item.code === form.carrierCode);
   return carrier?.name || '';
 });
 
 // API 전송용 휴대폰번호
-const rawPhoneNumber = computed(
-  () =>
-    phoneNumberInput.value.replace(
-      /[^0-9]/g,
-      '',
-    ),
-);
+const rawPhoneNumber = computed(() => phoneNumberInput.value.replace(/[^0-9]/g, ''));
 
 // 이름 유효성
-// const isValidUserName = () =>
-//   /^[가-힣]{2,7}$/.test(
-//     form.userName.trim(),
-//   );
+// const isValidUserName = () => /^[가-힣]{2,7}$/.test(form.userName.trim());
 
-const isValidUserName = () =>
-    /^[가-힣0-9]{2,10}$/.test(
-        form.userName.trim(),
-    );
+const isValidUserName = () => /^[가-힣0-9]{2,10}$/.test(form.userName.trim());
 
 // 휴대폰번호 유효성
-const isValidPhoneNumber = () =>
-  /^01[016789][0-9]{8}$/.test(
-    rawPhoneNumber.value,
-  );
+const isValidPhoneNumber = () => /^01[016789][0-9]{8}$/.test(rawPhoneNumber.value);
 
 // 단계 이동
 const moveToStep = async (step) => {
@@ -409,23 +312,12 @@ const moveToStep = async (step) => {
 
   await nextTick();
 
-  if (step === 4) {
-    emit(
-      'phone-valid-change',
-      isValidPhoneNumber(),
-    );
-  }
+  if (step === 4) emit('phone-valid-change', isValidPhoneNumber());
 };
 
 // 이름 입력
 const handleNameInput = () => {
-  if (
-    isNameChange.value ||
-    isComposing.value
-  ) {
-    return;
-  }
-
+  if (isNameChange.value || isComposing.value) return;
   scheduleNameNext();
 };
 
@@ -447,7 +339,6 @@ const scheduleNameNext = () => {
 
   nameTimer = setTimeout(() => {
     if (!isValidUserName()) return;
-
     moveToStep(2);
   }, 700);
 };
@@ -462,42 +353,19 @@ const clearUserName = () => {
 
 // 생년월일 포맷
 function formatBirthDate(value) {
-  const numbers = String(value)
-    .replace(/[^0-9]/g, '')
-    .slice(0, 8);
+  const numbers = String(value).replace(/[^0-9]/g, '').slice(0, 8);
 
-  if (numbers.length <= 4) {
-    return numbers;
-  }
+  if (numbers.length <= 4) return numbers;
+  if (numbers.length <= 6) return `${numbers.slice(0, 4)}-${numbers.slice(4)}`;
 
-  if (numbers.length <= 6) {
-    return `${numbers.slice(
-      0,
-      4,
-    )}-${numbers.slice(4)}`;
-  }
-
-  return `${numbers.slice(
-    0,
-    4,
-  )}-${numbers.slice(
-    4,
-    6,
-  )}-${numbers.slice(6)}`;
+  return `${numbers.slice(0, 4)}-${numbers.slice(4, 6)}-${numbers.slice(6)}`;
 }
 
 // 생년월일 입력
 const handleBirthDateInput = () => {
-  birthDateInput.value =
-    formatBirthDate(
-      birthDateInput.value,
-    );
+  birthDateInput.value = formatBirthDate(birthDateInput.value);
 
-  const numbers =
-    birthDateInput.value.replace(
-      /[^0-9]/g,
-      '',
-    );
+  const numbers = birthDateInput.value.replace(/[^0-9]/g, '');
 
   if (numbers.length !== 8) {
     errorMessage.value = '';
@@ -505,8 +373,7 @@ const handleBirthDateInput = () => {
   }
 
   if (!isValidBirthDate()) {
-    errorMessage.value =
-      '생년월일을 확인해주세요.';
+    errorMessage.value = '생년월일을 확인해주세요.';
     return;
   }
 
@@ -522,52 +389,52 @@ const clearBirthDate = () => {
 
 // 생년월일 유효성 검사
 const isValidBirthDate = () => {
-  const value =
-    birthDateInput.value.replace(
-      /[^0-9]/g,
-      '',
-    );
+  const value = birthDateInput.value.replace(/[^0-9]/g, '');
 
-  if (!/^\d{8}$/.test(value)) {
-    return false;
-  }
+  if (!/^\d{8}$/.test(value)) return false;
 
-  const year = Number(
-    value.slice(0, 4),
-  );
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(4, 6));
+  const day = Number(value.slice(6, 8));
+  const date = new Date(year, month - 1, day);
 
-  const month = Number(
-    value.slice(4, 6),
-  );
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+};
 
-  const day = Number(
-    value.slice(6, 8),
-  );
+// 통신사 바텀시트 위치/크기 동기화
+const syncCarrierOverlayLayout = () => {
+  const page = document.querySelector('#membership-page');
 
-  const date = new Date(
-    year,
-    month - 1,
-    day,
-  );
+  if (!page) return;
 
-  return (
-    date.getFullYear() === year &&
-    date.getMonth() === month - 1 &&
-    date.getDate() === day
-  );
+  const rect = page.getBoundingClientRect();
+  const style = window.getComputedStyle(page);
+
+  carrierOverlayStyle.value = {
+    top: `${rect.top}px`,
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+    height: `${rect.height}px`,
+    borderRadius: style.borderRadius,
+  };
 };
 
 // 통신사 바텀시트
-const openCarrierSheet = () =>
-  (showCarrierSheet.value = true);
+const openCarrierSheet = async () => {
+  syncCarrierOverlayLayout();
+  showCarrierSheet.value = true;
 
-const closeCarrierSheet = () =>
-  (showCarrierSheet.value = false);
+  await nextTick();
+
+  syncCarrierOverlayLayout();
+};
+
+const closeCarrierSheet = () => {
+  showCarrierSheet.value = false;
+};
 
 // 통신사 선택
-const selectCarrier = async (
-  carrier,
-) => {
+const selectCarrier = async (carrier) => {
   form.carrierCode = carrier.code;
 
   closeCarrierSheet();
@@ -577,45 +444,23 @@ const selectCarrier = async (
 
 // 휴대폰번호 포맷
 function formatPhoneNumber(value) {
-  const numbers = String(value)
-    .replace(/[^0-9]/g, '')
-    .slice(0, 11);
+  const numbers = String(value).replace(/[^0-9]/g, '').slice(0, 11);
 
-  if (numbers.length <= 3) {
-    return numbers;
-  }
+  if (numbers.length <= 3) return numbers;
+  if (numbers.length <= 7) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
 
-  if (numbers.length <= 7) {
-    return `${numbers.slice(
-      0,
-      3,
-    )}-${numbers.slice(3)}`;
-  }
-
-  return `${numbers.slice(
-    0,
-    3,
-  )}-${numbers.slice(
-    3,
-    7,
-  )}-${numbers.slice(7)}`;
+  return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
 }
 
 // 휴대폰번호 입력
 const handlePhoneNumberInput = () => {
   if (isPhoneChange.value) return;
 
-  phoneNumberInput.value =
-    formatPhoneNumber(
-      phoneNumberInput.value,
-    );
+  phoneNumberInput.value = formatPhoneNumber(phoneNumberInput.value);
 
   errorMessage.value = '';
 
-  emit(
-    'phone-valid-change',
-    isValidPhoneNumber(),
-  );
+  emit('phone-valid-change', isValidPhoneNumber());
 };
 
 // 휴대폰번호 전체 삭제
@@ -624,10 +469,7 @@ const clearPhoneNumber = () => {
   form.phoneNumber = '';
   errorMessage.value = '';
 
-  emit(
-    'phone-valid-change',
-    false,
-  );
+  emit('phone-valid-change', false);
 };
 
 // 이전 단계
@@ -637,28 +479,15 @@ const previousStep = () => {
     return true;
   }
 
-  if (
-    isSettingChange.value &&
-    currentStep.value <= 3
-  ) {
-    return false;
-  }
+  if (isSettingChange.value && currentStep.value <= 3) return false;
+  if (currentStep.value <= 1) return false;
 
-  if (currentStep.value <= 1) {
-    return false;
-  }
-
-  if (
-    isSettingChange.value &&
-    currentStep.value === 4
-  ) {
+  if (isSettingChange.value && currentStep.value === 4) {
     moveToStep(3);
     return true;
   }
 
-  moveToStep(
-    currentStep.value - 1,
-  );
+  moveToStep(currentStep.value - 1);
 
   return true;
 };
@@ -668,52 +497,47 @@ const submitForm = () => {
   if (props.loading) return;
 
   if (!isValidPhoneNumber()) {
-    errorMessage.value =
-      '휴대폰번호 11자리를 확인해주세요.';
+    errorMessage.value = '휴대폰번호 11자리를 확인해주세요.';
 
-    emit(
-      'phone-valid-change',
-      false,
-    );
+    emit('phone-valid-change', false);
 
     return;
   }
 
-  form.birthDate =
-    birthDateInput.value;
+  form.birthDate = birthDateInput.value;
+  form.phoneNumber = rawPhoneNumber.value;
 
-  form.phoneNumber =
-    rawPhoneNumber.value;
-
-  emit('submit', {
-    ...form,
-    verificationPurpose:
-      verificationPurpose.value,
-  });
+  emit('submit', { ...form, verificationPurpose: verificationPurpose.value });
 };
 
 onMounted(() => {
-  emit(
-    'step-change',
-    currentStep.value,
-  );
+  emit('step-change', currentStep.value);
 
-  if (currentStep.value === 4) {
-    emit(
-      'phone-valid-change',
-      isValidPhoneNumber(),
-    );
+  if (currentStep.value === 4) emit('phone-valid-change', isValidPhoneNumber());
+
+  const page = document.querySelector('#membership-page');
+
+  if (page) {
+    carrierPageObserver = new ResizeObserver(() => {
+      if (showCarrierSheet.value) syncCarrierOverlayLayout();
+    });
+
+    carrierPageObserver.observe(page);
   }
+
+  window.addEventListener('resize', syncCarrierOverlayLayout);
+  window.addEventListener('scroll', syncCarrierOverlayLayout, true);
 });
 
 onBeforeUnmount(() => {
   clearTimeout(nameTimer);
+
+  carrierPageObserver?.disconnect();
+  window.removeEventListener('resize', syncCarrierOverlayLayout);
+  window.removeEventListener('scroll', syncCarrierOverlayLayout, true);
 });
 
-defineExpose({
-  previousStep,
-  submitForm,
-});
+defineExpose({ previousStep, submitForm });
 </script>
 
 <style scoped>
@@ -880,8 +704,8 @@ defineExpose({
 .step-slide-enter-active,
 .step-slide-leave-active {
   transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
+      opacity 0.22s ease,
+      transform 0.22s ease;
 }
 
 .step-slide-enter-from {
@@ -898,8 +722,8 @@ defineExpose({
 .completed-field-enter-active,
 .completed-field-leave-active {
   transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
+      opacity 0.22s ease,
+      transform 0.22s ease;
 }
 
 .completed-field-enter-from,
@@ -916,15 +740,14 @@ defineExpose({
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.48);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.32);
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 /* 통신사 바텀시트 */
 .carrier-sheet {
   width: 100%;
-  max-width: 430px;
   padding: 10px 24px 30px;
   border-radius: 28px 28px 0 0;
   background: #ffffff;
@@ -1003,8 +826,8 @@ defineExpose({
 .sheet-enter-active .carrier-sheet,
 .sheet-leave-active .carrier-sheet {
   transition:
-    transform 0.28s
-    cubic-bezier(0.22, 1, 0.36, 1);
+      transform 0.28s
+      cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .sheet-enter-from,
