@@ -210,7 +210,14 @@ const onEventAction = async ({
     FEED: '/feed',
     CARD: '/card/create/intro',
     WALLET: '/wallet',
-    SETTLEMENT: '/settlement',
+    SETTLEMENT: {
+      path: '/mypage',
+      query: {
+        tab: 'settlement',
+        type: 'requested',
+        state: 'progress',
+      },
+    },
     RANDOMBOX: '/point-wallet/random-box',
     ANALYSIS: '/analysis',
   };

@@ -23,7 +23,8 @@ public class LoginServiceImpl implements LoginService {
     private static final int AUTH_EXPIRE_MINUTES = 3;
     private static final int SIGNUP_EXPIRE_MINUTES = 10;
     private static final int MAX_FAIL_COUNT = 5;
-    private static final long REJOIN_WAIT_HOURS = 24L;
+    // private static final long REJOIN_WAIT_HOURS = 24L;
+    private static final long REJOIN_WAIT_MINUTES = 1L;
 
     private final LoginMapper loginMapper;
     private final JwtProcessor jwtProcessor;
@@ -206,7 +207,8 @@ public class LoginServiceImpl implements LoginService {
         if ("WITHDRAWN".equals(user.getUserStatus())) {
             if (user.getWithdrawnAt() == null) throw new IllegalStateException("탈퇴 일시를 확인할 수 없습니다.");
 
-            LocalDateTime rejoinAvailableAt = user.getWithdrawnAt().plusHours(REJOIN_WAIT_HOURS);
+//            LocalDateTime rejoinAvailableAt = user.getWithdrawnAt().plusHours(REJOIN_WAIT_HOURS);
+            LocalDateTime rejoinAvailableAt = user.getWithdrawnAt().plusMinutes(REJOIN_WAIT_MINUTES);
 
             if (LocalDateTime.now().isBefore(rejoinAvailableAt)) {
                 return SignupStatusResponseDTO.builder()

@@ -302,9 +302,14 @@ onBeforeUnmount(stopStatusPolling);
   color: var(--color-text-main);
 }
 
-/* 이 화면에서만 공용 헤더의 좌우 위치를 맞춘다. */
+/* 이 화면에서만 공용 헤더 위치와 배경을 맞춘다. */
 .check-page :deep(.page-header) {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
   padding: 0 24px;
+  background: #ffffff;
 }
 
 .check-content-start {
