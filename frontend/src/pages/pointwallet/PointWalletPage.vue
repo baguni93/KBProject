@@ -111,6 +111,15 @@
         <PointTransactionList :transactions="recentTransactions" :loading="loading" loading-text="포인트 정보를 불러오는 중이에요." empty-text="최근 포인트 이용내역이 없어요." />
       </section>
     </div>
+
+    <Transition name="toast">
+      <div v-if="message && messageType === 'success'" class="attendance-toast text-13" role="status">
+        <div class="attendance-toast-icon">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <span>{{ message }}</span>
+      </div>
+    </Transition>
   </main>
 </template>
 
@@ -133,6 +142,7 @@ const attendanceLoading = ref(false);
 const message = ref('');
 const messageType = ref('success');
 const isCalendarExpanded = ref(false);
+let messageTimer = null;
 
 const now = new Date();
 const currentYear = now.getFullYear();
@@ -165,7 +175,7 @@ const toDateKey = (value) => {
   return `${year}-${month}-${day}`;
 };
 
-const recentTransactions = computed(() => transactions.value.filter((transaction) => ['EARN', 'USE'].includes(transaction.transactionType)).slice(0, 5).map((transaction) => ({ ...transaction, createdAt: toDateKey(transaction.createdAt) })));
+const recentTransactions = computed(() => transactions.value.filter((transaction) => ['EARN', 'USE'].includes(transaction.transactionType)).slice(0, 3).map((transaction) => ({ ...transaction, createdAt: toDateKey(transaction.createdAt) })));
 
 const getCalendarDayClass = (day) => {
   if (!day) return {};
@@ -176,6 +186,18 @@ const getCalendarDayClass = (day) => {
 };
 
 const goToFinance = () => router.push('/finance');
+
+// 출석 성공 메시지
+const showAttendanceMessage = (messageText) => {
+  messageType.value = 'success';
+  message.value = messageText || '출석 체크가 완료되었습니다.';
+
+  if (messageTimer) window.clearTimeout(messageTimer);
+
+  messageTimer = window.setTimeout(() => {
+    message.value = '';
+  }, 1800);
+};
 
 const loadPage = async () => {
   loading.value = true;
@@ -201,8 +223,7 @@ const submitAttendance = async () => {
   try {
     const result = await pointWalletApi.attend();
     await loadPage();
-    messageType.value = 'success';
-    message.value = result.message;
+    showAttendanceMessage(result.message);
   } catch (error) {
     messageType.value = 'error';
     message.value = getApiErrorMessage(error, '출석 체크에 실패했습니다.');
@@ -541,6 +562,55 @@ onMounted(loadPage);
   align-items: center;
   gap: 5px;
 }
+/* 출석 성공 토스트 */
+.attendance-toast {
+  position: fixed;
+  z-index: 200;
+  right: 24px;
+  bottom: 34px;
+  left: 24px;
+  display: flex;
+  max-width: 374px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  margin: 0 auto;
+  padding: 9px 14px;
+  border: 1px solid rgba(31, 166, 75, 0.22);
+  border-radius: 12px;
+  background: rgba(31, 166, 75, 0.13);
+  box-shadow: 0 8px 24px rgba(31, 166, 75, 0.12);
+  color: #157a38;
+  box-sizing: border-box;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.attendance-toast-icon {
+  display: flex;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(31, 166, 75, 0.16);
+  color: var(--color-success);
+  font-size: 11px;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
 @keyframes point-float {
   0%, 18%, 100% { transform: translateY(0) scale(1); }
   7% { transform: translateY(-4px) scale(1.03); }
