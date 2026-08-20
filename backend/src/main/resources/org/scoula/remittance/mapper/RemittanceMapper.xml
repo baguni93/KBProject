@@ -29,6 +29,13 @@
         WHERE bank_code = #{bankCode} AND account_number = #{accountNumber}
     </update>
 
+    <update id="subtractPrimaryAccountBalance">
+        UPDATE account_dummy_tbl ad
+        INNER JOIN linked_account_tbl la
+            ON (la.account_number = ad.account_number AND la.primary_yn = 'Y' AND la.user_id = #{userId})
+        SET ad.balance = CASE WHEN ad.balance >= #{amount} THEN ad.balance - #{amount} ELSE 0 END
+    </update>
+
     <!-- 충전 거래 기록 (자동 충전용) -->
     <insert id="insertChargeTransaction">
         INSERT INTO financial_transaction_tbl (user_id, spending_category_id, transaction_type, source_type, target_type, transaction_status, amount, created_at)

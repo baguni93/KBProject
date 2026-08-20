@@ -25,6 +25,8 @@ public interface RemittanceMapper {
                           @Param("accountNumber") String accountNumber,
                           @Param("amount") Integer amount);
 
+    int subtractPrimaryAccountBalance(@Param("userId") Integer userId, @Param("amount") Integer amount);
+
     int insertFeed(@Param("userId") Integer userId,
                    @Param("transactionId") Integer transactionId,
                    @Param("feedType") String feedType,

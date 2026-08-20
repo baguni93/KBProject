@@ -64,6 +64,12 @@ public class RemittanceServiceImpl implements RemittanceService {
             int shortage = amount - currentBalance;
             log.info("지갑 잔액 부족 -> {}원 자동 충전 (walletId={})", shortage, actualWalletId);
 
+            try {
+                remittanceMapper.subtractPrimaryAccountBalance(resolvedUserId, shortage);
+            } catch (Exception accDeductErr) {
+                log.warn("대표계좌 자동충전 출금 예외: {}", accDeductErr.getMessage());
+            }
+
             remittanceMapper.addBalance(actualWalletId, shortage);
             try {
                 remittanceMapper.insertChargeTransaction(resolvedUserId, shortage);

@@ -547,6 +547,13 @@ export const useRemittanceStore = defineStore('remittance', () => {
         await remittanceApi.sendMoney(payload);
       }
 
+      // 송금 완료 후 즉시 지갑 및 계좌 잔액 최신 상태로 갱신
+      try {
+        await loadInitData();
+      } catch (initErr) {
+        console.log('송금 후 잔액 갱신 예외:', initErr);
+      }
+
       // 정산 송금인 경우 정산 상태 갱신 트리거
       if (targetSettlementId) {
         try {
