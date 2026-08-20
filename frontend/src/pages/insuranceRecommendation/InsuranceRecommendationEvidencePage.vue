@@ -1,9 +1,9 @@
 <template>
   <div class="kb-mobile-page insurance-evidence-page">
     <PageHeader
-      title="보험 추천 근거"
-      :custom-back="true"
-      @back="goBack"
+        title="보험 추천 근거"
+        :custom-back="true"
+        @back="goBack"
     />
 
     <div v-if="loading" class="kb-card kb-loading">
@@ -42,9 +42,9 @@
 
         <div v-if="categories.length" class="evidence-list">
           <article
-            v-for="category in categories"
-            :key="category.spendingCategoryId"
-            class="evidence-item kb-card"
+              v-for="category in categories"
+              :key="category.spendingCategoryId"
+              class="evidence-item kb-card"
           >
             <div class="evidence-icon">
               <i class="fa-solid fa-receipt"></i>
@@ -134,13 +134,13 @@ const loadEvidence = async () => {
 
   try {
     evidence.value = await insuranceRecommendationApi.getEvidence(
-      spendingAnalysisId,
+        spendingAnalysisId,
     );
   } catch (error) {
     evidence.value = null;
     message.value = getInsuranceRecommendationErrorMessage(
-      error,
-      '보험 추천 근거를 불러오지 못했습니다.',
+        error,
+        '보험 추천 근거를 불러오지 못했습니다.',
     );
   } finally {
     loading.value = false;
@@ -148,19 +148,30 @@ const loadEvidence = async () => {
 };
 
 const goBack = () =>
-  router.push({
-    name: 'insurance-recommendation',
-    params: { spendingAnalysisId },
-  });
+    router.push({
+      name: 'insurance-recommendation',
+      params: { spendingAnalysisId },
+    });
 
 onMounted(loadEvidence);
 </script>
 
 <style scoped>
 .insurance-evidence-page {
+  min-height: 100vh;
   padding-bottom: 36px;
   background: var(--color-bg-screen);
   color: var(--color-text-main);
+}
+
+/* 상단 헤더 - 다른 보험 페이지와 동일 */
+.insurance-evidence-page :deep(.page-header) {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  padding: 0 24px;
+  background: var(--color-bg-page);
 }
 
 .evidence-summary {
@@ -295,3 +306,9 @@ onMounted(loadEvidence);
   margin-top: 16px;
 }
 </style>
+
+@media (max-width: 380px) {
+.insurance-evidence-page :deep(.page-header) {
+padding: 0 20px;
+}
+}
