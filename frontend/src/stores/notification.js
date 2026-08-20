@@ -19,6 +19,8 @@ export const useNotificationStore = defineStore('notification', () => {
   const getList = async (params) => {
     try {
       notifications.value = await notificationApi.getList(params);
+
+      console.log(notifications.value);
     } catch (e) {
       console.log(e);
     }

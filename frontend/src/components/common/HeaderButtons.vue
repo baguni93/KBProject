@@ -19,9 +19,13 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useNotificationStore } from '@/stores/notification';
+import { useAuthStore } from '@/stores/auth';
 
+const authStore = useAuthStore();
+const userId = authStore.userId;
 const router = useRouter();
 
 const notificationStore = useNotificationStore();
@@ -33,6 +37,10 @@ const goNotification = () => {
 const goSetting = () => {
   router.push('/setting');
 };
+
+onMounted(async () => {
+  await notificationStore.getList({ userId });
+});
 </script>
 
 <style scoped>

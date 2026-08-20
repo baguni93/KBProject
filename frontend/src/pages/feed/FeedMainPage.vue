@@ -60,7 +60,11 @@
 import { useRouter } from 'vue-router';
 import FeedSection from './components/FeedSection.vue';
 import { useNotificationStore } from '@/stores/notification';
+import { onMounted } from 'vue';
+import { useAuthStore } from '@/stores/auth';
 
+const authStore = useAuthStore();
+const userId = authStore.userId;
 const router = useRouter();
 
 const notificationStore = useNotificationStore();
@@ -79,6 +83,10 @@ const handleSearchClick = () => {
 const handleBannerClick = () => {
   router.push('/card/create/intro');
 };
+
+onMounted(async () => {
+  await notificationStore.getList({ userId });
+});
 </script>
 
 <style scoped>
