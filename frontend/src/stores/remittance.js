@@ -81,10 +81,13 @@ export const useRemittanceStore = defineStore('remittance', () => {
 
   const myProfileImageUrl = computed(() => {
     const pUrl = profileStore.profile?.url || profileStore.profile?.profileImageUrl || profileStore.profile?.imageUrl;
-    if (pUrl) return pUrl;
+    if (pUrl && pUrl.trim()) {
+      if (pUrl.startsWith("http") || pUrl.startsWith("/")) return pUrl;
+      return `/api/feeds/profile/${pUrl}`;
+    }
 
     const pName = profileStore.profile?.imageName || profileStore.profile?.profileImageName || profileStore.profile?.image || authStore.user?.profileImageName || authStore.user?.profileImage || authStore.user?.profileImg;
-    if (pName && pName !== 'character1.png') {
+    if (pName && pName.trim()) {
       if (pName.startsWith("http") || pName.startsWith("/")) return pName;
       return `/api/feeds/profile/${pName}`;
     }
@@ -92,16 +95,17 @@ export const useRemittanceStore = defineStore('remittance', () => {
   });
 
   const myProfileName = computed(() => {
-    const authNick = authStore.user?.nickname || authStore.nickname;
-    if (authNick && authNick !== '김국민') return authNick;
-
-    const authName = authStore.userName || authStore.user?.userName;
-    if (authName && authName !== '김국민') return authName;
-
+    // 1. DB 프로필(profile_tbl)의 닉네임 최우선
     const profNick = profileStore.profile?.nickname;
-    if (profNick && profNick !== '김국민') return profNick;
+    if (profNick && profNick.trim() && profNick !== '김국민') return profNick;
 
-    return authNick || authName || profNick || "내 프로필";
+    // 2. 로그인 세션(authStore)의 닉네임
+    const authNick = authStore.user?.nickname || authStore.nickname;
+    if (authNick && authNick.trim() && authNick !== '김국민') return authNick;
+
+    // 3. 닉네임이 없을 때만 이름(userName) 표시
+    const authName = authStore.userName || authStore.user?.userName;
+    return profNick || authNick || authName || "내 프로필";
   });
 
   const getFriendObj = (fId) => {
@@ -111,6 +115,7 @@ export const useRemittanceStore = defineStore('remittance', () => {
   // 더치페이 N빵 정산 폼
   const selectedDutchFriends = ref([]);
   const dutchRoomTitle = ref('');
+  const allUserTxList = ref([]);
   const userTxList = ref([]);
   const selectedTxIds = ref([]);
 
@@ -385,22 +390,32 @@ export const useRemittanceStore = defineStore('remittance', () => {
         console.log("친구 목록 조회 예외", fErr);
       }
 
+      // 최근 송금 및 결제 거래 내역 로드 (최근 보낸 친구 및 더치페이용)
+      try {
+        await loadUserTransactions();
+      } catch (txErr) {
+        console.log("거래내역 로드 예외", txErr);
+      }
+
     } catch (err) {
       console.log("송금 초기 데이터 로드 예외", err);
     }
   };
 
-  // 거래 내역 로드 (더치페이용)
+  // 거래 내역 로드 (더치페이 및 최근 보낸 친구용)
   const loadUserTransactions = async () => {
     try {
       const userId = Number(authStore.userId);
       if (!userId) {
+        allUserTxList.value = [];
         userTxList.value = [];
         return;
       }
       if (transactionApi && transactionApi.getTransactions) {
         const data = await transactionApi.getTransactions(userId);
         if (data && Array.isArray(data)) {
+          allUserTxList.value = data;
+
           const payItems = data.filter((t) => {
             const typeStr = (t.transactionType || t.type || "").toUpperCase();
             return (
@@ -547,6 +562,13 @@ export const useRemittanceStore = defineStore('remittance', () => {
         await remittanceApi.sendMoney(payload);
       }
 
+      // 송금 완료 후 즉시 지갑 및 계좌 잔액 최신 상태로 갱신
+      try {
+        await loadInitData();
+      } catch (initErr) {
+        console.log('송금 후 잔액 갱신 예외:', initErr);
+      }
+
       // 정산 송금인 경우 정산 상태 갱신 트리거
       if (targetSettlementId) {
         try {
@@ -600,12 +622,15 @@ export const useRemittanceStore = defineStore('remittance', () => {
   };
 
   const recentFriends = computed(() => {
-    if (!userTxList.value || userTxList.value.length === 0 || !friendList.value || friendList.value.length === 0) {
+    if (!allUserTxList.value || allUserTxList.value.length === 0 || !friendList.value || friendList.value.length === 0) {
       return [];
     }
 
-    const transferTxs = userTxList.value.filter(
-      (tx) => (tx.transactionType === "TRANSFER" || tx.type === "TRANSFER") && (tx.receiverId || tx.receiveId)
+    const currentUid = Number(authStore.userId);
+    const transferTxs = allUserTxList.value.filter(
+      (tx) => (tx.transactionType === "TRANSFER" || tx.type === "TRANSFER") &&
+              (tx.receiverId || tx.receiveId) &&
+              Number(tx.userId) === currentUid
     );
 
     if (transferTxs.length === 0) {
@@ -616,16 +641,16 @@ export const useRemittanceStore = defineStore('remittance', () => {
     const result = [];
 
     for (const tx of transferTxs) {
-      const recId = tx.receiverId || tx.receiveId;
+      const recId = Number(tx.receiverId || tx.receiveId);
       if (recId && !seenIds.has(recId)) {
         seenIds.add(recId);
         const f = friendList.value.find(
           (item) =>
-            item.id === recId ||
-            item.friendId === recId ||
-            item.friendUserId === recId ||
-            item.userId === recId ||
-            item.receiver?.id === recId
+            Number(item.id) === recId ||
+            Number(item.friendId) === recId ||
+            Number(item.friendUserId) === recId ||
+            Number(item.userId) === recId ||
+            Number(item.receiver?.id) === recId
         );
         if (f) {
           result.push(f);
@@ -651,6 +676,7 @@ export const useRemittanceStore = defineStore('remittance', () => {
     getFriendObj,
     selectedDutchFriends,
     dutchRoomTitle,
+    allUserTxList,
     userTxList,
     selectedTxIds,
     remitAmount,

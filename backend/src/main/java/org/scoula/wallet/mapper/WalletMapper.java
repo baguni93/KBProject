@@ -14,6 +14,8 @@ public interface WalletMapper {
 
     int addBalance(@Param("walletId") Integer walletId, @Param("amount") Integer amount);
 
+    int subtractPrimaryAccountBalance(@Param("userId") Integer userId, @Param("amount") Integer amount);
+
     int insertChargeTransaction(WalletChargeDTO chargeDTO);
 
     WalletChargeDTO getChargeById(Integer chargeId);
