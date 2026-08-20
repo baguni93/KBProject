@@ -94,7 +94,7 @@ const router = createRouter({
       name: 'EventMain',
       component: EventPage,
       meta: {
-        showBottomNav: true,
+        showBottomNav: false,
       },
     },
     {
@@ -103,7 +103,7 @@ const router = createRouter({
       component: EventListPage,
       alias: '/event/list/joined',
       meta: {
-        showBottomNav: true,
+        showBottomNav: false,
       },
     },
     ...feed,
