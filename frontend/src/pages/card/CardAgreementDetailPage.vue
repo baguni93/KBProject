@@ -125,14 +125,14 @@ onMounted(loadAgreement);
 <style scoped>
 .page {
   width: 100%;
-  height: 100dvh;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
   display: flex;
   flex-direction: column;
   min-height: 0;
   box-sizing: border-box;
   overflow: hidden;
-  padding: 12px;
-  background: #ffffff;
+  padding: 0 20px 30px;
 }
 
 .header-area {

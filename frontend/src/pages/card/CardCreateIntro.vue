@@ -135,13 +135,13 @@ customCardStore.load(userId);
 .main-page {
   width: 100%;
   /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
-  height: 100dvh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   min-height: 0;
   box-sizing: border-box;
   overflow: hidden;
-  padding: 12px;
+  padding: 0 20px 30px;
 }
 
 .content-area {

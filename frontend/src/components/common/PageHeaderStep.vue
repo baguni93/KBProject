@@ -98,9 +98,10 @@ const handleBack = () => {
 
   width: 100%;
   height: 64px;
-  padding: 10px 28px 0;
 
-  background: var(--color-bg-page);
+  /* 기존 0 24px 제거 */
+  padding: 0;
+
   box-sizing: border-box;
 }
 
@@ -115,12 +116,10 @@ const handleBack = () => {
 
 .header-left {
   justify-content: flex-start;
-  margin-left: -35px;
 }
 
 .header-right {
   justify-content: flex-end;
-  margin-right: -35px;
 }
 
 /* ========================================
@@ -129,10 +128,13 @@ const handleBack = () => {
 
 .header-title {
   margin: 0;
+
   color: var(--color-text-main);
+
   font-size: 16px;
   font-weight: 700;
   line-height: 1.4;
+
   text-align: center;
 }
 
@@ -144,6 +146,7 @@ const handleBack = () => {
   display: flex;
   width: 40px;
   height: 40px;
+
   align-items: center;
   justify-content: center;
 
@@ -155,7 +158,30 @@ const handleBack = () => {
   color: var(--color-text-main);
 
   font-size: 18px;
+
   cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    opacity 0.15s ease;
+}
+
+/*
+   본문 시작선과 아이콘 위치 맞춤
+
+   버튼의 40px 터치 영역은 그대로 유지하고
+   왼쪽 뒤로가기 아이콘만 바깥쪽으로 이동함
+*/
+.header-left .header-icon-btn {
+  transform: translateX(-12px);
+}
+
+/*
+   오른쪽 새로고침 버튼도
+   왼쪽과 동일하게 대칭 보정
+*/
+.header-right .header-icon-btn {
+  transform: translateX(12px);
 }
 
 .header-icon-btn:hover {
