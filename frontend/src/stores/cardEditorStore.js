@@ -40,6 +40,16 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     size: 8,
   });
 
+  const restoreBackground = (background) => {
+    if (!background) return;
+
+    color.value = background.color || '';
+    gradient.value = background.gradient || '';
+    image.value = background.image || '';
+
+    saveSnapshot();
+  };
+
   // 백업 및 히스토리
   const backup = ref(null);
   const history = ref(null);
@@ -549,6 +559,7 @@ export const useCardEditorStore = defineStore('cardEditor', () => {
     isFeedLoad,
     accountNumber,
     // methods
+    restoreBackground,
     setColor,
     setGradient,
     setImage,

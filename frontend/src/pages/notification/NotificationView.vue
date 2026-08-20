@@ -139,10 +139,10 @@ const notificationMessage = (notification) => {
     const actorCount = Number(notification.actorCount ?? 1);
 
     if (actorCount <= 1) {
-      return '님이 피드에 좋아요를 눌렀습니다.';
+      return '님이 피드에 댓글을 남겼습니다.';
     }
 
-    return `님 외 ${actorCount - 1}명이 피드에 좋아요를 눌렀습니다.`;
+    return `님 외 ${actorCount - 1}명이 피드에 댓글을 남겼습니다.`;
   }
 
   const map = {
