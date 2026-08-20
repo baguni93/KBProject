@@ -123,6 +123,11 @@ onMounted(loadFinanceSummary);
   flex-shrink: 0;
 }
 
+/* 상단 헤더 배경 */
+.finance-shell :deep(.page-header) {
+  background: #fff;
+}
+
 .finance-page {
   height: auto;
   flex: 1;
@@ -155,6 +160,8 @@ onMounted(loadFinanceSummary);
   font: inherit;
   text-align: left;
   cursor: pointer;
+
+  flex-shrink: 0;
 }
 
 .balance-main {
@@ -164,6 +171,8 @@ onMounted(loadFinanceSummary);
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+
+  box-sizing: border-box;
 }
 
 .balance-content {
@@ -216,6 +225,8 @@ onMounted(loadFinanceSummary);
   align-items: center;
   justify-content: space-between;
   border-top: 1px solid rgba(221, 221, 221, 0.6);
+
+  box-sizing: border-box;
 }
 
 .balance-link-row i {
