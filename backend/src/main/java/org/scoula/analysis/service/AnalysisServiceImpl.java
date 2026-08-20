@@ -6,9 +6,11 @@ import org.scoula.analysis.domain.*;
 import org.scoula.analysis.dto.*;
 import org.scoula.analysis.mapper.AnalysisMapper;
 import org.scoula.analysis.mapper.MerchantCategoryMappingMapper;
+import org.scoula.common.util.Enum;
 import org.scoula.exception.CustomException;
 import org.scoula.exception.ErrorCode;
 import org.scoula.event.service.EventService;
+import org.scoula.task.service.TaskEventService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +42,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     private final AnalysisSaveService analysisSaveService;
     private final AnalysisNarrativeService analysisNarrativeService;
     private final EventService eventService;
+    private final TaskEventService taskEventService;
 
 
     @Override
@@ -804,6 +807,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                 );
 
         eventService.recordMissionProgress(userId, "ANALYSIS");
+        taskEventService.sendTaskEvent(userId, Enum.TaskType.ANALYSIS_COMPLETE, "나도 몰랐던 소비 패턴을 확인해보세요" ,spendingAnalysisId);
 
         log.info(
                 "소비분석 실행 완료 userId={}, period={}, "

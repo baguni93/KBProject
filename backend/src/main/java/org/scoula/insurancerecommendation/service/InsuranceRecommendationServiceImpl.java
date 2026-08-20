@@ -4,11 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.analysis.dto.AnalysisDetailResponseDTO;
 import org.scoula.analysis.service.AnalysisService;
+import org.scoula.common.util.Enum;
 import org.scoula.exception.CustomException;
 import org.scoula.exception.ErrorCode;
 import org.scoula.insurancerecommendation.domain.*;
 import org.scoula.insurancerecommendation.dto.*;
 import org.scoula.insurancerecommendation.mapper.InsuranceRecommendationMapper;
+import org.scoula.task.service.TaskEventService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 public class InsuranceRecommendationServiceImpl
         implements InsuranceRecommendationService {
 
+    private final TaskEventService taskEventService;
     /*
      * 보험추천 정책은 12개월 소비분석을 기준으로 한다.
      * 실제 추천 판단 데이터는 spending_analysis_category_tbl이 아니라
@@ -112,6 +115,9 @@ public class InsuranceRecommendationServiceImpl
                 spendingAnalysisId,
                 candidates.size()
         );
+
+        taskEventService.sendTaskEvent(userId , Enum.TaskType.INSURANCE_RECOMMEND, "맞춤 보험 추천 분석 완료", spendingAnalysisId);
+
 
         return InsuranceRecommendationCreateResponseDTO.builder()
                 .spendingAnalysisId(spendingAnalysisId)

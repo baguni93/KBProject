@@ -3,6 +3,7 @@ package org.scoula.event.mapper;
 import org.apache.ibatis.annotations.Param;
 import org.scoula.event.domain.*;
 import org.scoula.event.dto.EventChallengeResponseDTO;
+import org.scoula.event.dto.EventCompletionDTO;
 import org.scoula.event.dto.EventResponseDTO;
 
 import java.util.List;
@@ -84,4 +85,7 @@ public interface EventMapper {
             @Param("eventId") int eventId,
             @Param("rewardId") int rewardId
     );
+
+    EventCompletionDTO getEventCompletion(@Param("userId")  int userId,
+                                          @Param("eventCategory")String eventCategory);
 }

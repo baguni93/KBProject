@@ -1,67 +1,60 @@
 <template>
   <div class="page-layout verification-page">
     <!-- 상단 헤더 그대로 유지 -->
-    <PageHeader
-        custom-back
-        @back="goBack"
-    />
+    <PageHeader custom-back @back="goBack" />
 
     <!-- 페이지 내용 -->
     <main class="page-content verification-content">
       <!-- 제목 -->
       <header class="verification-header">
-        <h1 class="text-30-bold">
-          인증번호 입력
-        </h1>
+        <h1 class="text-30-bold">인증번호 입력</h1>
 
-        <p class="text-15">
-          문자로 받은 인증번호를 입력해 주세요.
-        </p>
+        <p class="text-15">문자로 받은 인증번호를 입력해 주세요.</p>
       </header>
 
       <!-- 인증번호 영역 -->
       <section class="verification-section">
         <!-- 인증번호 / 남은 시간 / X -->
         <div
-            :class="{
-              error: !!errorMessage || expired || attemptExceeded,
-              disabled: expired || attemptExceeded,
-            }"
-            class="verification-input-area"
+          :class="{
+            error: !!errorMessage || expired || attemptExceeded,
+            disabled: expired || attemptExceeded,
+          }"
+          class="verification-input-area"
         >
           <div class="input-row">
             <input
-                ref="verificationInput"
-                :value="verificationCode"
-                :disabled="expired || attemptExceeded"
-                class="verification-input"
-                inputmode="numeric"
-                maxlength="6"
-                pattern="[0-9]*"
-                autocomplete="one-time-code"
-                placeholder="인증번호 6자리"
-                type="text"
-                @input="changeVerificationCode"
+              ref="verificationInput"
+              :value="verificationCode"
+              :disabled="expired || attemptExceeded"
+              class="verification-input"
+              inputmode="numeric"
+              maxlength="6"
+              pattern="[0-9]*"
+              autocomplete="one-time-code"
+              placeholder="인증번호 6자리"
+              type="text"
+              @input="changeVerificationCode"
             />
 
             <div class="input-actions">
               <!-- 남은 시간 -->
               <div class="input-timer text-13">
                 <VerificationTimer
-                    :key="timerKey"
-                    :seconds="signupStore.expiresIn"
-                    @expired="handleExpired"
+                  :key="timerKey"
+                  :seconds="signupStore.expiresIn"
+                  @expired="handleExpired"
                 />
               </div>
 
               <!-- 전체 삭제 -->
               <button
-                  v-if="verificationCode"
-                  :disabled="expired || attemptExceeded"
-                  aria-label="인증번호 전체 삭제"
-                  class="clear-button"
-                  type="button"
-                  @click="clearVerificationCode"
+                v-if="verificationCode"
+                :disabled="expired || attemptExceeded"
+                aria-label="인증번호 전체 삭제"
+                class="clear-button"
+                type="button"
+                @click="clearVerificationCode"
               >
                 <i class="fa-solid fa-xmark"></i>
               </button>
@@ -71,55 +64,46 @@
 
         <!-- 오류 메시지 -->
         <div
-            v-if="attemptExceeded || expired || errorMessage"
-            class="message-area"
-            aria-live="polite"
+          v-if="attemptExceeded || expired || errorMessage"
+          class="message-area"
+          aria-live="polite"
         >
-          <p
-              v-if="attemptExceeded"
-              class="error-message text-13"
-          >
+          <p v-if="attemptExceeded" class="error-message text-13">
             {{ errorMessage }}
           </p>
 
           <p
-              v-else-if="expired && resendCount === 0"
-              class="error-message text-13"
+            v-else-if="expired && resendCount === 0"
+            class="error-message text-13"
           >
             인증시간이 만료되어 재전송이 필요해요.
           </p>
 
           <p
-              v-else-if="expired && resendCount >= 1"
-              class="error-message text-13"
+            v-else-if="expired && resendCount >= 1"
+            class="error-message text-13"
           >
             인증 가능 횟수를 초과했어요.<br />
             본인인증을 다시 진행해 주세요.
           </p>
 
-          <p
-              v-else-if="errorMessage"
-              class="error-message text-13"
-          >
+          <p v-else-if="errorMessage" class="error-message text-13">
             {{ errorMessage }}
           </p>
         </div>
 
         <!-- 개발용 인증번호 / 재전송 -->
         <div class="verification-sub-row">
-          <p
-              v-if="signupStore.developmentCode"
-              class="development-code"
-          >
+          <p v-if="signupStore.developmentCode" class="development-code">
             <span>개발용 인증번호</span>
             <strong>{{ signupStore.developmentCode }}</strong>
           </p>
 
           <button
-              :disabled="resending || resendCount >= 1"
-              class="resend-button text-13-bold"
-              type="button"
-              @click="resendCode"
+            :disabled="resending || resendCount >= 1"
+            class="resend-button text-13-bold"
+            type="button"
+            @click="resendCode"
           >
             {{ resending ? '재전송 중...' : '인증번호 재전송' }}
           </button>
@@ -129,31 +113,21 @@
 
     <!-- 본인인증 다시 시작 -->
     <div
-        v-if="
-          (expired && resendCount >= 1) ||
-          (attemptExceeded && resendCount >= 1)
-        "
-        class="bottom-btn-area single"
+      v-if="
+        (expired && resendCount >= 1) || (attemptExceeded && resendCount >= 1)
+      "
+      class="bottom-btn-area single"
     >
-      <button
-          class="bottom-btn"
-          type="button"
-          @click="restartVerification"
-      >
+      <button class="bottom-btn" type="button" @click="restartVerification">
         본인인증 다시 하기
       </button>
     </div>
 
     <!-- 로딩 -->
-    <div
-        v-if="loading"
-        class="loading-overlay"
-    >
+    <div v-if="loading" class="loading-overlay">
       <div class="loading-spinner"></div>
 
-      <span class="text-15-bold">
-        인증정보를 확인하고 있어요.
-      </span>
+      <span class="text-15-bold"> 인증정보를 확인하고 있어요. </span>
     </div>
   </div>
 </template>
@@ -162,15 +136,14 @@
 import { nextTick, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import loginApi from '@/api/loginApi';
-import {
-  changePhoneNumber,
-  changeUserName,
-} from '@/api/userApi';
+import { changePhoneNumber, changeUserName } from '@/api/userApi';
 import VerificationTimer from '@/components/auth/VerificationTimer.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useSignupStore } from '@/stores/signup';
+import { useTaskStore } from '@/stores/task';
 
+const taskStore = useTaskStore();
 const router = useRouter();
 const signupStore = useSignupStore();
 const authStore = useAuthStore();
@@ -199,9 +172,7 @@ const focusInput = async () => {
 
 // 인증번호 입력
 const changeVerificationCode = (event) => {
-  const value = event.target.value
-      .replace(/[^0-9]/g, '')
-      .slice(0, 6);
+  const value = event.target.value.replace(/[^0-9]/g, '').slice(0, 6);
 
   verificationCode.value = value;
   errorMessage.value = '';
@@ -220,18 +191,12 @@ const clearVerificationCode = async () => {
 };
 
 // 서버 오류 메시지
-const getVerificationErrorMessage = (
-    error,
-    fallbackMessage,
-) => {
+const getVerificationErrorMessage = (error, fallbackMessage) => {
   if (!error.response) {
     return '서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.';
   }
 
-  return (
-      error.response?.data?.message ||
-      fallbackMessage
-  );
+  return error.response?.data?.message || fallbackMessage;
 };
 
 // 인증시간 만료
@@ -244,8 +209,8 @@ const handleExpired = () => {
 // PIN 재설정 인증 완료
 const handlePinReset = async () => {
   sessionStorage.setItem(
-      'pinResetPhoneNumber',
-      signupStore.phoneAuth.phoneNumber,
+    'pinResetPhoneNumber',
+    signupStore.phoneAuth.phoneNumber,
   );
 
   await router.push('/auth/pin-reset');
@@ -253,29 +218,21 @@ const handlePinReset = async () => {
 
 // 이름 변경 인증 완료
 const handleNameChange = async () => {
-  const newUserName =
-      sessionStorage.getItem(
-          'nameChangeNewUserName',
-      );
+  const newUserName = sessionStorage.getItem('nameChangeNewUserName');
 
   if (!authStore.userId || !newUserName) {
-    await router.replace(
-        '/setting/account-management/name',
-    );
+    await router.replace('/setting/account-management/name');
     return;
   }
 
   await changeUserName({
-    phoneNumber:
-    signupStore.phoneAuth.phoneNumber,
+    phoneNumber: signupStore.phoneAuth.phoneNumber,
     newUserName,
   });
 
   authStore.setUserName(newUserName);
 
-  sessionStorage.removeItem(
-      'nameChangeNewUserName',
-  );
+  sessionStorage.removeItem('nameChangeNewUserName');
 
   signupStore.reset();
 
@@ -294,11 +251,9 @@ const handlePhoneChange = async () => {
     return;
   }
 
-  const tokenData =
-      await changePhoneNumber({
-        newPhoneNumber:
-        signupStore.phoneAuth.phoneNumber,
-      });
+  const tokenData = await changePhoneNumber({
+    newPhoneNumber: signupStore.phoneAuth.phoneNumber,
+  });
 
   authStore.updateTokens(tokenData);
 
@@ -314,6 +269,7 @@ const handlePhoneChange = async () => {
 
 // 회원가입 인증 완료
 const handleSignup = async () => {
+
   const signupResponse = await loginApi.checkSignupStatus({ phoneNumber: signupStore.phoneAuth.phoneNumber });
 
   signupStore.setMemberStatus(signupResponse.memberStatus);
@@ -336,11 +292,7 @@ const handleSignup = async () => {
 
 // 인증번호 확인
 const verifyCode = async () => {
-  if (
-      loading.value ||
-      expired.value ||
-      attemptExceeded.value
-  ) {
+  if (loading.value || expired.value || attemptExceeded.value) {
     return;
   }
 
@@ -349,42 +301,27 @@ const verifyCode = async () => {
   try {
     loading.value = true;
 
-    const verificationPurpose =
-        signupStore.phoneAuth
-            .verificationPurpose;
+    const verificationPurpose = signupStore.phoneAuth.verificationPurpose;
 
     await loginApi.verifyPhoneAuthCode({
-      phoneNumber:
-      signupStore.phoneAuth.phoneNumber,
-      verificationCode:
-      verificationCode.value,
+      phoneNumber: signupStore.phoneAuth.phoneNumber,
+      verificationCode: verificationCode.value,
       verificationPurpose,
     });
 
-    signupStore.setVerificationCode(
-        verificationCode.value,
-    );
+    signupStore.setVerificationCode(verificationCode.value);
 
-    if (
-        verificationPurpose ===
-        'PIN_RESET'
-    ) {
+    if (verificationPurpose === 'PIN_RESET') {
       await handlePinReset();
       return;
     }
 
-    if (
-        verificationPurpose ===
-        'NAME_CHANGE'
-    ) {
+    if (verificationPurpose === 'NAME_CHANGE') {
       await handleNameChange();
       return;
     }
 
-    if (
-        verificationPurpose ===
-        'PHONE_CHANGE'
-    ) {
+    if (verificationPurpose === 'PHONE_CHANGE') {
       await handlePhoneChange();
       return;
     }
@@ -393,19 +330,14 @@ const verifyCode = async () => {
   } catch (error) {
     console.error(error);
 
-    const message =
-        getVerificationErrorMessage(
-            error,
-            '인증번호가 일치하지 않습니다.',
-        );
+    const message = getVerificationErrorMessage(
+      error,
+      '인증번호가 일치하지 않습니다.',
+    );
 
     errorMessage.value = message;
 
-    if (
-        message.includes(
-            '입력 가능 횟수를 초과',
-        )
-    ) {
+    if (message.includes('입력 가능 횟수를 초과')) {
       attemptExceeded.value = true;
     }
 
@@ -420,28 +352,27 @@ const verifyCode = async () => {
 };
 
 // 6자리 입력 완료 시 자동 인증
-watch(
-    verificationCode,
-    async (code) => {
-      if (
-          code.length !== 6 ||
-          loading.value ||
-          expired.value ||
-          attemptExceeded.value
-      ) {
-        return;
-      }
+watch(verificationCode, async (code) => {
+  if (
+    code.length !== 6 ||
+    loading.value ||
+    expired.value ||
+    attemptExceeded.value
+  ) {
+    return;
+  }
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
-      await verifyCode();
-    },
-);
+  // 딜레이 동안 사용자가 값을 지웠다면 인증하지 않음
+  if (verificationCode.value.length !== 6) {
+    return;
+  }
+  await verifyCode();
+});
 
 // 인증번호 재전송
 const resendCode = async () => {
-  if (
-      resendCount.value >= 1 ||
-      resending.value
-  ) {
+  if (resendCount.value >= 1 || resending.value) {
     return;
   }
 
@@ -449,21 +380,24 @@ const resendCode = async () => {
     resending.value = true;
     errorMessage.value = '';
 
-    const response =
-        await loginApi.resendPhoneAuthCode({
-          phoneNumber:
-          signupStore.phoneAuth.phoneNumber,
-          verificationPurpose:
-          signupStore.phoneAuth
-              .verificationPurpose,
-        });
+    const response = await loginApi.resendPhoneAuthCode({
+      phoneNumber: signupStore.phoneAuth.phoneNumber,
+      verificationPurpose: signupStore.phoneAuth.verificationPurpose,
+    });
 
-    signupStore.setExpiresIn(
-        response.expiresIn,
-    );
+    signupStore.setExpiresIn(response.expiresIn);
 
-    signupStore.setDevelopmentCode(
-        response.verificationCode,
+    signupStore.setDevelopmentCode(response.verificationCode);
+
+    taskStore.addTaskEvent(
+      {
+        taskType: 'PHONE_AUTH_SEND',
+        message: `인증번호는 [${response.verificationCode}]입니다.`,
+      },
+      () => {
+        verificationCode.value = response.verificationCode;
+        // 원하는 동작
+      },
     );
 
     resendCount.value += 1;
@@ -478,11 +412,10 @@ const resendCode = async () => {
   } catch (error) {
     console.error(error);
 
-    errorMessage.value =
-        getVerificationErrorMessage(
-            error,
-            '인증번호 재전송에 실패했습니다.',
-        );
+    errorMessage.value = getVerificationErrorMessage(
+      error,
+      '인증번호 재전송에 실패했습니다.',
+    );
   } finally {
     resending.value = false;
   }
@@ -490,30 +423,18 @@ const resendCode = async () => {
 
 // 본인인증 다시 시작
 const restartVerification = async () => {
-  const verificationPurpose =
-      signupStore.phoneAuth
-          .verificationPurpose;
+  const verificationPurpose = signupStore.phoneAuth.verificationPurpose;
 
   signupStore.setVerificationCode('');
   signupStore.setDevelopmentCode('');
 
-  if (
-      verificationPurpose ===
-      'NAME_CHANGE'
-  ) {
-    await router.replace(
-        '/setting/account-management/name',
-    );
+  if (verificationPurpose === 'NAME_CHANGE') {
+    await router.replace('/setting/account-management/name');
     return;
   }
 
-  if (
-      verificationPurpose ===
-      'PHONE_CHANGE'
-  ) {
-    await router.replace(
-        '/setting/account-management/phone',
-    );
+  if (verificationPurpose === 'PHONE_CHANGE') {
+    await router.replace('/setting/account-management/phone');
     return;
   }
 
@@ -522,27 +443,15 @@ const restartVerification = async () => {
 
 // 이전 화면
 const goBack = async () => {
-  const verificationPurpose =
-      signupStore.phoneAuth
-          .verificationPurpose;
+  const verificationPurpose = signupStore.phoneAuth.verificationPurpose;
 
-  if (
-      verificationPurpose ===
-      'NAME_CHANGE'
-  ) {
-    await router.replace(
-        '/setting/account-management/name',
-    );
+  if (verificationPurpose === 'NAME_CHANGE') {
+    await router.replace('/setting/account-management/name');
     return;
   }
 
-  if (
-      verificationPurpose ===
-      'PHONE_CHANGE'
-  ) {
-    await router.replace(
-        '/setting/account-management/phone',
-    );
+  if (verificationPurpose === 'PHONE_CHANGE') {
+    await router.replace('/setting/account-management/phone');
     return;
   }
 
@@ -551,12 +460,23 @@ const goBack = async () => {
 
 onMounted(() => {
   focusInput();
+
+  taskStore.addTaskEvent(
+    {
+      taskType: 'PHONE_AUTH_SEND',
+      message: `인증번호는 [${signupStore.developmentCode}]입니다.`,
+    },
+    () => {
+      verificationCode.value = signupStore.developmentCode;
+      // 원하는 동작
+    },
+  );
 });
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
-@import "@/components/common/common/layout.css";
+@import '@/components/common/common/common.css';
+@import '@/components/common/common/layout.css';
 
 .verification-page {
   position: relative;
@@ -598,8 +518,8 @@ onMounted(() => {
   border-bottom: 2px solid var(--color-border-main);
   box-sizing: border-box;
   transition:
-      border-color 0.2s ease,
-      opacity 0.2s ease;
+    border-color 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .verification-input-area:focus-within {

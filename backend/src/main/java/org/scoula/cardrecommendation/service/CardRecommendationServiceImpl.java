@@ -5,8 +5,10 @@ import lombok.extern.log4j.Log4j2;
 import org.scoula.cardrecommendation.domain.*;
 import org.scoula.cardrecommendation.dto.*;
 import org.scoula.cardrecommendation.mapper.CardRecommendationMapper;
+import org.scoula.common.util.Enum;
 import org.scoula.exception.CustomException;
 import org.scoula.exception.ErrorCode;
+import org.scoula.task.service.TaskEventService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +47,7 @@ public class CardRecommendationServiceImpl
     private final CardBenefitCalculator cardBenefitCalculator;
     private final CardRecommendationNarrativeService narrativeService;
     private final CardRecommendationSaveService saveService;
+    private final TaskEventService taskEventService;
 
     /*
      * 카드 추천 생성의 핵심 메서드.
@@ -166,6 +169,8 @@ public class CardRecommendationServiceImpl
                 spendingAnalysisId,
                 topResults.size()
         );
+
+        taskEventService.sendTaskEvent(userId, Enum.TaskType.CARD_RECOMMEND , "맞춤 카드 추천 분석 완료" , spendingAnalysisId);
 
         return CardRecommendationCreateResponseDTO.builder()
                 .spendingAnalysisId(spendingAnalysisId)

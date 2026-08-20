@@ -89,6 +89,7 @@ import javax.sql.DataSource;
         "org.scoula.insurancerecommendation.util",
         "org.scoula.search.service",
         "org.scoula.customcard.service",
+        "org.scoula.task.service",
 
 })
 @EnableTransactionManagement

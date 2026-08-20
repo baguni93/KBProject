@@ -9,6 +9,8 @@
       <!-- 공통 Bottom -->
       <BottomNav v-if="showBottomNav" @tab-click="handleTabClick" />
 
+      <TaskPush />
+
       <!-- 앱 내부 Overlay -->
       <div class="overlay-root">
         <CommonModal />
@@ -23,6 +25,7 @@ import { useRoute } from 'vue-router';
 import BottomNav from './BottomNav.vue';
 import CommonModal from '@/components/common/CommonModal.vue';
 import { useFeedStore } from '@/stores/feed';
+import TaskPush from '../common/TaskPush.vue';
 const feedStore = useFeedStore();
 
 defineProps({
