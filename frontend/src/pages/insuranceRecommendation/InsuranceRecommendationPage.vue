@@ -40,7 +40,7 @@
             </span>
 
             <span class="ai-reason-toggle__action text-13">
-              {{ aiReasonOpen ? '접기' : '자세히' }}
+              {{ aiReasonOpen ? '접기' : '펼쳐보기' }}
               <i
                   class="fa-solid fa-chevron-down"
                   :class="{ open: aiReasonOpen }"
@@ -199,7 +199,7 @@
 
         <button
             type="button"
-            class="content-btn primary browse-button"
+            class="bottom-btn browse-button"
             @click="openProducts"
         >
           전체 보험 둘러보기
@@ -750,10 +750,8 @@ onBeforeUnmount(stopStatusPolling);
 }
 
 /* 전체 보험 둘러보기 버튼: 크기는 기존 유지, 폰트만 16px / 600 */
-.content-btn.primary.browse-button {
+.bottom-btn.browse-button {
   margin-top: 16px;
-  font-size: 16px;
-  font-weight: 600;
 }
 
 .empty-recommendation,
