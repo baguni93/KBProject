@@ -554,6 +554,8 @@ const handleRemindAll = async () => {
       settlementId: props.settlement.settlementId,
       userId,
     });
+    // 리마인드 성공 후 정산 목록 최신화
+    await settlementStore.getMyList({ userId });
   } catch (e) {
     await modalStore.showAlert(e.error || '알 수 없는 오류가 발생했습니다.');
 
@@ -566,22 +568,22 @@ const handleRemindAll = async () => {
  * ========================= */
 
 const showPinModal = ref(false);
-const inputPin = ref("");
-const pinErrorMessage = ref("");
+const inputPin = ref('');
+const pinErrorMessage = ref('');
 const pinLocked = ref(false);
 const isPaying = ref(false);
 
 const goToPayment = () => {
   if (isPaid.value) return;
-  inputPin.value = "";
-  pinErrorMessage.value = "";
+  inputPin.value = '';
+  pinErrorMessage.value = '';
   pinLocked.value = false;
   showPinModal.value = true;
 };
 
 const enterPin = async (n) => {
   if (pinLocked.value || isPaying.value) return;
-  pinErrorMessage.value = "";
+  pinErrorMessage.value = '';
 
   if (inputPin.value.length < 6) {
     inputPin.value += String(n);
@@ -590,7 +592,7 @@ const enterPin = async (n) => {
         isPaying.value = true;
         const res = await walletApi.verifyPin(userId, inputPin.value);
         if (res && res.verified) {
-          pinErrorMessage.value = "";
+          pinErrorMessage.value = '';
           showPinModal.value = false;
 
           // 1. 백엔드 정산 결제 API 호출 (지갑 차감 + 상대 입금 + 거래내역 + 멤버 상태 COMPLETE)
@@ -604,20 +606,28 @@ const enterPin = async (n) => {
 
           modalStore.showAlert(
             `${props.settlement.title || '정산'} 분담금 송금이 완료되었습니다!`,
-            "정산 송금 완료"
+            '정산 송금 완료',
           );
         } else {
-          pinErrorMessage.value = res?.message || "간편비밀번호가 일치하지 않습니다.";
-          inputPin.value = "";
-          if (res?.pinLocked || pinErrorMessage.value.includes("초과") || pinErrorMessage.value.includes("잠겼습니다")) {
+          pinErrorMessage.value =
+            res?.message || '간편비밀번호가 일치하지 않습니다.';
+          inputPin.value = '';
+          if (
+            res?.pinLocked ||
+            pinErrorMessage.value.includes('초과') ||
+            pinErrorMessage.value.includes('잠겼습니다')
+          ) {
             pinLocked.value = true;
           }
         }
       } catch (err) {
-        console.error("정산 결제 처리 오류:", err);
-        const errMsg = err.response?.data?.message || err.message || "정산 결제 처리에 실패했습니다.";
+        console.error('정산 결제 처리 오류:', err);
+        const errMsg =
+          err.response?.data?.message ||
+          err.message ||
+          '정산 결제 처리에 실패했습니다.';
         pinErrorMessage.value = errMsg;
-        inputPin.value = "";
+        inputPin.value = '';
       } finally {
         isPaying.value = false;
       }
@@ -627,23 +637,23 @@ const enterPin = async (n) => {
 
 const closePinModal = () => {
   showPinModal.value = false;
-  inputPin.value = "";
-  pinErrorMessage.value = "";
+  inputPin.value = '';
+  pinErrorMessage.value = '';
 };
 
 const clearPin = () => {
-  inputPin.value = "";
-  pinErrorMessage.value = "";
+  inputPin.value = '';
+  pinErrorMessage.value = '';
 };
 
 const deletePin = () => {
   inputPin.value = inputPin.value.slice(0, -1);
-  pinErrorMessage.value = "";
+  pinErrorMessage.value = '';
 };
 
 const goPinReset = () => {
   showPinModal.value = false;
-  inputPin.value = "";
+  inputPin.value = '';
   signupStore.setVerificationPurpose('PIN_RESET');
   router.push('/signup/check');
 };
