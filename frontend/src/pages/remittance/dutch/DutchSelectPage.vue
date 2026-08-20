@@ -5,6 +5,7 @@
       :selected-friends="remittanceStore.selectedDutchFriends"
       :friends="remittanceStore.filteredFriends"
       :my-profile-image-url="remittanceStore.myProfileImageUrl"
+      :my-profile-name="remittanceStore.myProfileName"
       :get-profile-image-url="remittanceStore.getProfileImageUrl"
       :get-friend-obj="remittanceStore.getFriendObj"
       :get-friend-name="remittanceStore.getFriendName"

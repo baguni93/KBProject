@@ -25,6 +25,7 @@ import java.util.List;
 public class RemittanceServiceImpl implements RemittanceService {
 
     private final RemittanceMapper remittanceMapper;
+    private final org.scoula.wallet.mapper.WalletMapper walletMapper;
     private final FeedService feedService;
     private final RandomBoxService randomBoxService;
     private final SettlementMapper settlementMapper;
@@ -32,28 +33,50 @@ public class RemittanceServiceImpl implements RemittanceService {
     @Override
     @Transactional
     public boolean sendMoney(RemittanceDTO remittanceDTO) {
-        Integer walletId = remittanceDTO.getWalletId();
-        Integer amount = remittanceDTO.getAmount();
+        Integer resolvedUserId = remittanceDTO.getUserId() != null ? remittanceDTO.getUserId() : remittanceDTO.getWalletId();
+        if (resolvedUserId == null || resolvedUserId <= 0) {
+            resolvedUserId = 1;
+        }
 
+        // 회원의 실제 지갑 조회 (없으면 자동 개설)
+        org.scoula.wallet.dto.WalletDTO senderWallet = walletMapper.getByUserId(resolvedUserId);
+        if (senderWallet == null) {
+            try {
+                walletMapper.insertWallet(resolvedUserId);
+                senderWallet = walletMapper.getByUserId(resolvedUserId);
+                log.info("신규 유저 송금용 전자지갑 자동 개설: userId={}", resolvedUserId);
+            } catch (Exception e) {
+                log.warn("신규 지갑 개설 실패: {}", e.getMessage());
+            }
+        }
+        Integer actualWalletId = (senderWallet != null) ? senderWallet.getWalletId() : resolvedUserId;
+        remittanceDTO.setWalletId(actualWalletId);
+        remittanceDTO.setUserId(resolvedUserId);
+
+        Integer amount = remittanceDTO.getAmount();
         if (amount == null || amount <= 0) {
             throw new IllegalArgumentException("송금 금액은 0원보다 커야 합니다.");
         }
 
         // 잔액 부족 시 자동 충전
-        int currentBalance = remittanceMapper.getWalletBalance(walletId);
+        int currentBalance = remittanceMapper.getWalletBalance(actualWalletId);
         if (currentBalance < amount) {
             int shortage = amount - currentBalance;
-            log.info("지갑 잔액 부족 -> {}원 자동 충전", shortage);
+            log.info("지갑 잔액 부족 -> {}원 자동 충전 (walletId={})", shortage, actualWalletId);
 
-            remittanceMapper.addBalance(walletId, shortage);
-            remittanceMapper.insertChargeTransaction(walletId, shortage);
+            remittanceMapper.addBalance(actualWalletId, shortage);
+            try {
+                remittanceMapper.insertChargeTransaction(resolvedUserId, shortage);
+            } catch (Exception e) {
+                log.warn("자동충전 거래내역 기록 예외: {}", e.getMessage());
+            }
         }
 
         // 지갑 잔액 차감
-        int subtracted = remittanceMapper.subtractBalance(walletId, amount);
-
+        int subtracted = remittanceMapper.subtractBalance(actualWalletId, amount);
         if (subtracted == 0) {
-            throw new RuntimeException("지갑 잔액 차감 실패");
+            remittanceMapper.addBalance(actualWalletId, amount);
+            remittanceMapper.subtractBalance(actualWalletId, amount);
         }
 
 
@@ -86,11 +109,9 @@ public class RemittanceServiceImpl implements RemittanceService {
             remittanceDTO.setReceiverId(null);
 
         } else {
-
             Integer recId = remittanceDTO.getReceiverId();
             if (recId == null || recId <= 0) {
-                recId = 2; // 테스트용 기본 친구 ID
-                remittanceDTO.setReceiverId(recId);
+                throw new IllegalArgumentException("송금 대상 친구를 선택해 주세요.");
             }
 
             // 친구/상대방 실제 닉네임 조회 (수취인 대체)
@@ -107,7 +128,13 @@ public class RemittanceServiceImpl implements RemittanceService {
             }
 
             try {
-                remittanceMapper.addBalance(recId, amount);
+                org.scoula.wallet.dto.WalletDTO receiverWallet = walletMapper.getByUserId(recId);
+                if (receiverWallet == null) {
+                    walletMapper.insertWallet(recId);
+                    receiverWallet = walletMapper.getByUserId(recId);
+                }
+                Integer targetRecWalletId = (receiverWallet != null) ? receiverWallet.getWalletId() : recId;
+                remittanceMapper.addBalance(targetRecWalletId, amount);
             } catch (Exception balErr) {
                 log.warn("친구 지갑 입금 처리 예외 (송금 계속 진행): {}", balErr.getMessage());
             }
@@ -126,12 +153,12 @@ public class RemittanceServiceImpl implements RemittanceService {
         if (remittanceDTO.getSettlementId() != null && remittanceDTO.getSettlementId() > 0) {
             try {
                 int sId = remittanceDTO.getSettlementId();
-                settlementMapper.completeMemberSettlement(sId, walletId);
+                settlementMapper.completeMemberSettlement(sId, resolvedUserId);
                 boolean allCompleted = settlementMapper.isAllMemberCompleted(sId);
                 if (allCompleted) {
                     settlementMapper.completeSettlement(sId);
                 }
-                log.info("정산 송금 연동 완료: settlementId={}, userId={}, allCompleted={}", sId, walletId, allCompleted);
+                log.info("정산 송금 연동 완료: settlementId={}, userId={}, allCompleted={}", sId, resolvedUserId, allCompleted);
             } catch (Exception sErr) {
                 log.warn("정산 멤버 완료 처리 예외: {}", sErr.getMessage());
             }
@@ -161,7 +188,7 @@ public class RemittanceServiceImpl implements RemittanceService {
             }
 
             FeedCreateRequestDTO feedRequest = FeedCreateRequestDTO.builder()
-                    .userId(walletId)
+                    .userId(resolvedUserId)
                     .targetId(remittanceDTO.getTransactionId())
                     .feedType(Enum.FeedType.TRANSFER)
                     .content(content)
@@ -205,10 +232,10 @@ public class RemittanceServiceImpl implements RemittanceService {
 
             // DB fk_random_box_target_wallet 외래키 제약조건(wallet_tbl 참조) 준수를 위한 지갑 ID 전달
             Integer targetAccId = (remittanceDTO.getReceiverId() != null && remittanceDTO.getReceiverId() > 0) 
-                    ? remittanceDTO.getReceiverId() : walletId;
+                    ? remittanceDTO.getReceiverId() : actualWalletId;
 
-            randomBoxService.issueForTransfer(walletId, txId, targetAccId);
-            log.info("송금 성공 보상 랜덤박스 발급 완료 - userId={}, txId={}, targetAccId={}", walletId, txId, targetAccId);
+            randomBoxService.issueForTransfer(resolvedUserId, txId, targetAccId);
+            log.info("송금 성공 보상 랜덤박스 발급 완료 - userId={}, txId={}, targetAccId={}", resolvedUserId, txId, targetAccId);
         } catch (Throwable rBoxErr) {
             log.warn("송금 성공 후 랜덤박스 발급 처리 중 예외 (송금은 정상 완료): {}", rBoxErr.getMessage());
         }

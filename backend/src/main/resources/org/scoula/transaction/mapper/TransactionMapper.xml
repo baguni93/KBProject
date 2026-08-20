@@ -10,6 +10,7 @@
             t.parent_transaction_id AS parentTransactionId,
             t.user_id AS userId,
             t.receive_id AS receiveId,
+            t.settlement_id AS settlementId,
             t.transaction_type AS transactionType,
             t.source_type AS sourceType,
             t.target_type AS targetType,
@@ -19,11 +20,15 @@
             t.spending_category_id AS spendingCategoryId,
             t.created_at AS createdAt,
             m.memo_content AS memo,
-            u.user_name AS receiverName
+            COALESCE(p_rec.nickname, u_rec.user_name, t.merchant_name) AS receiverName,
+            COALESCE(p_send.nickname, u_send.user_name) AS senderName
         FROM financial_transaction_tbl t
         LEFT JOIN receipt_memo_tbl m ON t.transaction_id = m.transaction_id
-        LEFT JOIN user_tbl u ON t.receive_id = u.user_id
-        WHERE t.user_id = #{userId}
+        LEFT JOIN user_tbl u_rec ON t.receive_id = u_rec.user_id
+        LEFT JOIN profile_tbl p_rec ON u_rec.user_id = p_rec.user_id
+        LEFT JOIN user_tbl u_send ON t.user_id = u_send.user_id
+        LEFT JOIN profile_tbl p_send ON u_send.user_id = p_send.user_id
+        WHERE (t.user_id = #{userId} OR t.receive_id = #{userId})
         <if test="type != null and type != ''">
             AND t.transaction_type = #{type}
         </if>
@@ -36,6 +41,7 @@
             t.parent_transaction_id AS parentTransactionId,
             t.user_id AS userId,
             t.receive_id AS receiveId,
+            t.settlement_id AS settlementId,
             t.transaction_type AS transactionType,
             t.source_type AS sourceType,
             t.target_type AS targetType,
@@ -45,10 +51,14 @@
             t.spending_category_id AS spendingCategoryId,
             t.created_at AS createdAt,
             m.memo_content AS memo,
-            u.user_name AS receiverName
+            COALESCE(p_rec.nickname, u_rec.user_name, t.merchant_name) AS receiverName,
+            COALESCE(p_send.nickname, u_send.user_name) AS senderName
         FROM financial_transaction_tbl t
         LEFT JOIN receipt_memo_tbl m ON t.transaction_id = m.transaction_id
-        LEFT JOIN user_tbl u ON t.receive_id = u.user_id
+        LEFT JOIN user_tbl u_rec ON t.receive_id = u_rec.user_id
+        LEFT JOIN profile_tbl p_rec ON u_rec.user_id = p_rec.user_id
+        LEFT JOIN user_tbl u_send ON t.user_id = u_send.user_id
+        LEFT JOIN profile_tbl p_send ON u_send.user_id = p_send.user_id
         WHERE t.transaction_id = #{transactionId}
     </select>
 

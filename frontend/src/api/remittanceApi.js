@@ -9,6 +9,12 @@ export default {
     return data;
   },
 
+  // remit-bank-002: 계좌 예금주 실명 검증 (POST /api/remittances/bank-accounts/verify)
+  async verifyBankAccount(bankCode, accountNumber) {
+    const { data } = await api.post(`${BASE_URL}/bank-accounts/verify`, { bankCode, accountNumber });
+    return data;
+  },
+
   // remit-friend-001: 송금 대상 친구 목록 조회
   async getFriends(userId = 1) {
     const { data } = await api.get('/api/friends', { params: { userId } });
@@ -18,7 +24,11 @@ export default {
   // remit-003: 송금 실행 (백엔드 @ModelAttribute 바인딩을 위한 FormData 전송)
   async sendMoney(remittanceData) {
     const formData = new FormData();
-    formData.append('walletId', remittanceData.walletId || 1);
+    const uId = remittanceData.userId || remittanceData.walletId;
+    if (uId) {
+      formData.append('userId', uId);
+      formData.append('walletId', uId);
+    }
     if (remittanceData.receiverId) formData.append('receiverId', remittanceData.receiverId);
     if (remittanceData.settlementId) formData.append('settlementId', remittanceData.settlementId);
     formData.append('amount', remittanceData.amount || 0);

@@ -111,44 +111,32 @@ const authStore = useAuthStore();
 const loading = ref(false);
 const rawTransactions = ref([]);
 
-// 거래 내역 더미 파이프라인 (TransactionListPage.vue와 100% 동일 시드)
-const defaultFallbackTransactions = [
-  { transactionId: 901, merchantName: '스타벅스', amount: 5000, transactionType: 'PAYMENT', createdAt: '2026-08-18T10:30:00' },
-  { transactionId: 902, merchantName: '교보문고', amount: 18000, transactionType: 'PAYMENT', createdAt: '2026-08-02T15:20:00' },
-  { transactionId: 903, merchantName: '오늘의집', amount: 27600, transactionType: 'PAYMENT', createdAt: '2026-08-02T14:10:00' },
-  { transactionId: 904, merchantName: '한솥도시락', amount: 12500, transactionType: 'PAYMENT', createdAt: '2026-08-02T12:00:00' },
-  { transactionId: 905, merchantName: '메가MGC커피', amount: 4900, transactionType: 'PAYMENT', createdAt: '2026-08-02T09:40:00' },
-  { transactionId: 906, merchantName: '스마일치과', amount: 65000, transactionType: 'PAYMENT', createdAt: '2026-08-02T09:00:00' },
-  { transactionId: 907, merchantName: '카카오T', amount: 14500, transactionType: 'PAYMENT', createdAt: '2026-08-01T22:15:00' },
-  { transactionId: 908, merchantName: '쿠팡', amount: 42900, transactionType: 'PAYMENT', createdAt: '2026-08-01T19:30:00' },
-  { transactionId: 909, merchantName: 'CU 계명대점', amount: 9800, transactionType: 'PAYMENT', createdAt: '2026-08-01T18:10:00' },
-  { transactionId: 910, merchantName: '투썸플레이스', amount: 5500, transactionType: 'PAYMENT', createdAt: '2026-08-01T15:00:00' },
-];
-
 const fetchTransactions = async () => {
   loading.value = true;
   try {
-    const userId = authStore.userId || 1;
+    const userId = authStore.userId;
+    if (!userId) {
+      rawTransactions.value = [];
+      return;
+    }
+
     let apiData = [];
     if (transactionApi && transactionApi.getTransactions) {
       apiData = await transactionApi.getTransactions(userId);
     }
 
-    // 실제 백엔드 DB 거래 내역이 존재하면 오직 실제 DB 내역만 노출! (더미 중복 병합 제거)
-    if (Array.isArray(apiData) && apiData.length > 0) {
+    if (Array.isArray(apiData)) {
       rawTransactions.value = apiData.filter((t) => {
         const type = (t.transactionType || t.type || '').toUpperCase();
         const merchant = (t.merchantName || t.merchant_name || t.storeName || '').trim();
-        // PAYMENT 타입이고 merchantName이 있는 가맹점 결제만 허용
         return type === 'PAYMENT' && !!merchant;
       });
     } else {
-      // DB 내역이 아예 없는 테스트 환경일 때만 기본 폴백 노출
-      rawTransactions.value = defaultFallbackTransactions;
+      rawTransactions.value = [];
     }
   } catch (err) {
-    console.log('거래 내역 로드 예외:', err);
-    rawTransactions.value = defaultFallbackTransactions;
+    console.error('결제 내역 조회 오류:', err);
+    rawTransactions.value = [];
   } finally {
     loading.value = false;
   }

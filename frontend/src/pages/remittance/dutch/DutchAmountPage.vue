@@ -10,6 +10,8 @@
       :category-list="remittanceStore.categoryList"
       :selected-category-id="remittanceStore.selectedCategoryId"
       :selected-dutch-friends="remittanceStore.selectedDutchFriends"
+      :my-profile-name="remittanceStore.myProfileName"
+      :my-profile-image-url="remittanceStore.myProfileImageUrl"
       :get-friend-name="remittanceStore.getFriendName"
       :get-profile-image-url="remittanceStore.getProfileImageUrl"
       :get-friend-obj="remittanceStore.getFriendObj"
@@ -75,7 +77,7 @@ const proceedToSummary = () => {
 
   // 결제내역을 선택하지 않고 직접 금액을 입력했거나 제목이 없는 경우 자동 생성
   if (!remittanceStore.selectedTxIds || remittanceStore.selectedTxIds.length === 0 || !remittanceStore.dutchRoomTitle) {
-    const myNickname = profileStore.profile?.nickname || authStore.userName || "노랑지갑";
+    const myNickname = remittanceStore.myProfileName || profileStore.profile?.nickname || authStore.userName || "내 프로필";
     const friendCount = remittanceStore.selectedDutchFriends ? remittanceStore.selectedDutchFriends.length : 0;
     if (friendCount > 0) {
       remittanceStore.dutchRoomTitle = `${myNickname} 외 ${friendCount}명`;

@@ -59,9 +59,6 @@ public class WalletController {
         Long userId = (customUser != null) ? customUser.getUser().getUserId() : 1L;
         log.info("JWT 내 지갑 잔액 조회 요청 - 회원 ID: {}", userId);
         WalletDTO walletDTO = walletService.getWalletByUserId(userId.intValue());
-        if (walletDTO == null) {
-            walletDTO = walletService.getWalletByUserId(1);
-        }
         return ResponseEntity.ok(walletDTO);
     }
 
@@ -73,29 +70,32 @@ public class WalletController {
         Integer targetUserId = resolveUserId(request, userId);
         log.info("지갑 잔액 조회 요청 - 회원 ID: {}, Resolved ID: {}", userId, targetUserId);
         WalletDTO walletDTO = walletService.getWalletByUserId(targetUserId);
-        if (walletDTO == null && targetUserId != 1) {
-            walletDTO = walletService.getWalletByUserId(1);
-        }
         return ResponseEntity.ok(walletDTO);
     }
 
     // QR 결제 토큰
     @GetMapping("/me/qr-token")
-    public ResponseEntity<PaymentTokenDTO> getQrToken(@RequestParam(value = "userId", defaultValue = "1") Integer userId) {
-        log.info("1회용 QR 결제 토큰 발급 요청 - 회원 ID: " + userId);
-        WalletDTO wallet = walletService.getWalletByUserId(userId);
-        Integer walletId = (wallet != null) ? wallet.getWalletId() : 1;
-        PaymentTokenDTO tokenDTO = tokenStore.createToken(userId, walletId, "QR");
+    public ResponseEntity<PaymentTokenDTO> getQrToken(
+            HttpServletRequest request,
+            @RequestParam(value = "userId", required = false) Integer userId) {
+        Integer targetUserId = resolveUserId(request, userId);
+        log.info("1회용 QR 결제 토큰 발급 요청 - 회원 ID: {}", targetUserId);
+        WalletDTO wallet = walletService.getWalletByUserId(targetUserId);
+        Integer walletId = (wallet != null) ? wallet.getWalletId() : targetUserId;
+        PaymentTokenDTO tokenDTO = tokenStore.createToken(targetUserId, walletId, "QR");
         return ResponseEntity.ok(tokenDTO);
     }
 
     // 바코드 결제 토큰
     @GetMapping("/me/barcode-token")
-    public ResponseEntity<PaymentTokenDTO> getBarcodeToken(@RequestParam(value = "userId", defaultValue = "1") Integer userId) {
-        log.info("1회용 바코드 결제 토큰 발급 요청 - 회원 ID: " + userId);
-        WalletDTO wallet = walletService.getWalletByUserId(userId);
-        Integer walletId = (wallet != null) ? wallet.getWalletId() : 1;
-        PaymentTokenDTO tokenDTO = tokenStore.createToken(userId, walletId, "BARCODE");
+    public ResponseEntity<PaymentTokenDTO> getBarcodeToken(
+            HttpServletRequest request,
+            @RequestParam(value = "userId", required = false) Integer userId) {
+        Integer targetUserId = resolveUserId(request, userId);
+        log.info("1회용 바코드 결제 토큰 발급 요청 - 회원 ID: {}", targetUserId);
+        WalletDTO wallet = walletService.getWalletByUserId(targetUserId);
+        Integer walletId = (wallet != null) ? wallet.getWalletId() : targetUserId;
+        PaymentTokenDTO tokenDTO = tokenStore.createToken(targetUserId, walletId, "BARCODE");
         return ResponseEntity.ok(tokenDTO);
     }
 

@@ -18,7 +18,7 @@
           <div class="receiver-info-col">
             <h3 class="receiver-name text-22-bold">
               <template v-if="remitType === 'FRIEND' || remitType === 'DUTCH_PAY'">
-                {{ selectedFriendObj?.name || selectedFriendObj?.nickname || accountForm.receiverName || "노랑지갑" }}님에게
+                {{ selectedFriendObj?.name || selectedFriendObj?.nickname || accountForm.receiverName || "친구" }}님에게
               </template>
               <template v-else>
                 {{ accountForm.receiverName || "수취인" }}님에게
@@ -26,7 +26,7 @@
             </h3>
             <p class="sub-handle text-13">
               <template v-if="remitType === 'FRIEND' || remitType === 'DUTCH_PAY'">
-                @{{ selectedFriendObj?.username || selectedFriendObj?.nickname || "노랑지갑" }}
+                @{{ selectedFriendObj?.username || selectedFriendObj?.nickname || "friend" }}
               </template>
               <template v-else>
                 {{ getBankName(accountForm.bankCode) }} {{ accountForm.accountNumber }}
@@ -150,11 +150,11 @@
         </button>
       </div>
 
-      <!-- 3. 참여 친구 목록 (친구 N명 | ✏️ 친구편집) -->
+      <!-- 3. 참여 친구 목록 (참여 인원 N명 | ✏️ 친구편집) -->
       <div class="dutch-participants-section">
         <div class="dutch-part-header">
           <span class="text-14-bold part-count-title">
-            친구 {{ selectedDutchFriends.length + 1 }}명
+            참여 인원 {{ selectedDutchFriends.length + 1 }}명 (나 포함)
           </span>
           <button type="button" class="btn-edit-friends text-13-bold" @click="$emit('editFriends')">
             <i class="fa-solid fa-pen"></i> 친구편집
@@ -166,14 +166,14 @@
           <div class="dutch-part-row">
             <div class="part-avatar-wrap">
               <img
-                :src="myProfileImageUrl || '/api/feeds/profile/profile_1.png'"
+                :src="myProfileImageUrl"
                 class="part-avatar-img"
-                @error="$event.target.src = '/api/feeds/profile/profile_1.png'"
+                @error="(e) => { e.target.onerror = null; e.target.style.display = 'none'; }"
               />
             </div>
             <div class="part-text-area">
               <span class="part-name text-15-bold">
-                {{ myProfileName }}
+                {{ myProfileName }} <span style="font-size: 12px; color: #ff9f00; font-weight: 700;">(나)</span>
               </span>
             </div>
           </div>
@@ -188,7 +188,7 @@
               <img
                 :src="getProfileImageUrl(getFriendObj(fId))"
                 class="part-avatar-img"
-                @error="$event.target.src = '/api/feeds/profile/default_profile.png'"
+                @error="(e) => { e.target.onerror = null; e.target.src = '/images/default_avatar.png'; }"
               />
             </div>
             <div class="part-text-area">
@@ -284,7 +284,7 @@ const props = defineProps({
   },
   myProfileName: {
     type: String,
-    default: "노랑지갑",
+    default: "내 프로필",
   },
   getBankLogoFileName: {
     type: Function,

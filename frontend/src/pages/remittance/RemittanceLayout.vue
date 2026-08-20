@@ -109,7 +109,7 @@ const restoreSettlementFromQuery = (q) => {
     const sId = Number(q.settlementId);
     const reqId = Number(q.requesterId || 1);
     const amount = Number(q.amount || 0);
-    const name = q.name || '노랑지갑';
+    const name = q.name || '정산 요청자';
     const title = q.title || '정산 송금';
 
     remittanceStore.settlementId = sId;

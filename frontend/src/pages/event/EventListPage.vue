@@ -1,25 +1,28 @@
 <template>
-  <div class="event-list-container">
-    <div class="list-content-wrapper">
-      <header class="list-header">
-        <button class="back-btn" @click="goToEventPage">← 이벤트 리스트</button>
-      </header>
+  <main class="kb-mobile-page event-list-page">
+    <PageHeader
+      title="이벤트 리스트"
+      :showBack="true"
+      :customBack="true"
+      @back="goToEventPage"
+    />
 
-      <!-- 이벤트 리스트 탭 (진행 중 / 참여 완료) -->
-      <nav class="tab-menu">
-        <button
-          :class="['tab-btn', { active: currentTab === 'active' }]"
-          @click="switchTab('active')"
-        >
-          진행 중
-        </button>
-        <button
-          :class="['tab-btn', { active: currentTab === 'joined' }]"
-          @click="switchTab('joined')"
-        >
-          참여완료
-        </button>
-      </nav>
+    <!-- 소비분석의 1/3/12개월 탭처럼 헤더 바로 아래, 좌우 끝까지 배치 -->
+    <nav class="event-list-tabs" aria-label="이벤트 목록 구분">
+      <button
+        v-for="tab in EVENT_LIST_TABS"
+        :key="tab.value"
+        type="button"
+        class="event-list-tab-btn"
+        :class="{ active: currentTab === tab.value }"
+        @click="switchTab(tab.value)"
+      >
+        {{ tab.label }}
+      </button>
+    </nav>
+
+    <div class="event-list-content">
+      <div class="list-content-wrapper">
 
       <!-- 참여완료 이벤트 탭일 때 -> 검색연월 변경 -->
       <div v-if="currentTab === 'joined'" class="date-picker-section">
@@ -55,14 +58,16 @@
           />
         </template>
       </main>
+      </div>
     </div>
-  </div>
+  </main>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import eventApi from '@/api/eventApi';
+import PageHeader from '@/components/common/PageHeader.vue';
 import EventItem from '@/components/event/EventItem.vue';
 import EventHistoryItem from '@/components/event/EventHistoryItem.vue';
 import { useFeedStore } from '@/stores/feed';
@@ -74,6 +79,11 @@ const userId = computed(() => authStore.userId);
 
 const router = useRouter();
 const route = useRoute();
+
+const EVENT_LIST_TABS = [
+  { value: 'active', label: '진행 중' },
+  { value: 'joined', label: '참여완료' },
+];
 
 const currentTab = ref('active');
 const eventList = ref([]);
@@ -304,132 +314,246 @@ const onEventAction = async ({
 </script>
 
 <style scoped>
-.event-list-container {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 16px;
-  background-color: #ffffff;
-  box-sizing: border-box;
-  /* min-height: 900px */
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
+.event-list-page {
+  min-height: 100%;
+  background: var(--color-bg-screen);
+  color: var(--color-text-main);
 }
 
-.list-content {
-  max-height: 580px;
-  overflow-y: auto;
-  padding-right: 12px;
+/* 소비분석과 동일한 공용 헤더 좌우 여백 */
+.event-list-page :deep(.page-header) {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  padding: 0 24px;
+  background: var(--color-bg-page);
+}
+
+/* 소비분석 1/3/12개월 탭처럼 헤더에 바로 붙고 좌우 끝까지 */
+.event-list-tabs {
+  width: 100%;
+  height: 44px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--color-border-main);
+  background: var(--color-bg-page);
+}
+
+.event-list-tab-btn {
+  position: relative;
+  min-width: 0;
+  height: 44px;
+  padding: 0 8px;
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: none;
+  background: transparent;
+  color: var(--color-text-sub);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.event-list-tab-btn.active {
+  color: var(--color-text-main);
+  font-weight: 600;
+}
+
+.event-list-tab-btn.active::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--color-primary);
+  content: '';
+}
+
+/* 목록 영역은 소비분석/포인트지갑과 같은 좌우 24px */
+.event-list-content {
+  padding: 12px 24px 8px;
 }
 
 .list-content-wrapper {
   width: 100%;
+}
+
+/* 내부 스크롤/고정 높이 제거 */
+.list-content {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  padding-bottom: 20px;
-}
-
-.list-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-}
-.back-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  margin-right: 12px;
-  font-size: 18px;
-  color: #222222;
-  font-weight: 600;
-}
-.list-header h2 {
-  font-size: 18px;
-  font-weight: bold;
-}
-
-/* 탭 메뉴 디자인 */
-.tab-menu {
-  display: flex;
-  border-bottom: 2px solid #e9ecef;
-  margin-bottom: 16px;
-}
-.tab-btn {
-  flex: 1;
-  background: none;
-  border: none;
-  padding: 12px 0;
-  font-size: 14px;
-  color: #888;
-  cursor: pointer;
-  font-weight: bold;
-  text-align: center;
-}
-.tab-btn.active {
-  color: #ffb703;
-  border-bottom: 2px solid #ffb703;
-  margin-bottom: -2px;
+  gap: 12px;
+  overflow: visible;
 }
 
 .date-picker-section {
-  margin-top: 4px;
-  margin-bottom: 20px;
   width: 100%;
+  margin: 4px 0 18px;
 }
 
 .month-selector {
   width: 100%;
-  background-color: #f1f3f5;
-  border-radius: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   box-sizing: border-box;
+  border-radius: 18px;
+  background: var(--color-bg-page);
+  box-shadow: 0 4px 16px rgba(30, 30, 30, 0.07);
 }
 
 .current-month-display {
+  color: var(--color-text-main);
   font-size: 15px;
-  font-weight: 800;
-  color: #2b3a4a;
+  font-weight: 600;
   letter-spacing: 0.5px;
   user-select: none;
 }
 
 .picker-nav-btn {
-  background: none;
-  border: none;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #8a94a0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-sub);
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.15s ease;
 }
 
-.picker-nav-btn:hover {
-  background-color: rgba(0, 0, 0, 0.04);
-  color: #2b3a4a;
+/* ===== 하위 이벤트 카드 공용 UI 덮어쓰기 ===== */
+
+/* 진행 중 카드: kb-card 외형 */
+.event-list-page :deep(.event-item) {
+  padding: 16px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--color-bg-page);
+  box-shadow: 0 4px 16px rgba(30, 30, 30, 0.07);
 }
 
-.picker-nav-btn:active {
-  transform: scale(0.92);
+.event-list-page :deep(.event-item.border-yellow) {
+  border: 0;
+  box-shadow: 0 4px 16px rgba(30, 30, 30, 0.07);
+}
+
+.event-list-page :deep(.event-title) {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.event-list-page :deep(.event-desc) {
+  margin: 4px 0 7px;
+  color: var(--color-text-sub);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
+.event-list-page :deep(.event-level),
+.event-list-page :deep(.reward-points),
+.event-list-page :deep(.reward-exp) {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.event-list-page :deep(.action-btn) {
+  width: auto;
+  min-width: 62px;
+  height: auto;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.event-list-page :deep(.action-btn.bg-yellow) {
+  background: var(--color-primary);
+  color: var(--color-text-main);
+}
+
+.event-list-page :deep(.action-btn.bg-gray) {
+  border: 1px solid var(--color-border-main);
+  background: var(--color-bg-page);
+  color: var(--color-text-body);
+}
+
+/* 참여완료 카드도 kb-card 외형과 공용 타이포 규격 */
+.event-list-page :deep(.history-item-card) {
+  width: 100%;
+  margin-bottom: 0;
+  padding: 16px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--color-bg-page);
+  box-shadow: 0 4px 16px rgba(30, 30, 30, 0.07);
+}
+
+.event-list-page :deep(.history-item-card .event-title) {
+  margin: 0 0 2px;
+  color: var(--color-text-main);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.event-list-page :deep(.event-date) {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.event-list-page :deep(.complete-tag) {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.event-list-page :deep(.card-bottom) {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--color-bg-screen);
+}
+
+.event-list-page :deep(.bottom-label) {
+  color: var(--color-text-sub);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.event-list-page :deep(.bottom-value) {
+  color: #f1ad00;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.event-list-page :deep(.exp-text) {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .loading-box,
 .empty-box {
-  text-align: center;
   padding: 40px 0;
-  color: #888;
+  color: var(--color-text-sub);
   font-size: 14px;
+  font-weight: 500;
+  text-align: center;
 }
 </style>

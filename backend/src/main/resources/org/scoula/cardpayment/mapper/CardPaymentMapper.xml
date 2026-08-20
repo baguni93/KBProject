@@ -343,7 +343,7 @@
         ) VALUES (
             #{userId},
             #{receiveId},
-            1,
+            #{spendingCategoryId},
             'PAYMENT',
             'ACCOUNT',
             'ACCOUNT',

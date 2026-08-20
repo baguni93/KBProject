@@ -15,6 +15,7 @@ import java.util.List;
 @Builder
 public class RemittanceDTO {
 
+    private Integer userId;
     private Integer walletId;
     private Integer receiverId;
     private String receiverName;

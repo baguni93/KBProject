@@ -35,6 +35,18 @@ export default [
     component: () => import('@/pages/signup/NewMemberPage.vue'),
   },
   {
+    path: '/signup/withdrawn-member',
+    name: 'withdrawn-member',
+    component: () => import('@/pages/signup/WithdrawnMemberPage.vue'),
+    beforeEnter: () => {
+      const rejoinAvailableAt = sessionStorage.getItem('rejoinAvailableAt');
+
+      if (!rejoinAvailableAt) return '/intro';
+
+      return true;
+    },
+  },
+  {
     path: '/signup/pin',
     name: 'signup-pin',
     component: () => import('@/pages/signup/PinPage.vue'),

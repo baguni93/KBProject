@@ -32,13 +32,13 @@
     <!-- 충전 거래 기록 (자동 충전용) -->
     <insert id="insertChargeTransaction">
         INSERT INTO financial_transaction_tbl (user_id, spending_category_id, transaction_type, source_type, target_type, transaction_status, amount, created_at)
-        VALUES (#{walletId}, 1, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', #{amount}, NOW())
+        VALUES (#{userId}, 1, 'CHARGE', 'ACCOUNT', 'WALLET', 'SUCCESS', #{amount}, NOW())
     </insert>
 
     <!-- 송금 거래 내역 저장 (spendingCategoryId 및 settlementId 반영) -->
     <insert id="insertRemittance" useGeneratedKeys="true" keyProperty="transactionId">
-        INSERT INTO financial_transaction_tbl (user_id, receive_id, settlement_id , spending_category_id, transaction_type, source_type, target_type, transaction_status, amount,merchant_name, created_at)
-        VALUES (#{walletId}, #{receiverId}, #{settlementId}, COALESCE(#{spendingCategoryId}, 1), 'TRANSFER', 'WALLET', #{receiverType}, 'SUCCESS', #{amount},#{merchantName}, NOW())
+        INSERT INTO financial_transaction_tbl (user_id, receive_id, settlement_id, spending_category_id, transaction_type, source_type, target_type, transaction_status, amount, merchant_name, created_at)
+        VALUES (#{userId}, #{receiverId}, #{settlementId}, COALESCE(#{spendingCategoryId}, 1), 'TRANSFER', 'WALLET', #{receiverType}, 'SUCCESS', #{amount}, #{merchantName}, NOW())
     </insert>
 
     <!-- 최신 init.sql 기준 피드 데이터 저장 (target_id & feed_status 반영) -->
@@ -54,32 +54,37 @@
         ORDER BY bank_code ASC
     </select>
 
-    <!-- 최근 송금 계좌 3건 조회 (계좌 중복 제거 & 최신 송금 이력 기준) -->
+    <!-- 최근 송금 계좌 조회 (1인 다수 계좌 뻥튀기 방지 및 최신 송금 이력 기준) -->
     <select id="getRecentAccounts" resultType="org.scoula.remittance.dto.RecentAccountDTO">
         SELECT
             accountNumber,
             bankCode,
             bankName,
-            MAX(ownerName) AS ownerName,
+            ownerName,
             MAX(lastTransferAt) AS lastTransferAt
         FROM (
             SELECT
-                COALESCE(la.account_number, u.phone_number, '110-222-222222') AS accountNumber,
-                COALESCE(la.bank_code, '081') AS bankCode,
-                COALESCE(b.bank_name, '하나') AS bankName,
-                COALESCE(u.user_name, NULLIF(t.merchant_name, ''), '테스트회원2') AS ownerName,
+                COALESCE(la.account_number, ad.account_number, u.phone_number) AS accountNumber,
+                COALESCE(la.bank_code, ad.bank_code, '004') AS bankCode,
+                COALESCE(b.bank_name, b2.bank_name, 'KB국민') AS bankName,
+                COALESCE(u.user_name, ad.owner_name, t.merchant_name, '수취인') AS ownerName,
                 t.created_at AS lastTransferAt
             FROM financial_transaction_tbl t
-            LEFT JOIN user_tbl u ON (
-                t.receive_id = u.user_id 
-                OR (t.merchant_name IS NOT NULL AND t.merchant_name = u.user_name)
-            )
-            LEFT JOIN linked_account_tbl la ON u.user_id = la.user_id
+            LEFT JOIN user_tbl u ON t.receive_id = u.user_id
+            LEFT JOIN linked_account_tbl la ON (u.user_id = la.user_id AND la.primary_yn = 'Y')
             LEFT JOIN bank_tbl b ON la.bank_code = b.bank_code
+            LEFT JOIN (
+                SELECT owner_name, MAX(account_number) AS account_number, MAX(bank_code) AS bank_code
+                FROM account_dummy_tbl
+                GROUP BY owner_name
+            ) ad ON (t.receive_id IS NULL AND t.merchant_name = ad.owner_name)
+            LEFT JOIN bank_tbl b2 ON ad.bank_code = b2.bank_code
             WHERE t.user_id = #{userId}
               AND t.transaction_type = 'TRANSFER'
+              AND (t.target_type = 'ACCOUNT' OR t.receive_id IS NULL)
         ) sub
-        GROUP BY accountNumber, bankCode, bankName
+        WHERE accountNumber IS NOT NULL
+        GROUP BY accountNumber, bankCode, bankName, ownerName
         ORDER BY lastTransferAt DESC
         LIMIT #{limit}
     </select>

@@ -16,6 +16,19 @@
         WHERE user_id = #{userId}
     </select>
 
+    <!-- 신규 회원 지갑 생성 -->
+    <insert id="insertWallet">
+        INSERT INTO wallet_tbl (
+            user_id,
+            balance,
+            wallet_status
+        ) VALUES (
+            #{userId},
+            0,
+            'ACTIVE'
+        )
+    </insert>
+
     <!-- 지갑 ID로 지갑 정보 및 잔액 조회 -->
     <select id="getByWalletId" resultType="org.scoula.wallet.dto.WalletDTO">
         SELECT
@@ -112,8 +125,8 @@
             c.card_num          AS cardNum,
             c.expiry_date       AS expiryDate,
             lc.represent_yn     AS representYn,
-            COALESCE(c.card_name, 'KB국민카드') AS cardName,
-            COALESCE(u.user_name, '김국민')     AS holderName
+            COALESCE(c.card_name, '연결 카드') AS cardName,
+            COALESCE(u.user_name, '회원')       AS holderName
         FROM linked_card_tbl lc
         LEFT JOIN user_tbl u ON lc.user_id = u.user_id
         LEFT JOIN card_tbl c ON lc.card_code = c.card_code

@@ -29,7 +29,7 @@
             <img
               :src="getProfileImageUrl(friend)"
               class="toss-friend-avatar-img"
-              @error="$event.target.src = '/api/feeds/profile/unknown.png'"
+              @error="(e) => { e.target.onerror = null; e.target.style.display = 'none'; }"
             />
           </div>
           <div class="toss-friend-text-area">
@@ -65,7 +65,7 @@
             <img
               :src="getProfileImageUrl(friend)"
               class="toss-friend-avatar-img"
-              @error="$event.target.src = '/api/feeds/profile/unknown.png'"
+              @error="(e) => { e.target.onerror = null; e.target.style.display = 'none'; }"
             />
           </div>
           <div class="toss-friend-text-area">

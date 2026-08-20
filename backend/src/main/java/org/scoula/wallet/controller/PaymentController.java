@@ -3,6 +3,7 @@ package org.scoula.wallet.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.scoula.analysis.service.PaymentTransactionRecordService;
+import org.scoula.event.service.EventService;
 import org.scoula.remittance.mapper.RemittanceMapper;
 import org.scoula.wallet.dto.PaymentConfirmRequestDTO;
 import org.scoula.wallet.dto.PaymentConfirmResponseDTO;
@@ -24,6 +25,7 @@ public class PaymentController {
     private final RemittanceMapper remittanceMapper;
     private final WalletMapper walletMapper;
     private final PaymentTransactionRecordService paymentTransactionRecordService;
+    private final EventService eventService;
 
     @PostMapping("/confirm")
     @Transactional
@@ -52,6 +54,9 @@ public class PaymentController {
                 request.getAmount(),
                 merchant
         );
+
+        // 박준우: 결제 성공 후, 참여 중인 지갑 결제 이벤트의 미션 진행도 기록
+        eventService.recordMissionProgress(tokenDTO.getUserId(), "WALLET");
 
         PaymentConfirmResponseDTO response = PaymentConfirmResponseDTO.builder()
                 .status("SUCCESS")

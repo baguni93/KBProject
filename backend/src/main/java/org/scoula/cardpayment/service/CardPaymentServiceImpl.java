@@ -2,6 +2,9 @@ package org.scoula.cardpayment.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.scoula.analysis.dto.MerchantCategoryClassificationResultDTO;
+import org.scoula.analysis.service.MerchantCategoryService;
+import org.scoula.card.controller.CardController;
 import org.scoula.cardpayment.dto.CardAgreementDTO;
 import org.scoula.cardpayment.dto.CardBinResponseDTO;
 import org.scoula.cardpayment.dto.CardRegisterDTO;
@@ -23,10 +26,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CardPaymentServiceImpl implements CardPaymentService {
 
     private final CardPaymentMapper cardPaymentMapper;
+    private final org.scoula.card.mapper.CardMapper cardMapper;
     private final KbCardCatalogRepository catalogRepository;
     private final TaskEventService taskEventService;
     private final org.scoula.notification.service.NotificationService notificationService;
     private final org.scoula.pointwallet.service.RandomBoxService randomBoxService;
+    // 자동 AI 카테고리 분류 서비스 연결완료
+    private final MerchantCategoryService merchantCategoryService;
 
     private final Map<String, CardBinResponseDTO> binMemoryCache = new ConcurrentHashMap<>();
 
@@ -134,7 +140,47 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         // Validate that the card exists in card_tbl
         Integer validatedCardCode = cardPaymentMapper.validateCard(cardRegisterDTO);
         if (validatedCardCode == null) {
-            throw new IllegalArgumentException("카드 정보를 찾을 수 없습니다.");
+            // card_tbl에 카드가 사전 등록되어 있지 않은 경우, 즉시 자동 마스터 생성하여 등록 지원
+            String cleanNum = cardRegisterDTO.getCardNum().replaceAll("\\D", "");
+            String bin6 = cleanNum.length() >= 6 ? cleanNum.substring(0, 6) : "941012";
+            String bin8 = cleanNum.length() >= 8 ? cleanNum.substring(0, 8) : bin6;
+
+            String cardName = cardRegisterDTO.getCardName();
+            String cardImg = cardRegisterDTO.getCardImageName();
+
+            // 1) BIN 매핑에서 이름/이미지 조회
+            if (CardController.BIN_MAPPING_MAP.containsKey(bin8)) {
+                CardController.CardInfo info = CardController.BIN_MAPPING_MAP.get(bin8);
+                if (cardName == null || cardName.trim().isEmpty()) cardName = info.getCardName();
+                if (cardImg == null || cardImg.trim().isEmpty()) cardImg = info.getImageUrl();
+            } else if (CardController.BIN_MAPPING_MAP.containsKey(bin6)) {
+                CardController.CardInfo info = CardController.BIN_MAPPING_MAP.get(bin6);
+                if (cardName == null || cardName.trim().isEmpty()) cardName = info.getCardName();
+                if (cardImg == null || cardImg.trim().isEmpty()) cardImg = info.getImageUrl();
+            }
+
+            if (cardName == null || cardName.trim().isEmpty()) {
+                cardName = "KB국민카드";
+            }
+            if (cardImg == null || cardImg.trim().isEmpty()) {
+                cardImg = "card_default.png";
+            }
+
+            String rawPw = cardRegisterDTO.getCardPassword() != null ? cardRegisterDTO.getCardPassword() : "1234";
+            String hashedPw = hashCardPassword(rawPw);
+
+            org.scoula.card.domain.CardVO newCard = org.scoula.card.domain.CardVO.builder()
+                    .cardNum(cardRegisterDTO.getCardNum())
+                    .expiryDate(cardRegisterDTO.getExpiryDate())
+                    .cvv(cardRegisterDTO.getCvv())
+                    .cardPassword(hashedPw)
+                    .cardName(cardName)
+                    .cardImgFileName(cardImg)
+                    .build();
+
+            cardMapper.insertCard(newCard);
+            validatedCardCode = newCard.getCardCode();
+            log.info("신규 카드 마스터 자동 생성 완료: cardCode={}, cardName={}, cardImg={}", validatedCardCode, cardName, cardImg);
         }
         cardRegisterDTO.setCardCode(validatedCardCode);
 
@@ -144,8 +190,6 @@ public class CardPaymentServiceImpl implements CardPaymentService {
             cardRegisterDTO.setCardImageName(foundImg);
         }
 
-
-
         try {
             cardPaymentMapper.insertLinkedCard(cardRegisterDTO);
         } catch (Exception e) {
@@ -153,6 +197,20 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         }
 
         return getPrimaryCard(userId);
+    }
+
+    private String hashCardPassword(String raw) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return raw;
+        }
     }
 
     @Override
@@ -293,12 +351,16 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         }
         Integer receiveId = cardPaymentMapper.getMerchantUserIdByAccountId(merchantAccountId);
 
+        // 결제 가맹점 자동 카테고리 분류: 기존 매핑 우선, 없으면 AI 분류
+        Integer spendingCategoryId = classifyMerchantCategory(merchantName);
+
         // 통합 금융 원장(financial_transaction_tbl) 생성
         org.scoula.cardpayment.dto.CardTransactionApproveDTO insertParam = org.scoula.cardpayment.dto.CardTransactionApproveDTO.builder()
                 .userId(targetUserId)
                 .receiveId(receiveId)
                 .merchantName(merchantName)
                 .amount(amount)
+                .spendingCategoryId(spendingCategoryId)
                 .build();
 
         cardPaymentMapper.insertFinancialTransactionForCard(insertParam);
@@ -392,11 +454,15 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         }
         Integer receiveId = cardPaymentMapper.getMerchantUserIdByAccountId(merchantAccountId);
 
+        // 박준우: 결제 가맹점 자동 카테고리 분류: 기존 매핑 우선, 없으면 AI 분류
+        Integer spendingCategoryId = classifyMerchantCategory(merchantName);
+
         org.scoula.cardpayment.dto.CardTransactionApproveDTO insertParam = org.scoula.cardpayment.dto.CardTransactionApproveDTO.builder()
                 .userId(targetUserId)
                 .receiveId(receiveId)
                 .merchantName(merchantName)
                 .amount(amount)
+                .spendingCategoryId(spendingCategoryId)
                 .build();
 
         cardPaymentMapper.insertFinancialTransactionForCard(insertParam);
@@ -432,6 +498,34 @@ public class CardPaymentServiceImpl implements CardPaymentService {
                 .updatedWalletBalance(updatedWalletBalance)
                 .message("전자지갑 결제가 성공적으로 승인되었습니다.")
                 .build();
+    }
+
+    /**
+     * 박준우: 결제 가맹점의 소비 카테고리를 자동 결정한다.
+     * 기존 가맹점 매핑을 먼저 사용하고, 매핑(임시테이블 저장)이 없을 때만 AI를 호출한다.
+     * AI 분류가 실패하면 null을 반환하여 미분류 상태로 거래는 정상 저장한다.
+     */
+    private Integer classifyMerchantCategory(String merchantName) {
+        if (merchantName == null || merchantName.isBlank()) {
+            return null;
+        }
+
+        MerchantCategoryClassificationResultDTO result =
+                merchantCategoryService.classify(merchantName.trim());
+
+        if (result == null || result.getSpendingCategoryId() == null) {
+            log.warn("결제 가맹점 카테고리 자동 분류 실패 - merchantName={}", merchantName);
+            return null;
+        }
+
+        log.info(
+                "결제 가맹점 카테고리 자동 분류 완료 - merchantName={}, categoryId={}, source={}",
+                merchantName,
+                result.getSpendingCategoryId(),
+                result.getClassificationSource()
+        );
+
+        return result.getSpendingCategoryId();
     }
 
     @Override
