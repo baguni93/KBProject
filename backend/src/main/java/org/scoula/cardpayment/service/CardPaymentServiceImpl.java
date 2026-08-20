@@ -9,6 +9,8 @@ import org.scoula.cardpayment.dto.CardStatusResponseDTO;
 import org.scoula.cardpayment.dto.PrimaryCardResponseDTO;
 import org.scoula.cardpayment.mapper.CardPaymentMapper;
 import org.scoula.cardpayment.util.KbCardCatalogRepository;
+import org.scoula.common.util.Enum;
+import org.scoula.task.service.TaskEventService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ public class CardPaymentServiceImpl implements CardPaymentService {
 
     private final CardPaymentMapper cardPaymentMapper;
     private final KbCardCatalogRepository catalogRepository;
+    private final TaskEventService taskEventService;
     private final org.scoula.notification.service.NotificationService notificationService;
     private final org.scoula.pointwallet.service.RandomBoxService randomBoxService;
 
@@ -308,6 +311,13 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         log.info("카드 결제 승인 성공 (지갑 잔액 차감 없음) - CardTxID: {}, FinancialTxID: {}, UserID: {}, Merchant: {}, Amount: {}",
                 cardTxId, createdTxId, targetUserId, merchantName, amount);
 
+        //박우진 축하 , 결제 푸쉬 대신 이거 사용하실려면 사용하세요
+//        taskEventService.sendTaskEvent(
+//                targetUserId,
+//                Enum.TaskType.PAYMENT_COMPLETE,
+//                merchantName + "\n" + String.format("%,d원 결제완료.", amount),
+//                null
+//        );
         return org.scoula.cardpayment.dto.CardTransactionResponseDTO.builder()
                 .cardTransactionId(cardTxId)
                 .linkedCardId(detailVO.getLinkedCardId())

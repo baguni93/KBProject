@@ -20,6 +20,7 @@ public class AnalysisSaveServiceImpl implements AnalysisSaveService {
     //분석 결과 매퍼
     private final AnalysisMapper analysisMapper;
 
+
     @Override
     @Transactional
     public Integer saveAnalysis(
@@ -68,6 +69,8 @@ public class AnalysisSaveServiceImpl implements AnalysisSaveService {
                 spendingAnalysisId,
                 categories.size()
         );
+
+
 
         return spendingAnalysisId;
     }

@@ -358,4 +358,37 @@ event_challenge_level_tbl : 레벨별 요구 EXP와 포인트 보상
         VALUES (#{eventId}, #{rewardId}, #{userId}, NOW())
     </insert>
 
+    <!-- 박우진 추가 , 이벤트 내역 추가 후 해당 이벤트 완료 여부 체크  -->
+    <select id="getEventCompletion" resultType="org.scoula.event.dto.EventCompletionDTO">
+        SELECT
+        e.event_id AS eventId,
+        e.event_name AS eventName,
+
+        CASE
+        WHEN (
+        SELECT COUNT(*)
+        FROM event_participation_tbl ep
+        WHERE ep.event_id = e.event_id
+        AND ep.user_id = #{userId}
+        AND ep.participated_at >= eu.joined_at
+        ) >= e.event_target
+        THEN TRUE
+        ELSE FALSE
+        END AS completed
+
+        FROM event_tbl e
+
+        JOIN event_user_tbl eu
+        ON eu.event_id = e.event_id
+        AND eu.user_id = #{userId}
+
+        WHERE e.event_category = #{eventCategory}
+        AND e.event_type != 'ATTENDANCE'
+        AND e.event_status = 'OPEN'
+        AND (e.start_at IS NULL OR NOW() >= e.start_at)
+        AND (e.end_at IS NULL OR NOW() &lt;= e.end_at)
+
+        LIMIT 1
+    </select>
+
 </mapper>
