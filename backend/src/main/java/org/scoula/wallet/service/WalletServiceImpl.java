@@ -72,7 +72,12 @@ public class WalletServiceImpl implements WalletService {
             throw new RuntimeException("지갑 정보를 찾을 수 없습니다.");
         }
 
-        // 2. 지갑 잔액 증가
+        // 2. 대표계좌 잔액 차감 및 지갑 잔액 증가
+        try {
+            walletMapper.subtractPrimaryAccountBalance(targetUserId, chargeDTO.getAmount());
+        } catch (Exception e) {
+            log.warn("충전 시 대표계좌 출금 예외: {}", e.getMessage());
+        }
         walletMapper.addBalance(wallet.getWalletId(), chargeDTO.getAmount());
 
         // 3. 충전 거래 내역 기록
