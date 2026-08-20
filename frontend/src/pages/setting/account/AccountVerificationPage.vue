@@ -52,7 +52,7 @@
           v-if="accountStore.accountForm.developmentCode"
           class="development-code text-13"
         >
-          개발용 인증번호: {{ accountStore.accountForm.developmentCode }}
+          계좌 인증번호: {{ accountStore.accountForm.developmentCode }}
         </p>
 
         <p v-if="errorMessage" class="error-message text-13">
