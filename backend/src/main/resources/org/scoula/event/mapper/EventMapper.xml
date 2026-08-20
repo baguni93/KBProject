@@ -363,21 +363,9 @@ event_challenge_level_tbl : 레벨별 요구 EXP와 포인트 보상
         SELECT
         e.event_id AS eventId,
         e.event_name AS eventName,
-
-        CASE
-        WHEN (
-        SELECT COUNT(*)
-        FROM event_participation_tbl ep
-        WHERE ep.event_id = e.event_id
-        AND ep.user_id = #{userId}
-        AND ep.participated_at >= eu.joined_at
-        ) >= e.event_target
-        THEN TRUE
-        ELSE FALSE
-        END AS completed
+        TRUE AS completed
 
         FROM event_tbl e
-
         JOIN event_user_tbl eu
         ON eu.event_id = e.event_id
         AND eu.user_id = #{userId}
@@ -388,7 +376,84 @@ event_challenge_level_tbl : 레벨별 요구 EXP와 포인트 보상
         AND (e.start_at IS NULL OR NOW() >= e.start_at)
         AND (e.end_at IS NULL OR NOW() &lt;= e.end_at)
 
+        -- 현재 목표는 달성했지만
+        AND (
+        SELECT COUNT(*)
+        FROM event_participation_tbl ep
+        WHERE ep.event_id = e.event_id
+        AND ep.user_id = #{userId}
+        AND ep.participated_at >= eu.joined_at
+        ) >= e.event_target
+
+        -- 보상 수령 여부 등을 기준으로
+        -- 이미 완료 처리한 이벤트는 제외
+        AND NOT EXISTS (
+        SELECT 1
+        FROM event_reward_receive_tbl err
+        WHERE err.event_id = e.event_id
+        AND err.user_id = #{userId}
+        )
+
+        ORDER BY e.event_id
         LIMIT 1
+    </select>
+    <select id="findProgressbarEventIds" resultType="java.lang.Integer">
+        SELECT e.event_id
+        FROM event_tbl e
+        JOIN event_user_tbl eu
+        ON eu.event_id = e.event_id
+        AND eu.user_id = #{userId}
+        WHERE e.event_category = #{eventCategory}
+        AND e.event_type != 'ATTENDANCE'
+        AND e.event_status = 'OPEN'
+        AND eu.joined_at &lt;= NOW()
+        AND (e.start_at IS NULL OR NOW() >= e.start_at)
+        AND (e.end_at IS NULL OR NOW() &lt;= e.end_at)
+        AND (
+        SELECT COUNT(*)
+        FROM event_participation_tbl ep
+        WHERE ep.event_id = e.event_id
+        AND ep.user_id = #{userId}
+        AND ep.participated_at >= eu.joined_at
+        ) &lt; e.event_target
+    </select>
+    <select id="getEventCompletionByEventId" resultType="org.scoula.event.dto.EventCompletionDTO">
+        SELECT
+        e.event_id AS eventId,
+        e.event_name AS eventName,
+        TRUE AS completed
+
+        FROM event_tbl e
+
+        JOIN event_user_tbl eu
+        ON eu.event_id = e.event_id
+        AND eu.user_id = #{userId}
+
+        WHERE e.event_id = #{eventId}
+
+        AND e.event_type != 'ATTENDANCE'
+        AND e.event_status = 'OPEN'
+
+        AND (e.start_at IS NULL OR NOW() >= e.start_at)
+        AND (e.end_at IS NULL OR NOW() &lt;= e.end_at)
+
+        -- 현재 목표 달성
+        AND (
+        SELECT COUNT(*)
+        FROM event_participation_tbl ep
+        WHERE ep.event_id = e.event_id
+        AND ep.user_id = #{userId}
+        AND ep.participated_at >= eu.joined_at
+        ) >= e.event_target
+
+        -- 이미 보상을 받은 이벤트는 제외
+        AND NOT EXISTS (
+        SELECT 1
+        FROM event_reward_receive_tbl err
+        WHERE err.event_id = e.event_id
+        AND err.user_id = #{userId}
+        )
+
     </select>
 
 </mapper>

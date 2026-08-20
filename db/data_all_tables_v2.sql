@@ -2723,44 +2723,44 @@ VALUES (1, 1, '질병 진단비', 30000000, '약관에서 정한 주요 질병�
 -- ---------------------------------------------------------------------
 -- 28. settlement_tbl (8건)
 -- ---------------------------------------------------------------------
-INSERT INTO settlement_tbl (settlement_id, requester_id, title, content, total_amount,
-                            status, created_at, settlement_type, spending_category_id,
-                            last_reminder_date, completed_at)
-VALUES (1, 1, '저녁 식사 정산', '저녁 식사 정산', 30000, 'REQUEST', '2026-07-20 19:00:00', 'EQUAL', 1, NULL, NULL),
-       (2, 2, '카페 모임 정산', '카페 모임 정산', 24000, 'COMPLETE', '2026-07-21 15:00:00', 'EQUAL', 2, '2026-07-21 17:00:00',
-        '2026-07-21 18:00:00'),
-       (3, 3, '택시비 정산', '택시비 정산', 18000, 'CANCEL', '2026-07-22 23:00:00', 'UNEQUAL', 6, NULL, NULL),
-(4, 2, '저녁 식사 더치페이', '저녁 식사 더치페이', 18000, 'COMPLETE', '2026-08-08 20:00:00', 'EQUAL', 1, NULL, '2026-08-08 20:10:00'),
-(5, 3, '카페 모임 더치페이', '카페 모임 더치페이', 8000, 'COMPLETE', '2026-07-24 16:30:00', 'EQUAL', 2, NULL, '2026-07-24 16:40:00'),
-(6, 2, '택시비 더치페이', '택시비 더치페이', 14000, 'COMPLETE', '2026-06-21 00:10:00', 'EQUAL', 6, NULL, '2026-06-21 00:20:00'),
-(7, 3, '숙소비 더치페이', '숙소비 더치페이', 60000, 'COMPLETE', '2026-05-29 20:20:00', 'EQUAL', 10, NULL, '2026-05-29 20:30:00'),
-(8, 2, '병원비 더치페이', '병원비 더치페이', 35000, 'COMPLETE', '2026-04-15 15:10:00', 'EQUAL', 16, NULL, '2026-04-15 15:20:00');
+-- INSERT INTO settlement_tbl (settlement_id, requester_id, title, content, total_amount,
+--                             status, created_at, settlement_type, spending_category_id,
+--                             last_reminder_date, completed_at)
+-- VALUES (1, 1, '저녁 식사 정산', '저녁 식사 정산', 30000, 'REQUEST', '2026-07-20 19:00:00', 'EQUAL', 1, NULL, NULL),
+--        (2, 2, '카페 모임 정산', '카페 모임 정산', 24000, 'COMPLETE', '2026-07-21 15:00:00', 'EQUAL', 2, '2026-07-21 17:00:00',
+--         '2026-07-21 18:00:00'),
+--        (3, 3, '택시비 정산', '택시비 정산', 18000, 'CANCEL', '2026-07-22 23:00:00', 'UNEQUAL', 6, NULL, NULL),
+-- (4, 2, '저녁 식사 더치페이', '저녁 식사 더치페이', 18000, 'COMPLETE', '2026-08-08 20:00:00', 'EQUAL', 1, NULL, '2026-08-08 20:10:00'),
+-- (5, 3, '카페 모임 더치페이', '카페 모임 더치페이', 8000, 'COMPLETE', '2026-07-24 16:30:00', 'EQUAL', 2, NULL, '2026-07-24 16:40:00'),
+-- (6, 2, '택시비 더치페이', '택시비 더치페이', 14000, 'COMPLETE', '2026-06-21 00:10:00', 'EQUAL', 6, NULL, '2026-06-21 00:20:00'),
+-- (7, 3, '숙소비 더치페이', '숙소비 더치페이', 60000, 'COMPLETE', '2026-05-29 20:20:00', 'EQUAL', 10, NULL, '2026-05-29 20:30:00'),
+-- (8, 2, '병원비 더치페이', '병원비 더치페이', 35000, 'COMPLETE', '2026-04-15 15:10:00', 'EQUAL', 16, NULL, '2026-04-15 15:20:00');
 
 -- ---------------------------------------------------------------------
 -- 29. settlement_member_tbl (6건)
 -- ---------------------------------------------------------------------
 
-INSERT INTO settlement_member_tbl (settlement_member_id, settlement_id, user_id,
-                                   amount, status, created_at, completed_at)
-VALUES (1, 1, 2, 15000, 'REQUEST', '2026-07-20 19:01:00', NULL),
-       (2, 1, 3, 15000, 'REQUEST', '2026-07-20 19:01:00', NULL),
-       (3, 2, 1, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 17:30:00'),
-       (4, 2, 3, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 18:00:00'),
-       (5, 3, 1, 8000, 'CANCEL', '2026-07-22 23:01:00', NULL),
-       (6, 3, 2, 10000, 'CANCEL', '2026-07-22 23:01:00', NULL);
+-- INSERT INTO settlement_member_tbl (settlement_member_id, settlement_id, user_id,
+--                                    amount, status, created_at, completed_at)
+-- VALUES (1, 1, 2, 15000, 'REQUEST', '2026-07-20 19:01:00', NULL),
+--        (2, 1, 3, 15000, 'REQUEST', '2026-07-20 19:01:00', NULL),
+--        (3, 2, 1, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 17:30:00'),
+--        (4, 2, 3, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 18:00:00'),
+--        (5, 3, 1, 8000, 'CANCEL', '2026-07-22 23:01:00', NULL),
+--        (6, 3, 2, 10000, 'CANCEL', '2026-07-22 23:01:00', NULL);
 
 -- ---------------------------------------------------------------------
 -- 30. notification_tbl (6건)
 -- ---------------------------------------------------------------------
 
-INSERT INTO notification_tbl (notification_id, receiver_id, sender_id,
-                              notification_type, target_id, status, created_at)
-VALUES (1, 2, 1, 'FRIEND_REQUEST', 1, 'READ', '2026-07-10 10:00:00'),
-       (2, 3, 1, 'FRIEND_REQUEST', 2, 'UNREAD', '2026-07-11 10:00:00'),
-       (3, 2, 1, 'SETTLEMENT_REQUEST', 1, 'UNREAD', '2026-07-20 19:01:00'),
-       (4, 3, 2, 'COMMENT', 1, 'READ', '2026-07-21 20:00:00'),
-       (5, 1, 3, 'LIKE', 2, 'UNREAD', '2026-07-22 20:00:00'),
-       (6, 1, 2, 'SETTLEMENT_REQUEST', 2, 'READ', '2026-07-23 20:00:00');
+-- INSERT INTO notification_tbl (notification_id, receiver_id, sender_id,
+--                               notification_type, target_id, status, created_at)
+-- VALUES (1, 2, 1, 'FRIEND_REQUEST', 1, 'READ', '2026-07-10 10:00:00'),
+--        (2, 3, 1, 'FRIEND_REQUEST', 2, 'UNREAD', '2026-07-11 10:00:00'),
+--        (3, 2, 1, 'SETTLEMENT_REQUEST', 1, 'UNREAD', '2026-07-20 19:01:00'),
+--        (4, 3, 2, 'COMMENT', 1, 'READ', '2026-07-21 20:00:00'),
+--        (5, 1, 3, 'LIKE', 2, 'UNREAD', '2026-07-22 20:00:00'),
+--        (6, 1, 2, 'SETTLEMENT_REQUEST', 2, 'READ', '2026-07-23 20:00:00');
 
 -- ---------------------------------------------------------------------
 -- 31. financial_transaction_tbl (6건)
