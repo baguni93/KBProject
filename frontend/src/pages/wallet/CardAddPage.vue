@@ -153,18 +153,6 @@
             </form>
           </section>
         </main>
-
-        <!-- 하단 버튼 -->
-        <div class="bottom-btn-area single">
-          <button
-            class="bottom-btn"
-            :disabled="!isFormValid"
-            type="button"
-            @click="proceedToAgreement"
-          >
-            다음
-          </button>
-        </div>
       </template>
 
       <!-- Step 2: 약관 동의 -->

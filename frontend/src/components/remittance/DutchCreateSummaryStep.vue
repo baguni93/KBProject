@@ -46,44 +46,11 @@
         ></textarea>
       </div>
 
-      <!-- B. 첨부 사진 미리보기 (가로 롤링 갤러리) -->
-      <div v-if="effectivePreviewUrls.length > 0" class="venmo-photo-card">
-        <div class="photo-card-header">
-          <span class="text-13-bold photo-card-title">
-            <i class="fa-solid fa-images" style="color: #ffbc2e;"></i> 첨부 사진 ({{ effectivePreviewUrls.length }}장)
-          </span>
-          <button
-            type="button"
-            class="photo-card-del-btn text-12-bold"
-            @click="$emit('removeFile')"
-          >
-            전체 삭제
-          </button>
-        </div>
-        <div class="venmo-multi-preview-grid">
-          <div
-            v-for="(url, idx) in effectivePreviewUrls"
-            :key="idx"
-            class="venmo-bottom-preview-wrap"
-          >
-            <img :src="url" class="venmo-bottom-preview-img" alt="피드 첨부 이미지" />
-            <button
-              type="button"
-              class="venmo-single-del-btn"
-              @click="$emit('removeFile', idx)"
-              title="이 사진 삭제"
-            >
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- C. 소비 카테고리 퀵 선택 칩 목록 -->
       <div class="venmo-category-section">
         <div class="venmo-category-header">
           <span class="text-13-bold venmo-sec-lbl">
-            <i class="fa-solid fa-tag" style="color: #ffbc2e;"></i> 소비 카테고리
+            소비 카테고리
           </span>
           <button
             type="button"
@@ -121,7 +88,7 @@
 
       <div class="venmo-divider"></div>
 
-      <!-- D. 하단 툴바: 공개 범위 세그먼트 스위치 & 사진 추가 버튼 -->
+      <!-- D. 하단 툴바: 공개 범위 세그먼트 스위치 -->
       <div class="venmo-toolbar">
         <!-- 공개 범위 선택 (Segmented Switch) -->
         <div class="venmo-visibility-bar">
@@ -149,21 +116,6 @@
           >
             <i class="fa-solid fa-lock"></i> 나만
           </button>
-        </div>
-
-        <!-- 사진 첨부 버튼 -->
-        <div class="venmo-photo-attach">
-          <label class="venmo-photo-btn text-13-bold">
-            <i class="fa-solid fa-camera" style="color: #ffbc2e;"></i>
-            <span>사진 추가</span>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              class="hidden-file-input"
-              @change="$emit('fileChange', $event)"
-            />
-          </label>
         </div>
       </div>
     </div>

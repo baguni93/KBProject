@@ -121,7 +121,7 @@
       <div class="venmo-category-section">
         <div class="venmo-category-header">
           <span class="text-13-bold venmo-sec-lbl">
-            <i class="fa-solid fa-tag" style="color: #ffbc2e;"></i> 소비 카테고리
+            소비 카테고리
           </span>
           <button
             type="button"

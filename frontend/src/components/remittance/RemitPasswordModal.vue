@@ -1,144 +1,100 @@
 <template>
   <Teleport to=".app">
-    <transition name="modal-fade-zoom">
+    <Transition name="modal">
       <div
         v-if="show"
-        class="wallet-pin-modal-overlay"
-        @click.self="$emit('close')"
+        class="overlay modal-overlay"
+        @click.self="handleClose"
       >
-        <div class="wallet-pin-modal-card text-center animate-slide-up">
-          <!-- Close Button -->
-          <button type="button" class="pin-close-btn" @click="$emit('close')">
+        <section class="pin-modal">
+          <!-- 닫기 버튼 -->
+          <button type="button" class="pin-modal-close-btn" @click="handleClose">
             <i class="fa-solid fa-xmark"></i>
           </button>
 
-          <!-- 메인 비주얼 -->
-          <div class="login-visual">
-            <div class="visual-glow"></div>
-            <div class="visual-icon">
-              <i class="fa-solid fa-lock"></i>
-            </div>
-            <span class="visual-dot dot-one"></span>
-            <span class="visual-dot dot-two"></span>
-            <span class="visual-dot dot-three"></span>
+          <!-- 상단 잠금 아이콘 (팀원 회원탈퇴 모달과 100% 동일 규격) -->
+          <div class="pin-icon">
+            <i class="fa-solid fa-lock"></i>
           </div>
 
-          <!-- 제목 및 안내 -->
-          <div class="login-header">
-            <h2 class="text-22-bold m-0">간편비밀번호 인증</h2>
-            <p class="text-13 text-sub mt-2 mb-0">
-              안전한 결제 승인을 위해 PIN 6자리를 입력하세요.
-            </p>
-          </div>
+          <h3 class="text-20-bold">{{ title }}</h3>
 
-          <!-- 6자리 PIN Box 디스플레이 (PinLoginPage 디자인과 100% 동일) -->
-          <div class="pin-boxes mt-4" :class="{ error: !!errorMessage }">
+          <p class="pin-description text-13" v-html="description"></p>
+
+          <!-- 6자리 PIN Box 디스플레이 (클릭 시 키보드 포커스) -->
+          <div
+            class="pin-boxes"
+            :class="{ error: !!errorMessage }"
+            role="button"
+            tabindex="0"
+            @click="focusPinInput"
+            @keydown.enter="focusPinInput"
+          >
             <div
               v-for="index in 6"
               :key="index"
               class="pin-box"
               :class="{
-                filled: inputPin.length >= index,
-                active: inputPin.length === index - 1 && !errorMessage,
+                filled: effectivePin.length >= index,
+                active: effectivePin.length === index - 1 && !errorMessage,
               }"
             >
-              <span v-if="inputPin.length >= index" class="pin-dot"></span>
+              <span v-if="effectivePin.length >= index" class="pin-dot"></span>
             </div>
+
+            <!-- 숨겨진 숫자 입력 인풋 (모바일/PC 키보드 연동) -->
+            <input
+              ref="pinInputRef"
+              :value="effectivePin"
+              class="hidden-pin-input"
+              inputmode="numeric"
+              maxlength="6"
+              pattern="[0-9]*"
+              type="password"
+              autocomplete="current-password"
+              @input="onInputChange"
+            />
           </div>
 
-          <!-- 인라인 에러 메시지 (알림창 X) -->
-          <p v-if="errorMessage" class="error-message text-13">
-            {{ errorMessage }}
-          </p>
+          <!-- 안내 및 에러 메시지 영역 -->
+          <div class="pin-message-area">
+            <p v-if="errorMessage" class="pin-error-message text-13">
+              {{ errorMessage }}
+            </p>
+            <p v-else class="pin-helper-message">
+              입력한 비밀번호는 본인 확인에만 사용돼요.
+            </p>
+          </div>
 
-          <!-- 간편비밀번호를 잊으셨나요? 링크 -->
+          <!-- 확인 버튼 (6자리 입력 시 노란색 활성화) -->
+          <button
+            class="pin-confirm-button"
+            :disabled="effectivePin.length !== 6"
+            type="button"
+            @click="handleConfirm"
+          >
+            확인
+          </button>
+
+          <!-- 간편비밀번호 재설정 링크 -->
           <button
             v-if="!pinLocked"
-            class="forgot-button text-13"
+            class="pin-forgot-link text-13"
             type="button"
             @click="$emit('forgotPin')"
           >
             간편비밀번호를 잊으셨나요?
           </button>
-
-          <!-- 잠김 시 재설정 안내 버튼 -->
-          <div v-if="pinLocked" class="locked-btn-area mt-3">
-            <button
-              class="bottom-btn primary-button text-14-bold"
-              type="button"
-              @click="$emit('forgotPin')"
-            >
-              본인인증 후 재설정
-            </button>
-          </div>
-
-          <!-- 하단 키패드 -->
-          <div v-if="!pinLocked" class="pin-keypad mt-4">
-            <div class="keypad-row">
-              <button
-                v-for="n in [1, 2, 3]"
-                :key="n"
-                type="button"
-                class="pin-num-btn text-18-bold"
-                @click="$emit('enterPin', n)"
-              >
-                {{ n }}
-              </button>
-            </div>
-            <div class="keypad-row">
-              <button
-                v-for="n in [4, 5, 6]"
-                :key="n"
-                type="button"
-                class="pin-num-btn text-18-bold"
-                @click="$emit('enterPin', n)"
-              >
-                {{ n }}
-              </button>
-            </div>
-            <div class="keypad-row">
-              <button
-                v-for="n in [7, 8, 9]"
-                :key="n"
-                type="button"
-                class="pin-num-btn text-18-bold"
-                @click="$emit('enterPin', n)"
-              >
-                {{ n }}
-              </button>
-            </div>
-            <div class="keypad-row">
-              <button
-                type="button"
-                class="pin-num-btn action-text-btn text-13-bold"
-                @click="$emit('clearPin')"
-              >
-                C
-              </button>
-              <button
-                type="button"
-                class="pin-num-btn text-18-bold"
-                @click="$emit('enterPin', 0)"
-              >
-                0
-              </button>
-              <button
-                type="button"
-                class="pin-num-btn del-icon-btn text-15"
-                @click="$emit('deletePin')"
-              >
-                <i class="fa-solid fa-delete-left"></i>
-              </button>
-            </div>
-          </div>
-        </div>
+        </section>
       </div>
-    </transition>
+    </Transition>
   </Teleport>
 </template>
 
 <script setup>
-defineProps({
+import { ref, computed, watch, nextTick } from "vue";
+
+const props = defineProps({
   show: {
     type: Boolean,
     default: false,
@@ -155,27 +111,87 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  title: {
+    type: String,
+    default: "간편비밀번호 확인",
+  },
+  description: {
+    type: String,
+    default: "본인 확인을 위해 현재 간편비밀번호<br />6자리를 입력해 주세요.",
+  },
 });
 
-defineEmits(["close", "enterPin", "clearPin", "deletePin", "forgotPin"]);
+const emit = defineEmits([
+  "close",
+  "enterPin",
+  "clearPin",
+  "deletePin",
+  "forgotPin",
+  "confirm",
+  "update:inputPin",
+]);
+
+const pinInputRef = ref(null);
+const internalPin = ref("");
+
+const effectivePin = computed(() => {
+  return props.inputPin !== undefined && props.inputPin !== ""
+    ? props.inputPin
+    : internalPin.value;
+});
+
+const focusPinInput = async () => {
+  await nextTick();
+  pinInputRef.value?.focus();
+};
+
+const onInputChange = (event) => {
+  const cleanVal = event.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+  internalPin.value = cleanVal;
+  emit("update:inputPin", cleanVal);
+
+  if (cleanVal.length > (props.inputPin || "").length) {
+    const lastChar = cleanVal.slice(-1);
+    emit("enterPin", Number(lastChar));
+  } else if (cleanVal.length < (props.inputPin || "").length) {
+    emit("deletePin");
+  }
+
+  if (event.target.value !== cleanVal) {
+    event.target.value = cleanVal;
+  }
+};
+
+const handleClose = () => {
+  internalPin.value = "";
+  emit("clearPin");
+  emit("close");
+};
+
+const handleConfirm = () => {
+  if (effectivePin.value.length === 6) {
+    emit("confirm", effectivePin.value);
+  }
+};
+
+watch(
+  () => props.show,
+  (newVal) => {
+    if (newVal) {
+      internalPin.value = props.inputPin || "";
+      focusPinInput();
+    } else {
+      internalPin.value = "";
+    }
+  }
+);
 </script>
 
 <style scoped>
 @import "@/components/common/common/common.css";
 
-.modal-fade-zoom-enter-active,
-.modal-fade-zoom-leave-active {
-  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.modal-fade-zoom-enter-from,
-.modal-fade-zoom-leave-to {
-  opacity: 0;
-  transform: scale(0.92);
-}
-
-.wallet-pin-modal-overlay {
+/* 중앙 Modal Overlay */
+.modal-overlay {
   position: absolute;
   top: 0;
   left: 0;
@@ -187,135 +203,71 @@ defineEmits(["close", "enterPin", "clearPin", "deletePin", "forgotPin"]);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 24px;
   box-sizing: border-box;
-  border-radius: 24px;
 }
 
-@media (max-width: 430px) {
-  .wallet-pin-modal-overlay {
-    border-radius: 0;
-  }
-}
-
-.wallet-pin-modal-card {
-  width: 100%;
-  max-width: 330px;
-  background-color: #ffffff;
-  border-radius: 24px;
-  padding: 24px 20px 20px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* PIN Modal Card (WithdrawPage.vue와 100% 동일 규격) */
+.pin-modal {
   position: relative;
+  width: 100%;
+  max-width: 360px;
+  padding: 26px 22px 22px;
+  border-radius: 22px;
+  background: var(--color-bg-page, #ffffff);
   box-sizing: border-box;
+  text-align: center;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.2);
 }
 
-.pin-close-btn {
+.pin-modal-close-btn {
   position: absolute;
   top: 16px;
   right: 16px;
-  border: none;
+  border: 0;
   background: transparent;
-  color: #999999;
-  font-size: 18px;
+  color: var(--color-text-muted, #888888);
+  font-size: 16px;
   cursor: pointer;
   padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s ease;
 }
 
-.pin-close-btn:hover {
-  color: #333333;
-}
-
-/* 비주얼 애니메이션 (PinLoginPage와 동일) */
-.login-visual {
-  position: relative;
-  width: 76px;
-  height: 76px;
-  margin: 4px auto 14px;
+.pin-icon {
   display: flex;
+  width: 52px;
+  height: 52px;
   align-items: center;
   justify-content: center;
+  margin: 0 auto 17px;
+  border-radius: 17px;
+  background: #fff4d7;
+  color: var(--color-primary-active, #d49500);
+  font-size: 20px;
 }
 
-.visual-glow {
-  position: absolute;
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 188, 46, 0.45) 0%,
-    rgba(255, 188, 46, 0.12) 65%,
-    rgba(255, 188, 46, 0) 100%
-  );
-  animation: glow-breathe 2.4s ease-in-out infinite;
-}
-
-.visual-icon {
-  position: relative;
-  z-index: 1;
-  width: 58px;
-  height: 58px;
-  border-radius: 22px;
-  background: linear-gradient(135deg, #ffc43a 0%, #f59e0b 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-size: 22px;
-  box-shadow: 0 8px 18px rgba(245, 158, 11, 0.35);
-}
-
-.visual-dot {
-  position: absolute;
-  border-radius: 50%;
-}
-
-.dot-one {
-  width: 6px;
-  height: 6px;
-  top: 10px;
-  right: 6px;
-  background: #8b5cf6;
-}
-
-.dot-two {
-  width: 7px;
-  height: 7px;
-  bottom: 8px;
-  left: 6px;
-  background: #10b981;
-}
-
-.dot-three {
-  width: 5px;
-  height: 5px;
-  top: 24px;
-  right: -2px;
-  background: #f43f5e;
-}
-
-.login-header h2 {
+.pin-modal h3 {
+  margin: 0;
   color: var(--color-text-main, #111111);
 }
 
-.login-header p {
-  color: var(--color-text-sub, #777777);
+.pin-description {
+  margin: 9px 0 0;
+  color: var(--color-text-muted, #777777);
+  font-weight: 400;
+  line-height: 1.55;
 }
 
-/* 6자리 PIN Box 디스플레이 (PinLoginPage 규격 100% 일치) */
 .pin-boxes {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
   width: 100%;
-  box-sizing: border-box;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 25px;
+  cursor: text;
 }
 
 .pin-box {
@@ -323,17 +275,17 @@ defineEmits(["close", "enterPin", "clearPin", "deletePin", "forgotPin"]);
   height: 48px;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--color-border-main, #e5e7eb);
-  border-radius: 10px;
-  background: #fafafa;
+  border: 1px solid var(--color-border-main, #e0e0e0);
+  border-radius: 11px;
+  background: var(--color-bg-screen, #f8f9fa);
   box-sizing: border-box;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  transition: all 0.2s ease;
 }
 
 .pin-box.active {
   border-color: var(--color-primary, #ffbc2e);
   background: #fffaf0;
-  box-shadow: 0 0 0 2px rgba(255, 188, 46, 0.15);
+  box-shadow: 0 0 0 3px rgba(255, 188, 46, 0.1);
 }
 
 .pin-box.filled {
@@ -342,9 +294,9 @@ defineEmits(["close", "enterPin", "clearPin", "deletePin", "forgotPin"]);
 }
 
 .pin-boxes.error .pin-box {
-  border-color: var(--color-error, #f04438);
-  background: #fff7f7;
-  box-shadow: none;
+  border-color: var(--color-error, #e53935);
+  background: var(--color-bg-page, #ffffff);
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.07);
 }
 
 .pin-dot {
@@ -354,104 +306,68 @@ defineEmits(["close", "enterPin", "clearPin", "deletePin", "forgotPin"]);
   background: var(--color-text-main, #111111);
 }
 
-/* 오류 텍스트 */
-.error-message {
-  min-height: 18px;
-  margin: 12px 0 0;
-  color: var(--color-error, #f04438);
-  line-height: 1.4;
-  font-size: 13px;
-  font-weight: 500;
-  text-align: center;
-}
-
-/* 간편비밀번호를 잊으셨나요? */
-.forgot-button {
-  margin-top: 12px;
-  padding: 0;
+.hidden-pin-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
   border: 0;
-  background: transparent;
-  color: var(--color-text-sub, #6b7280);
-  cursor: pointer;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
+  opacity: 0;
+  pointer-events: none;
 }
 
-.forgot-button:active {
-  color: var(--color-text-main, #111111);
-}
-
-.locked-btn-area {
-  width: 100%;
-}
-
-.locked-btn-area .bottom-btn {
-  width: 100%;
-  height: 44px;
-  border-radius: 12px;
-}
-
-/* 키패드 */
-.pin-keypad {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.keypad-row {
-  display: flex;
-  gap: 8px;
-  width: 100%;
-}
-
-.pin-num-btn {
-  flex: 1;
-  height: 46px;
-  border: none;
-  background-color: #f8f9fa;
-  border-radius: 10px;
-  color: var(--color-text-main, #111111);
-  font-weight: 700;
-  cursor: pointer;
+.pin-message-area {
+  min-height: 36px;
+  margin-top: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
-.pin-num-btn:active {
-  background-color: #e9ecef;
-  transform: scale(0.96);
+.pin-error-message,
+.pin-helper-message {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
 }
 
-.action-text-btn {
-  color: #ff9800;
-  background-color: #fff9ed;
+.pin-error-message {
+  color: var(--color-error, #e53935);
 }
 
-.action-text-btn:active {
-  background-color: #ffecb3;
+.pin-helper-message {
+  color: var(--color-text-muted, #777777);
 }
 
-.del-icon-btn {
-  color: #495057;
-  background-color: #f1f3f5;
+.pin-confirm-button {
+  width: 100%;
+  height: 48px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-primary, #ffbc2e);
+  color: var(--color-text-main, #111111);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.del-icon-btn:active {
-  background-color: #dee2e6;
+.pin-confirm-button:disabled {
+  background: var(--color-bg-disabled, #e0e0e0);
+  color: var(--color-text-disabled, #999999);
+  cursor: not-allowed;
 }
 
-@keyframes glow-breathe {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.72;
-    transform: scale(1.06);
-  }
+.pin-forgot-link {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted, #888888);
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
 }
 </style>
