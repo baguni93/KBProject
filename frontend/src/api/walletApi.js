@@ -45,6 +45,18 @@ export default {
     return data;
   },
 
+  // 박준우: QR 전자지갑 결제 승인 (wallet_tbl 잔액 차감)
+  async approveQrPayment(paymentData) {
+    const { data } = await api.post(`${BASE_URL}/payments/qr/approve`, paymentData);
+    return data;
+  },
+
+  // 박준우: 바코드 전자지갑 결제 승인 (wallet_tbl 잔액 차감)
+  async approveBarcodePayment(paymentData) {
+    const { data } = await api.post(`${BASE_URL}/payments/barcode/approve`, paymentData);
+    return data;
+  },
+
   // POS / 가맹점 결제 승인 요청 (토큰 소멸 & 잔액 차감)
   async confirmPayment(paymentData) {
     const { data } = await api.post('/api/payments/confirm', paymentData);
