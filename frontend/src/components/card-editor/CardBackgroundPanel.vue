@@ -143,7 +143,7 @@ const fileInput = ref(null);
 
 // 토글 기능을 위한 전 이미지
 const previewImage = ref('');
-
+const previousBackground = ref(null);
 // 이미지 적용 여부
 const applyImage = ref(false);
 
@@ -201,15 +201,10 @@ const openFile = () => {
 const selectPhoto = (event) => {
   const file = event.target.files[0];
 
-  if (!file) {
-    console.log('[selectPhoto] 파일 없음');
-    return;
-  }
+  if (!file) return;
 
-  // 허용 확장자
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
 
-  // 이미지 형식 체크
   if (!allowedTypes.includes(file.type)) {
     modalStroe.showAlert(
       'JPG, PNG, WEBP 형식의 이미지만 업로드할 수 있습니다.',
@@ -219,7 +214,6 @@ const selectPhoto = (event) => {
     return;
   }
 
-  // 최대 용량 5MB
   const maxSize = 5 * 1024 * 1024;
 
   if (file.size > maxSize) {
@@ -229,17 +223,18 @@ const selectPhoto = (event) => {
     return;
   }
 
-  // 미리보기 생성
+  // ⭐ 사진 적용 전 기존 배경 저장
+  previousBackground.value = {
+    color: cardStore.color,
+    gradient: cardStore.gradient,
+    image: cardStore.image,
+  };
+
   const imageUrl = URL.createObjectURL(file);
 
   previewImage.value = imageUrl;
   applyImage.value = true;
 
-  console.log('[selectPhoto] 파일명:', file.name);
-  console.log('[selectPhoto] 파일 크기:', file.size);
-  console.log('[selectPhoto] imageUrl:', imageUrl);
-
-  // 카드 배경 적용
   cardStore.setImage(imageUrl);
 };
 
@@ -249,17 +244,19 @@ const toggleApply = () => {
 
   if (applyImage.value) {
     cardStore.setImage(previewImage.value);
-  } else {
-    cardStore.setImage('');
+    return;
   }
-};
 
+  // 사진 적용 전 배경 복원
+  cardStore.restoreBackground(previousBackground.value);
+};
 // 이미지 제거
 const removeImage = () => {
-  cardStore.setImage('');
+  cardStore.restoreBackground(previousBackground.value);
+
   previewImage.value = '';
   applyImage.value = false;
-  cardStore.restoreSnapshot();
+  previousBackground.value = null;
 };
 </script>
 

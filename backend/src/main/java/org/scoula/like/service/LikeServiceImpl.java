@@ -165,6 +165,14 @@ public class LikeServiceImpl implements LikeService {
             return;
         }
 
+        int currentCount = Integer.parseInt(count);
+
+        // 0 이하라면 더 이상 감소시키지 않음
+        if (currentCount <= 0) {
+            redisConnection.sync().set(key, "0");
+            return;
+        }
+
         redisConnection.sync()
                 .decr(key);
     }
