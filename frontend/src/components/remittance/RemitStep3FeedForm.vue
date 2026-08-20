@@ -33,7 +33,7 @@
           :value="remitMemo"
           @input="$emit('update:remitMemo', $event.target.value)"
           class="venmo-note-textarea text-15"
-          placeholder="피드에 어떤 추억을 남길까요? 🍕"
+          placeholder="피드에 어떤 추억을 남길까요?"
           rows="3"
         ></textarea>
       </div>
@@ -307,6 +307,8 @@ const effectivePreviewUrls = computed(() => {
   gap: 14px;
   width: 100%;
   position: relative;
+  min-height: 100%;
+  padding-bottom: 90px;
   box-sizing: border-box;
 }
 
@@ -623,5 +625,39 @@ const effectivePreviewUrls = computed(() => {
 .dutch-cat-chip.active .cat-name {
   color: #0f172a;
   font-weight: 700;
+}
+
+/* =========================================
+   하단 고정 버튼 영역 (팀 공통 규격 100% 일치)
+========================================= */
+.bottom-btn-area.single {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 0 24px;
+  background: #ffffff;
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+.bottom-btn-area.single .bottom-btn {
+  width: 100%;
+  height: 52px;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  border: none;
+  background-color: #ffbc2e;
+  color: #111111;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.bottom-btn-area.single .bottom-btn:active {
+  background-color: #f3a711;
 }
 </style>

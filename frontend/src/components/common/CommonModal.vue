@@ -203,6 +203,7 @@ const modalStore = useModalStore();
   font-weight: 700;
 
   line-height: 1.4;
+  word-break: keep-all;
 }
 
 .modal-desc {
@@ -216,6 +217,7 @@ const modalStore = useModalStore();
   line-height: 1.5;
 
   white-space: pre-line;
+  word-break: keep-all;
 }
 
 /* ========================================

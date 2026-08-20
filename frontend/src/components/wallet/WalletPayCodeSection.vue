@@ -4,7 +4,7 @@
     <div class="active-barcode-qr-card kakaopay-style-card">
       <!-- 1. 바코드 & QR 코드 영역 (전폭 카드 규격에 맞춰 큼직하게) -->
       <div class="barcode-qr-dual-row">
-        <div class="barcode-display-section" @click="$emit('openBarcode')">
+        <div class="barcode-display-section">
           <div class="svg-barcode-box">
             <svg class="real-barcode-svg" viewBox="0 0 200 60" width="100%" height="72">
               <rect v-for="(b, idx) in barcodeLines" :key="idx" :x="b.x" y="0" :width="b.w" height="60" fill="#111" />
@@ -15,7 +15,7 @@
 
         <div class="vertical-divider"></div>
 
-        <div class="qr-display-section" @click="$emit('openQr')">
+        <div class="qr-display-section">
           <svg class="real-qr-svg" viewBox="0 0 108 108" width="96" height="96">
             <rect v-for="(m, idx) in qrModules" :key="idx" :x="m.x" :y="m.y" :width="m.w" :height="m.h" fill="#111" />
           </svg>
@@ -53,50 +53,6 @@
         </div>
       </div>
     </div>
-
-
-
-    <!-- 4. 전면 세로형 바코드 확대 뷰 (Teleport to .app) -->
-    <Teleport to=".app">
-      <div v-if="fullScreenMode === 'BARCODE'" class="kakaopay-fullscreen-overlay" @click="$emit('closeFullScreen')">
-        <button class="kakaopay-close-btn" @click.stop="$emit('closeFullScreen')">
-          <i class="fa-solid fa-xmark text-24 text-white"></i>
-        </button>
-
-        <div class="kakaopay-barcode-layout" @click.stop="$emit('approveBarcode')">
-          <div class="vertical-number-column text-18-bold text-white">
-            {{ dynamicBarcodeToken }}
-          </div>
-
-          <div class="white-vertical-barcode-card">
-            <svg class="kakaopay-real-barcode-svg" viewBox="0 0 200 120" preserveAspectRatio="none" width="100%" height="100%">
-              <rect v-for="(b, idx) in barcodeLines" :key="idx" x="0" :y="b.x * 0.6" width="200" :height="b.w * 0.8" fill="#111" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- 5. 전면 큼직한 QR 확대 뷰 (Teleport to .app) -->
-    <Teleport to=".app">
-      <div v-if="fullScreenMode === 'QR'" class="kakaopay-fullscreen-overlay" @click="$emit('closeFullScreen')">
-        <button class="kakaopay-close-btn" @click.stop="$emit('closeFullScreen')">
-          <i class="fa-solid fa-xmark text-24 text-white"></i>
-        </button>
-
-        <div class="kakaopay-qr-layout-vertical" @click.stop="$emit('approveQr')">
-          <div class="yellow-border-qr-card">
-            <svg class="giant-qr-svg" viewBox="0 0 108 108" width="220" height="220">
-              <rect v-for="(m, idx) in qrModules" :key="idx" :x="m.x" :y="m.y" :width="m.w" :height="m.h" fill="#111" />
-            </svg>
-          </div>
-
-          <div class="qr-horizontal-number text-18-bold text-white">
-            {{ dynamicBarcodeToken }}
-          </div>
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>
 

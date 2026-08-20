@@ -57,7 +57,7 @@ const router = createRouter({
       path: '/transactions',
       name: 'transaction-list',
       component: TransactionListPage,
-      meta: { requiresAuth: true, showBottomNav: true },
+      meta: { requiresAuth: true, showBottomNav: false },
     },
     {
       path: '/transactions/receipt/:transactionId',
