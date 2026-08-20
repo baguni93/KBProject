@@ -9,7 +9,7 @@
 
     <div class="recommendation-content-start">
 
-      <section class="recommendation-intro kb-card">
+      <section v-if="!loading" class="recommendation-intro kb-card">
         <div class="intro-topline">
           <span class="intro-icon" aria-hidden="true">
             <i class="fa-solid fa-wand-magic-sparkles"></i>

@@ -2,6 +2,7 @@ import { Client } from '@stomp/stompjs';
 import { useNotificationStore } from '@/stores/notification';
 import { useSettlementStore } from '@/stores/settlement';
 import { useFriendStore } from '@/stores/friend';
+import { useTaskStore } from '@/stores/task';
 
 let client = null;
 
@@ -11,6 +12,7 @@ export const connectStomp = (token) => {
   const notificationStore = useNotificationStore();
   const settlementStore = useSettlementStore();
   const friendStore = useFriendStore();
+  const taskStore = useTaskStore();
 
   client = new Client({
     brokerURL: 'ws://localhost:8080/ws',
@@ -43,6 +45,14 @@ export const connectStomp = (token) => {
           detail: notification,
         }),
       );
+    });
+
+    client.subscribe('/user/queue/tasks', (message) => {
+      const taskEvent = JSON.parse(message.body);
+
+      console.log('작업 완료 웹소켓:', taskEvent);
+
+      taskStore.addTaskEvent(taskEvent);
     });
 
     // 정산

@@ -71,7 +71,9 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import EventItem from '@/components/event/EventItem.vue';
 import EventHistoryItem from '@/components/event/EventHistoryItem.vue';
 import { useFeedStore } from '@/stores/feed';
+import { useModalStore } from '@/stores/userModalStore';
 const feedStore = useFeedStore();
+const modalStore = useModalStore();
 // 유저 아이디
 import { useAuthStore } from '@/stores/auth';
 const authStore = useAuthStore();
@@ -199,7 +201,7 @@ const onEventAction = async ({
   if (!eventId) return;
 
   if (!userId.value) {
-    alert('올바른 사용자 정보가 아닙니다.');
+    modalStore.showAlert('올바른 사용자 정보가 아닙니다.');
     return;
   }
 
@@ -249,7 +251,7 @@ const onEventAction = async ({
     // 4. 오늘자 참여 완료
     DAILY_LIMIT: {
       action: async () => {
-        alert('이미 참여한 이벤트입니다.');
+        modalStore.showAlert('이미 참여한 이벤트입니다.');
       },
       msg: null,
     },
@@ -278,7 +280,7 @@ const onEventAction = async ({
         await feedStore.createFeed(fromData);
       },
 
-      msg: `[${eventName}] 보상 수령이 완료되었습니다!`,
+      msg: `[${eventName}]\n보상 수령이 완료되었습니다!`,
     },
   };
 
@@ -294,7 +296,7 @@ const onEventAction = async ({
 
     const successMsg =
       targetAction.msg || `[${eventName}] 참여 처리가 완료되었습니다.`;
-    if (targetAction.msg) alert(successMsg);
+    if (targetAction.msg) modalStore.showSuccess(successMsg);
 
     if (
       currentTab?.value === 'joined' &&
@@ -308,7 +310,7 @@ const onEventAction = async ({
     console.error('이벤트 처리 실패:', error);
     const errorMsg =
       error.response?.data?.message || '요청 처리 중 오류가 발생했습니다.';
-    alert(errorMsg);
+    modalStore.showAlert(errorMsg);
   }
 };
 </script>
@@ -481,6 +483,11 @@ const onEventAction = async ({
   border-radius: 20px;
   font-size: 13px;
   font-weight: 700;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .event-list-page :deep(.action-btn.bg-yellow) {

@@ -75,4 +75,13 @@ public class Enum {
         KB_AVAILABLE_FOR_CUSTOM,
         NOT_KB_BANK
     }
+
+    public enum TaskType{
+        ANALYSIS_COMPLETE,
+        CARD_RECOMMEND,
+        INSURANCE_RECOMMEND,
+        EVENT_COMPLETE,
+        PAYMENT_COMPLETE,
+        PHONE_AUTH_SEND,
+    }
 }

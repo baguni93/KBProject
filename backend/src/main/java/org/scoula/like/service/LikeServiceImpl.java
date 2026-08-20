@@ -7,6 +7,7 @@ import org.scoula.common.util.Enum;
 import org.scoula.like.mapper.LikeMapper;
 import org.scoula.notification.service.NotificationGroupService;
 import org.scoula.redis.RedisKey;
+import org.scoula.task.service.TaskEventService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,8 @@ public class LikeServiceImpl implements LikeService {
     private final LikeMapper likeMapper;
     private final NotificationGroupService notificationGroupService;
     private final StatefulRedisConnection<String, String> redisConnection;
+    private final TaskEventService taskEventService;
+
 
     @Transactional
     @Override

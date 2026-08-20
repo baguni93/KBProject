@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.scoula.exception.CustomException;
 import org.scoula.insurancerecommendation.dto.InsuranceRecommendationCreateResponseDTO;
+import org.scoula.task.service.TaskEventService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 

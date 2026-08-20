@@ -2,6 +2,7 @@ package org.scoula.event.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.scoula.common.util.Enum;
 import org.scoula.event.domain.EventChallengeUserVO;
 import org.scoula.event.domain.EventRewardVO;
 import org.scoula.event.dto.*;
@@ -11,6 +12,7 @@ import org.scoula.exception.ErrorCode;
 import org.scoula.pointwallet.common.PointReasonType;
 import org.scoula.pointwallet.dto.PointWalletDTO;
 import org.scoula.pointwallet.service.PointWalletService;
+import org.scoula.task.service.TaskEventService;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,7 @@ public class EventServiceImpl implements EventService {
 
     private final EventMapper eventMapper;
     private final PointWalletService pointWalletService;
+    private final TaskEventService taskEventService;
 
     // 1. 이벤트 메인 페이지 불러오기
     @Override
@@ -172,6 +175,24 @@ public class EventServiceImpl implements EventService {
                     eventCategory,
                     insertedCount
             );
+
+            EventCompletionDTO completion =
+                    eventMapper.getEventCompletion(
+                            userId,
+                            eventCategory
+                    );
+
+            if (completion != null && completion.getCompleted()) {
+
+                log.info(
+                        "이벤트 완료 userId={}, eventId={}, eventName={}",
+                        userId,
+                        completion.getEventId(),
+                        completion.getEventName()
+                );
+
+                taskEventService.sendTaskEvent(userId , Enum.TaskType.EVENT_COMPLETE , completion.getEventName() + " 완료 \n 기다리던 보상을 확인해보세요!", null);
+            }
         }
 
         return insertedCount;
