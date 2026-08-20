@@ -13,6 +13,7 @@ import org.scoula.cardpayment.dto.PrimaryCardResponseDTO;
 import org.scoula.cardpayment.mapper.CardPaymentMapper;
 import org.scoula.cardpayment.util.KbCardCatalogRepository;
 import org.scoula.common.util.Enum;
+import org.scoula.event.service.EventService;
 import org.scoula.task.service.TaskEventService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ public class CardPaymentServiceImpl implements CardPaymentService {
     private final org.scoula.card.mapper.CardMapper cardMapper;
     private final KbCardCatalogRepository catalogRepository;
     private final TaskEventService taskEventService;
+    private final EventService eventService;
     private final org.scoula.notification.service.NotificationService notificationService;
     private final org.scoula.pointwallet.service.RandomBoxService randomBoxService;
     // 자동 AI 카테고리 분류 서비스 연결완료
@@ -248,12 +250,12 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         String cleanBin = binNumber.replaceAll("\\D", "");
 
         // 1. catalogRepository 및 BIN_MAPPING_MAP 조회
-        org.scoula.card.controller.CardController.CardInfo info = null;
+        CardController.CardInfo info = null;
         if (cleanBin.length() >= 8) {
-            info = org.scoula.card.controller.CardController.BIN_MAPPING_MAP.get(cleanBin.substring(0, 8));
+            info = CardController.BIN_MAPPING_MAP.get(cleanBin.substring(0, 8));
         }
         if (info == null && cleanBin.length() >= 6) {
-            info = org.scoula.card.controller.CardController.BIN_MAPPING_MAP.get(cleanBin.substring(0, 6));
+            info = CardController.BIN_MAPPING_MAP.get(cleanBin.substring(0, 6));
         }
 
         String cardName = (info != null) ? info.getCardName() : "KB국민 신용/체크카드";
@@ -470,6 +472,10 @@ public class CardPaymentServiceImpl implements CardPaymentService {
 
         cardPaymentMapper.updateCardTransactionStatus(cardTxId, "SUCCESS", createdTxId);
 
+        // 박준우: 실제 전자지갑/QR/바코드 결제 성공 시에만 WALLET 이벤트 진행도를 반영한다.
+        // 일반 카드 결제(approveTransaction)는 이 호출을 하지 않으므로 지갑 결제 이벤트에 포함되지 않는다.
+        eventService.recordMissionProgress(targetUserId, "WALLET");
+
         // 지갑/QR/바코드 결제 승인 알림 발송 (NotificationRequestDTO 규격 연동)
         try {
             Integer safeTxId = (createdTxId != null && createdTxId > 0) ? createdTxId : 1;
@@ -477,7 +483,7 @@ public class CardPaymentServiceImpl implements CardPaymentService {
                     org.scoula.notification.dto.NotificationRequestDTO.builder()
                             .receiverId(targetUserId)
                             .senderId(targetUserId)
-                            .notificationType(org.scoula.common.util.Enum.NotificationType.SETTLEMENT_PAYMENT)
+                            .notificationType(Enum.NotificationType.SETTLEMENT_PAYMENT)
                             .targetId(safeTxId)
                             .build()
             );

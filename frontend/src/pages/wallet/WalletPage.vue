@@ -189,7 +189,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import api from "@/api";
-import { getCards, requestCardPayment, cancelCardPayment, getCardTransactionStatus, approveCardPayment } from "@/api/cardApi";
+import { getCards, requestCardPayment, cancelCardPayment, getCardTransactionStatus } from "@/api/cardApi";
 import walletApi from "@/api/walletApi";
 import { useAuthStore } from "@/stores/auth";
 import { useSignupStore } from "@/stores/signup";
@@ -256,8 +256,6 @@ const openBarcodeFullScreen = () => { fullScreenMode.value = "BARCODE"; };
 const openQrFullScreen = () => { fullScreenMode.value = "QR"; };
 const closeFullScreen = () => { fullScreenMode.value = null; };
 
-const cardPaymentApi = { approveWalletTransaction: approveCardPayment };
-
 // 1. 바코드 결제 승인
 const approveBarcodePayment = async () => {
   try {
@@ -267,7 +265,7 @@ const approveBarcodePayment = async () => {
       return;
     }
     const payAmount = 15000;
-    const res = await cardPaymentApi.approveWalletTransaction({
+    const res = await walletApi.approveBarcodePayment({
       userId: uId,
       amount: payAmount,
       merchantName: "CU 편의점 (바코드 결제)",
@@ -315,7 +313,7 @@ const approveQrPayment = async () => {
       return;
     }
     const payAmount = 25000;
-    const res = await cardPaymentApi.approveWalletTransaction({
+    const res = await walletApi.approveQrPayment({
       userId: uId,
       amount: payAmount,
       merchantName: "스타벅스 (QR 결제)",
