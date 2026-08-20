@@ -44,7 +44,7 @@
           <div class="complete-message">
             <h1 class="text-30-bold">충전이 완료되었어요!</h1>
             <p class="complete-description text-20-bold" style="margin-top: 8px; color: #111111;">
-              +{{ formatCurrency(lastChargedAmount) }} 원
+              +{{ formatCurrency(lastChargedAmount) }}원
             </p>
           </div>
 
@@ -55,10 +55,6 @@
               <span class="val text-15-bold">
                 {{ primaryAccount?.bankName || "KB국민" }} {{ primaryAccount?.accountNumber || "110-111-111111" }}
               </span>
-            </div>
-            <div class="detail-row text-14">
-              <span class="lbl text-14">충전 수단</span>
-              <span class="val text-15-bold">전자지갑 즉시 충전</span>
             </div>
           </div>
         </section>
@@ -245,12 +241,7 @@ defineEmits([
   width: 100%;
   height: 100%;
   background-color: #ffffff;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 50;
+  position: relative;
   box-sizing: border-box;
 }
 
@@ -677,19 +668,30 @@ defineEmits([
   border-bottom: 2px solid #ffbc2e;
   padding-bottom: 8px;
   margin-bottom: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .amount-direct-input {
   flex: 1;
+  min-width: 0;
+  width: 0;
   border: none;
   outline: none;
   background: transparent;
   color: #111111;
+  font-size: 26px;
+  font-weight: 800;
+  padding: 0;
+  margin: 0;
 }
 
 .krw-unit {
+  flex-shrink: 0;
   color: #111111;
-  margin-left: 8px;
+  font-size: 22px;
+  font-weight: 800;
+  margin-left: 6px;
 }
 
 .quick-amount-row {

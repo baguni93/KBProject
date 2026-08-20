@@ -61,9 +61,9 @@
     <select id="validateCard" parameterType="org.scoula.cardpayment.dto.CardRegisterDTO" resultType="java.lang.Integer">
         SELECT card_code
         FROM card_tbl
-        WHERE card_num = #{cardNum}
-          AND expiry_date = #{expiryDate}
-          AND cvv = #{cvv}
+        WHERE (REPLACE(card_num, '-', '') = REPLACE(#{cardNum}, '-', '') OR card_num = #{cardNum})
+          AND (expiry_date = #{expiryDate} OR REPLACE(expiry_date, '/', '') = REPLACE(#{expiryDate}, '/', ''))
+          AND (cvv = #{cvv} OR REPLACE(cvv, '-', '') = REPLACE(#{cvv}, '-', ''))
         LIMIT 1
     </select>
 

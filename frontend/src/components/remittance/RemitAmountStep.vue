@@ -93,8 +93,7 @@
 
         <!-- 자동 충전 안내 메시지 -->
         <div v-else-if="isAutoChargeNeeded && autoChargeAmount > 0" class="auto-charge-info-msg text-13">
-          <i class="fa-solid fa-bolt" style="color: #ff9f00;"></i>
-          지갑 잔액 부족으로 대표계좌에서 <strong class="text-13-bold">{{ formatCurrency(autoChargeAmount) }}원</strong>이 자동 충전됩니다.
+          <span class="auto-charge-text">지갑 잔액 부족으로 대표계좌에서 <strong class="text-13-bold">{{ formatCurrency(autoChargeAmount) }}원</strong>이 자동 충전됩니다.</span>
         </div>
       </div>
 
@@ -425,27 +424,34 @@ const backspaceKeypad = () => {
 
 .amount-large-display {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   border-bottom: 2px solid #ffbc2e;
   padding-bottom: 8px;
   margin-bottom: 14px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .amount-direct-input {
   flex: 1;
+  min-width: 0;
+  width: 0;
   border: none;
   outline: none;
   background: transparent;
   color: #0f172a;
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 800;
+  padding: 0;
+  margin: 0;
 }
 
 .krw-unit {
+  flex-shrink: 0;
   color: #0f172a;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
-  margin-left: 4px;
+  margin-left: 6px;
 }
 
 .quick-amount-pill-row {
@@ -668,6 +674,17 @@ const backspaceKeypad = () => {
   border-radius: 12px;
   font-size: 13px;
   animation: fadeIn 0.2s ease-in-out;
+  text-align: left;
+}
+
+.auto-charge-bolt {
+  flex-shrink: 0;
+}
+
+.auto-charge-text {
+  flex: 1;
+  word-break: keep-all;
+  line-height: 1.4;
 }
 
 @keyframes fadeIn {

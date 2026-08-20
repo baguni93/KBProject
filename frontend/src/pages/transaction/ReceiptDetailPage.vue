@@ -47,11 +47,11 @@
         </div>
       </div>
 
-      <!-- 2-A. 송금(TRANSFER/REMIT) 전용 메모 작성 카드 -->
+      <!-- 2-A. 송금(TRANSFER) 및 정산(SETTLEMENT) 전용 메모 작성 카드 -->
       <div v-if="isTransferTransaction" class="venmo-composer-card">
         <div class="feed-card-header">
           <span class="text-14-bold card-title-lbl">
-            송금 메모
+            {{ isSettlement ? '정산 메모' : (isIncome ? '입금 메모' : '송금 메모') }}
           </span>
           <span v-if="memoSaved" class="saved-status-tag text-12-bold">
             <i class="fa-solid fa-circle-check text-success mr-1"></i> 저장 완료
@@ -64,7 +64,7 @@
             <textarea
               v-model="editMemo"
               class="venmo-note-textarea text-15"
-              placeholder="송금 메모를 입력하세요. (예: 점심값, 축의금)"
+              placeholder="메모를 입력하세요. (예: 점심값, 축의금, 정산)"
               rows="2"
             ></textarea>
           </div>
@@ -76,7 +76,7 @@
           </div>
         </template>
 
-        <!-- 저장 완료 상태 (웹 alert 브라우저 팝업 대신 앱 인라인 토스트로 표시) -->
+        <!-- 저장 완료 상태 -->
         <template v-else>
           <div class="posted-feed-display-box">
             <p class="posted-memo-text text-14 text-main">
@@ -85,7 +85,7 @@
           </div>
 
           <div v-if="justSavedMemoToast" class="reward-mini-toast text-13-bold text-center">
-            ✨ 송금 메모가 성공적으로 저장되었습니다!
+            ✨ 메모가 성공적으로 저장되었습니다!
           </div>
 
           <div class="feed-action-btns single-btn">
@@ -113,9 +113,42 @@
             <textarea
               v-model="editMemo"
               class="venmo-note-textarea text-15"
-              placeholder="피드에 어떤 추억을 남길까요? 🍕"
+              placeholder="피드에 어떤 추억을 남길까요?"
               rows="3"
             ></textarea>
+          </div>
+
+          <!-- 첨부 사진 미리보기 (가로 롤링 갤러리 칩) -->
+          <div v-if="effectivePreviewUrls.length > 0" class="venmo-photo-embedded-box">
+            <div class="photo-card-header">
+              <span class="text-13-bold photo-card-title">
+                <i class="fa-solid fa-images" style="color: #ffbc2e;"></i> 첨부 사진 ({{ effectivePreviewUrls.length }}장)
+              </span>
+              <button
+                type="button"
+                class="photo-card-del-btn text-12-bold"
+                @click="removeImage()"
+              >
+                전체 삭제
+              </button>
+            </div>
+            <div class="venmo-multi-preview-grid">
+              <div
+                v-for="(url, idx) in effectivePreviewUrls"
+                :key="idx"
+                class="venmo-bottom-preview-wrap"
+              >
+                <img :src="url" class="venmo-bottom-preview-img" alt="피드 첨부 이미지" />
+                <button
+                  type="button"
+                  class="venmo-single-del-btn"
+                  @click="removeImage(idx)"
+                  title="이 사진 삭제"
+                >
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- 공개 범위 & 사진 첨부 툴바 -->
@@ -150,18 +183,16 @@
             <div class="venmo-photo-attach">
               <label class="venmo-photo-btn text-13-bold">
                 <i class="fa-solid fa-camera" style="color: #ffbc2e;"></i>
-                <span>사진</span>
-                <input type="file" accept="image/*" class="hidden-file-input" @change="onFileSelected" />
+                <span>사진 추가</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  class="hidden-file-input"
+                  @change="onFileSelected"
+                />
               </label>
             </div>
-          </div>
-
-          <!-- 사진 미리보기 -->
-          <div v-if="imagePreviewUrl" class="photo-preview-wrap">
-            <img :src="imagePreviewUrl" class="preview-img" alt="첨부 이미지" />
-            <button type="button" class="btn-del-photo" @click="removeImage">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
           </div>
 
           <!-- 하단 카드 버튼: [더치페이 정산하기](흰색) / [소셜 피드 등록](노란색) -->
@@ -233,7 +264,9 @@ const loading = ref(true);
 const editMemo = ref("");
 const editVisibility = ref("PUBLIC");
 const selectedFile = ref(null);
+const selectedFiles = ref([]);
 const imagePreviewUrl = ref(null);
+const imagePreviewUrls = ref([]);
 const saving = ref(false);
 const savedSuccess = ref(false);
 const memoSaved = ref(false);
@@ -241,25 +274,50 @@ const justSavedMemoToast = ref(false);
 const hasExistingFeed = ref(false);
 const justPostedReward = ref(false);
 
+const effectivePreviewUrls = computed(() => {
+  if (imagePreviewUrls.value && imagePreviewUrls.value.length > 0) {
+    return imagePreviewUrls.value;
+  }
+  if (imagePreviewUrl.value) {
+    return [imagePreviewUrl.value];
+  }
+  return [];
+});
+
 const transactionId = computed(() => route.params.transactionId);
 
-// 1. 송금(TRANSFER/REMIT) 건 여부
+// 1. 송금(TRANSFER) 및 정산(SETTLEMENT) 거래 건 여부
 const isTransferTransaction = computed(() => {
   const reqType = (route.query.type || "").toUpperCase();
-  if (reqType === "TRANSFER" || reqType === "REMIT") return true;
+  if (
+    reqType === "TRANSFER" ||
+    reqType === "REMIT" ||
+    reqType.includes("TRANSFER") ||
+    reqType.includes("SETTLEMENT") ||
+    reqType.includes("DUTCH")
+  ) {
+    return true;
+  }
   if (!transaction.value) return false;
   const tType = (transaction.value.transactionType || transaction.value.type || "").toUpperCase();
-  return tType === "TRANSFER" || tType === "REMIT";
+  return (
+    tType === "TRANSFER" ||
+    tType === "REMIT" ||
+    tType.includes("TRANSFER") ||
+    tType.includes("SETTLEMENT") ||
+    tType.includes("DUTCH") ||
+    (transaction.value.settlementId && Number(transaction.value.settlementId) > 0)
+  );
 });
 
 // 2. 순수 가맹점 결제(PAYMENT) 건 여부
 const isPaymentTransaction = computed(() => {
   if (isTransferTransaction.value) return false;
   const reqType = (route.query.type || "").toUpperCase();
-  if (reqType === "CHARGE" || reqType === "SETTLEMENT") return false;
+  if (reqType === "CHARGE" || reqType.includes("CHARGE") || reqType.includes("SETTLEMENT") || reqType.includes("DUTCH")) return false;
   if (!transaction.value) return true;
   const tType = (transaction.value.transactionType || transaction.value.type || "").toUpperCase();
-  if (tType === "CHARGE" || tType === "SETTLEMENT") return false;
+  if (tType.includes("CHARGE") || tType.includes("SETTLEMENT") || tType.includes("DUTCH")) return false;
   return true;
 });
 
@@ -279,9 +337,11 @@ const isIncome = computed(() => {
 });
 
 const isSettlement = computed(() => {
+  const reqType = (route.query.type || "").toUpperCase();
+  if (reqType.includes("SETTLEMENT") || reqType.includes("DUTCH")) return true;
   if (!transaction.value) return false;
   const tType = (transaction.value.transactionType || transaction.value.type || "").toUpperCase();
-  return tType.includes("SETTLEMENT") || (transaction.value.settlementId && Number(transaction.value.settlementId) > 0);
+  return tType.includes("SETTLEMENT") || tType.includes("DUTCH") || (transaction.value.settlementId && Number(transaction.value.settlementId) > 0);
 });
 
 // 3. 가맹점/송금자/수취인 명칭 (DB merchant_name / receiverName / senderName 연동)
@@ -388,16 +448,28 @@ const goToFeed = () => {
 };
 
 const onFileSelected = (e) => {
-  const file = e.target.files?.[0];
-  if (file) {
-    selectedFile.value = file;
-    imagePreviewUrl.value = URL.createObjectURL(file);
+  const files = Array.from(e.target.files || []);
+  if (files.length > 0) {
+    selectedFiles.value = [...selectedFiles.value, ...files];
+    selectedFile.value = selectedFiles.value[0];
+    const newUrls = files.map((f) => URL.createObjectURL(f));
+    imagePreviewUrls.value = [...imagePreviewUrls.value, ...newUrls];
+    imagePreviewUrl.value = imagePreviewUrls.value[0];
   }
 };
 
-const removeImage = () => {
-  selectedFile.value = null;
-  imagePreviewUrl.value = null;
+const removeImage = (idx = null) => {
+  if (idx !== null && typeof idx === "number") {
+    selectedFiles.value.splice(idx, 1);
+    imagePreviewUrls.value.splice(idx, 1);
+    selectedFile.value = selectedFiles.value[0] || null;
+    imagePreviewUrl.value = imagePreviewUrls.value[0] || null;
+  } else {
+    selectedFiles.value = [];
+    imagePreviewUrls.value = [];
+    selectedFile.value = null;
+    imagePreviewUrl.value = null;
+  }
 };
 
 // 단순 송금 메모 저장 (웹 브라우저 alert() 팝업 전면 제거)
@@ -441,7 +513,9 @@ const postToSocialFeed = async () => {
     formData.append("content", editMemo.value || `${getMerchantTitle.value} 방문`);
     formData.append("visibility", editVisibility.value || "PUBLIC");
 
-    if (selectedFile.value) {
+    if (selectedFiles.value && selectedFiles.value.length > 0) {
+      selectedFiles.value.forEach((f) => formData.append("files", f));
+    } else if (selectedFile.value) {
       formData.append("files", selectedFile.value);
     }
 
@@ -471,6 +545,19 @@ const startDutchPay = () => {
   router.push("/remittance/dutch");
 };
 
+const isSystemRoutingMemo = (memo) => {
+  if (!memo || typeof memo !== "string") return false;
+  const trimmed = memo.trim();
+  return (
+    /^\d{3}:[0-9-]+:.+$/.test(trimmed) ||
+    /^\d{3}:[0-9-]+$/.test(trimmed) ||
+    /^\d{3}:.+$/.test(trimmed) ||
+    trimmed === "송금 완료" ||
+    trimmed === "상세 내역 피드 남기기" ||
+    trimmed === "기본 피드"
+  );
+};
+
 // 영수증 정보 및 기존 피드/메모 조회
 const loadReceiptData = async () => {
   loading.value = true;
@@ -492,9 +579,12 @@ const loadReceiptData = async () => {
       );
       if (found) {
         transaction.value = found;
-        if (found.memo && found.memo !== "상세 내역 피드 남기기" && found.memo !== "기본 피드") {
+        if (found.memo && !isSystemRoutingMemo(found.memo)) {
           editMemo.value = found.memo;
           memoSaved.value = true;
+        } else {
+          editMemo.value = "";
+          memoSaved.value = false;
         }
       }
     }
@@ -789,33 +879,73 @@ onMounted(loadReceiptData);
   cursor: pointer;
 }
 
-.photo-preview-wrap {
+.venmo-photo-embedded-box {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.photo-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.photo-card-title {
+  color: #334155;
+  font-size: 13px;
+}
+
+.photo-card-del-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 0;
+}
+
+.venmo-multi-preview-grid {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.venmo-bottom-preview-wrap {
   position: relative;
   width: 72px;
   height: 72px;
-  border-radius: 10px;
+  flex-shrink: 0;
+  border-radius: 12px;
   overflow: hidden;
   border: 1px solid #e2e8f0;
 }
 
-.preview-img {
+.venmo-bottom-preview-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.btn-del-photo {
+.venmo-single-del-btn {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 18px;
-  height: 18px;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.65);
   color: #ffffff;
   border: none;
-  font-size: 10px;
+  font-size: 11px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .feed-action-btns {

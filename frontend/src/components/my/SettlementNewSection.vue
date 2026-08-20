@@ -604,7 +604,7 @@ const enterPin = async (n) => {
           // 2. 정산 목록 즉시 최신화
           await settlementStore.getMyList({ userId });
 
-          modalStore.showAlert(
+          modalStore.showSuccess(
             `${props.settlement.title || '정산'} 분담금 송금이 완료되었습니다!`,
             '정산 송금 완료',
           );

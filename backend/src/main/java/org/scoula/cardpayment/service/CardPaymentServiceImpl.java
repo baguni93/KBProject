@@ -142,47 +142,7 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         // Validate that the card exists in card_tbl
         Integer validatedCardCode = cardPaymentMapper.validateCard(cardRegisterDTO);
         if (validatedCardCode == null) {
-            // card_tbl에 카드가 사전 등록되어 있지 않은 경우, 즉시 자동 마스터 생성하여 등록 지원
-            String cleanNum = cardRegisterDTO.getCardNum().replaceAll("\\D", "");
-            String bin6 = cleanNum.length() >= 6 ? cleanNum.substring(0, 6) : "941012";
-            String bin8 = cleanNum.length() >= 8 ? cleanNum.substring(0, 8) : bin6;
-
-            String cardName = cardRegisterDTO.getCardName();
-            String cardImg = cardRegisterDTO.getCardImageName();
-
-            // 1) BIN 매핑에서 이름/이미지 조회
-            if (CardController.BIN_MAPPING_MAP.containsKey(bin8)) {
-                CardController.CardInfo info = CardController.BIN_MAPPING_MAP.get(bin8);
-                if (cardName == null || cardName.trim().isEmpty()) cardName = info.getCardName();
-                if (cardImg == null || cardImg.trim().isEmpty()) cardImg = info.getImageUrl();
-            } else if (CardController.BIN_MAPPING_MAP.containsKey(bin6)) {
-                CardController.CardInfo info = CardController.BIN_MAPPING_MAP.get(bin6);
-                if (cardName == null || cardName.trim().isEmpty()) cardName = info.getCardName();
-                if (cardImg == null || cardImg.trim().isEmpty()) cardImg = info.getImageUrl();
-            }
-
-            if (cardName == null || cardName.trim().isEmpty()) {
-                cardName = "KB국민카드";
-            }
-            if (cardImg == null || cardImg.trim().isEmpty()) {
-                cardImg = "card_default.png";
-            }
-
-            String rawPw = cardRegisterDTO.getCardPassword() != null ? cardRegisterDTO.getCardPassword() : "1234";
-            String hashedPw = hashCardPassword(rawPw);
-
-            org.scoula.card.domain.CardVO newCard = org.scoula.card.domain.CardVO.builder()
-                    .cardNum(cardRegisterDTO.getCardNum())
-                    .expiryDate(cardRegisterDTO.getExpiryDate())
-                    .cvv(cardRegisterDTO.getCvv())
-                    .cardPassword(hashedPw)
-                    .cardName(cardName)
-                    .cardImgFileName(cardImg)
-                    .build();
-
-            cardMapper.insertCard(newCard);
-            validatedCardCode = newCard.getCardCode();
-            log.info("신규 카드 마스터 자동 생성 완료: cardCode={}, cardName={}, cardImg={}", validatedCardCode, cardName, cardImg);
+            throw new IllegalArgumentException("일치하는 카드 정보가 없습니다.\n카드 정보를 다시 확인해주세요.");
         }
         cardRegisterDTO.setCardCode(validatedCardCode);
 

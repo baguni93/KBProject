@@ -329,7 +329,8 @@ const fetchDetail = async () => {
     const data = await transactionApi.getTransactionDetail(props.transactionId);
     if (data) {
       transaction.value = data;
-      editMemo.value = data.memo || "";
+      const isSysMemo = data.memo && (/^\d{3}:[0-9-]+/.test(data.memo) || data.memo === "송금 완료" || data.memo === "상세 내역 피드 남기기");
+      editMemo.value = isSysMemo ? "" : (data.memo || "");
     } else {
       transaction.value = {
         transactionId: props.transactionId,

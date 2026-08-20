@@ -6,6 +6,7 @@ import walletApi from '@/api/walletApi';
 import analysisApi from '@/api/analysisApi';
 import transactionApi from '@/api/transactionApi';
 import * as accountApi from '@/api/accountApi';
+import feedApi from '@/api/feedApi';
 import { useAuthStore } from '@/stores/auth';
 import { useProfileStore } from '@/stores/profile';
 import { useSettlementStore } from '@/stores/settlement';
@@ -61,8 +62,11 @@ export const useRemittanceStore = defineStore('remittance', () => {
   const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
   const getProfileImageUrl = (friend) => {
-    if (!friend) return DEFAULT_AVATAR;
-    if (friend.url) return friend.url;
+    if (!friend) return "/api/feeds/profile/unknown.png";
+    if (friend.url && friend.url.trim()) {
+      if (friend.url.startsWith("http") || friend.url.startsWith("/")) return friend.url;
+      return `/api/feeds/profile/${friend.url}`;
+    }
     const imgName =
       friend.profileImageName ||
       friend.profileImage ||
@@ -71,12 +75,12 @@ export const useRemittanceStore = defineStore('remittance', () => {
       friend.receiver?.profileImage ||
       friend.friend?.profileImageName ||
       friend.user?.profileImageName;
-    if (imgName && imgName !== 'character1.png') {
+    if (imgName && imgName.trim() && imgName !== 'default.png') {
       if (imgName.startsWith("http") || imgName.startsWith("/")) return imgName;
       return `/api/feeds/profile/${imgName}`;
     }
-    if (friend.avatarUrl && !friend.avatarUrl.includes("default_profile")) return friend.avatarUrl;
-    return DEFAULT_AVATAR;
+    if (friend.avatarUrl && !friend.avatarUrl.includes("default_profile") && !friend.avatarUrl.includes("default.png")) return friend.avatarUrl;
+    return "/api/feeds/profile/unknown.png";
   };
 
   const myProfileImageUrl = computed(() => {
@@ -518,6 +522,28 @@ export const useRemittanceStore = defineStore('remittance', () => {
         if (remittanceApi && remittanceApi.createSettlement) {
           const res = await remittanceApi.createSettlement(settlementPayload);
           console.log('Settlement created successfully:', res);
+          const createdSettlementId = res?.settlementId || res?.data?.settlementId || res?.id || res?.data?.id;
+
+          // 정산 생성 피드 등록 (사진 첨부 및 피드 메시지 연동)
+          try {
+            const formData = new FormData();
+            formData.append('userId', Number(userId));
+            if (createdSettlementId) formData.append('targetId', createdSettlementId);
+            formData.append('feedType', 'SETTLEMENT');
+            formData.append('content', rawContent);
+            formData.append('visibility', remitVisibility.value || 'PUBLIC');
+            if (selectedFiles.value.length > 0) {
+              selectedFiles.value.forEach((f) => formData.append('files', f));
+            } else if (selectedFile.value) {
+              formData.append('files', selectedFile.value);
+            }
+            if (feedApi && feedApi.createFeed) {
+              await feedApi.createFeed(formData);
+            }
+          } catch (fErr) {
+            console.log('정산 피드 등록 예외 (정산은 계속 진행):', fErr);
+          }
+
           // 정산 목록 즉시 갱신
           try {
             await settlementStore.getMyList({ userId });
@@ -628,9 +654,14 @@ export const useRemittanceStore = defineStore('remittance', () => {
 
     const currentUid = Number(authStore.userId);
     const transferTxs = allUserTxList.value.filter(
-      (tx) => (tx.transactionType === "TRANSFER" || tx.type === "TRANSFER") &&
-              (tx.receiverId || tx.receiveId) &&
-              Number(tx.userId) === currentUid
+      (tx) => {
+        const isTransfer = tx.transactionType === "TRANSFER" || tx.type === "TRANSFER";
+        const isFriendTarget = (tx.targetType === "FRIEND" || tx.targetType === "USER" || tx.targetType === "MEMBER") ||
+                               (tx.targetType !== "ACCOUNT" && !tx.targetType?.includes("ACCOUNT"));
+        const hasReceiver = tx.receiverId || tx.receiveId;
+        const isSender = Number(tx.userId) === currentUid;
+        return isTransfer && isFriendTarget && tx.targetType !== "ACCOUNT" && hasReceiver && isSender;
+      }
     );
 
     if (transferTxs.length === 0) {

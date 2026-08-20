@@ -466,14 +466,19 @@ const isRequiredAgreed = computed(() => {
 
 const changeAll = (event) => {
   const checked = event.target.checked;
-  cardAgreements.value.forEach((a) => (a.agreed = checked));
+  cardAgreements.value = cardAgreements.value.map((a) => ({
+    ...a,
+    agreed: checked,
+  }));
 };
 
 const changeAgreement = (id, agreed) => {
-  const found = cardAgreements.value.find((a) => a.agreementId === id);
-  if (found) {
-    found.agreed = agreed;
-  }
+  cardAgreements.value = cardAgreements.value.map((a) => {
+    if (a.agreementId === id) {
+      return { ...a, agreed: Boolean(agreed) };
+    }
+    return a;
+  });
 };
 
 const showTermDetail = (item) => {
@@ -575,11 +580,8 @@ const submitCard = async () => {
     await router.replace('/setting/card/add/complete');
   } catch (error) {
     console.error('카드 등록 실패:', error);
-    const message =
-      error.response?.data?.message ||
-      error.message ||
-      '카드 등록에 실패했습니다.';
-    modalStore.showAlert(`카드 등록 실패: ${message}`, '카드 등록 안내');
+    const message = error.response?.data?.message || error.message || '카드 정보를 다시 확인해주세요.';
+    modalStore.showAlert(message, '카드 등록 안내');
   } finally {
     submitting.value = false;
   }

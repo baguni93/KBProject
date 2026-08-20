@@ -69,94 +69,100 @@
       </div>
     </template>
 
-    <!-- 2. 지갑 충전 화면 (PIN 인증 시 풀페이지 적용) -->
-    <template v-else-if="currentView === 'CHARGE'">
-      <!-- 충전 전용 풀페이지 PIN 인증 단독 화면 (모달 팝업 아님! 100% PinLoginPage 규격) -->
-      <div v-if="isChargePinPage" class="charge-pin-full-page">
-        <!-- 헤더 -->
-        <div class="pin-page-header">
-          <button type="button" class="back-btn" @click="cancelChargePin">
-            <i class="fa-solid fa-chevron-left"></i>
-          </button>
-          <h3 class="text-18-bold header-title">간편비밀번호 인증</h3>
-          <div class="header-right-empty"></div>
-        </div>
+    <!-- 2. 지갑 충전 화면 (PIN 인증 및 충전 입력/완료 전체를 .app으로 Teleport하여 하단바 완전 은닉) -->
+    <Teleport to=".app">
+      <div
+        v-if="currentView === 'CHARGE'"
+        class="charge-fullscreen-overlay"
+        style="position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100% !important; height: 100% !important; background-color: #ffffff !important; z-index: 9999 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important;"
+      >
+        <!-- 충전 전용 풀페이지 PIN 인증 단독 화면 (모달 팝업 아님! 100% PinLoginPage 규격) -->
+        <div v-if="isChargePinPage" class="charge-pin-full-page">
+          <!-- 헤더 -->
+          <div class="pin-page-header">
+            <button type="button" class="back-btn" @click="cancelChargePin">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <h3 class="text-18-bold header-title">간편비밀번호 인증</h3>
+            <div class="header-right-empty"></div>
+          </div>
 
-        <!-- 본문 -->
-        <div class="pin-page-body text-center">
-          <!-- 비주얼 (PinLoginPage 100% 동일) -->
-          <div class="login-visual mt-3">
-            <div class="visual-glow"></div>
-            <div class="visual-icon">
-              <i class="fa-solid fa-lock"></i>
+          <!-- 본문 -->
+          <div class="pin-page-body text-center">
+            <!-- 비주얼 (PinLoginPage 100% 동일) -->
+            <div class="login-visual mt-3">
+              <div class="visual-glow"></div>
+              <div class="visual-icon">
+                <i class="fa-solid fa-lock"></i>
+              </div>
+              <span class="visual-dot dot-one"></span>
+              <span class="visual-dot dot-two"></span>
+              <span class="visual-dot dot-three"></span>
             </div>
-            <span class="visual-dot dot-one"></span>
-            <span class="visual-dot dot-two"></span>
-            <span class="visual-dot dot-three"></span>
+
+            <!-- 타이틀 -->
+            <div class="login-header mt-3">
+              <h2 class="text-24-bold m-0">간편비밀번호 입력</h2>
+              <p class="text-14 text-sub mt-2 mb-0">
+                충전 금액 <strong class="text-main text-16-bold">{{ formatCurrency(chargeAmount) }}원</strong> 승인을 위해<br/>PIN 6자리를 입력해주세요.
+              </p>
+            </div>
+
+            <!-- 6자리 PIN Box (보안 카드 박스 100% 삭제) -->
+            <div class="pin-boxes mt-4">
+              <div
+                v-for="index in 6"
+                :key="index"
+                class="pin-box"
+                :class="{
+                  filled: inputPinCode.length >= index,
+                  active: inputPinCode.length === index - 1
+                }"
+              >
+                <span v-if="inputPinCode.length >= index" class="pin-dot"></span>
+              </div>
+            </div>
           </div>
 
-          <!-- 타이틀 -->
-          <div class="login-header mt-3">
-            <h2 class="text-24-bold m-0">간편비밀번호 입력</h2>
-            <p class="text-14 text-sub mt-2 mb-0">
-              충전 금액 <strong class="text-main text-16-bold">{{ formatCurrency(chargeAmount) }}원</strong> 승인을 위해<br/>PIN 6자리를 입력해주세요.
-            </p>
-          </div>
-
-          <!-- 6자리 PIN Box (보안 카드 박스 100% 삭제) -->
-          <div class="pin-boxes mt-4">
-            <div
-              v-for="index in 6"
-              :key="index"
-              class="pin-box"
-              :class="{
-                filled: inputPinCode.length >= index,
-                active: inputPinCode.length === index - 1
-              }"
-            >
-              <span v-if="inputPinCode.length >= index" class="pin-dot"></span>
+          <!-- 하단 키패드 -->
+          <div class="pin-keypad-bottom">
+            <div class="keypad-row">
+              <button v-for="n in [1, 2, 3]" :key="n" type="button" class="pin-num-btn text-20-bold" @click="enterPin(n)">{{ n }}</button>
+            </div>
+            <div class="keypad-row">
+              <button v-for="n in [4, 5, 6]" :key="n" type="button" class="pin-num-btn text-20-bold" @click="enterPin(n)">{{ n }}</button>
+            </div>
+            <div class="keypad-row">
+              <button v-for="n in [7, 8, 9]" :key="n" type="button" class="pin-num-btn text-20-bold" @click="enterPin(n)">{{ n }}</button>
+            </div>
+            <div class="keypad-row">
+              <button type="button" class="pin-num-btn action-text-btn text-14-bold" @click="inputPinCode = ''">C</button>
+              <button type="button" class="pin-num-btn text-20-bold" @click="enterPin(0)">0</button>
+              <button type="button" class="pin-num-btn del-icon-btn text-16" @click="inputPinCode = inputPinCode.slice(0, -1)"><i class="fa-solid fa-delete-left"></i></button>
             </div>
           </div>
         </div>
 
-        <!-- 하단 키패드 -->
-        <div class="pin-keypad-bottom">
-          <div class="keypad-row">
-            <button v-for="n in [1, 2, 3]" :key="n" type="button" class="pin-num-btn text-20-bold" @click="enterPin(n)">{{ n }}</button>
-          </div>
-          <div class="keypad-row">
-            <button v-for="n in [4, 5, 6]" :key="n" type="button" class="pin-num-btn text-20-bold" @click="enterPin(n)">{{ n }}</button>
-          </div>
-          <div class="keypad-row">
-            <button v-for="n in [7, 8, 9]" :key="n" type="button" class="pin-num-btn text-20-bold" @click="enterPin(n)">{{ n }}</button>
-          </div>
-          <div class="keypad-row">
-            <button type="button" class="pin-num-btn action-text-btn text-14-bold" @click="inputPinCode = ''">C</button>
-            <button type="button" class="pin-num-btn text-20-bold" @click="enterPin(0)">0</button>
-            <button type="button" class="pin-num-btn del-icon-btn text-16" @click="inputPinCode = inputPinCode.slice(0, -1)"><i class="fa-solid fa-delete-left"></i></button>
-          </div>
-        </div>
+        <!-- 충전 입력 양식 / 성공 화면 -->
+        <WalletChargeSection
+          v-else
+          :charge-success="chargeSuccess"
+          :last-charged-amount="lastChargedAmount"
+          :primary-account="primaryAccount"
+          :account-balance="accountBalance"
+          :charge-amount="chargeAmount"
+          :charge-amount-display="chargeAmountDisplay"
+          :charge-error="chargeError"
+          :charge-loading="chargeLoading"
+          :format-currency="formatCurrency"
+          :get-bank-logo-file-name="getBankLogoFileName"
+          @back-to-main="currentView = 'MAIN'"
+          @on-amount-input="onChargeAmountInput"
+          @add-amount="addChargeAmount"
+          @submit="submitWalletCharge"
+        />
       </div>
-
-      <!-- 충전 입력 양식 / 성공 화면 -->
-      <WalletChargeSection
-        v-else
-        :charge-success="chargeSuccess"
-        :last-charged-amount="lastChargedAmount"
-        :primary-account="primaryAccount"
-        :account-balance="accountBalance"
-        :charge-amount="chargeAmount"
-        :charge-amount-display="chargeAmountDisplay"
-        :charge-error="chargeError"
-        :charge-loading="chargeLoading"
-        :format-currency="formatCurrency"
-        :get-bank-logo-file-name="getBankLogoFileName"
-        @back-to-main="currentView = 'MAIN'"
-        @on-amount-input="onChargeAmountInput"
-        @add-amount="addChargeAmount"
-        @submit="submitWalletCharge"
-      />
-    </template>
+    </Teleport>
 
     <!-- 3. NFC 결제 애니메이션 오버레이 (Teleport to body 적용) -->
     <WalletNfcPaymentOverlay
@@ -922,18 +928,31 @@ const executeWalletCharge = async () => {
 
 const kbCardImageMap = {
   "KB Pay 노리2 체크카드 (KB국민카드)": "/images/cards/nori2.png",
+  "노리2 체크카드": "/images/cards/nori2.png",
+  "노리2": "/images/cards/nori2.png",
   "KB국민 톡톡MyPoint 카드": "/images/cards/toktok.png",
+  "톡톡MyPoint 카드": "/images/cards/toktok.png",
+  "톡톡": "/images/cards/toktok.png",
   "KB국민 굿데이 ALL 카드": "/images/cards/goodday.png",
+  "굿데이": "/images/cards/goodday.png",
   "KB국민 청춘대로 톡톡카드": "/images/cards/chungchun.png",
+  "청춘대로": "/images/cards/chungchun.png",
   "KB국민 My WEISH 카드": "/images/cards/weish.png",
+  "WEISH": "/images/cards/weish.png",
+  "위시": "/images/cards/weish.png",
   "KB국민 Easy Link 카드": "/images/cards/easylink.png",
+  "Easy Link": "/images/cards/easylink.png",
 };
 
 const getCardImg = (card) => {
-  if (!card) return null;
-  if (card.cardImageUrl) return card.cardImageUrl;
-  if (card.cardImage) return card.cardImage;
-  if (card.imageUrl) return card.imageUrl;
+  if (!card) return "/images/cards/nori2.png";
+  if (card.cardImageUrl && !card.cardImageUrl.includes("card_default.png")) return card.cardImageUrl;
+  if (card.cardImage && !card.cardImage.includes("card_default.png")) return card.cardImage;
+  if (card.cardImgFileName && card.cardImgFileName !== "card_default.png") {
+    if (card.cardImgFileName.startsWith("/")) return card.cardImgFileName;
+    return `/api/cards/image/${card.cardImgFileName}`;
+  }
+  if (card.imageUrl && !card.imageUrl.includes("card_default.png")) return card.imageUrl;
   if (card.cardName && kbCardImageMap[card.cardName])
     return kbCardImageMap[card.cardName];
   if (card.cardName) {
@@ -942,7 +961,7 @@ const getCardImg = (card) => {
         return img;
     }
   }
-  return null;
+  return "/images/cards/nori2.png";
 };
 
 const formatMaskedCardNum = (num) => {
@@ -1264,6 +1283,22 @@ textarea {
   cursor: pointer;
 }
 
+/* 충전 전용 풀페이지 전체화면 오버레이 (BottomNav 완벽 은닉) */
+.charge-fullscreen-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  z-index: 5000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* 충전 전용 풀페이지 PIN 인증 단독 화면 (PinLoginPage 100% 동일 규격 - 모달 팝업 아님) */
 .charge-pin-full-page {
   display: flex;
@@ -1273,7 +1308,12 @@ textarea {
   background-color: #ffffff;
   box-sizing: border-box;
   padding: 16px;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 250;
   overflow-y: auto;
 }
 

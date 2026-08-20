@@ -177,7 +177,7 @@ public class KbCardCatalogScraper implements InitializingBean {
         return UploadPathName.getCardPath();
     }
 
-    // 카드 크롤링(앱 시연시에  반드시 다시 켜야한다.)
+    // 카드 크롤링(앱 시연시에 반드시 다시 켜야한다.)
     @Override
     public void afterPropertiesSet() {
 //        log.info("==================================================");

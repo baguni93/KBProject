@@ -38,6 +38,9 @@ const submitRemittance = () => {
 .step-content-wrap {
   display: flex;
   flex-direction: column;
+  position: relative;
+  min-height: 100%;
   height: 100%;
+  box-sizing: border-box;
 }
 </style>

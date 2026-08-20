@@ -1,9 +1,16 @@
 <template>
   <div class="transaction-root">
-    <!-- 공통 페이지 헤더 -->
-    <PageHeader title="거래 내역" :show-back="true" :show-refresh="false" />
+    <!-- 공통 페이지 헤더 (최상단 완전 고정) -->
+    <PageHeader
+      title="거래 내역"
+      custom-back
+      :show-refresh="false"
+      @back="goBackToPrevious"
+    />
 
-    <div class="tx-body">
+    <!-- 본문 독립 스크롤 영역 (헤더는 절대 움직이지 않음) -->
+    <div class="card-body-scroll">
+      <div class="tx-body">
       <!-- ══════════════════════════════════════════
            [1] 월 선택 피커 & 소비 인사이트 요약 카드
       ══════════════════════════════════════════ -->
@@ -164,6 +171,7 @@
       />
     </div>
   </div>
+  </div>
 </template>
 
 <script setup>
@@ -236,6 +244,14 @@ const setPeriodFilter = (val) => {
   if (val === "CURRENT") {
     selectedYear.value = now.getFullYear();
     selectedMonth.value = now.getMonth() + 1;
+  }
+};
+
+const goBackToPrevious = () => {
+  if (window.history.state?.back) {
+    router.back();
+  } else {
+    router.push('/wallet');
   }
 };
 
@@ -410,41 +426,52 @@ const getItemTitle = (item) => {
   return item.merchantName || item.merchant_name || item.title || item.memo || "가맹점 결제";
 };
 
+const isSystemRoutingMemo = (memo) => {
+  if (!memo || typeof memo !== "string") return false;
+  const trimmed = memo.trim();
+  return (
+    /^\d{3}:[0-9-]+/.test(trimmed) ||
+    trimmed === "송금 완료" ||
+    trimmed === "결제 완료" ||
+    trimmed === "상세 내역 피드 남기기" ||
+    trimmed === "기본 피드"
+  );
+};
+
 const getItemSubText = (item) => {
-  if (isSettlement(item)) {
-    return item.memo && item.memo !== "송금 완료" && item.memo !== "정산 완료" ? `더치페이 정산 · ${item.memo}` : "더치페이 정산";
-  }
-  if (
-    item.memo &&
-    item.memo.trim() &&
-    item.memo !== "송금 완료" &&
-    item.memo !== "결제 완료" &&
-    item.memo !== "상세 내역 피드 남기기" &&
-    item.memo !== "기본 피드"
-  ) {
+  const isInc = isIncome(item);
+  const type = (item.transactionType || item.type || "").toUpperCase();
+
+  // 1. 사용자가 작성한 유효한 메모가 있으면 그대로 표시 (접두사 없이 깔끔하게)
+  if (item.memo && !isSystemRoutingMemo(item.memo)) {
     return item.memo;
   }
-  if (
-    item.content &&
-    item.content.trim() &&
-    item.content !== "송금 완료" &&
-    item.content !== "결제 완료" &&
-    item.content !== "상세 내역 피드 남기기" &&
-    item.content !== "기본 피드"
-  ) {
+  if (item.content && !isSystemRoutingMemo(item.content)) {
     return item.content;
   }
-  if (item.categoryName && item.categoryName !== "기타") {
-    return item.categoryName;
+
+  // 2. 작성된 메모가 없을 때 기본 구분 텍스트 표시
+  if (isSettlement(item)) {
+    return isInc ? "더치페이 정산 입금" : "더치페이 정산";
   }
-  if (item.spendingCategoryName && item.spendingCategoryName !== "기타") {
-    return item.spendingCategoryName;
-  }
-  const type = (item.transactionType || item.type || "").toUpperCase();
+
   if (type === "TRANSFER" || type === "REMIT") {
+    if (isInc) return "송금 입금";
     return item.targetType === "ACCOUNT" || item.sourceType === "ACCOUNT" ? "계좌 송금" : "친구 송금";
   }
-  return null;
+
+  if (type === "CHARGE") {
+    return "지갑 충전";
+  }
+
+  if (item.categoryName && item.categoryName !== "기타" && item.categoryName !== "미분류") {
+    return item.categoryName;
+  }
+  if (item.spendingCategoryName && item.spendingCategoryName !== "기타" && item.spendingCategoryName !== "미분류") {
+    return item.spendingCategoryName;
+  }
+
+  return "지갑 결제";
 };
 
 const getTypeIcon = (item) => {
@@ -542,34 +569,39 @@ onMounted(() => {
    ========================================================================== */
 
 .transaction-root {
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 0 16px;
   background-color: var(--color-bg-page, #ffffff);
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
   color: var(--color-text-main, #111111);
-  padding-bottom: 50px;
 }
 
 .transaction-root * {
   box-sizing: border-box;
 }
 
-/* ========================================
-   거래 내역 화면 전용 헤더 여백 보정 (공용 PageHeader.vue 원본 100% 보존)
-======================================== */
-.transaction-root :deep(.page-header) {
-  padding: 0 16px;
+.card-body-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 0 40px;
+  box-sizing: border-box;
 }
 
-.transaction-root :deep(.header-left .header-icon-btn) {
-  transform: none;
+.card-body-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .tx-body {
   max-width: 500px;
   margin: 0 auto;
-  padding: 16px;
 }
 
 /* 월 선택 및 인사이트 카드 */

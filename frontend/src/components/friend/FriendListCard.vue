@@ -55,7 +55,7 @@ const router = useRouter();
 const props = defineProps({
   profileImageName: {
     type: String,
-    default: 'default.png',
+    default: 'unknown.png',
   },
 
   nickname: {
