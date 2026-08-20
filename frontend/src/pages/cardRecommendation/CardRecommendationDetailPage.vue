@@ -80,7 +80,7 @@
               <span class="text-13-bold">왜 추천했나요?</span>
 
               <span class="ai-reason__action text-13">
-        {{ aiSummaryOpen ? '접기' : '자세히' }}
+        {{ aiSummaryOpen ? '접기' : '펼쳐보기' }}
         <i
             class="fa-solid fa-chevron-down"
             :class="{ open: aiSummaryOpen }"
