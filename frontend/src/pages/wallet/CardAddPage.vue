@@ -17,7 +17,9 @@
               showingDetailTerm.requiredYn === 'Y' ? 'required' : 'optional',
             ]"
           >
-            {{ showingDetailTerm.requiredYn === 'Y' ? '필수 약관' : '선택 약관' }}
+            {{
+              showingDetailTerm.requiredYn === 'Y' ? '필수 약관' : '선택 약관'
+            }}
           </span>
         </div>
       </header>
@@ -34,14 +36,16 @@
             @change="changeDetailAgreement"
           />
           <span class="check-box"></span>
-          <span class="text-15-bold">
-            위 약관에 동의합니다.
-          </span>
+          <span class="text-15-bold"> 위 약관에 동의합니다. </span>
         </label>
       </main>
 
       <div class="bottom-btn-area single">
-        <button class="bottom-btn" type="button" @click="showingDetailTerm = null">
+        <button
+          class="bottom-btn"
+          type="button"
+          @click="showingDetailTerm = null"
+        >
           확인
         </button>
       </div>
@@ -49,11 +53,7 @@
 
     <!-- 메인 카드 등록 플로우 -->
     <template v-else>
-      <PageHeader
-        title="카드 등록"
-        custom-back
-        @back="goBack"
-      />
+      <PageHeader title="카드 등록" custom-back @back="goBack" />
 
       <!-- Step 1: 카드 정보 한 개씩 동적 등장 폼 (토스/KBPay style 한 단계씩 순차 등장) -->
       <template v-if="currentStep === 1">
@@ -76,7 +76,10 @@
           <section class="card-form-section">
             <form id="cardAddForm" @submit.prevent="proceedToAgreement">
               <!-- 1. 카드 번호 입력 (기본 노출) -->
-              <div v-if="inputSubStep >= 1" class="card-form-group field-slide-up">
+              <div
+                v-if="inputSubStep >= 1"
+                class="card-form-group field-slide-up"
+              >
                 <label class="text-13-bold">카드 번호</label>
                 <input
                   ref="cardNumInputRef"
@@ -92,7 +95,10 @@
               </div>
 
               <!-- 2. 만료일 입력 (카드 번호 완료 시 순차 등장) -->
-              <div v-if="inputSubStep >= 2" class="card-form-group field-slide-up">
+              <div
+                v-if="inputSubStep >= 2"
+                class="card-form-group field-slide-up"
+              >
                 <label class="text-13-bold">만료일 (MM / YY)</label>
                 <input
                   ref="expiryInputRef"
@@ -108,7 +114,10 @@
               </div>
 
               <!-- 3. 보안 코드 입력 (만료일 완료 시 순차 등장) -->
-              <div v-if="inputSubStep >= 3" class="card-form-group field-slide-up">
+              <div
+                v-if="inputSubStep >= 3"
+                class="card-form-group field-slide-up"
+              >
                 <label class="text-13-bold">보안 코드 (CVC/CVV)</label>
                 <input
                   ref="cvcInputRef"
@@ -124,7 +133,10 @@
               </div>
 
               <!-- 4. 카드 비밀번호 입력 (보안 코드 완료 시 순차 등장) -->
-              <div v-if="inputSubStep >= 4" class="card-form-group field-slide-up">
+              <div
+                v-if="inputSubStep >= 4"
+                class="card-form-group field-slide-up"
+              >
                 <label class="text-13-bold">카드 비밀번호 처음 2자리</label>
                 <input
                   ref="passwordInputRef"
@@ -164,11 +176,7 @@
 
         <section class="agreement-section page-content">
           <label class="all-agreement">
-            <input
-              :checked="isAllAgreed"
-              type="checkbox"
-              @change="changeAll"
-            />
+            <input :checked="isAllAgreed" type="checkbox" @change="changeAll" />
             <span class="check-box"></span>
             <strong class="text-18-bold">전체 동의</strong>
           </label>
@@ -183,7 +191,9 @@
             :required="agreement.requiredYn === 'Y'"
             :last="index === cardAgreements.length - 1"
             detail-mode="navigate"
-            @update:model-value="(agreed) => changeAgreement(agreement.agreementId, agreed)"
+            @update:model-value="
+              (agreed) => changeAgreement(agreement.agreementId, agreed)
+            "
             @open-detail="showTermDetail(agreement)"
           />
 
@@ -232,21 +242,31 @@ const passwordInputRef = ref(null);
 // 상단 타이틀 & 안내 문구 동적 변환
 const currentHeadingTitle = computed(() => {
   switch (inputSubStep.value) {
-    case 1: return "카드 번호를 입력하세요";
-    case 2: return "만료일을 입력하세요";
-    case 3: return "보안 코드를 입력하세요";
-    case 4: return "카드 비밀번호를 입력하세요";
-    default: return "카드 번호를 입력하세요";
+    case 1:
+      return '카드 번호를 입력하세요';
+    case 2:
+      return '만료일을 입력하세요';
+    case 3:
+      return '보안 코드를 입력하세요';
+    case 4:
+      return '카드 비밀번호를 입력하세요';
+    default:
+      return '카드 번호를 입력하세요';
   }
 });
 
 const currentHeadingSub = computed(() => {
   switch (inputSubStep.value) {
-    case 1: return "본인 명의의 카드만 등록할 수 있습니다.";
-    case 2: return "카드 전면에 인쇄된 유효기간 4자리를 입력해주세요.";
-    case 3: return "카드 뒷면 CVC/CVV 3자리 숫자를 입력해주세요.";
-    case 4: return "카드 비밀번호 앞 2자리(**)를 입력해주세요.";
-    default: return "본인 명의의 카드만 등록할 수 있습니다.";
+    case 1:
+      return '본인 명의의 카드만 등록할 수 있습니다.';
+    case 2:
+      return '카드 전면에 인쇄된 유효기간 4자리를 입력해주세요.';
+    case 3:
+      return '카드 뒷면 CVC/CVV 3자리 숫자를 입력해주세요.';
+    case 4:
+      return '카드 비밀번호 앞 2자리(**)를 입력해주세요.';
+    default:
+      return '본인 명의의 카드만 등록할 수 있습니다.';
   }
 });
 
@@ -358,7 +378,8 @@ const cardAgreements = ref([
     agreementId: 7,
     agreementType: 'CHECK_CARD',
     agreementName: '개인정보 수집·이용 동의',
-    agreementContent: '1. 수집·이용 목적: 체크카드 발급 적격 심사, 회원 가입 및 회원 관리, 본인 식별, 실물 카드 배송, 고객 상담 및 민원 처리, 부정이용 방지\n\n2. 수집 항목: [필수] 성명, 생년월일, 휴대전화번호, 이메일, 주소, 직장 정보\n\n3. 보유 및 이용 기간: 회원 탈퇴 및 카드 유효기간 만료 후 5년까지 보유',
+    agreementContent:
+      '1. 수집·이용 목적: 체크카드 발급 적격 심사, 회원 가입 및 회원 관리, 본인 식별, 실물 카드 배송, 고객 상담 및 민원 처리, 부정이용 방지\n\n2. 수집 항목: [필수] 성명, 생년월일, 휴대전화번호, 이메일, 주소, 직장 정보\n\n3. 보유 및 이용 기간: 회원 탈퇴 및 카드 유효기간 만료 후 5년까지 보유',
     requiredYn: 'Y',
     agreed: false,
   },
@@ -366,7 +387,8 @@ const cardAgreements = ref([
     agreementId: 8,
     agreementType: 'CHECK_CARD',
     agreementName: '고유식별정보 처리 동의',
-    agreementContent: '1. 수집·이용 목적: 여신전문금융업법 및 관련 법령에 따른 본인 확인, 실명 확인 및 체크카드 발급 심사\n\n2. 수집 항목: [주민등록번호/외국인등록번호/여권번호] 등 고유식별정보\n\n3. 보유 및 이용 기간: 동의일로부터 회원 탈퇴 및 카드 발급 계약 종료 후 관계 법령이 정하는 기간까지',
+    agreementContent:
+      '1. 수집·이용 목적: 여신전문금융업법 및 관련 법령에 따른 본인 확인, 실명 확인 및 체크카드 발급 심사\n\n2. 수집 항목: [주민등록번호/외국인등록번호/여권번호] 등 고유식별정보\n\n3. 보유 및 이용 기간: 동의일로부터 회원 탈퇴 및 카드 발급 계약 종료 후 관계 법령이 정하는 기간까지',
     requiredYn: 'Y',
     agreed: false,
   },
@@ -374,7 +396,8 @@ const cardAgreements = ref([
     agreementId: 9,
     agreementType: 'CHECK_CARD',
     agreementName: '개인정보 제3자 제공 동의',
-    agreementContent: '1. 제공받는 자: 주식회사 OO택배, 코리아결제네트워크(VAN사), 신용카드사, 제휴 브랜드사(VISA/Mastercard 등)\n\n2. 제공받는 자의 이용 목적: 체크카드 실물 배송, 결제 승인 및 매입 처리, 제휴 서비스 제공\n\n3. 제공하는 항목: 성명, 휴대전화번호, 배송지 주소, 카드 승인 정보\n\n4. 보유 및 이용 기간: 개인정보 이용 목적 달성 시까지',
+    agreementContent:
+      '1. 제공받는 자: 주식회사 OO택배, 코리아결제네트워크(VAN사), 신용카드사, 제휴 브랜드사(VISA/Mastercard 등)\n\n2. 제공받는 자의 이용 목적: 체크카드 실물 배송, 결제 승인 및 매입 처리, 제휴 서비스 제공\n\n3. 제공하는 항목: 성명, 휴대전화번호, 배송지 주소, 카드 승인 정보\n\n4. 보유 및 이용 기간: 개인정보 이용 목적 달성 시까지',
     requiredYn: 'Y',
     agreed: false,
   },
@@ -382,7 +405,8 @@ const cardAgreements = ref([
     agreementId: 10,
     agreementType: 'CHECK_CARD',
     agreementName: '직불/체크카드 회원 표준약관',
-    agreementContent: '제1조(목적) 이 약관은 직불/체크카드 회원이 카드를 이용함에 있어 회사와 회원 사이의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.\n\n제2조(이용 한도 및 이용 시간) 1. 체크카드는 회원의 지정 계좌 잔액 범위 내에서 이용할 수 있습니다.\n\n제3조(분실·도난 신고 및 책임) 회원이 카드의 분실 또는 도난 등의 사유로 회사에 신고한 경우, 회사는 신고 접수 시점 이후 발생한 부정사용 금액에 대하여 책임을 부담합니다.',
+    agreementContent:
+      '제1조(목적) 이 약관은 직불/체크카드 회원이 카드를 이용함에 있어 회사와 회원 사이의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.\n\n제2조(이용 한도 및 이용 시간) 1. 체크카드는 회원의 지정 계좌 잔액 범위 내에서 이용할 수 있습니다.\n\n제3조(분실·도난 신고 및 책임) 회원이 카드의 분실 또는 도난 등의 사유로 회사에 신고한 경우, 회사는 신고 접수 시점 이후 발생한 부정사용 금액에 대하여 책임을 부담합니다.',
     requiredYn: 'Y',
     agreed: false,
   },
@@ -390,7 +414,8 @@ const cardAgreements = ref([
     agreementId: 11,
     agreementType: 'CHECK_CARD',
     agreementName: '출금계좌 이용약관 (금융거래 기본약관)',
-    agreementContent: '제1조(목적) 본 약관은 체크카드 이용 시 결제 대금을 회원의 지정 계좌에서 실시간으로 인출(출금)하는 자동이체 거래에 관하여 정함을 목적으로 합니다.\n\n제2조(출금 처리) 체크카드 사용 승인이 이루어지는 즉시 회원의 지정 계좌에서 해당 결제 금액이 출금되며, 계좌 잔액 부족 시 거래가 거절될 수 있습니다.\n\n제3조(계좌 변경 및 해지) 지정 계좌의 변경 또는 해지는 회사의 앱 또는 고객센터를 통해 처리할 수 있습니다.',
+    agreementContent:
+      '제1조(목적) 본 약관은 체크카드 이용 시 결제 대금을 회원의 지정 계좌에서 실시간으로 인출(출금)하는 자동이체 거래에 관하여 정함을 목적으로 합니다.\n\n제2조(출금 처리) 체크카드 사용 승인이 이루어지는 즉시 회원의 지정 계좌에서 해당 결제 금액이 출금되며, 계좌 잔액 부족 시 거래가 거절될 수 있습니다.\n\n제3조(계좌 변경 및 해지) 지정 계좌의 변경 또는 해지는 회사의 앱 또는 고객센터를 통해 처리할 수 있습니다.',
     requiredYn: 'Y',
     agreed: false,
   },
@@ -402,7 +427,11 @@ const loadAgreements = async () => {
       const list = await agreementApi.getAgreements();
       if (list && Array.isArray(list) && list.length > 0) {
         // 서버에서 CHECK_CARD 및 CARD_ 관련 약관이 내려올 때만 덮어쓰기
-        const cardList = list.filter((a) => (a.agreementType || '') === 'CHECK_CARD' || (a.agreementType || '').startsWith('CARD_'));
+        const cardList = list.filter(
+          (a) =>
+            (a.agreementType || '') === 'CHECK_CARD' ||
+            (a.agreementType || '').startsWith('CARD_'),
+        );
         if (cardList.length > 0) {
           cardAgreements.value = cardList.map((a) => ({
             agreementId: a.agreementId || a.id,
@@ -423,11 +452,16 @@ const loadAgreements = async () => {
 onMounted(loadAgreements);
 
 const isAllAgreed = computed(() => {
-  return cardAgreements.value.length > 0 && cardAgreements.value.every((a) => a.agreed);
+  return (
+    cardAgreements.value.length > 0 &&
+    cardAgreements.value.every((a) => a.agreed)
+  );
 });
 
 const isRequiredAgreed = computed(() => {
-  return cardAgreements.value.filter((a) => a.requiredYn === 'Y').every((a) => a.agreed);
+  return cardAgreements.value
+    .filter((a) => a.requiredYn === 'Y')
+    .every((a) => a.agreed);
 });
 
 const changeAll = (event) => {
@@ -488,7 +522,9 @@ const submitCard = async () => {
 
   submitting.value = true;
   try {
-    let rawExpiry = (cardForm.value.expiry || '').trim().replace(/[^0-9/]/g, '');
+    let rawExpiry = (cardForm.value.expiry || '')
+      .trim()
+      .replace(/[^0-9/]/g, '');
     if (rawExpiry.includes('/')) {
       const parts = rawExpiry.split('/');
       let mm = parts[0].padStart(2, '0');
@@ -503,7 +539,10 @@ const submitCard = async () => {
 
     const userIdVal = Number(authStore.userId);
     if (!userIdVal) {
-      modalStore.showAlert('로그인 세션이 만료되었습니다. 다시 로그인해주세요.', '카드 등록 안내');
+      modalStore.showAlert(
+        '로그인 세션이 만료되었습니다. 다시 로그인해주세요.',
+        '카드 등록 안내',
+      );
       return;
     }
 
@@ -521,8 +560,13 @@ const submitCard = async () => {
 
     try {
       if (saveCardAgreements) {
-        const agreedIds = cardAgreements.value.filter((a) => a.agreed).map((a) => a.agreementId);
-        await saveCardAgreements({ userId: userIdVal, agreementIds: agreedIds });
+        const agreedIds = cardAgreements.value
+          .filter((a) => a.agreed)
+          .map((a) => a.agreementId);
+        await saveCardAgreements({
+          userId: userIdVal,
+          agreementIds: agreedIds,
+        });
       }
     } catch (agErr) {
       console.log('약관 동의 저장 처리 생략:', agErr);
@@ -531,7 +575,10 @@ const submitCard = async () => {
     await router.replace('/setting/card/add/complete');
   } catch (error) {
     console.error('카드 등록 실패:', error);
-    const message = error.response?.data?.message || error.message || '카드 등록에 실패했습니다.';
+    const message =
+      error.response?.data?.message ||
+      error.message ||
+      '카드 등록에 실패했습니다.';
     modalStore.showAlert(`카드 등록 실패: ${message}`, '카드 등록 안내');
   } finally {
     submitting.value = false;
@@ -552,15 +599,19 @@ const goBack = () => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
-@import "@/components/common/common/layout.css";
+@import '@/components/common/common/common.css';
+@import '@/components/common/common/layout.css';
 
 .card-add-page {
   background: var(--color-bg-page);
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 0;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .signup-header h1 {

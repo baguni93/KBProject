@@ -1,10 +1,7 @@
 <template>
   <div class="page-layout pin-page">
     <!-- 공통 상단 헤더 -->
-    <PageHeader
-        custom-back
-        @back="goBack"
-    />
+    <PageHeader custom-back @back="goBack" />
 
     <!-- 콘텐츠 -->
     <main class="page-content pin-content">
@@ -19,50 +16,43 @@
 
       <!-- 제목 -->
       <header class="pin-header">
-        <h1 class="text-30-bold">
-          간편비밀번호 확인
-        </h1>
+        <h1 class="text-30-bold">간편비밀번호 확인</h1>
 
-        <p class="text-15">
-          설정한 PIN을 한 번 더 입력해 주세요.
-        </p>
+        <p class="text-15">설정한 PIN을 한 번 더 입력해 주세요.</p>
       </header>
 
       <!-- PIN 입력 -->
       <section class="pin-section">
         <div
-            :class="{ error: !!errorMessage }"
-            class="pin-boxes"
-            role="button"
-            tabindex="0"
-            @click="focusPinInput"
-            @keydown.enter="focusPinInput"
+          :class="{ error: !!errorMessage }"
+          class="pin-boxes"
+          role="button"
+          tabindex="0"
+          @click="focusPinInput"
+          @keydown.enter="focusPinInput"
         >
           <div
-              v-for="index in 6"
-              :key="index"
-              :class="{
-                filled: confirmPin.length >= index,
-                active: confirmPin.length === index - 1 && !errorMessage,
-              }"
-              class="pin-box"
+            v-for="index in 6"
+            :key="index"
+            :class="{
+              filled: confirmPin.length >= index,
+              active: confirmPin.length === index - 1 && !errorMessage,
+            }"
+            class="pin-box"
           >
-            <span
-                v-if="confirmPin.length >= index"
-                class="pin-dot"
-            ></span>
+            <span v-if="confirmPin.length >= index" class="pin-dot"></span>
           </div>
 
           <input
-              ref="pinInput"
-              :value="confirmPin"
-              class="hidden-pin-input"
-              type="password"
-              inputmode="numeric"
-              maxlength="6"
-              pattern="[0-9]*"
-              autocomplete="off"
-              @input="changePin"
+            ref="pinInput"
+            :value="confirmPin"
+            class="hidden-pin-input"
+            type="password"
+            inputmode="numeric"
+            maxlength="6"
+            pattern="[0-9]*"
+            autocomplete="off"
+            @input="changePin"
           />
         </div>
 
@@ -79,10 +69,10 @@
     <!-- 공통 하단 버튼 -->
     <div class="bottom-btn-area single">
       <button
-          class="bottom-btn"
-          type="button"
-          :disabled="confirmPin.length !== 6"
-          @click="next"
+        class="bottom-btn"
+        type="button"
+        :disabled="confirmPin.length !== 6"
+        @click="next"
       >
         다음
       </button>
@@ -151,10 +141,18 @@ onMounted(() => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
-@import "@/components/common/common/layout.css";
+@import '@/components/common/common/common.css';
+@import '@/components/common/common/layout.css';
 
 .pin-page {
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 
@@ -236,9 +234,9 @@ onMounted(() => {
   background: #fafafa;
   box-sizing: border-box;
   transition:
-      border-color 0.2s,
-      background 0.2s,
-      box-shadow 0.2s;
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
 }
 
 .pin-box.active {

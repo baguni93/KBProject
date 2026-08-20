@@ -3,18 +3,20 @@
     <!-- 상단 헤더 -->
     <header class="header-area">
       <PageHeader
-          :title="loading ? '불러오는 중...' : agreement.agreementName || '약관 상세'"
-          :custom-back="true"
-          @back="goBack"
+        :title="
+          loading ? '불러오는 중...' : agreement.agreementName || '약관 상세'
+        "
+        :custom-back="true"
+        @back="goBack"
       />
 
       <div v-if="!loading && !errorMessage" class="badge-wrapper">
         <span
-            :class="[
-              'agreement-type',
-              'text-13-bold',
-              agreement.requiredYn === 'Y' ? 'required' : 'optional',
-            ]"
+          :class="[
+            'agreement-type',
+            'text-13-bold',
+            agreement.requiredYn === 'Y' ? 'required' : 'optional',
+          ]"
         >
           {{ agreement.requiredYn === 'Y' ? '필수 약관' : '선택 약관' }}
         </span>
@@ -27,7 +29,10 @@
         약관을 불러오는 중입니다.
       </section>
 
-      <section v-else-if="errorMessage" class="status-message error-message text-15">
+      <section
+        v-else-if="errorMessage"
+        class="status-message error-message text-15"
+      >
         {{ errorMessage }}
       </section>
 
@@ -38,25 +43,21 @@
 
         <label class="consent-label">
           <input
-              :checked="isAgreed"
-              type="checkbox"
-              @change="changeAgreement"
+            :checked="isAgreed"
+            type="checkbox"
+            @change="changeAgreement"
           />
 
           <span class="check-box"></span>
 
-          <span class="text-15-bold">
-            위 약관에 동의합니다.
-          </span>
+          <span class="text-15-bold"> 위 약관에 동의합니다. </span>
         </label>
       </template>
     </main>
 
     <!-- 하단 버튼 -->
     <div class="bottom-btn-area single">
-      <button class="bottom-btn" type="button" @click="goBack">
-        확인
-      </button>
+      <button class="bottom-btn" type="button" @click="goBack">확인</button>
     </div>
   </div>
 </template>
@@ -77,7 +78,9 @@ const loading = ref(false);
 const errorMessage = ref('');
 
 const isAgreed = computed(() => {
-  const item = signupStore.agreements.find((item) => item.agreementType === route.params.agreementType);
+  const item = signupStore.agreements.find(
+    (item) => item.agreementType === route.params.agreementType,
+  );
   return item?.agreed ?? false;
 });
 
@@ -85,7 +88,9 @@ const isAgreed = computed(() => {
 const loadAgreement = async () => {
   try {
     loading.value = true;
-    agreement.value = await agreementApi.getAgreementDetail(route.params.agreementType);
+    agreement.value = await agreementApi.getAgreementDetail(
+      route.params.agreementType,
+    );
   } catch (error) {
     console.error(error);
     errorMessage.value = '약관 내용을 불러오지 못했습니다.';
@@ -96,7 +101,10 @@ const loadAgreement = async () => {
 
 // 약관 동의
 const changeAgreement = (event) => {
-  signupStore.setAgreementChecked(route.params.agreementType, event.target.checked);
+  signupStore.setAgreementChecked(
+    route.params.agreementType,
+    event.target.checked,
+  );
 };
 
 // 이전 화면
@@ -108,11 +116,19 @@ onMounted(loadAgreement);
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
-@import "@/components/common/common/layout.css";
+@import '@/components/common/common/common.css';
+@import '@/components/common/common/layout.css';
 
 .page {
   background: var(--color-bg-page);
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .header-area {

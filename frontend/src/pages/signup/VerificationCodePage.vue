@@ -269,19 +269,26 @@ const handlePhoneChange = async () => {
 
 // 회원가입 인증 완료
 const handleSignup = async () => {
-
-  const signupResponse = await loginApi.checkSignupStatus({ phoneNumber: signupStore.phoneAuth.phoneNumber });
+  const signupResponse = await loginApi.checkSignupStatus({
+    phoneNumber: signupStore.phoneAuth.phoneNumber,
+  });
 
   signupStore.setMemberStatus(signupResponse.memberStatus);
 
   if (signupResponse.memberStatus === 'EXISTING') {
-    sessionStorage.setItem('pinLoginPhoneNumber', signupStore.phoneAuth.phoneNumber);
+    sessionStorage.setItem(
+      'pinLoginPhoneNumber',
+      signupStore.phoneAuth.phoneNumber,
+    );
     await router.push('/signup/existing-member');
     return;
   }
 
   if (signupResponse.memberStatus === 'WITHDRAWN_WAIT') {
-    sessionStorage.setItem('rejoinAvailableAt', signupResponse.rejoinAvailableAt);
+    sessionStorage.setItem(
+      'rejoinAvailableAt',
+      signupResponse.rejoinAvailableAt,
+    );
     await router.push('/signup/withdrawn-member');
     return;
   }
@@ -479,8 +486,15 @@ onMounted(() => {
 @import '@/components/common/common/layout.css';
 
 .verification-page {
-  position: relative;
   background: var(--color-bg-page);
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .verification-content {

@@ -27,20 +27,22 @@
         </div>
 
         <div class="phone-field">
-          <label class="text-13-bold" for="newPhoneNumber">새 휴대폰 번호</label>
+          <label class="text-13-bold" for="newPhoneNumber"
+            >새 휴대폰 번호</label
+          >
 
           <input
-              id="newPhoneNumber"
-              ref="newPhoneInput"
-              v-model="newPhoneNumber"
-              :class="{ error: !!phoneErrorMessage }"
-              class="phone-box text-15"
-              maxlength="13"
-              inputmode="numeric"
-              placeholder="새 휴대폰 번호를 입력해 주세요"
-              type="text"
-              @input="formatNewPhoneNumber"
-              @blur="validatePhoneNumber"
+            id="newPhoneNumber"
+            ref="newPhoneInput"
+            v-model="newPhoneNumber"
+            :class="{ error: !!phoneErrorMessage }"
+            class="phone-box text-15"
+            maxlength="13"
+            inputmode="numeric"
+            placeholder="새 휴대폰 번호를 입력해 주세요"
+            type="text"
+            @input="formatNewPhoneNumber"
+            @blur="validatePhoneNumber"
           />
 
           <p v-if="phoneErrorMessage" class="phone-error-message text-13">
@@ -71,7 +73,12 @@
     </main>
 
     <div class="bottom-btn-area single">
-      <button class="bottom-btn" :disabled="loading || !newPhoneNumber" type="button" @click="startVerification">
+      <button
+        class="bottom-btn"
+        :disabled="loading || !newPhoneNumber"
+        type="button"
+        @click="startVerification"
+      >
         새 휴대폰 번호 인증
       </button>
     </div>
@@ -102,8 +109,10 @@ const newPhoneInput = ref(null);
 const formattedPhoneNumber = computed(() => {
   const value = (userInfo.phoneNumber || '').replace(/[^0-9]/g, '');
 
-  if (value.length === 11) return `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`;
-  if (value.length === 10) return `${value.slice(0, 3)}-${value.slice(3, 6)}-${value.slice(6, 10)}`;
+  if (value.length === 11)
+    return `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`;
+  if (value.length === 10)
+    return `${value.slice(0, 3)}-${value.slice(3, 6)}-${value.slice(6, 10)}`;
 
   return value || '-';
 });
@@ -182,7 +191,8 @@ const loadUserInfo = async () => {
     userInfo.phoneNumber = data.phoneNumber || '';
   } catch (error) {
     console.error(error);
-    loadErrorMessage.value = error.response?.data?.message || '회원정보를 불러오지 못했습니다.';
+    loadErrorMessage.value =
+      error.response?.data?.message || '회원정보를 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -213,7 +223,8 @@ const startVerification = async () => {
     await router.push('/signup/check');
   } catch (error) {
     console.error(error);
-    phoneErrorMessage.value = error.response?.data?.message || '휴대폰번호를 확인해주세요.';
+    phoneErrorMessage.value =
+      error.response?.data?.message || '휴대폰번호를 확인해주세요.';
     await clearPhoneSelection();
   } finally {
     loading.value = false;
@@ -229,9 +240,17 @@ onMounted(loadUserInfo);
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
+@import '@/components/common/common/common.css';
 
 .guide-page {
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 
@@ -304,7 +323,9 @@ onMounted(loadUserInfo);
 
 input.phone-box {
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 input.phone-box:focus {

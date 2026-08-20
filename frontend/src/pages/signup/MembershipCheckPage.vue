@@ -15,12 +15,12 @@
     <!-- 입력 영역 -->
     <main class="content-area page-content">
       <PhoneAuthForm
-          ref="phoneAuthFormRef"
-          :initial-value="signupStore.phoneAuth"
-          :loading="loading"
-          @step-change="handleStepChange"
-          @phone-valid-change="handlePhoneValidChange"
-          @submit="sendCode"
+        ref="phoneAuthFormRef"
+        :initial-value="signupStore.phoneAuth"
+        :loading="loading"
+        @step-change="handleStepChange"
+        @phone-valid-change="handlePhoneValidChange"
+        @submit="sendCode"
       />
 
       <p v-if="errorMessage" class="error-message text-13">
@@ -30,12 +30,15 @@
 
     <!-- 휴대폰번호 입력 완료 시에만 버튼 -->
     <Transition name="button-fade">
-      <div v-if="currentStep === 4 && phoneValid" class="bottom-btn-area single">
+      <div
+        v-if="currentStep === 4 && phoneValid"
+        class="bottom-btn-area single"
+      >
         <button
-            class="bottom-btn"
-            :disabled="loading"
-            type="button"
-            @click="handleButtonClick"
+          class="bottom-btn"
+          :disabled="loading"
+          type="button"
+          @click="handleButtonClick"
         >
           인증번호 받기
         </button>
@@ -96,7 +99,10 @@ const sendCode = async (formData) => {
     loading.value = true;
     errorMessage.value = '';
 
-    const requestData = { ...formData, verificationPurpose: signupStore.phoneAuth.verificationPurpose };
+    const requestData = {
+      ...formData,
+      verificationPurpose: signupStore.phoneAuth.verificationPurpose,
+    };
     const response = await loginApi.sendPhoneAuthCode(requestData);
 
     signupStore.setPhoneAuth(requestData);
@@ -106,7 +112,8 @@ const sendCode = async (formData) => {
     router.push('/signup/verification');
   } catch (error) {
     console.error(error);
-    errorMessage.value = error.response?.data?.message || '인증번호 발급에 실패했습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '인증번호 발급에 실패했습니다.';
   } finally {
     loading.value = false;
   }
@@ -126,11 +133,19 @@ const goBack = () => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
-@import "@/components/common/common/layout.css";
+@import '@/components/common/common/common.css';
+@import '@/components/common/common/layout.css';
 
 .signup-page {
   background: var(--color-bg-page);
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .signup-header {
@@ -161,7 +176,9 @@ const goBack = () => {
 /* 제목 단계 전환 */
 .title-slide-enter-active,
 .title-slide-leave-active {
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
 }
 
 .title-slide-enter-from {
@@ -177,7 +194,9 @@ const goBack = () => {
 /* 하단 버튼 등장 */
 .button-fade-enter-active,
 .button-fade-leave-active {
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
 }
 
 .button-fade-enter-from,

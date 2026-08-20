@@ -44,13 +44,9 @@
           </div>
 
           <div class="guide-text">
-            <strong class="text-15-bold">
-              다음은 계좌 연결이에요
-            </strong>
+            <strong class="text-15-bold"> 다음은 계좌 연결이에요 </strong>
 
-            <p class="text-13">
-              본인 명의 계좌를 연결해 주세요.
-            </p>
+            <p class="text-13">본인 명의 계좌를 연결해 주세요.</p>
           </div>
         </div>
       </section>
@@ -59,9 +55,9 @@
     <!-- 공통 하단 버튼 -->
     <div class="bottom-btn-area single">
       <button
-          class="bottom-btn connect-button"
-          type="button"
-          @click="goAccountConnect"
+        class="bottom-btn connect-button"
+        type="button"
+        @click="goAccountConnect"
       >
         계좌 연결하기
       </button>
@@ -81,18 +77,19 @@ const goAccountConnect = () => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
-@import "@/components/common/common/layout.css";
+@import '@/components/common/common/common.css';
+@import '@/components/common/common/layout.css';
 
 .complete-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
   overflow: hidden;
-  background: linear-gradient(
-      180deg,
-      #fffdf8 0%,
-      #ffffff 42%,
-      #ffffff 100%
-  );
+  background: linear-gradient(180deg, #fffdf8 0%, #ffffff 42%, #ffffff 100%);
 }
 
 .content-area {
@@ -149,15 +146,15 @@ const goAccountConnect = () => {
   inset: 4px;
   border-radius: 50%;
   background: linear-gradient(
-      135deg,
-      rgba(255, 188, 46, 0.17),
-      rgba(255, 225, 155, 0.07)
+    135deg,
+    rgba(255, 188, 46, 0.17),
+    rgba(255, 225, 155, 0.07)
   );
   opacity: 0;
   transform: scale(0.75);
   animation:
-      circle-enter 0.5s ease 0.05s forwards,
-      circle-pulse 2.4s ease-in-out 0.9s infinite;
+    circle-enter 0.5s ease 0.05s forwards,
+    circle-pulse 2.4s ease-in-out 0.9s infinite;
 }
 
 .check-circle {
@@ -172,16 +169,17 @@ const goAccountConnect = () => {
   justify-content: center;
   border-radius: 50%;
   background: linear-gradient(
-      135deg,
-      #ffca52 0%,
-      var(--color-primary) 65%,
-      #f3a711 100%
+    135deg,
+    #ffca52 0%,
+    var(--color-primary) 65%,
+    #f3a711 100%
   );
   box-shadow: 0 14px 30px rgba(255, 188, 46, 0.26);
   color: #ffffff;
   opacity: 0;
   transform: scale(0.55);
-  animation: check-circle-pop 0.58s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s forwards;
+  animation: check-circle-pop 0.58s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s
+    forwards;
 }
 
 .check-circle i {
@@ -207,8 +205,8 @@ const goAccountConnect = () => {
   height: 9px;
   background: #ffca52;
   animation:
-      deco-pop 0.4s ease 0.4s forwards,
-      deco-float 3.2s ease-in-out 1s infinite;
+    deco-pop 0.4s ease 0.4s forwards,
+    deco-float 3.2s ease-in-out 1s infinite;
 }
 
 .deco-two {
@@ -218,8 +216,8 @@ const goAccountConnect = () => {
   height: 7px;
   background: #9d90ff;
   animation:
-      deco-pop 0.4s ease 0.5s forwards,
-      deco-float 3.6s ease-in-out 1.1s infinite reverse;
+    deco-pop 0.4s ease 0.5s forwards,
+    deco-float 3.6s ease-in-out 1.1s infinite reverse;
 }
 
 .deco-three {
@@ -229,8 +227,8 @@ const goAccountConnect = () => {
   height: 7px;
   background: #7bd6c7;
   animation:
-      deco-pop 0.4s ease 0.56s forwards,
-      deco-float 3.4s ease-in-out 1.15s infinite;
+    deco-pop 0.4s ease 0.56s forwards,
+    deco-float 3.4s ease-in-out 1.15s infinite;
 }
 
 .deco-four {
@@ -240,8 +238,8 @@ const goAccountConnect = () => {
   height: 8px;
   background: #ff9eaa;
   animation:
-      deco-pop 0.4s ease 0.62s forwards,
-      deco-float 3.8s ease-in-out 1.2s infinite reverse;
+    deco-pop 0.4s ease 0.62s forwards,
+    deco-float 3.8s ease-in-out 1.2s infinite reverse;
 }
 
 .sparkle {
@@ -256,8 +254,8 @@ const goAccountConnect = () => {
   color: var(--color-primary);
   font-size: 11px;
   animation:
-      sparkle-pop 0.45s ease 0.52s forwards,
-      sparkle-float 3s ease-in-out 1.1s infinite;
+    sparkle-pop 0.45s ease 0.52s forwards,
+    sparkle-float 3s ease-in-out 1.1s infinite;
 }
 
 .sparkle-two {
@@ -266,8 +264,8 @@ const goAccountConnect = () => {
   color: #a99df7;
   font-size: 9px;
   animation:
-      sparkle-pop 0.45s ease 0.68s forwards,
-      sparkle-float 3.5s ease-in-out 1.2s infinite reverse;
+    sparkle-pop 0.45s ease 0.68s forwards,
+    sparkle-float 3.5s ease-in-out 1.2s infinite reverse;
 }
 
 /* 완료 메시지 */
@@ -299,12 +297,7 @@ const goAccountConnect = () => {
   padding: 18px;
   border: 1px solid rgba(255, 188, 46, 0.15);
   border-radius: 18px;
-  background: linear-gradient(
-      110deg,
-      #fff9ec 0%,
-      #fffdf8 70%,
-      #faf8ff 100%
-  );
+  background: linear-gradient(110deg, #fff9ec 0%, #fffdf8 70%, #faf8ff 100%);
   box-sizing: border-box;
   text-align: left;
   opacity: 0;

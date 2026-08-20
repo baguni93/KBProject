@@ -1,16 +1,10 @@
 <template>
   <main class="page-layout card-page" @click="closeMenu">
-    <PageHeader
-        title="연결 카드 관리"
-        custom-back
-        @back="goBack"
-    />
+    <PageHeader title="연결 카드 관리" custom-back @back="goBack" />
 
     <div class="page-content">
       <section class="title-section">
-        <h2 class="text-26-bold">
-          연결된 카드를 관리해 보세요
-        </h2>
+        <h2 class="text-26-bold">연결된 카드를 관리해 보세요</h2>
 
         <p class="text-15">
           연결 카드는 송금, 결제, 혜택 분석 등에<br />
@@ -26,13 +20,16 @@
           </div>
 
           <button
-              class="refresh-button"
-              :disabled="loading"
-              type="button"
-              aria-label="카드 목록 새로고침"
-              @click.stop="loadCards"
+            class="refresh-button"
+            :disabled="loading"
+            type="button"
+            aria-label="카드 목록 새로고침"
+            @click.stop="loadCards"
           >
-            <i class="fa-solid fa-rotate-right" :class="{ rotating: loading }"></i>
+            <i
+              class="fa-solid fa-rotate-right"
+              :class="{ rotating: loading }"
+            ></i>
           </button>
         </div>
 
@@ -44,7 +41,11 @@
           <div v-else-if="errorMessage" class="error-area">
             <p class="text-13">{{ errorMessage }}</p>
 
-            <button class="retry-button text-13-bold" type="button" @click="loadCards">
+            <button
+              class="retry-button text-13-bold"
+              type="button"
+              @click="loadCards"
+            >
               다시 불러오기
             </button>
           </div>
@@ -64,17 +65,17 @@
 
           <div v-else class="card-list">
             <article
-                v-for="card in cardStore.cards"
-                :key="card.linkedCardId"
-                class="card-item"
+              v-for="card in cardStore.cards"
+              :key="card.linkedCardId"
+              class="card-item"
             >
               <div class="card-image-area">
                 <img
-                    v-if="card.cardImageUrl"
-                    :alt="card.cardName"
-                    :src="card.cardImageUrl"
-                    class="card-image"
-                    @error="card.cardImageUrl = null"
+                  v-if="card.cardImageUrl"
+                  :alt="card.cardName"
+                  :src="card.cardImageUrl"
+                  class="card-image"
+                  @error="card.cardImageUrl = null"
                 />
 
                 <div v-else class="card-image-fallback">
@@ -101,24 +102,24 @@
               </div>
 
               <button
-                  class="menu-button"
-                  type="button"
-                  aria-label="카드 관리 메뉴"
-                  @click.stop="toggleMenu(card.linkedCardId)"
+                class="menu-button"
+                type="button"
+                aria-label="카드 관리 메뉴"
+                @click.stop="toggleMenu(card.linkedCardId)"
               >
                 <i class="fa-solid fa-ellipsis-vertical"></i>
               </button>
 
               <div
-                  v-if="openedCardId === card.linkedCardId"
-                  class="card-menu"
-                  @click.stop
+                v-if="openedCardId === card.linkedCardId"
+                class="card-menu"
+                @click.stop
               >
                 <button
-                    v-if="card.representYn !== 'Y'"
-                    class="text-13"
-                    type="button"
-                    @click="changePrimary(card)"
+                  v-if="card.representYn !== 'Y'"
+                  class="text-13"
+                  type="button"
+                  @click="changePrimary(card)"
                 >
                   <span class="menu-icon">
                     <i class="fa-regular fa-star"></i>
@@ -127,9 +128,9 @@
                 </button>
 
                 <button
-                    class="delete-button text-13"
-                    type="button"
-                    @click="openDisconnectModal(card)"
+                  class="delete-button text-13"
+                  type="button"
+                  @click="openDisconnectModal(card)"
                 >
                   <span class="menu-icon">
                     <i class="fa-solid fa-link-slash"></i>
@@ -149,15 +150,19 @@
         {{ toastMessage }}
       </p>
 
-      <button class="content-add-btn connect-button" type="button" @click="goConnect">
+      <button
+        class="content-add-btn connect-button"
+        type="button"
+        @click="goConnect"
+      >
         <i class="fa-solid fa-plus"></i>
         카드 연결하기
       </button>
 
       <div
-          v-if="disconnectTarget"
-          class="modal-overlay"
-          @click.self="closeDisconnectModal"
+        v-if="disconnectTarget"
+        class="modal-overlay"
+        @click.self="closeDisconnectModal"
       >
         <section class="disconnect-modal">
           <div class="warning-icon">
@@ -169,10 +174,10 @@
           <article class="selected-card">
             <div class="selected-card-image">
               <img
-                  v-if="disconnectTarget.cardImageUrl"
-                  :alt="disconnectTarget.cardName"
-                  :src="disconnectTarget.cardImageUrl"
-                  @error="disconnectTarget.cardImageUrl = null"
+                v-if="disconnectTarget.cardImageUrl"
+                :alt="disconnectTarget.cardName"
+                :src="disconnectTarget.cardImageUrl"
+                @error="disconnectTarget.cardImageUrl = null"
               />
 
               <span v-else>
@@ -181,7 +186,9 @@
             </div>
 
             <div class="selected-card-info">
-              <strong class="text-15-bold">{{ disconnectTarget.cardName }}</strong>
+              <strong class="text-15-bold">{{
+                disconnectTarget.cardName
+              }}</strong>
               <p class="text-13">{{ disconnectTarget.maskedCardNumber }}</p>
             </div>
           </article>
@@ -193,19 +200,19 @@
 
           <div class="modal-button-area">
             <button
-                class="modal-cancel-button text-15-bold"
-                :disabled="disconnecting"
-                type="button"
-                @click="closeDisconnectModal"
+              class="modal-cancel-button text-15-bold"
+              :disabled="disconnecting"
+              type="button"
+              @click="closeDisconnectModal"
             >
               취소
             </button>
 
             <button
-                class="modal-delete-button text-15-bold"
-                :disabled="disconnecting"
-                type="button"
-                @click="removeCard"
+              class="modal-delete-button text-15-bold"
+              :disabled="disconnecting"
+              type="button"
+              @click="removeCard"
             >
               {{ disconnecting ? '해제 중...' : '연결 해제' }}
             </button>
@@ -268,7 +275,8 @@ const loadCards = async () => {
     cardStore.setCards(cards);
   } catch (error) {
     console.error(error);
-    errorMessage.value = error.response?.data?.message || '카드 목록을 불러오지 못했습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '카드 목록을 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -276,7 +284,8 @@ const loadCards = async () => {
 
 // 관리 메뉴 열기
 const toggleMenu = (linkedCardId) => {
-  openedCardId.value = openedCardId.value === linkedCardId ? null : linkedCardId;
+  openedCardId.value =
+    openedCardId.value === linkedCardId ? null : linkedCardId;
 };
 
 // 관리 메뉴 닫기
@@ -298,7 +307,8 @@ const changePrimary = async (card) => {
     showToast('대표카드가 변경되었습니다.');
   } catch (error) {
     console.error(error);
-    errorMessage.value = error.response?.data?.message || '대표카드 변경에 실패했습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '대표카드 변경에 실패했습니다.';
   }
 };
 
@@ -332,7 +342,8 @@ const removeCard = async () => {
     showToast('카드 연결이 해제되었습니다.');
   } catch (error) {
     console.error(error);
-    errorMessage.value = error.response?.data?.message || '카드 연결 해제에 실패했습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '카드 연결 해제에 실패했습니다.';
   } finally {
     disconnecting.value = false;
   }
@@ -369,12 +380,18 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
+@import '@/components/common/common/common.css';
 
 .card-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
-  overflow: visible;
 }
 
 .title-section {

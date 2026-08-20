@@ -26,9 +26,7 @@
 
         <!-- 메시지 -->
         <div class="member-message">
-          <h1 class="text-30-bold">
-            아직 재가입할 수 없어요
-          </h1>
+          <h1 class="text-30-bold">아직 재가입할 수 없어요</h1>
 
           <p class="text-15">
             회원 탈퇴 후 24시간이 지나면<br />다시 가입할 수 있어요.
@@ -42,13 +40,9 @@
           </div>
 
           <div class="guide-text">
-            <strong class="text-15-bold">
-              재가입 가능 시간
-            </strong>
+            <strong class="text-15-bold"> 재가입 가능 시간 </strong>
 
-            <p class="text-13">
-              {{ formattedRejoinAvailableAt }} 이후
-            </p>
+            <p class="text-13">{{ formattedRejoinAvailableAt }} 이후</p>
           </div>
         </div>
       </section>
@@ -56,11 +50,7 @@
 
     <!-- 공통 하단 버튼 -->
     <div class="bottom-btn-area single">
-      <button
-          class="bottom-btn next-button"
-          type="button"
-          @click="goIntro"
-      >
+      <button class="bottom-btn next-button" type="button" @click="goIntro">
         처음으로
       </button>
     </div>
@@ -106,11 +96,17 @@ onMounted(() => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
-@import "@/components/common/common/layout.css";
+@import '@/components/common/common/common.css';
+@import '@/components/common/common/layout.css';
 
 .member-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
   overflow: hidden;
   background: linear-gradient(180deg, #fffdf8 0%, #ffffff 42%, #ffffff 100%);
 }
@@ -169,15 +165,15 @@ onMounted(() => {
   inset: 4px;
   border-radius: 50%;
   background: linear-gradient(
-      135deg,
-      rgba(255, 188, 46, 0.17),
-      rgba(255, 225, 155, 0.07)
+    135deg,
+    rgba(255, 188, 46, 0.17),
+    rgba(255, 225, 155, 0.07)
   );
   opacity: 0;
   transform: scale(0.76);
   animation:
-      circle-enter 0.5s ease 0.05s forwards,
-      circle-pulse 2.6s ease-in-out 0.9s infinite;
+    circle-enter 0.5s ease 0.05s forwards,
+    circle-pulse 2.6s ease-in-out 0.9s infinite;
 }
 
 .member-icon {
@@ -192,10 +188,10 @@ onMounted(() => {
   justify-content: center;
   border-radius: 50%;
   background: linear-gradient(
-      135deg,
-      #ffd268 0%,
-      var(--color-primary) 65%,
-      #f3a711 100%
+    135deg,
+    #ffd268 0%,
+    var(--color-primary) 65%,
+    #f3a711 100%
   );
   box-shadow: 0 14px 30px rgba(255, 188, 46, 0.24);
   color: #ffffff;
@@ -227,8 +223,8 @@ onMounted(() => {
   height: 9px;
   background: #ffca52;
   animation:
-      deco-pop 0.4s ease 0.4s forwards,
-      deco-float 3.4s ease-in-out 1s infinite;
+    deco-pop 0.4s ease 0.4s forwards,
+    deco-float 3.4s ease-in-out 1s infinite;
 }
 
 .deco-two {
@@ -238,8 +234,8 @@ onMounted(() => {
   height: 7px;
   background: #9d90ff;
   animation:
-      deco-pop 0.4s ease 0.48s forwards,
-      deco-float 3.8s ease-in-out 1.1s infinite reverse;
+    deco-pop 0.4s ease 0.48s forwards,
+    deco-float 3.8s ease-in-out 1.1s infinite reverse;
 }
 
 .deco-three {
@@ -249,8 +245,8 @@ onMounted(() => {
   height: 7px;
   background: #7bd6c7;
   animation:
-      deco-pop 0.4s ease 0.56s forwards,
-      deco-float 3.5s ease-in-out 1.15s infinite;
+    deco-pop 0.4s ease 0.56s forwards,
+    deco-float 3.5s ease-in-out 1.15s infinite;
 }
 
 .deco-four {
@@ -260,8 +256,8 @@ onMounted(() => {
   height: 8px;
   background: #ff9eaa;
   animation:
-      deco-pop 0.4s ease 0.62s forwards,
-      deco-float 3.9s ease-in-out 1.2s infinite reverse;
+    deco-pop 0.4s ease 0.62s forwards,
+    deco-float 3.9s ease-in-out 1.2s infinite reverse;
 }
 
 .sparkle {
@@ -276,8 +272,8 @@ onMounted(() => {
   color: var(--color-primary);
   font-size: 11px;
   animation:
-      sparkle-pop 0.45s ease 0.5s forwards,
-      sparkle-float 3.2s ease-in-out 1.1s infinite;
+    sparkle-pop 0.45s ease 0.5s forwards,
+    sparkle-float 3.2s ease-in-out 1.1s infinite;
 }
 
 .sparkle-two {
@@ -286,8 +282,8 @@ onMounted(() => {
   color: #a99df7;
   font-size: 9px;
   animation:
-      sparkle-pop 0.45s ease 0.66s forwards,
-      sparkle-float 3.6s ease-in-out 1.2s infinite reverse;
+    sparkle-pop 0.45s ease 0.66s forwards,
+    sparkle-float 3.6s ease-in-out 1.2s infinite reverse;
 }
 
 /* 메시지 */
@@ -319,12 +315,7 @@ onMounted(() => {
   padding: 18px;
   border: 1px solid rgba(255, 188, 46, 0.15);
   border-radius: 18px;
-  background: linear-gradient(
-      110deg,
-      #fff9ec 0%,
-      #fffdf8 70%,
-      #faf8ff 100%
-  );
+  background: linear-gradient(110deg, #fff9ec 0%, #fffdf8 70%, #faf8ff 100%);
   box-sizing: border-box;
   text-align: left;
   opacity: 0;

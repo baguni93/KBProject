@@ -1,10 +1,7 @@
 <template>
   <div class="signup-page page-layout">
     <!-- 공통 상단바 -->
-    <PageHeader
-        :show-back="false"
-        :show-refresh="false"
-    />
+    <PageHeader :show-back="false" :show-refresh="false" />
 
     <!-- 상단 영역 -->
     <section class="signup-header">
@@ -16,9 +13,9 @@
     <section class="agreement-section page-content">
       <label class="all-agreement">
         <input
-            :checked="signupStore.isAllChecked"
-            type="checkbox"
-            @change="changeAll"
+          :checked="signupStore.isAllChecked"
+          type="checkbox"
+          @change="changeAll"
         />
 
         <span class="check-box"></span>
@@ -28,15 +25,18 @@
       <div class="divider"></div>
 
       <AgreementCheckItem
-          v-for="(agreement, index) in signupStore.agreements"
-          :key="agreement.agreementId"
-          :model-value="agreement.agreed"
-          :title="agreement.agreementName"
-          :required="agreement.requiredYn === 'Y'"
-          :last="index === signupStore.agreements.length - 1"
-          detail-mode="navigate"
-          @update:model-value="(agreed) => changeAgreement({ agreementType: agreement.agreementType, agreed })"
-          @open-detail="showAgreementDetail(agreement.agreementType)"
+        v-for="(agreement, index) in signupStore.agreements"
+        :key="agreement.agreementId"
+        :model-value="agreement.agreed"
+        :title="agreement.agreementName"
+        :required="agreement.requiredYn === 'Y'"
+        :last="index === signupStore.agreements.length - 1"
+        detail-mode="navigate"
+        @update:model-value="
+          (agreed) =>
+            changeAgreement({ agreementType: agreement.agreementType, agreed })
+        "
+        @open-detail="showAgreementDetail(agreement.agreementType)"
       />
 
       <div class="divider bottom-divider"></div>
@@ -49,10 +49,10 @@
     <!-- 하단 버튼 -->
     <div class="bottom-btn-area single">
       <button
-          class="bottom-btn"
-          :disabled="!signupStore.isRequiredChecked"
-          type="button"
-          @click="next"
+        class="bottom-btn"
+        :disabled="!signupStore.isRequiredChecked"
+        type="button"
+        @click="next"
       >
         다음
       </button>
@@ -107,11 +107,19 @@ onMounted(loadAgreements);
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
-@import "@/components/common/common/layout.css";
+@import '@/components/common/common/common.css';
+@import '@/components/common/common/layout.css';
 
 .signup-page {
   background: var(--color-bg-page);
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .signup-header {

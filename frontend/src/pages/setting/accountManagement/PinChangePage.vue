@@ -22,35 +22,35 @@
 
       <section class="pin-section">
         <div
-            :class="{ error: !!errorMessage }"
-            class="pin-boxes"
-            role="button"
-            tabindex="0"
-            @click="focusPinInput"
-            @keydown.enter="focusPinInput"
+          :class="{ error: !!errorMessage }"
+          class="pin-boxes"
+          role="button"
+          tabindex="0"
+          @click="focusPinInput"
+          @keydown.enter="focusPinInput"
         >
           <div
-              v-for="index in 6"
-              :key="index"
-              :class="{
+            v-for="index in 6"
+            :key="index"
+            :class="{
               filled: pinPassword.length >= index,
               active: pinPassword.length === index - 1 && !errorMessage,
             }"
-              class="pin-box"
+            class="pin-box"
           >
             <span v-if="pinPassword.length >= index" class="pin-dot"></span>
           </div>
 
           <input
-              ref="pinInput"
-              :value="pinPassword"
-              class="hidden-pin-input"
-              inputmode="numeric"
-              maxlength="6"
-              pattern="[0-9]*"
-              type="password"
-              autocomplete="current-password"
-              @input="changePin"
+            ref="pinInput"
+            :value="pinPassword"
+            class="hidden-pin-input"
+            inputmode="numeric"
+            maxlength="6"
+            pattern="[0-9]*"
+            type="password"
+            autocomplete="current-password"
+            @input="changePin"
           />
         </div>
 
@@ -66,10 +66,10 @@
 
     <div class="bottom-btn-area single">
       <button
-          class="bottom-btn"
-          :disabled="pinPassword.length !== 6 || loading"
-          type="button"
-          @click="verifyCurrentPin"
+        class="bottom-btn"
+        :disabled="pinPassword.length !== 6 || loading"
+        type="button"
+        @click="verifyCurrentPin"
       >
         {{ loading ? '확인 중...' : '다음' }}
       </button>
@@ -131,7 +131,8 @@ const verifyCurrentPin = async () => {
 
     if (!response.verified) {
       pinPassword.value = '';
-      errorMessage.value = response.message || '현재 간편비밀번호가 일치하지 않습니다.';
+      errorMessage.value =
+        response.message || '현재 간편비밀번호가 일치하지 않습니다.';
       await focusPinInput();
       return;
     }
@@ -142,7 +143,8 @@ const verifyCurrentPin = async () => {
     console.error(error);
 
     pinPassword.value = '';
-    errorMessage.value = error.response?.data?.message || '현재 간편비밀번호가 일치하지 않습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '현재 간편비밀번호가 일치하지 않습니다.';
 
     await focusPinInput();
   } finally {
@@ -165,10 +167,17 @@ onMounted(() => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
+@import '@/components/common/common/common.css';
 
 .pin-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 
@@ -245,7 +254,10 @@ onMounted(() => {
   border-radius: 12px;
   background: var(--color-bg-screen);
   box-sizing: border-box;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
 }
 
 .pin-box.active {

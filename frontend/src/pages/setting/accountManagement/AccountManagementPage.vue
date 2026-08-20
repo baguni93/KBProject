@@ -10,12 +10,10 @@
         </div>
 
         <div class="title-content">
-          <h2 class="text-26-bold">
-            계정을 관리해 보세요
-          </h2>
+          <h2 class="text-26-bold">계정을 관리해 보세요</h2>
 
           <p class="text-13">
-            안전한 서비스 이용을 위해<br/>
+            안전한 서비스 이용을 위해<br />
             계정 정보를 관리할 수 있어요.
           </p>
         </div>
@@ -101,7 +99,11 @@
             <i class="fa-solid fa-chevron-right arrow-icon"></i>
           </button>
 
-          <button class="menu-item withdraw-item" type="button" @click="goWithdraw">
+          <button
+            class="menu-item withdraw-item"
+            type="button"
+            @click="goWithdraw"
+          >
             <div class="menu-label">
               <span class="item-icon">
                 <i class="fa-regular fa-circle-xmark"></i>
@@ -136,8 +138,10 @@ const errorMessage = ref('');
 const formattedPhoneNumber = computed(() => {
   const phoneNumber = userInfo.phoneNumber.replace(/[^0-9]/g, '');
 
-  if (phoneNumber.length === 11) return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 7)}-${phoneNumber.slice(7)}`;
-  if (phoneNumber.length === 10) return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6)}`;
+  if (phoneNumber.length === 11)
+    return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 7)}-${phoneNumber.slice(7)}`;
+  if (phoneNumber.length === 10)
+    return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6)}`;
 
   return phoneNumber || '-';
 });
@@ -161,7 +165,8 @@ const loadUserInfo = async () => {
     if (data.userName) authStore.setUserName(data.userName);
   } catch (error) {
     console.error(error);
-    errorMessage.value = error.response?.data?.message || '회원정보를 불러오지 못했습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '회원정보를 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -203,9 +208,17 @@ onMounted(loadUserInfo);
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
+@import '@/components/common/common/common.css';
 
 .management-page {
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 

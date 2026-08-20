@@ -25,10 +25,10 @@
           <label class="section-label text-15-bold">탈퇴 사유</label>
 
           <button
-              class="reason-select"
-              :disabled="loading"
-              type="button"
-              @click="openReasonSheet"
+            class="reason-select"
+            :disabled="loading"
+            type="button"
+            @click="openReasonSheet"
           >
             <span v-if="withdrawalReason" class="reason-value">
               {{ withdrawalReason }}
@@ -81,10 +81,10 @@
     <!-- 하단 버튼 -->
     <div class="bottom-btn-area single withdraw-bottom-area">
       <button
-          class="withdraw-main-button"
-          :disabled="!canStartWithdraw || loading"
-          type="button"
-          @click="openPinModal"
+        class="withdraw-main-button"
+        :disabled="!canStartWithdraw || loading"
+        type="button"
+        @click="openPinModal"
       >
         회원탈퇴
       </button>
@@ -93,9 +93,9 @@
     <!-- 탈퇴 사유 Bottom Sheet -->
     <Transition name="sheet">
       <div
-          v-if="showReasonSheet"
-          class="overlay sheet-overlay"
-          @click.self="closeReasonSheet"
+        v-if="showReasonSheet"
+        class="overlay sheet-overlay"
+        @click.self="closeReasonSheet"
       >
         <section class="reason-sheet">
           <div class="sheet-handle"></div>
@@ -107,18 +107,18 @@
 
           <div class="reason-list">
             <button
-                v-for="reason in withdrawalReasons"
-                :key="reason"
-                class="reason-item"
-                :class="{ selected: withdrawalReason === reason }"
-                type="button"
-                @click="selectReason(reason)"
+              v-for="reason in withdrawalReasons"
+              :key="reason"
+              class="reason-item"
+              :class="{ selected: withdrawalReason === reason }"
+              type="button"
+              @click="selectReason(reason)"
             >
               <span>{{ reason }}</span>
 
               <i
-                  v-if="withdrawalReason === reason"
-                  class="fa-solid fa-check"
+                v-if="withdrawalReason === reason"
+                class="fa-solid fa-check"
               ></i>
             </button>
           </div>
@@ -129,9 +129,9 @@
     <!-- PIN 중앙 Modal -->
     <Transition name="modal">
       <div
-          v-if="showPinModal"
-          class="overlay modal-overlay"
-          @click.self="closePinModal"
+        v-if="showPinModal"
+        class="overlay modal-overlay"
+        @click.self="closePinModal"
       >
         <section class="pin-modal">
           <div class="pin-icon">
@@ -146,18 +146,18 @@
           </p>
 
           <div
-              class="pin-boxes"
-              :class="{ error: !!pinErrorMessage }"
-              role="button"
-              tabindex="0"
-              @click="focusPinInput"
-              @keydown.enter="focusPinInput"
+            class="pin-boxes"
+            :class="{ error: !!pinErrorMessage }"
+            role="button"
+            tabindex="0"
+            @click="focusPinInput"
+            @keydown.enter="focusPinInput"
           >
             <div
-                v-for="index in 6"
-                :key="index"
-                class="pin-box"
-                :class="{
+              v-for="index in 6"
+              :key="index"
+              class="pin-box"
+              :class="{
                 filled: pinPassword.length >= index,
                 active: pinPassword.length === index - 1 && !pinErrorMessage,
               }"
@@ -166,15 +166,15 @@
             </div>
 
             <input
-                ref="pinInput"
-                :value="pinPassword"
-                class="hidden-pin-input"
-                inputmode="numeric"
-                maxlength="6"
-                pattern="[0-9]*"
-                type="password"
-                autocomplete="current-password"
-                @input="changePin"
+              ref="pinInput"
+              :value="pinPassword"
+              class="hidden-pin-input"
+              inputmode="numeric"
+              maxlength="6"
+              pattern="[0-9]*"
+              type="password"
+              autocomplete="current-password"
+              @input="changePin"
             />
           </div>
 
@@ -189,10 +189,10 @@
           </div>
 
           <button
-              class="pin-confirm-button"
-              :disabled="pinPassword.length !== 6 || pinVerifying"
-              type="button"
-              @click="verifyPinPassword"
+            class="pin-confirm-button"
+            :disabled="pinPassword.length !== 6 || pinVerifying"
+            type="button"
+            @click="verifyPinPassword"
           >
             {{ pinVerifying ? '확인 중...' : '확인' }}
           </button>
@@ -203,18 +203,16 @@
     <!-- 최종 탈퇴 확인 Modal -->
     <Transition name="modal">
       <div
-          v-if="showFinalModal"
-          class="overlay modal-overlay"
-          @click.self="closeFinalModal"
+        v-if="showFinalModal"
+        class="overlay modal-overlay"
+        @click.self="closeFinalModal"
       >
         <section class="final-modal">
           <div class="final-warning-icon">
             <i class="fa-solid fa-triangle-exclamation"></i>
           </div>
 
-          <h3 class="text-20-bold">
-            정말 회원탈퇴하시겠어요?
-          </h3>
+          <h3 class="text-20-bold">정말 회원탈퇴하시겠어요?</h3>
 
           <p class="final-description text-13">
             탈퇴 후에는 서비스를 이용할 수 없으며<br />
@@ -232,19 +230,19 @@
 
           <div class="final-buttons">
             <button
-                class="final-cancel-button"
-                :disabled="loading"
-                type="button"
-                @click="closeFinalModal"
+              class="final-cancel-button"
+              :disabled="loading"
+              type="button"
+              @click="closeFinalModal"
             >
               취소
             </button>
 
             <button
-                class="final-withdraw-button"
-                :disabled="loading"
-                type="button"
-                @click="withdraw"
+              class="final-withdraw-button"
+              :disabled="loading"
+              type="button"
+              @click="withdraw"
             >
               {{ loading ? '처리 중...' : '회원탈퇴' }}
             </button>
@@ -293,7 +291,9 @@ const withdrawalReasons = [
 ];
 
 // 회원탈퇴 시작 가능 여부
-const canStartWithdraw = computed(() => !!withdrawalReason.value && agreed.value);
+const canStartWithdraw = computed(
+  () => !!withdrawalReason.value && agreed.value,
+);
 
 // 탈퇴 사유 Bottom Sheet 열기
 const openReasonSheet = () => {
@@ -363,7 +363,8 @@ const verifyPinPassword = async () => {
 
     if (!response.verified) {
       pinPassword.value = '';
-      pinErrorMessage.value = response.message || '간편비밀번호가 일치하지 않습니다.';
+      pinErrorMessage.value =
+        response.message || '간편비밀번호가 일치하지 않습니다.';
       await focusPinInput();
       return;
     }
@@ -374,7 +375,8 @@ const verifyPinPassword = async () => {
     console.error(error);
 
     pinPassword.value = '';
-    pinErrorMessage.value = error.response?.data?.message || '간편비밀번호가 일치하지 않습니다.';
+    pinErrorMessage.value =
+      error.response?.data?.message || '간편비밀번호가 일치하지 않습니다.';
 
     await focusPinInput();
   } finally {
@@ -392,7 +394,12 @@ const closeFinalModal = () => {
 
 // 회원탈퇴
 const withdraw = async () => {
-  if (!canStartWithdraw.value || pinPassword.value.length !== 6 || loading.value) return;
+  if (
+    !canStartWithdraw.value ||
+    pinPassword.value.length !== 6 ||
+    loading.value
+  )
+    return;
 
   if (!authStore.userId) {
     await router.replace('/intro');
@@ -416,7 +423,9 @@ const withdraw = async () => {
     });
   } catch (error) {
     console.error(error);
-    withdrawErrorMessage.value = error.response?.data?.message || '회원탈퇴에 실패했습니다. 다시 시도해주세요.';
+    withdrawErrorMessage.value =
+      error.response?.data?.message ||
+      '회원탈퇴에 실패했습니다. 다시 시도해주세요.';
   } finally {
     loading.value = false;
   }
@@ -429,10 +438,17 @@ const goBack = () => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
+@import '@/components/common/common/common.css';
 
 .withdraw-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 
@@ -1058,7 +1074,9 @@ const goBack = () => {
 .modal-leave-active .pin-modal,
 .modal-enter-active .final-modal,
 .modal-leave-active .final-modal {
-  transition: opacity 0.2s ease, transform 0.22s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.22s ease;
 }
 
 .modal-enter-from,

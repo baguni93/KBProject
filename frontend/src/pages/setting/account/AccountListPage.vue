@@ -1,16 +1,10 @@
 <template>
   <main class="page-layout account-page" @click="closeMenu">
-    <PageHeader
-        title="연결 계좌 관리"
-        custom-back
-        @back="goBack"
-    />
+    <PageHeader title="연결 계좌 관리" custom-back @back="goBack" />
 
     <div class="page-content">
       <section class="title-section">
-        <h2 class="text-26-bold">
-          연결된 계좌를 관리해 보세요
-        </h2>
+        <h2 class="text-26-bold">연결된 계좌를 관리해 보세요</h2>
 
         <p class="text-15">
           연결 계좌는 송금, 출금, 자산 조회 등에<br />
@@ -22,17 +16,22 @@
         <div class="account-summary">
           <div class="account-count">
             <span class="text-13-bold">연결 계좌</span>
-            <strong class="text-15-bold">{{ accountStore.accounts.length }}</strong>
+            <strong class="text-15-bold">{{
+              accountStore.accounts.length
+            }}</strong>
           </div>
 
           <button
-              class="refresh-button"
-              :disabled="loading"
-              type="button"
-              aria-label="계좌 목록 새로고침"
-              @click.stop="loadAccounts"
+            class="refresh-button"
+            :disabled="loading"
+            type="button"
+            aria-label="계좌 목록 새로고침"
+            @click.stop="loadAccounts"
           >
-            <i class="fa-solid fa-rotate-right" :class="{ rotating: loading }"></i>
+            <i
+              class="fa-solid fa-rotate-right"
+              :class="{ rotating: loading }"
+            ></i>
           </button>
         </div>
 
@@ -44,12 +43,19 @@
           <div v-else-if="errorMessage" class="error-area">
             <p class="text-13">{{ errorMessage }}</p>
 
-            <button class="retry-button text-13-bold" type="button" @click="loadAccounts">
+            <button
+              class="retry-button text-13-bold"
+              type="button"
+              @click="loadAccounts"
+            >
               다시 불러오기
             </button>
           </div>
 
-          <div v-else-if="accountStore.accounts.length === 0" class="empty-area">
+          <div
+            v-else-if="accountStore.accounts.length === 0"
+            class="empty-area"
+          >
             <div class="empty-icon">
               <i class="fa-solid fa-building-columns"></i>
             </div>
@@ -64,16 +70,16 @@
 
           <div v-else class="account-list">
             <article
-                v-for="account in accountStore.accounts"
-                :key="account.linkedAccountId"
-                class="account-item"
+              v-for="account in accountStore.accounts"
+              :key="account.linkedAccountId"
+              class="account-item"
             >
               <div class="bank-logo-area">
                 <img
-                    v-if="account.bankLogoUrl"
-                    :alt="account.bankName"
-                    :src="account.bankLogoUrl"
-                    class="bank-logo"
+                  v-if="account.bankLogoUrl"
+                  :alt="account.bankName"
+                  :src="account.bankLogoUrl"
+                  class="bank-logo"
                 />
 
                 <div v-else class="bank-logo-fallback text-15-bold">
@@ -90,29 +96,31 @@
                   </span>
                 </div>
 
-                <p class="text-13">{{ maskAccountNumber(account.accountNumber) }}</p>
+                <p class="text-13">
+                  {{ maskAccountNumber(account.accountNumber) }}
+                </p>
               </div>
 
               <button
-                  v-if="accountStore.accounts.length > 1"
-                  class="menu-button"
-                  type="button"
-                  aria-label="계좌 관리 메뉴"
-                  @click.stop="toggleMenu(account.linkedAccountId)"
+                v-if="accountStore.accounts.length > 1"
+                class="menu-button"
+                type="button"
+                aria-label="계좌 관리 메뉴"
+                @click.stop="toggleMenu(account.linkedAccountId)"
               >
                 <i class="fa-solid fa-ellipsis-vertical"></i>
               </button>
 
               <div
-                  v-if="openedAccountId === account.linkedAccountId"
-                  class="account-menu"
-                  @click.stop
+                v-if="openedAccountId === account.linkedAccountId"
+                class="account-menu"
+                @click.stop
               >
                 <button
-                    v-if="account.primaryYn !== 'Y'"
-                    class="text-13"
-                    type="button"
-                    @click="changePrimary(account)"
+                  v-if="account.primaryYn !== 'Y'"
+                  class="text-13"
+                  type="button"
+                  @click="changePrimary(account)"
                 >
                   <span class="menu-icon">
                     <i class="fa-regular fa-star"></i>
@@ -121,9 +129,9 @@
                 </button>
 
                 <button
-                    class="delete-button text-13"
-                    type="button"
-                    @click="openDisconnectModal(account)"
+                  class="delete-button text-13"
+                  type="button"
+                  @click="openDisconnectModal(account)"
                 >
                   <span class="menu-icon">
                     <i class="fa-solid fa-link-slash"></i>
@@ -143,15 +151,19 @@
         {{ toastMessage }}
       </p>
 
-      <button class="content-add-btn connect-button" type="button" @click="goConnect">
+      <button
+        class="content-add-btn connect-button"
+        type="button"
+        @click="goConnect"
+      >
         <i class="fa-solid fa-plus"></i>
         계좌 연결하기
       </button>
 
       <div
-          v-if="disconnectTarget"
-          class="modal-overlay"
-          @click.self="closeDisconnectModal"
+        v-if="disconnectTarget"
+        class="modal-overlay"
+        @click.self="closeDisconnectModal"
       >
         <section class="disconnect-modal">
           <div class="warning-icon">
@@ -163,9 +175,9 @@
           <article class="selected-account">
             <div class="selected-bank-logo">
               <img
-                  v-if="disconnectTarget.bankLogoUrl"
-                  :alt="disconnectTarget.bankName"
-                  :src="disconnectTarget.bankLogoUrl"
+                v-if="disconnectTarget.bankLogoUrl"
+                :alt="disconnectTarget.bankName"
+                :src="disconnectTarget.bankLogoUrl"
               />
 
               <span v-else class="text-15-bold">
@@ -174,8 +186,12 @@
             </div>
 
             <div class="selected-account-info">
-              <strong class="text-15-bold">{{ disconnectTarget.bankName }}</strong>
-              <p class="text-13">{{ maskAccountNumber(disconnectTarget.accountNumber) }}</p>
+              <strong class="text-15-bold">{{
+                disconnectTarget.bankName
+              }}</strong>
+              <p class="text-13">
+                {{ maskAccountNumber(disconnectTarget.accountNumber) }}
+              </p>
             </div>
           </article>
 
@@ -186,17 +202,17 @@
 
           <div class="modal-button-area">
             <button
-                class="modal-cancel-button text-15-bold"
-                type="button"
-                @click="closeDisconnectModal"
+              class="modal-cancel-button text-15-bold"
+              type="button"
+              @click="closeDisconnectModal"
             >
               취소
             </button>
 
             <button
-                class="modal-delete-button text-15-bold"
-                type="button"
-                @click="removeAccount"
+              class="modal-delete-button text-15-bold"
+              type="button"
+              @click="removeAccount"
             >
               연결 해제
             </button>
@@ -210,7 +226,11 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { disconnectAccount, getAccounts, setPrimaryAccount } from '@/api/accountApi';
+import {
+  disconnectAccount,
+  getAccounts,
+  setPrimaryAccount,
+} from '@/api/accountApi';
 import { useAccountStore } from '@/stores/account';
 import PageHeader from '@/components/common/PageHeader.vue';
 
@@ -256,7 +276,8 @@ const loadAccounts = async () => {
     accountStore.setAccounts(accounts);
   } catch (error) {
     console.error(error);
-    errorMessage.value = error.response?.data?.message || '계좌 목록을 불러오지 못했습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '계좌 목록을 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -264,7 +285,8 @@ const loadAccounts = async () => {
 
 // 계좌 관리 메뉴 열기
 const toggleMenu = (linkedAccountId) => {
-  openedAccountId.value = openedAccountId.value === linkedAccountId ? null : linkedAccountId;
+  openedAccountId.value =
+    openedAccountId.value === linkedAccountId ? null : linkedAccountId;
 };
 
 // 계좌 관리 메뉴 닫기
@@ -287,9 +309,7 @@ const changePrimary = async (account) => {
   } catch (error) {
     console.error(error);
 
-    showToast(
-        error.response?.data?.message || '대표계좌 변경에 실패했습니다.'
-    );
+    showToast(error.response?.data?.message || '대표계좌 변경에 실패했습니다.');
   }
 };
 
@@ -322,7 +342,7 @@ const removeAccount = async () => {
     console.error(error);
 
     showToast(
-        error.response?.data?.message || '계좌 연결 해제에 실패했습니다.'
+      error.response?.data?.message || '계좌 연결 해제에 실패했습니다.',
     );
   }
 };
@@ -359,9 +379,15 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .account-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
-  overflow: visible;
 }
 
 .title-section {

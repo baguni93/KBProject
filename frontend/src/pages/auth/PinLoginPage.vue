@@ -1,10 +1,7 @@
 <template>
   <div class="page-layout login-page">
     <!-- 공통 상단 헤더 -->
-    <PageHeader
-        custom-back
-        @back="goBack"
-    />
+    <PageHeader custom-back @back="goBack" />
 
     <!-- 콘텐츠 -->
     <main class="page-content login-content">
@@ -23,66 +20,56 @@
 
       <!-- 제목 -->
       <header class="login-header">
-        <h1 class="text-28-bold">
-          간편비밀번호 로그인
-        </h1>
+        <h1 class="text-28-bold">간편비밀번호 로그인</h1>
 
-        <p class="text-15">
-          등록한 PIN 6자리를 입력해 주세요.
-        </p>
+        <p class="text-15">등록한 PIN 6자리를 입력해 주세요.</p>
       </header>
 
       <!-- PIN 입력 -->
       <section class="pin-section">
         <div
-            :class="{ error: !!errorMessage }"
-            class="pin-boxes"
-            role="button"
-            tabindex="0"
-            @click="focusPinInput"
-            @keydown.enter="focusPinInput"
+          :class="{ error: !!errorMessage }"
+          class="pin-boxes"
+          role="button"
+          tabindex="0"
+          @click="focusPinInput"
+          @keydown.enter="focusPinInput"
         >
           <div
-              v-for="index in 6"
-              :key="index"
-              :class="{
-                filled: pinPassword.length >= index,
-                active: pinPassword.length === index - 1 && !errorMessage,
-              }"
-              class="pin-box"
+            v-for="index in 6"
+            :key="index"
+            :class="{
+              filled: pinPassword.length >= index,
+              active: pinPassword.length === index - 1 && !errorMessage,
+            }"
+            class="pin-box"
           >
-            <span
-                v-if="pinPassword.length >= index"
-                class="pin-dot"
-            ></span>
+            <span v-if="pinPassword.length >= index" class="pin-dot"></span>
           </div>
 
           <input
-              ref="pinInput"
-              :value="pinPassword"
-              :disabled="pinLocked"
-              class="hidden-pin-input"
-              inputmode="numeric"
-              maxlength="6"
-              pattern="[0-9]*"
-              type="password"
-              autocomplete="off"
-              @input="changePin"
+            ref="pinInput"
+            :value="pinPassword"
+            :disabled="pinLocked"
+            class="hidden-pin-input"
+            inputmode="numeric"
+            maxlength="6"
+            pattern="[0-9]*"
+            type="password"
+            autocomplete="off"
+            @input="changePin"
           />
         </div>
 
-        <p
-            v-if="errorMessage"
-            class="error-message text-13"
-        >
+        <p v-if="errorMessage" class="error-message text-13">
           {{ errorMessage }}
         </p>
 
         <button
-            v-if="!pinLocked"
-            class="forgot-button text-13-bold"
-            type="button"
-            @click="goPinReset"
+          v-if="!pinLocked"
+          class="forgot-button text-13-bold"
+          type="button"
+          @click="goPinReset"
         >
           간편비밀번호를 잊으셨나요?
         </button>
@@ -95,13 +82,9 @@
         </div>
 
         <div class="security-text">
-          <strong class="text-15-bold">
-            안전하게 보호하고 있어요
-          </strong>
+          <strong class="text-15-bold"> 안전하게 보호하고 있어요 </strong>
 
-          <p class="text-13">
-            입력한 간편비밀번호는 안전하게 보호돼요.
-          </p>
+          <p class="text-13">입력한 간편비밀번호는 안전하게 보호돼요.</p>
         </div>
       </section>
     </main>
@@ -109,20 +92,20 @@
     <!-- 하단 버튼 -->
     <div class="bottom-btn-area single">
       <button
-          v-if="pinLocked"
-          class="bottom-btn"
-          type="button"
-          @click="goPinReset"
+        v-if="pinLocked"
+        class="bottom-btn"
+        type="button"
+        @click="goPinReset"
       >
         본인인증 후 재설정
       </button>
 
       <button
-          v-else
-          class="bottom-btn"
-          :disabled="pinPassword.length !== 6 || loading"
-          type="button"
-          @click="login"
+        v-else
+        class="bottom-btn"
+        :disabled="pinPassword.length !== 6 || loading"
+        type="button"
+        @click="login"
       >
         {{ loading ? '로그인 중' : '로그인' }}
       </button>
@@ -132,9 +115,7 @@
     <div v-if="loading" class="loading-overlay">
       <div class="loading-spinner"></div>
 
-      <span class="text-15-bold">
-        안전하게 로그인하고 있어요.
-      </span>
+      <span class="text-15-bold"> 안전하게 로그인하고 있어요. </span>
     </div>
   </div>
 </template>
@@ -213,16 +194,20 @@ const login = async () => {
     pinPassword.value = '';
 
     if (!error.response) {
-      errorMessage.value = '서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.';
+      errorMessage.value =
+        '서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.';
     } else {
       const responseData = error.response.data;
 
-      errorMessage.value = typeof responseData === 'string'
+      errorMessage.value =
+        typeof responseData === 'string'
           ? responseData
-          : responseData?.message || '로그인에 실패했습니다. 다시 시도해주세요.';
+          : responseData?.message ||
+            '로그인에 실패했습니다. 다시 시도해주세요.';
     }
 
-    if (errorMessage.value.includes('입력 가능 횟수를 초과')) pinLocked.value = true;
+    if (errorMessage.value.includes('입력 가능 횟수를 초과'))
+      pinLocked.value = true;
 
     if (!pinLocked.value) await focusPinInput();
   } finally {
@@ -254,17 +239,24 @@ watch(pinPassword, (value) => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
-@import "@/components/common/common/layout.css";
+@import '@/components/common/common/common.css';
+@import '@/components/common/common/layout.css';
 
 .login-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
   overflow: hidden;
+
   background: linear-gradient(
-      180deg,
-      #fffdf8 0%,
-      var(--color-bg-page) 42%,
-      var(--color-bg-page) 100%
+    180deg,
+    #fffdf8 0%,
+    var(--color-bg-page) 42%,
+    var(--color-bg-page) 100%
   );
 }
 
@@ -289,8 +281,8 @@ watch(pinPassword, (value) => {
   opacity: 0;
   transform: scale(0.78);
   animation:
-      glow-enter 0.5s ease 0.05s forwards,
-      glow-breathe 3s ease-in-out 1s infinite;
+    glow-enter 0.5s ease 0.05s forwards,
+    glow-breathe 3s ease-in-out 1s infinite;
 }
 
 .visual-icon {
@@ -302,10 +294,10 @@ watch(pinPassword, (value) => {
   justify-content: center;
   border-radius: 26px;
   background: linear-gradient(
-      135deg,
-      #ffca52 0%,
-      var(--color-primary) 65%,
-      #f3a711 100%
+    135deg,
+    #ffca52 0%,
+    var(--color-primary) 65%,
+    #f3a711 100%
   );
   box-shadow: 0 12px 26px rgba(255, 188, 46, 0.22);
   color: #ffffff;
@@ -341,8 +333,8 @@ watch(pinPassword, (value) => {
   background: #8f81f5;
 
   animation:
-      dot-pop 0.35s ease 0.42s forwards,
-      dot-float 3.2s ease-in-out 1s infinite;
+    dot-pop 0.35s ease 0.42s forwards,
+    dot-float 3.2s ease-in-out 1s infinite;
 }
 
 .dot-two {
@@ -353,8 +345,8 @@ watch(pinPassword, (value) => {
   background: #6fd0bd;
 
   animation:
-      dot-pop 0.35s ease 0.5s forwards,
-      dot-float 3.6s ease-in-out 1.1s infinite reverse;
+    dot-pop 0.35s ease 0.5s forwards,
+    dot-float 3.6s ease-in-out 1.1s infinite reverse;
 }
 
 .dot-three {
@@ -365,8 +357,8 @@ watch(pinPassword, (value) => {
   background: #ff9aa7;
 
   animation:
-      dot-pop 0.35s ease 0.58s forwards,
-      dot-float 3.4s ease-in-out 1.15s infinite;
+    dot-pop 0.35s ease 0.58s forwards,
+    dot-float 3.4s ease-in-out 1.15s infinite;
 }
 
 /* 제목 */
@@ -413,9 +405,9 @@ watch(pinPassword, (value) => {
   background: #fafafa;
   box-sizing: border-box;
   transition:
-      border-color 0.2s,
-      background 0.2s,
-      box-shadow 0.2s;
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
 }
 
 .pin-box.active {
@@ -486,12 +478,7 @@ watch(pinPassword, (value) => {
   padding: 16px;
   border: 1px solid rgba(255, 188, 46, 0.16);
   border-radius: 16px;
-  background: linear-gradient(
-      110deg,
-      #fff9ec 0%,
-      #fffdf8 75%,
-      #faf8ff 100%
-  );
+  background: linear-gradient(110deg, #fff9ec 0%, #fffdf8 75%, #faf8ff 100%);
   box-sizing: border-box;
   text-align: left;
 }

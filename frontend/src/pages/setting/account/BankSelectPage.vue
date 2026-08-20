@@ -1,10 +1,6 @@
 <template>
   <main class="page-layout account-page">
-    <PageHeader
-        title="계좌 연결"
-        custom-back
-        @back="goBack"
-    />
+    <PageHeader title="계좌 연결" custom-back @back="goBack" />
 
     <div class="page-content">
       <header class="title-section">
@@ -23,18 +19,20 @@
 
         <div v-else class="bank-grid">
           <button
-              v-for="bank in accountStore.banks"
-              :key="bank.bankCode"
-              :class="{ selected: accountStore.accountForm.bankCode === bank.bankCode }"
-              class="bank-item"
-              type="button"
-              @click="selectBank(bank)"
+            v-for="bank in accountStore.banks"
+            :key="bank.bankCode"
+            :class="{
+              selected: accountStore.accountForm.bankCode === bank.bankCode,
+            }"
+            class="bank-item"
+            type="button"
+            @click="selectBank(bank)"
           >
             <img
-                v-if="bank.bankLogoUrl"
-                :alt="bank.bankName"
-                :src="bank.bankLogoUrl"
-                class="bank-logo"
+              v-if="bank.bankLogoUrl"
+              :alt="bank.bankName"
+              :src="bank.bankLogoUrl"
+              class="bank-logo"
             />
 
             <div v-else class="bank-logo fallback-logo text-15-bold">
@@ -44,8 +42,8 @@
             <span class="text-13-bold">{{ bank.bankName }}</span>
 
             <span
-                v-if="accountStore.accountForm.bankCode === bank.bankCode"
-                class="selected-icon"
+              v-if="accountStore.accountForm.bankCode === bank.bankCode"
+              class="selected-icon"
             >
               <i class="fa-solid fa-check"></i>
             </span>
@@ -55,10 +53,10 @@
 
       <div class="bottom-btn-area single">
         <button
-            class="bottom-btn"
-            :disabled="!accountStore.accountForm.bankCode"
-            type="button"
-            @click="next"
+          class="bottom-btn"
+          :disabled="!accountStore.accountForm.bankCode"
+          type="button"
+          @click="next"
         >
           다음
         </button>
@@ -90,7 +88,8 @@ const loadBanks = async () => {
     accountStore.setBanks(banks);
   } catch (error) {
     console.error(error);
-    errorMessage.value = error.response?.data?.message || '은행 목록을 불러오지 못했습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '은행 목록을 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -121,6 +120,14 @@ onMounted(() => {
 
 <style scoped>
 .account-page {
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 

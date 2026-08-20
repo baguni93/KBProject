@@ -26,13 +26,9 @@
 
         <!-- 메시지 -->
         <div class="member-message">
-          <h1 class="text-30-bold">
-            이미 가입된 회원이에요!
-          </h1>
+          <h1 class="text-30-bold">이미 가입된 회원이에요!</h1>
 
-          <p class="text-15">
-            등록한 간편비밀번호로 로그인해 주세요.
-          </p>
+          <p class="text-15">등록한 간편비밀번호로 로그인해 주세요.</p>
         </div>
 
         <!-- 안내 카드 -->
@@ -42,13 +38,9 @@
           </div>
 
           <div class="guide-text">
-            <strong class="text-15-bold">
-              간편비밀번호 로그인
-            </strong>
+            <strong class="text-15-bold"> 간편비밀번호 로그인 </strong>
 
-            <p class="text-13">
-              등록한 PIN을 입력해 주세요.
-            </p>
+            <p class="text-13">등록한 PIN을 입력해 주세요.</p>
           </div>
         </div>
       </section>
@@ -56,11 +48,7 @@
 
     <!-- 공통 하단 버튼 -->
     <div class="bottom-btn-area single">
-      <button
-          class="bottom-btn next-button"
-          type="button"
-          @click="goLogin"
-      >
+      <button class="bottom-btn next-button" type="button" @click="goLogin">
         다음
       </button>
     </div>
@@ -86,11 +74,17 @@ const goLogin = () => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
-@import "@/components/common/common/layout.css";
+@import '@/components/common/common/common.css';
+@import '@/components/common/common/layout.css';
 
 .member-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
   overflow: hidden;
   background: linear-gradient(180deg, #fffdf8 0%, #ffffff 42%, #ffffff 100%);
 }
@@ -149,15 +143,15 @@ const goLogin = () => {
   inset: 4px;
   border-radius: 50%;
   background: linear-gradient(
-      135deg,
-      rgba(255, 188, 46, 0.17),
-      rgba(255, 225, 155, 0.07)
+    135deg,
+    rgba(255, 188, 46, 0.17),
+    rgba(255, 225, 155, 0.07)
   );
   opacity: 0;
   transform: scale(0.76);
   animation:
-      circle-enter 0.5s ease 0.05s forwards,
-      circle-pulse 2.6s ease-in-out 0.9s infinite;
+    circle-enter 0.5s ease 0.05s forwards,
+    circle-pulse 2.6s ease-in-out 0.9s infinite;
 }
 
 .member-icon {
@@ -172,10 +166,10 @@ const goLogin = () => {
   justify-content: center;
   border-radius: 50%;
   background: linear-gradient(
-      135deg,
-      #ffd268 0%,
-      var(--color-primary) 65%,
-      #f3a711 100%
+    135deg,
+    #ffd268 0%,
+    var(--color-primary) 65%,
+    #f3a711 100%
   );
   box-shadow: 0 14px 30px rgba(255, 188, 46, 0.24);
   color: #ffffff;
@@ -207,8 +201,8 @@ const goLogin = () => {
   height: 9px;
   background: #ffca52;
   animation:
-      deco-pop 0.4s ease 0.4s forwards,
-      deco-float 3.4s ease-in-out 1s infinite;
+    deco-pop 0.4s ease 0.4s forwards,
+    deco-float 3.4s ease-in-out 1s infinite;
 }
 
 .deco-two {
@@ -218,8 +212,8 @@ const goLogin = () => {
   height: 7px;
   background: #9d90ff;
   animation:
-      deco-pop 0.4s ease 0.48s forwards,
-      deco-float 3.8s ease-in-out 1.1s infinite reverse;
+    deco-pop 0.4s ease 0.48s forwards,
+    deco-float 3.8s ease-in-out 1.1s infinite reverse;
 }
 
 .deco-three {
@@ -229,8 +223,8 @@ const goLogin = () => {
   height: 7px;
   background: #7bd6c7;
   animation:
-      deco-pop 0.4s ease 0.56s forwards,
-      deco-float 3.5s ease-in-out 1.15s infinite;
+    deco-pop 0.4s ease 0.56s forwards,
+    deco-float 3.5s ease-in-out 1.15s infinite;
 }
 
 .deco-four {
@@ -240,8 +234,8 @@ const goLogin = () => {
   height: 8px;
   background: #ff9eaa;
   animation:
-      deco-pop 0.4s ease 0.62s forwards,
-      deco-float 3.9s ease-in-out 1.2s infinite reverse;
+    deco-pop 0.4s ease 0.62s forwards,
+    deco-float 3.9s ease-in-out 1.2s infinite reverse;
 }
 
 .sparkle {
@@ -256,8 +250,8 @@ const goLogin = () => {
   color: var(--color-primary);
   font-size: 11px;
   animation:
-      sparkle-pop 0.45s ease 0.5s forwards,
-      sparkle-float 3.2s ease-in-out 1.1s infinite;
+    sparkle-pop 0.45s ease 0.5s forwards,
+    sparkle-float 3.2s ease-in-out 1.1s infinite;
 }
 
 .sparkle-two {
@@ -266,8 +260,8 @@ const goLogin = () => {
   color: #a99df7;
   font-size: 9px;
   animation:
-      sparkle-pop 0.45s ease 0.66s forwards,
-      sparkle-float 3.6s ease-in-out 1.2s infinite reverse;
+    sparkle-pop 0.45s ease 0.66s forwards,
+    sparkle-float 3.6s ease-in-out 1.2s infinite reverse;
 }
 
 /* 메시지 */
@@ -299,12 +293,7 @@ const goLogin = () => {
   padding: 18px;
   border: 1px solid rgba(255, 188, 46, 0.15);
   border-radius: 18px;
-  background: linear-gradient(
-      110deg,
-      #fff9ec 0%,
-      #fffdf8 70%,
-      #faf8ff 100%
-  );
+  background: linear-gradient(110deg, #fff9ec 0%, #fffdf8 70%, #faf8ff 100%);
   box-sizing: border-box;
   text-align: left;
   opacity: 0;

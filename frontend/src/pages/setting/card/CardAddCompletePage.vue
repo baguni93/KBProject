@@ -57,17 +57,17 @@
     <!-- 하단 2개 버튼 -->
     <div class="bottom-btn-area double complete-button-area">
       <button
-          class="bottom-btn secondary-button complete-button"
-          type="button"
-          @click="goPayment"
+        class="bottom-btn secondary-button complete-button"
+        type="button"
+        @click="goPayment"
       >
         결제 홈
       </button>
 
       <button
-          class="bottom-btn primary-button complete-button"
-          type="button"
-          @click="goCardList"
+        class="bottom-btn primary-button complete-button"
+        type="button"
+        @click="goCardList"
       >
         카드 관리
       </button>
@@ -92,18 +92,23 @@ const goCardList = async () => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
+@import '@/components/common/common/common.css';
 
 .complete-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
   overflow: hidden;
-  background:
-      linear-gradient(
-          180deg,
-          #fffdf8 0%,
-          var(--color-bg-page) 42%,
-          var(--color-bg-page) 100%
-      );
+  background: linear-gradient(
+    180deg,
+    #fffdf8 0%,
+    var(--color-bg-page) 42%,
+    var(--color-bg-page) 100%
+  );
 }
 
 /* =========================
@@ -187,23 +192,14 @@ const goCardList = async () => {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background:
-      linear-gradient(
-          145deg,
-          #ffd15c,
-          var(--color-primary)
-      );
+  background: linear-gradient(145deg, #ffd15c, var(--color-primary));
   box-shadow:
-      0 16px 34px rgba(255, 188, 46, 0.28),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    0 16px 34px rgba(255, 188, 46, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
   color: var(--color-text-white);
   font-size: 42px;
   transform: translate(-50%, -50%) scale(0);
-  animation:
-      success-pop
-      0.55s
-      cubic-bezier(0.34, 1.56, 0.64, 1)
-      forwards;
+  animation: success-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .success-circle i {

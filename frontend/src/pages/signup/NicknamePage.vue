@@ -1,10 +1,7 @@
 <template>
   <div class="page-layout nickname-page">
     <!-- 공통 상단 헤더 -->
-    <PageHeader
-        custom-back
-        @back="goBack"
-    />
+    <PageHeader custom-back @back="goBack" />
 
     <!-- 콘텐츠 -->
     <main class="page-content nickname-content">
@@ -19,22 +16,18 @@
 
       <!-- 제목 -->
       <header class="nickname-header">
-        <h1 class="text-30-bold">
-          닉네임 설정
-        </h1>
+        <h1 class="text-30-bold">닉네임 설정</h1>
 
-        <p class="text-15">
-          사용할 닉네임을 입력해 주세요.
-        </p>
+        <p class="text-15">사용할 닉네임을 입력해 주세요.</p>
       </header>
 
       <!-- 닉네임 입력 -->
       <section class="nickname-section">
         <NicknameForm
-            ref="nicknameFormRef"
-            :submitting="submitting"
-            @valid-change="handleValidChange"
-            @submit="handleSignup"
+          ref="nicknameFormRef"
+          :submitting="submitting"
+          @valid-change="handleValidChange"
+          @submit="handleSignup"
         />
       </section>
     </main>
@@ -42,10 +35,10 @@
     <!-- 공통 하단 버튼 -->
     <div class="bottom-btn-area single">
       <button
-          class="bottom-btn"
-          type="button"
-          :disabled="!nicknameValid || submitting"
-          @click="handleSubmit"
+        class="bottom-btn"
+        type="button"
+        :disabled="!nicknameValid || submitting"
+        @click="handleSubmit"
       >
         {{ submitting ? '가입 중' : '회원가입' }}
       </button>
@@ -103,8 +96,8 @@ const handleSignup = async (nickname) => {
     pinPassword,
     nickname,
     agreementIds: signupStore.agreements
-        .filter((agreement) => agreement.agreed)
-        .map((agreement) => agreement.agreementId),
+      .filter((agreement) => agreement.agreed)
+      .map((agreement) => agreement.agreementId),
   };
 
   try {
@@ -137,12 +130,19 @@ const handleSignup = async (nickname) => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
-@import "@/components/common/common/layout.css";
-@import "@/components/common/common/button.css";
+@import '@/components/common/common/common.css';
+@import '@/components/common/common/layout.css';
+@import '@/components/common/common/button.css';
 
 .nickname-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 
@@ -202,5 +202,6 @@ const handleSignup = async (nickname) => {
 /* 닉네임 입력 */
 .nickname-section {
   margin-top: 52px;
+  padding: 1px;
 }
 </style>

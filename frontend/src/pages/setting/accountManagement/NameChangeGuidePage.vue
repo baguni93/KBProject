@@ -32,15 +32,15 @@
           <label class="text-13-bold" for="newUserName">변경할 이름</label>
 
           <input
-              id="newUserName"
-              v-model.trim="newUserName"
-              :class="{ error: !!nameErrorMessage }"
-              class="name-box text-15"
-              maxlength="7"
-              placeholder="새로운 이름을 입력해 주세요"
-              type="text"
-              @input="clearNameError"
-              @blur="validateName"
+            id="newUserName"
+            v-model.trim="newUserName"
+            :class="{ error: !!nameErrorMessage }"
+            class="name-box text-15"
+            maxlength="7"
+            placeholder="새로운 이름을 입력해 주세요"
+            type="text"
+            @input="clearNameError"
+            @blur="validateName"
           />
 
           <p v-if="nameErrorMessage" class="name-error-message text-13">
@@ -72,7 +72,12 @@
     </main>
 
     <div class="bottom-btn-area single">
-      <button class="bottom-btn" :disabled="loading || !newUserName" type="button" @click="startVerification">
+      <button
+        class="bottom-btn"
+        :disabled="loading || !newUserName"
+        type="button"
+        @click="startVerification"
+      >
         본인인증 하기
       </button>
     </div>
@@ -118,7 +123,8 @@ const loadUserInfo = async () => {
     userInfo.phoneNumber = data.phoneNumber || '';
   } catch (error) {
     console.error(error);
-    loadErrorMessage.value = error.response?.data?.message || '회원정보를 불러오지 못했습니다.';
+    loadErrorMessage.value =
+      error.response?.data?.message || '회원정보를 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -178,9 +184,17 @@ onMounted(loadUserInfo);
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
+@import '@/components/common/common/common.css';
 
 .guide-page {
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 
@@ -253,7 +267,9 @@ onMounted(loadUserInfo);
 
 input.name-box {
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 input.name-box:focus {

@@ -1,19 +1,13 @@
 <template>
   <div class="page-layout account-page">
     <!-- 공통 상단 헤더 -->
-    <PageHeader
-        title="계좌 인증"
-        custom-back
-        @back="goBack"
-    />
+    <PageHeader title="계좌 인증" custom-back @back="goBack" />
 
     <!-- 콘텐츠 -->
     <main class="page-content account-content">
       <!-- 페이지 제목 -->
       <header class="verification-header">
-        <h1 class="text-26-bold">
-          계좌 인증번호 입력
-        </h1>
+        <h1 class="text-26-bold">계좌 인증번호 입력</h1>
 
         <p class="text-15">
           계좌 거래내역에 표시된<br />
@@ -24,39 +18,39 @@
       <!-- 인증번호 입력 -->
       <section class="verification-section">
         <div
-            :class="{
-              error: !!errorMessage,
-              disabled: resendRequired || verificationLocked,
-            }"
-            class="verification-input-area"
+          :class="{
+            error: !!errorMessage,
+            disabled: resendRequired || verificationLocked,
+          }"
+          class="verification-input-area"
         >
           <input
-              ref="verificationInput"
-              :value="verificationCode"
-              :disabled="resendRequired || verificationLocked || loading"
-              class="verification-input"
-              inputmode="numeric"
-              maxlength="4"
-              placeholder="인증번호 4자리"
-              type="text"
-              @input="changeVerificationCode"
+            ref="verificationInput"
+            :value="verificationCode"
+            :disabled="resendRequired || verificationLocked || loading"
+            class="verification-input"
+            inputmode="numeric"
+            maxlength="4"
+            placeholder="인증번호 4자리"
+            type="text"
+            @input="changeVerificationCode"
           />
 
           <button
-              v-if="verificationCode"
-              class="clear-button"
-              :disabled="resendRequired || verificationLocked || loading"
-              type="button"
-              aria-label="인증번호 전체 삭제"
-              @click="clearVerificationCode"
+            v-if="verificationCode"
+            class="clear-button"
+            :disabled="resendRequired || verificationLocked || loading"
+            type="button"
+            aria-label="인증번호 전체 삭제"
+            @click="clearVerificationCode"
           >
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
 
         <p
-            v-if="accountStore.accountForm.developmentCode"
-            class="development-code text-13"
+          v-if="accountStore.accountForm.developmentCode"
+          class="development-code text-13"
         >
           개발용 인증번호: {{ accountStore.accountForm.developmentCode }}
         </p>
@@ -68,15 +62,12 @@
     </main>
 
     <!-- 인증번호 재발급이 필요한 경우에만 하단 버튼 표시 -->
-    <div
-        v-if="resendRequired"
-        class="bottom-btn-area single"
-    >
+    <div v-if="resendRequired" class="bottom-btn-area single">
       <button
-          class="bottom-btn"
-          :disabled="loading"
-          type="button"
-          @click="resendVerification"
+        class="bottom-btn"
+        :disabled="loading"
+        type="button"
+        @click="resendVerification"
       >
         {{ loading ? '인증번호 재발급 중...' : '인증번호 다시 받기' }}
       </button>
@@ -85,12 +76,7 @@
 </template>
 
 <script setup>
-import {
-  nextTick,
-  onMounted,
-  ref,
-  watch,
-} from 'vue';
+import { nextTick, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   confirmAccountVerification,
@@ -112,11 +98,7 @@ const verificationLocked = ref(false);
 
 // 입력창 포커스
 const focusInput = async () => {
-  if (
-      resendRequired.value ||
-      verificationLocked.value ||
-      loading.value
-  ) {
+  if (resendRequired.value || verificationLocked.value || loading.value) {
     return;
   }
 
@@ -126,9 +108,7 @@ const focusInput = async () => {
 
 // 인증번호 입력
 const changeVerificationCode = (event) => {
-  const value = event.target.value
-      .replace(/[^0-9]/g, '')
-      .slice(0, 4);
+  const value = event.target.value.replace(/[^0-9]/g, '').slice(0, 4);
 
   verificationCode.value = value;
   errorMessage.value = '';
@@ -155,17 +135,16 @@ const clearVerificationCode = async () => {
 // 계좌 인증 및 연결
 const confirmAndConnect = async () => {
   if (
-      loading.value ||
-      verificationCode.value.length !== 4 ||
-      resendRequired.value ||
-      verificationLocked.value
+    loading.value ||
+    verificationCode.value.length !== 4 ||
+    resendRequired.value ||
+    verificationLocked.value
   ) {
     return;
   }
 
   const userId = accountStore.userId;
-  const verificationId =
-      accountStore.accountForm.verificationId;
+  const verificationId = accountStore.accountForm.verificationId;
 
   if (!userId || !verificationId) {
     await router.replace('/setting/account/connect');
@@ -196,34 +175,22 @@ const confirmAndConnect = async () => {
     accountStore.setVerificationCode('');
 
     const message =
-        error.response?.data?.message ||
-        '인증번호가 일치하지 않습니다.';
+      error.response?.data?.message || '인증번호가 일치하지 않습니다.';
 
     errorMessage.value = message;
 
     // 최초 인증번호 5회 실패
-    if (
-        message.includes(
-            '인증번호를 다시 받아주세요',
-        )
-    ) {
+    if (message.includes('인증번호를 다시 받아주세요')) {
       resendRequired.value = true;
     }
 
     // 재발급 후 5회 실패
-    if (
-        message.includes(
-            '5분 후 다시 시도해주세요',
-        )
-    ) {
+    if (message.includes('5분 후 다시 시도해주세요')) {
       resendRequired.value = false;
       verificationLocked.value = true;
     }
 
-    if (
-        !resendRequired.value &&
-        !verificationLocked.value
-    ) {
+    if (!resendRequired.value && !verificationLocked.value) {
       await focusInput();
     }
   } finally {
@@ -232,33 +199,25 @@ const confirmAndConnect = async () => {
 };
 
 // 4자리 입력 완료 시 자동 인증
-watch(
-    verificationCode,
-    async (code) => {
-      if (
-          code.length !== 4 ||
-          loading.value ||
-          resendRequired.value ||
-          verificationLocked.value
-      ) {
-        return;
-      }
+watch(verificationCode, async (code) => {
+  if (
+    code.length !== 4 ||
+    loading.value ||
+    resendRequired.value ||
+    verificationLocked.value
+  ) {
+    return;
+  }
 
-      await confirmAndConnect();
-    },
-);
+  await confirmAndConnect();
+});
 
 // 계좌 인증번호 재발급
 const resendVerification = async () => {
   const userId = accountStore.userId;
-  const verificationId =
-      accountStore.accountForm.verificationId;
+  const verificationId = accountStore.accountForm.verificationId;
 
-  if (
-      !userId ||
-      !verificationId ||
-      loading.value
-  ) {
+  if (!userId || !verificationId || loading.value) {
     return;
   }
 
@@ -266,13 +225,9 @@ const resendVerification = async () => {
     loading.value = true;
     errorMessage.value = '';
 
-    const response =
-        await resendAccountVerification(
-            verificationId,
-        );
+    const response = await resendAccountVerification(verificationId);
 
-    accountStore.accountForm.developmentCode =
-        response.verificationCode;
+    accountStore.accountForm.developmentCode = response.verificationCode;
 
     verificationCode.value = '';
     accountStore.setVerificationCode('');
@@ -284,26 +239,18 @@ const resendVerification = async () => {
     console.error(error);
 
     const message =
-        error.response?.data?.message ||
-        '인증번호 재발급에 실패했습니다.';
+      error.response?.data?.message || '인증번호 재발급에 실패했습니다.';
 
     errorMessage.value = message;
 
-    if (
-        message.includes(
-            '5분 후 다시 시도해주세요',
-        )
-    ) {
+    if (message.includes('5분 후 다시 시도해주세요')) {
       resendRequired.value = false;
       verificationLocked.value = true;
     }
   } finally {
     loading.value = false;
 
-    if (
-        !resendRequired.value &&
-        !verificationLocked.value
-    ) {
+    if (!resendRequired.value && !verificationLocked.value) {
       await focusInput();
     }
   }
@@ -315,9 +262,7 @@ const goBack = () => {
 };
 
 onMounted(() => {
-  if (
-      !accountStore.accountForm.verificationId
-  ) {
+  if (!accountStore.accountForm.verificationId) {
     router.replace('/setting/account/connect');
     return;
   }
@@ -327,10 +272,18 @@ onMounted(() => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
-@import "@/components/common/common/layout.css";
+@import '@/components/common/common/common.css';
+@import '@/components/common/common/layout.css';
 
 .account-page {
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 

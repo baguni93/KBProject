@@ -30,14 +30,11 @@
         </div>
 
         <div class="complete-message">
-          <h1
-              class="text-26-bold"
-              v-html="completeInfo.title"
-          ></h1>
+          <h1 class="text-26-bold" v-html="completeInfo.title"></h1>
 
           <p
-              class="complete-description text-15"
-              v-html="completeInfo.description"
+            class="complete-description text-15"
+            v-html="completeInfo.description"
           ></p>
         </div>
 
@@ -49,11 +46,7 @@
     </main>
 
     <div class="bottom-btn-area single complete-button-area">
-      <button
-          class="bottom-btn"
-          type="button"
-          @click="complete"
-      >
+      <button class="bottom-btn" type="button" @click="complete">
         {{ completeInfo.buttonText }}
       </button>
     </div>
@@ -67,17 +60,14 @@ import { useRoute, useRouter } from 'vue-router';
 const route = useRoute();
 const router = useRouter();
 
-const completeType = computed(() =>
-    String(route.query.type || 'PIN_CHANGE')
-);
+const completeType = computed(() => String(route.query.type || 'PIN_CHANGE'));
 
 // 완료 화면 정보
 const completeInfo = computed(() => {
   const completeData = {
     NAME_CHANGE: {
       title: '이름 변경이<br />완료되었어요',
-      description:
-          '변경된 이름으로<br />서비스를 이용할 수 있어요.',
+      description: '변경된 이름으로<br />서비스를 이용할 수 있어요.',
       icon: 'fa-regular fa-user',
       badgeText: '새 이름 적용 완료',
       buttonText: '확인',
@@ -86,8 +76,7 @@ const completeInfo = computed(() => {
 
     PHONE_CHANGE: {
       title: '휴대폰 번호 변경이<br />완료되었어요',
-      description:
-          '새로운 휴대폰 번호가<br />계정에 안전하게 등록되었어요.',
+      description: '새로운 휴대폰 번호가<br />계정에 안전하게 등록되었어요.',
       icon: 'fa-solid fa-mobile-screen-button',
       badgeText: '새 번호 적용 완료',
       buttonText: '확인',
@@ -96,8 +85,7 @@ const completeInfo = computed(() => {
 
     PIN_CHANGE: {
       title: '간편비밀번호 변경이<br />완료되었어요',
-      description:
-          '이제 새로운 간편비밀번호로<br />서비스를 이용할 수 있어요.',
+      description: '이제 새로운 간편비밀번호로<br />서비스를 이용할 수 있어요.',
       icon: 'fa-solid fa-lock',
       badgeText: '새 비밀번호 적용 완료',
       buttonText: '확인',
@@ -106,8 +94,7 @@ const completeInfo = computed(() => {
 
     WITHDRAW: {
       title: '회원탈퇴가<br />완료되었어요',
-      description:
-          '그동안 서비스를<br />이용해 주셔서 감사합니다.',
+      description: '그동안 서비스를<br />이용해 주셔서 감사합니다.',
       icon: 'fa-regular fa-hand',
       badgeText: '탈퇴 처리 완료',
       buttonText: '확인',
@@ -115,33 +102,33 @@ const completeInfo = computed(() => {
     },
   };
 
-  return (
-      completeData[completeType.value] ||
-      completeData.PIN_CHANGE
-  );
+  return completeData[completeType.value] || completeData.PIN_CHANGE;
 });
 
 // 완료 후 이동
 const complete = async () => {
-  await router.replace(
-      completeInfo.value.path
-  );
+  await router.replace(completeInfo.value.path);
 };
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
+@import '@/components/common/common/common.css';
 
 .complete-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
   overflow: hidden;
-  background:
-      linear-gradient(
-          180deg,
-          #fffdf8 0%,
-          var(--color-bg-page) 42%,
-          var(--color-bg-page) 100%
-      );
+  background: linear-gradient(
+    180deg,
+    #fffdf8 0%,
+    var(--color-bg-page) 42%,
+    var(--color-bg-page) 100%
+  );
 }
 
 .complete-container {
@@ -175,9 +162,7 @@ const complete = async () => {
   width: 240px;
   height: 240px;
   background: rgba(255, 188, 46, 0.1);
-  animation:
-      backgroundFloatLeft
-      6s ease-in-out infinite;
+  animation: backgroundFloatLeft 6s ease-in-out infinite;
 }
 
 .decoration-right {
@@ -186,9 +171,7 @@ const complete = async () => {
   width: 210px;
   height: 210px;
   background: rgba(176, 164, 255, 0.05);
-  animation:
-      backgroundFloatRight
-      7s ease-in-out infinite;
+  animation: backgroundFloatRight 7s ease-in-out infinite;
 }
 
 /* =========================
@@ -212,10 +195,7 @@ const complete = async () => {
   border-radius: 50%;
   background: rgba(255, 188, 46, 0.16);
   transform: translate(-50%, -50%);
-  animation:
-      glow
-      2.2s ease-in-out
-      0.8s infinite;
+  animation: glow 2.2s ease-in-out 0.8s infinite;
 }
 
 /* 메인 체크 원 */
@@ -230,36 +210,20 @@ const complete = async () => {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background:
-      linear-gradient(
-          145deg,
-          #ffd15c,
-          var(--color-primary)
-      );
+  background: linear-gradient(145deg, #ffd15c, var(--color-primary));
   box-shadow:
-      0 16px 34px rgba(255, 188, 46, 0.28),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    0 16px 34px rgba(255, 188, 46, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
   color: var(--color-text-white);
   font-size: 42px;
-  transform:
-      translate(-50%, -50%)
-      scale(0);
-  animation:
-      successPop
-      0.55s
-      cubic-bezier(0.34, 1.56, 0.64, 1)
-      forwards;
+  transform: translate(-50%, -50%) scale(0);
+  animation: successPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .success-circle i {
   opacity: 0;
-  transform:
-      scale(0.5)
-      rotate(-15deg);
-  animation:
-      checkAppear
-      0.35s ease
-      0.42s forwards;
+  transform: scale(0.5) rotate(-15deg);
+  animation: checkAppear 0.35s ease 0.42s forwards;
 }
 
 /* =========================
@@ -280,10 +244,7 @@ const complete = async () => {
 .particle-1 {
   top: 28px;
   left: 28px;
-  animation:
-      particlePop
-      0.55s ease
-      0.35s forwards;
+  animation: particlePop 0.55s ease 0.35s forwards;
 }
 
 .particle-2 {
@@ -291,10 +252,7 @@ const complete = async () => {
   right: 36px;
   width: 6px;
   height: 6px;
-  animation:
-      particlePop
-      0.55s ease
-      0.5s forwards;
+  animation: particlePop 0.55s ease 0.5s forwards;
 }
 
 .particle-3 {
@@ -302,10 +260,7 @@ const complete = async () => {
   right: 8px;
   width: 10px;
   height: 10px;
-  animation:
-      particlePop
-      0.55s ease
-      0.4s forwards;
+  animation: particlePop 0.55s ease 0.4s forwards;
 }
 
 .particle-4 {
@@ -313,10 +268,7 @@ const complete = async () => {
   bottom: 24px;
   width: 7px;
   height: 7px;
-  animation:
-      particlePop
-      0.55s ease
-      0.6s forwards;
+  animation: particlePop 0.55s ease 0.6s forwards;
 }
 
 .particle-5 {
@@ -324,10 +276,7 @@ const complete = async () => {
   left: 30px;
   width: 6px;
   height: 6px;
-  animation:
-      particlePop
-      0.55s ease
-      0.48s forwards;
+  animation: particlePop 0.55s ease 0.48s forwards;
 }
 
 .particle-6 {
@@ -335,10 +284,7 @@ const complete = async () => {
   left: 6px;
   width: 9px;
   height: 9px;
-  animation:
-      particlePop
-      0.55s ease
-      0.58s forwards;
+  animation: particlePop 0.55s ease 0.58s forwards;
 }
 
 /* =========================
@@ -356,20 +302,14 @@ const complete = async () => {
   top: 18px;
   left: 70px;
   font-size: 12px;
-  animation:
-      sparkPop
-      0.55s ease
-      0.55s forwards;
+  animation: sparkPop 0.55s ease 0.55s forwards;
 }
 
 .spark-2 {
   right: 46px;
   bottom: 17px;
   font-size: 10px;
-  animation:
-      sparkPop
-      0.55s ease
-      0.7s forwards;
+  animation: sparkPop 0.55s ease 0.7s forwards;
 }
 
 /* =========================
@@ -379,10 +319,7 @@ const complete = async () => {
 .complete-message {
   opacity: 0;
   transform: translateY(16px);
-  animation:
-      contentUp
-      0.5s ease
-      0.55s forwards;
+  animation: contentUp 0.5s ease 0.55s forwards;
 }
 
 .complete-message h1 {
@@ -409,21 +346,15 @@ const complete = async () => {
   gap: 7px;
   margin-top: 26px;
   padding: 10px 15px;
-  border:
-      1px solid
-      rgba(255, 188, 46, 0.22);
+  border: 1px solid rgba(255, 188, 46, 0.22);
   border-radius: 999px;
-  background:
-      rgba(255, 188, 46, 0.1);
+  background: rgba(255, 188, 46, 0.1);
   color: #9a6900;
   font-size: 13px;
   font-weight: 500;
   opacity: 0;
   transform: translateY(10px);
-  animation:
-      contentUp
-      0.45s ease
-      0.72s forwards;
+  animation: contentUp 0.45s ease 0.72s forwards;
 }
 
 .complete-badge i {
@@ -444,10 +375,7 @@ const complete = async () => {
   opacity: 0;
   transform: translateY(14px);
 
-  animation:
-      buttonUp
-      0.45s ease
-      0.85s forwards;
+  animation: buttonUp 0.45s ease 0.85s forwards;
 }
 
 .complete-button-area::before,
@@ -462,21 +390,15 @@ const complete = async () => {
 /* 메인 원 등장 */
 @keyframes successPop {
   0% {
-    transform:
-        translate(-50%, -50%)
-        scale(0);
+    transform: translate(-50%, -50%) scale(0);
   }
 
   70% {
-    transform:
-        translate(-50%, -50%)
-        scale(1.08);
+    transform: translate(-50%, -50%) scale(1.08);
   }
 
   100% {
-    transform:
-        translate(-50%, -50%)
-        scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -484,16 +406,12 @@ const complete = async () => {
 @keyframes checkAppear {
   from {
     opacity: 0;
-    transform:
-        scale(0.5)
-        rotate(-15deg);
+    transform: scale(0.5) rotate(-15deg);
   }
 
   to {
     opacity: 1;
-    transform:
-        scale(1)
-        rotate(0);
+    transform: scale(1) rotate(0);
   }
 }
 
@@ -519,23 +437,17 @@ const complete = async () => {
 @keyframes sparkPop {
   0% {
     opacity: 0;
-    transform:
-        scale(0)
-        rotate(-40deg);
+    transform: scale(0) rotate(-40deg);
   }
 
   60% {
     opacity: 1;
-    transform:
-        scale(1.4)
-        rotate(12deg);
+    transform: scale(1.4) rotate(12deg);
   }
 
   100% {
     opacity: 0.75;
-    transform:
-        scale(1)
-        rotate(0);
+    transform: scale(1) rotate(0);
   }
 }
 
@@ -544,16 +456,12 @@ const complete = async () => {
   0%,
   100% {
     opacity: 0.55;
-    transform:
-        translate(-50%, -50%)
-        scale(0.95);
+    transform: translate(-50%, -50%) scale(0.95);
   }
 
   50% {
     opacity: 1;
-    transform:
-        translate(-50%, -50%)
-        scale(1.1);
+    transform: translate(-50%, -50%) scale(1.1);
   }
 }
 
@@ -627,13 +535,11 @@ const complete = async () => {
   }
 
   .success-circle {
-    transform:
-        translate(-50%, -50%);
+    transform: translate(-50%, -50%);
   }
 
   .success-glow {
-    transform:
-        translate(-50%, -50%);
+    transform: translate(-50%, -50%);
   }
 }
 

@@ -22,35 +22,38 @@
 
       <section class="pin-section">
         <div
-            :class="{ error: !!errorMessage }"
-            class="pin-boxes"
-            role="button"
-            tabindex="0"
-            @click="focusPinInput"
-            @keydown.enter="focusPinInput"
+          :class="{ error: !!errorMessage }"
+          class="pin-boxes"
+          role="button"
+          tabindex="0"
+          @click="focusPinInput"
+          @keydown.enter="focusPinInput"
         >
           <div
-              v-for="index in 6"
-              :key="index"
-              :class="{
+            v-for="index in 6"
+            :key="index"
+            :class="{
               filled: confirmPinPassword.length >= index,
               active: confirmPinPassword.length === index - 1 && !errorMessage,
             }"
-              class="pin-box"
+            class="pin-box"
           >
-            <span v-if="confirmPinPassword.length >= index" class="pin-dot"></span>
+            <span
+              v-if="confirmPinPassword.length >= index"
+              class="pin-dot"
+            ></span>
           </div>
 
           <input
-              ref="pinInput"
-              :value="confirmPinPassword"
-              class="hidden-pin-input"
-              inputmode="numeric"
-              maxlength="6"
-              pattern="[0-9]*"
-              type="password"
-              autocomplete="new-password"
-              @input="handlePinInput"
+            ref="pinInput"
+            :value="confirmPinPassword"
+            class="hidden-pin-input"
+            inputmode="numeric"
+            maxlength="6"
+            pattern="[0-9]*"
+            type="password"
+            autocomplete="new-password"
+            @input="handlePinInput"
           />
         </div>
 
@@ -66,10 +69,10 @@
 
     <div class="bottom-btn-area single">
       <button
-          class="bottom-btn"
-          :disabled="confirmPinPassword.length !== 6 || loading"
-          type="button"
-          @click="submitPinChange"
+        class="bottom-btn"
+        :disabled="confirmPinPassword.length !== 6 || loading"
+        type="button"
+        @click="submitPinChange"
       >
         {{ loading ? '변경 중...' : '간편비밀번호 변경' }}
       </button>
@@ -153,7 +156,8 @@ const submitPinChange = async () => {
     console.error(error);
 
     confirmPinPassword.value = '';
-    errorMessage.value = error.response?.data?.message || '간편비밀번호 변경에 실패했습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '간편비밀번호 변경에 실패했습니다.';
 
     await focusPinInput();
   } finally {
@@ -181,10 +185,17 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
+@import '@/components/common/common/common.css';
 
 .pin-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 
@@ -269,7 +280,10 @@ onMounted(async () => {
   border-radius: 12px;
   background: var(--color-bg-screen);
   box-sizing: border-box;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
 }
 
 .pin-box.active {

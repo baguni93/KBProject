@@ -29,14 +29,22 @@
       <section v-else-if="loadErrorMessage" class="state-area error">
         <p class="text-13">{{ loadErrorMessage }}</p>
 
-        <button class="content-btn primary retry-button" type="button" @click="loadNotificationSetting">
+        <button
+          class="content-btn primary retry-button"
+          type="button"
+          @click="loadNotificationSetting"
+        >
           다시 시도
         </button>
       </section>
 
       <template v-else>
         <section class="setting-list">
-          <article v-for="item in notificationItems" :key="item.key" class="setting-item">
+          <article
+            v-for="item in notificationItems"
+            :key="item.key"
+            class="setting-item"
+          >
             <div :class="`item-icon ${item.iconClass}`">
               <i :class="item.icon"></i>
             </div>
@@ -47,13 +55,13 @@
             </div>
 
             <button
-                :class="{ active: isEnabled(item.key) }"
-                :disabled="savingKey === item.key"
-                class="toggle-button"
-                type="button"
-                :aria-label="`${item.title} ${isEnabled(item.key) ? '끄기' : '켜기'}`"
-                :aria-pressed="isEnabled(item.key)"
-                @click="toggleNotification(item.key)"
+              :class="{ active: isEnabled(item.key) }"
+              :disabled="savingKey === item.key"
+              class="toggle-button"
+              type="button"
+              :aria-label="`${item.title} ${isEnabled(item.key) ? '끄기' : '켜기'}`"
+              :aria-pressed="isEnabled(item.key)"
+              @click="toggleNotification(item.key)"
             >
               <span class="toggle-circle"></span>
             </button>
@@ -82,7 +90,11 @@
         </Transition>
 
         <Transition name="toast">
-          <div v-if="saveErrorMessage" class="save-error-message text-13" role="alert">
+          <div
+            v-if="saveErrorMessage"
+            class="save-error-message text-13"
+            role="alert"
+          >
             <i class="fa-solid fa-circle-exclamation"></i>
             <span>{{ saveErrorMessage }}</span>
           </div>
@@ -95,14 +107,22 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { getNotificationSetting, updateNotificationSetting } from '@/api/notificationSettingApi';
+import {
+  getNotificationSetting,
+  updateNotificationSetting,
+} from '@/api/notificationSettingApi';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const authStore = useAuthStore();
 
-const notificationSetting = reactive({ financeNotificationYn: 'N', friendNotificationYn: 'N', rewardNotificationYn: 'N', eventNotificationYn: 'N' });
+const notificationSetting = reactive({
+  financeNotificationYn: 'N',
+  friendNotificationYn: 'N',
+  rewardNotificationYn: 'N',
+  eventNotificationYn: 'N',
+});
 const loading = ref(false);
 const savingKey = ref('');
 const loadErrorMessage = ref('');
@@ -112,10 +132,35 @@ let messageTimer = null;
 
 // 알림 항목
 const notificationItems = [
-  { key: 'financeNotificationYn', icon: 'fa-solid fa-building-columns', iconClass: 'finance', title: '금융 알림', description: '입출금, 이체, 결제, 한도 변경 등 금융 거래 관련 알림을 받아요.' },
-  { key: 'friendNotificationYn', icon: 'fa-solid fa-user-group', iconClass: 'friend', title: '친구 요청 알림', description: '친구 요청과 수락 관련 알림을 받아요.' },
-  { key: 'rewardNotificationYn', icon: 'fa-solid fa-gift', iconClass: 'reward', title: '리워드 알림', description: '포인트 적립, 사용, 만료 예정 등 리워드 관련 알림을 받아요.' },
-  { key: 'eventNotificationYn', icon: 'fa-solid fa-bullhorn', iconClass: 'event', title: '이벤트·혜택 알림', description: '이벤트, 제휴 혜택, 프로모션 등 다양한 소식을 받아요.' },
+  {
+    key: 'financeNotificationYn',
+    icon: 'fa-solid fa-building-columns',
+    iconClass: 'finance',
+    title: '금융 알림',
+    description:
+      '입출금, 이체, 결제, 한도 변경 등 금융 거래 관련 알림을 받아요.',
+  },
+  {
+    key: 'friendNotificationYn',
+    icon: 'fa-solid fa-user-group',
+    iconClass: 'friend',
+    title: '친구 요청 알림',
+    description: '친구 요청과 수락 관련 알림을 받아요.',
+  },
+  {
+    key: 'rewardNotificationYn',
+    icon: 'fa-solid fa-gift',
+    iconClass: 'reward',
+    title: '리워드 알림',
+    description: '포인트 적립, 사용, 만료 예정 등 리워드 관련 알림을 받아요.',
+  },
+  {
+    key: 'eventNotificationYn',
+    icon: 'fa-solid fa-bullhorn',
+    iconClass: 'event',
+    title: '이벤트·혜택 알림',
+    description: '이벤트, 제휴 혜택, 프로모션 등 다양한 소식을 받아요.',
+  },
 ];
 
 // 알림 활성화 여부
@@ -134,13 +179,17 @@ const loadNotificationSetting = async () => {
 
     const data = await getNotificationSetting();
 
-    notificationSetting.financeNotificationYn = data.financeNotificationYn || 'N';
+    notificationSetting.financeNotificationYn =
+      data.financeNotificationYn || 'N';
     notificationSetting.friendNotificationYn = data.friendNotificationYn || 'N';
     notificationSetting.rewardNotificationYn = data.rewardNotificationYn || 'N';
     notificationSetting.eventNotificationYn = data.eventNotificationYn || 'N';
   } catch (error) {
     console.error(error);
-    loadErrorMessage.value = error.response?.data?.message || error.error || '알림 설정을 불러오지 못했습니다.';
+    loadErrorMessage.value =
+      error.response?.data?.message ||
+      error.error ||
+      '알림 설정을 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -172,7 +221,10 @@ const toggleNotification = async (key) => {
 
     // 저장 실패 시 이전 값으로 복구
     notificationSetting[key] = previousValue;
-    saveErrorMessage.value = error.response?.data?.message || error.error || '알림 설정 변경에 실패했습니다.';
+    saveErrorMessage.value =
+      error.response?.data?.message ||
+      error.error ||
+      '알림 설정 변경에 실패했습니다.';
   } finally {
     savingKey.value = '';
   }
@@ -198,9 +250,17 @@ onMounted(loadNotificationSetting);
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
+@import '@/components/common/common/common.css';
 
 .notification-page {
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 
@@ -344,7 +404,9 @@ onMounted(loadNotificationSetting);
   border-radius: 18px;
   background: var(--color-border-main);
   cursor: pointer;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .toggle-button.active {
@@ -511,7 +573,9 @@ onMounted(loadNotificationSetting);
 /* 토스트 애니메이션 */
 .toast-enter-active,
 .toast-leave-active {
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
 }
 
 .toast-enter-from,

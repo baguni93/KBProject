@@ -2,13 +2,29 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHeader from '@/components/common/PageHeader.vue';
-import { deleteProfileImage, getProfile, getProfileImage, updateProfile, updateProfileImage } from '@/api/profileApi';
+import {
+  deleteProfileImage,
+  getProfile,
+  getProfileImage,
+  updateProfile,
+  updateProfileImage,
+} from '@/api/profileApi';
 
 const router = useRouter();
 
-const profile = reactive(/** @type {{ nickname: string, introduction: string }} */ ({ nickname: '', introduction: '' }));
+const profile = reactive(
+  /** @type {{ nickname: string, introduction: string }} */ ({
+    nickname: '',
+    introduction: '',
+  }),
+);
 
-const originalProfile = reactive(/** @type {{ nickname: string, introduction: string }} */ ({ nickname: '', introduction: '' }));
+const originalProfile = reactive(
+  /** @type {{ nickname: string, introduction: string }} */ ({
+    nickname: '',
+    introduction: '',
+  }),
+);
 
 const imageInput = ref(/** @type {HTMLInputElement | null} */ (null));
 const nicknameInput = ref(/** @type {HTMLInputElement | null} */ (null));
@@ -39,13 +55,13 @@ const confirmModal = reactive({
 });
 
 const openConfirmModal = ({
-                            type,
-                            title,
-                            message,
-                            confirmText = '확인',
-                            cancelText = '취소',
-                            danger = false,
-                          }) => {
+  type,
+  title,
+  message,
+  confirmText = '확인',
+  cancelText = '취소',
+  danger = false,
+}) => {
   confirmModal.type = type;
   confirmModal.title = title;
   confirmModal.message = message;
@@ -77,10 +93,14 @@ const handleConfirmModal = async () => {
 };
 
 // 이미지 작업 중 여부
-const imageProcessing = computed(() => imageUploading.value || imageDeleting.value);
+const imageProcessing = computed(
+  () => imageUploading.value || imageDeleting.value,
+);
 
 // 저장 가능 여부
-const canSave = computed(() => profile.nickname.length > 0 && !nicknameError.value);
+const canSave = computed(
+  () => profile.nickname.length > 0 && !nicknameError.value,
+);
 
 // 프로필 이미지 URL 갱신
 const refreshProfileImage = async () => {
@@ -153,7 +173,8 @@ const changeImage = async (event) => {
   } catch (error) {
     console.error(error);
 
-    imageError.value = error.response?.data?.message || '프로필 이미지 변경에 실패했습니다.';
+    imageError.value =
+      error.response?.data?.message || '프로필 이미지 변경에 실패했습니다.';
   } finally {
     imageUploading.value = false;
 
@@ -196,8 +217,7 @@ const confirmRemoveProfileImage = async () => {
     console.error(error);
 
     imageError.value =
-        error.response?.data?.message ||
-        '프로필 이미지 삭제에 실패했습니다.';
+      error.response?.data?.message || '프로필 이미지 삭제에 실패했습니다.';
   } finally {
     imageDeleting.value = false;
   }
@@ -250,7 +270,8 @@ const loadProfile = async () => {
   } catch (error) {
     console.error(error);
 
-    errorMessage.value = error.response?.data?.message || '프로필 정보를 불러오지 못했습니다.';
+    errorMessage.value =
+      error.response?.data?.message || '프로필 정보를 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -264,7 +285,10 @@ const saveProfile = async () => {
     saving.value = true;
     errorMessage.value = '';
 
-    const profileData = { nickname: profile.nickname.trim(), introduction: profile.introduction.trim() };
+    const profileData = {
+      nickname: profile.nickname.trim(),
+      introduction: profile.introduction.trim(),
+    };
 
     await updateProfile(profileData);
 
@@ -277,11 +301,15 @@ const saveProfile = async () => {
   } catch (error) {
     console.error(error);
 
-    const message = error.response?.data?.message || '프로필 수정에 실패했습니다.';
+    const message =
+      error.response?.data?.message || '프로필 수정에 실패했습니다.';
 
     if (message === '이미 사용 중인 닉네임입니다.') {
       nicknameError.value = message;
-      nicknameInput.value?.setSelectionRange(profile.nickname.length, profile.nickname.length);
+      nicknameInput.value?.setSelectionRange(
+        profile.nickname.length,
+        profile.nickname.length,
+      );
     } else errorMessage.value = message;
   } finally {
     saving.value = false;
@@ -296,7 +324,9 @@ const closeSuccessModal = async () => {
 };
 
 // 수정 여부 확인
-const isProfileChanged = () => profile.nickname !== originalProfile.nickname || profile.introduction !== originalProfile.introduction;
+const isProfileChanged = () =>
+  profile.nickname !== originalProfile.nickname ||
+  profile.introduction !== originalProfile.introduction;
 
 // 수정 취소
 const cancel = async () => {
@@ -341,185 +371,131 @@ onMounted(() => {
 
 <template>
   <main class="page-layout profile-page">
-    <PageHeader
-        title="프로필 관리"
-        custom-back
-        @back="goBack"
-    />
+    <PageHeader title="프로필 관리" custom-back @back="goBack" />
 
     <div class="page-content profile-content">
       <section class="title-section">
-        <h2 class="text-26-bold">
-          내 정보를 확인해 주세요
-        </h2>
+        <h2 class="text-26-bold">내 정보를 확인해 주세요</h2>
 
-        <p class="text-15">
-          프로필 사진과 소개는 자유롭게 변경할 수 있어요.
-        </p>
+        <p class="text-15">프로필 사진과 소개는 자유롭게 변경할 수 있어요.</p>
       </section>
 
       <!-- 프로필 이미지 -->
       <section class="profile-image-section">
         <div
-            class="profile-image-wrap"
-            :class="{ disabled: imageProcessing }"
-            role="button"
-            aria-label="프로필 사진 수정 메뉴 열기"
-            @click="openImageActionSheet"
+          class="profile-image-wrap"
+          :class="{ disabled: imageProcessing }"
+          role="button"
+          aria-label="프로필 사진 수정 메뉴 열기"
+          @click="openImageActionSheet"
         >
           <img
-              :key="profileImage"
-              :src="profileImage"
-              alt="프로필 이미지"
-              class="profile-image"
+            :key="profileImage"
+            :src="profileImage"
+            alt="프로필 이미지"
+            class="profile-image"
           />
 
           <button
-              aria-label="프로필 사진 수정 메뉴 열기"
-              class="image-edit-button"
-              :disabled="imageProcessing"
-              type="button"
-              @click.stop="openImageActionSheet"
+            aria-label="프로필 사진 수정 메뉴 열기"
+            class="image-edit-button"
+            :disabled="imageProcessing"
+            type="button"
+            @click.stop="openImageActionSheet"
           >
-            <span
-                v-if="imageProcessing"
-                class="mini-spinner"
-            ></span>
+            <span v-if="imageProcessing" class="mini-spinner"></span>
 
-            <i
-                v-else
-                class="fa-solid fa-camera"
-            ></i>
+            <i v-else class="fa-solid fa-camera"></i>
           </button>
         </div>
 
         <input
-            ref="imageInput"
-            accept="image/jpeg,image/png,image/gif,image/webp"
-            class="hidden-image-input"
-            type="file"
-            @change="changeImage"
+          ref="imageInput"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          class="hidden-image-input"
+          type="file"
+          @change="changeImage"
         />
 
-        <p
-            v-if="imageError"
-            class="image-error text-13"
-        >
+        <p v-if="imageError" class="image-error text-13">
           {{ imageError }}
         </p>
       </section>
 
       <!-- 프로필 입력 폼 -->
-      <form
-          class="profile-form"
-          @submit.prevent="saveProfile"
-      >
+      <form class="profile-form" @submit.prevent="saveProfile">
         <!-- 닉네임 -->
         <section class="input-card">
-          <label
-              for="nickname"
-              class="text-15-bold"
-          >
-            닉네임
-          </label>
+          <label for="nickname" class="text-15-bold"> 닉네임 </label>
 
           <p class="input-guide text-13">
             다른 사용자에게 표시되는 이름이에요.
           </p>
 
           <div
-              :class="{
-                error: !!nicknameError,
-              }"
-              class="input-area"
+            :class="{
+              error: !!nicknameError,
+            }"
+            class="input-area"
           >
             <input
-                id="nickname"
-                ref="nicknameInput"
-                v-model.trim="profile.nickname"
-                maxlength="15"
-                placeholder="닉네임을 입력해 주세요"
-                type="text"
-                @input="clearNicknameError"
+              id="nickname"
+              ref="nicknameInput"
+              v-model.trim="profile.nickname"
+              maxlength="15"
+              placeholder="닉네임을 입력해 주세요"
+              type="text"
+              @input="clearNicknameError"
             />
 
-            <span class="text-13">
-              {{ profile.nickname.length }}/15
-            </span>
+            <span class="text-13"> {{ profile.nickname.length }}/15 </span>
           </div>
 
-          <p
-              v-if="nicknameError"
-              class="field-error text-13"
-          >
+          <p v-if="nicknameError" class="field-error text-13">
             {{ nicknameError }}
           </p>
         </section>
 
         <!-- 소개 -->
         <section class="input-card introduction-card">
-          <label
-              for="introduction"
-              class="text-15-bold"
-          >
-            소개
-          </label>
+          <label for="introduction" class="text-15-bold"> 소개 </label>
 
-          <p class="input-guide text-13">
-            나를 간단히 소개해 보세요!
-          </p>
+          <p class="input-guide text-13">나를 간단히 소개해 보세요!</p>
 
           <div class="textarea-area">
             <textarea
-                id="introduction"
-                v-model="profile.introduction"
-                maxlength="100"
-                placeholder="소개를 입력해 주세요"
-                class="text-15"
+              id="introduction"
+              v-model="profile.introduction"
+              maxlength="100"
+              placeholder="소개를 입력해 주세요"
+              class="text-15"
             ></textarea>
 
-            <span class="text-13">
-              {{ profile.introduction.length }}/100
-            </span>
+            <span class="text-13"> {{ profile.introduction.length }}/100 </span>
           </div>
         </section>
 
-        <p
-            v-if="errorMessage"
-            class="page-error text-13"
-        >
+        <p v-if="errorMessage" class="page-error text-13">
           {{ errorMessage }}
         </p>
 
         <!-- 하단 버튼 -->
         <div class="bottom-btn-area double button-area">
           <button
-              class="bottom-btn cancel-button"
-              :disabled="
-                saving ||
-                imageProcessing
-              "
-              type="button"
-              @click="cancel"
+            class="bottom-btn cancel-button"
+            :disabled="saving || imageProcessing"
+            type="button"
+            @click="cancel"
           >
             취소
           </button>
 
           <button
-              class="bottom-btn save-button"
-              :disabled="
-                loading ||
-                saving ||
-                imageProcessing ||
-                !canSave
-              "
-              type="submit"
+            class="bottom-btn save-button"
+            :disabled="loading || saving || imageProcessing || !canSave"
+            type="submit"
           >
-            {{
-              saving
-                  ? '저장 중...'
-                  : '저장하기'
-            }}
+            {{ saving ? '저장 중...' : '저장하기' }}
           </button>
         </div>
       </form>
@@ -528,82 +504,68 @@ onMounted(() => {
     <!-- 프로필 이미지 액션시트 -->
     <transition name="action-sheet">
       <div
-          v-if="imageActionSheetOpen"
-          class="action-sheet-overlay"
-          role="presentation"
-          @click.self="closeImageActionSheet"
+        v-if="imageActionSheetOpen"
+        class="action-sheet-overlay"
+        role="presentation"
+        @click.self="closeImageActionSheet"
       >
         <section
-            aria-label="프로필 사진 수정 메뉴"
-            aria-modal="true"
-            class="action-sheet"
-            role="dialog"
+          aria-label="프로필 사진 수정 메뉴"
+          aria-modal="true"
+          class="action-sheet"
+          role="dialog"
         >
           <div class="action-sheet-handle"></div>
 
           <div class="action-sheet-header">
-            <h3 class="text-18-bold">
-              프로필 사진 수정
-            </h3>
+            <h3 class="text-18-bold">프로필 사진 수정</h3>
           </div>
 
           <div class="action-sheet-menu">
             <button
-                class="action-sheet-button"
-                :disabled="imageProcessing"
-                type="button"
-                @click="selectImage"
+              class="action-sheet-button"
+              :disabled="imageProcessing"
+              type="button"
+              @click="selectImage"
             >
               <span class="menu-icon">
                 <i class="fa-regular fa-image"></i>
               </span>
 
               <span class="menu-text">
-                <strong class="text-15-bold">
-                  사진 선택
-                </strong>
+                <strong class="text-15-bold"> 사진 선택 </strong>
 
-                <small class="text-13">
-                  라이브러리에서 사진 가져오기
-                </small>
+                <small class="text-13"> 라이브러리에서 사진 가져오기 </small>
               </span>
 
-              <i
-                  class="fa-solid fa-chevron-right menu-arrow"
-              ></i>
+              <i class="fa-solid fa-chevron-right menu-arrow"></i>
             </button>
 
             <button
-                class="action-sheet-button delete-action"
-                :disabled="imageProcessing"
-                type="button"
-                @click="removeProfileImage"
+              class="action-sheet-button delete-action"
+              :disabled="imageProcessing"
+              type="button"
+              @click="removeProfileImage"
             >
               <span class="menu-icon">
                 <i class="fa-regular fa-trash-can"></i>
               </span>
 
               <span class="menu-text">
-                <strong class="text-15-bold">
-                  프로필 사진 삭제
-                </strong>
+                <strong class="text-15-bold"> 프로필 사진 삭제 </strong>
 
-                <small class="text-13">
-                  기본 프로필 이미지로 변경
-                </small>
+                <small class="text-13"> 기본 프로필 이미지로 변경 </small>
               </span>
 
-              <i
-                  class="fa-solid fa-chevron-right menu-arrow"
-              ></i>
+              <i class="fa-solid fa-chevron-right menu-arrow"></i>
             </button>
           </div>
 
           <button
-              class="action-sheet-cancel text-15-bold"
-              :disabled="imageProcessing"
-              type="button"
-              @click="closeImageActionSheet"
+            class="action-sheet-cancel text-15-bold"
+            :disabled="imageProcessing"
+            type="button"
+            @click="closeImageActionSheet"
           >
             취소
           </button>
@@ -614,29 +576,19 @@ onMounted(() => {
     <!-- 공통 확인 모달 -->
     <transition name="confirm-modal">
       <div
-          v-if="confirmModal.open"
-          class="confirm-modal-overlay"
-          @click.self="closeConfirmModal"
+        v-if="confirmModal.open"
+        class="confirm-modal-overlay"
+        @click.self="closeConfirmModal"
       >
-        <section
-            aria-modal="true"
-            class="confirm-modal"
-            role="dialog"
-        >
+        <section aria-modal="true" class="confirm-modal" role="dialog">
           <div class="confirm-icon-wrap">
-            <div
-                class="confirm-icon"
-                :class="{ danger: confirmModal.danger }"
-            >
+            <div class="confirm-icon" :class="{ danger: confirmModal.danger }">
               <i
-                  v-if="confirmModal.type === 'DELETE_IMAGE'"
-                  class="fa-regular fa-trash-can"
+                v-if="confirmModal.type === 'DELETE_IMAGE'"
+                class="fa-regular fa-trash-can"
               ></i>
 
-              <i
-                  v-else
-                  class="fa-solid fa-exclamation"
-              ></i>
+              <i v-else class="fa-solid fa-exclamation"></i>
             </div>
           </div>
 
@@ -652,26 +604,25 @@ onMounted(() => {
 
           <div class="confirm-buttons">
             <button
-                class="confirm-cancel-button text-15-bold"
-                :disabled="imageProcessing"
-                type="button"
-                @click="closeConfirmModal"
+              class="confirm-cancel-button text-15-bold"
+              :disabled="imageProcessing"
+              type="button"
+              @click="closeConfirmModal"
             >
               {{ confirmModal.cancelText }}
             </button>
 
             <button
-                class="confirm-action-button text-15-bold"
-                :class="{ danger: confirmModal.danger }"
-                :disabled="imageProcessing"
-                type="button"
-                @click="handleConfirmModal"
+              class="confirm-action-button text-15-bold"
+              :class="{ danger: confirmModal.danger }"
+              :disabled="imageProcessing"
+              type="button"
+              @click="handleConfirmModal"
             >
               {{
-                imageDeleting &&
-                confirmModal.type === 'DELETE_IMAGE'
-                    ? '삭제 중...'
-                    : confirmModal.confirmText
+                imageDeleting && confirmModal.type === 'DELETE_IMAGE'
+                  ? '삭제 중...'
+                  : confirmModal.confirmText
               }}
             </button>
           </div>
@@ -681,15 +632,12 @@ onMounted(() => {
 
     <!-- 프로필 수정 성공 모달 -->
     <transition name="success-modal">
-      <div
-          v-if="successModalOpen"
-          class="success-modal-overlay"
-      >
+      <div v-if="successModalOpen" class="success-modal-overlay">
         <section
-            aria-labelledby="profile-success-title"
-            aria-modal="true"
-            class="success-modal"
-            role="dialog"
+          aria-labelledby="profile-success-title"
+          aria-modal="true"
+          class="success-modal"
+          role="dialog"
         >
           <!-- 성공 아이콘 -->
           <div class="success-icon-wrap">
@@ -700,23 +648,18 @@ onMounted(() => {
 
           <!-- 성공 메시지 -->
           <div class="success-content">
-            <h3
-                id="profile-success-title"
-                class="text-20-bold"
-            >
+            <h3 id="profile-success-title" class="text-20-bold">
               프로필 수정 완료
             </h3>
 
-            <p class="text-14">
-              프로필이 수정되었어요.
-            </p>
+            <p class="text-14">프로필이 수정되었어요.</p>
           </div>
 
           <!-- 확인 -->
           <button
-              class="success-confirm-button text-15-bold"
-              type="button"
-              @click="closeSuccessModal"
+            class="success-confirm-button text-15-bold"
+            type="button"
+            @click="closeSuccessModal"
           >
             확인
           </button>
@@ -725,22 +668,24 @@ onMounted(() => {
     </transition>
 
     <!-- 로딩 -->
-    <div
-        v-if="loading"
-        class="loading-overlay"
-    >
+    <div v-if="loading" class="loading-overlay">
       <div class="loading-spinner"></div>
 
-      <span class="text-15-bold">
-        프로필 정보를 불러오고 있어요.
-      </span>
+      <span class="text-15-bold"> 프로필 정보를 불러오고 있어요. </span>
     </div>
   </main>
 </template>
 
 <style scoped>
 .profile-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 
@@ -1225,8 +1170,7 @@ onMounted(() => {
   background: rgba(255, 188, 46, 0.16);
   color: var(--color-primary-border);
   font-size: 25px;
-  animation: success-icon-pop 0.4s
-  cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: success-icon-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* 성공 문구 */
@@ -1254,8 +1198,8 @@ onMounted(() => {
   color: var(--color-text-main);
   cursor: pointer;
   transition:
-      background 0.15s ease,
-      transform 0.15s ease;
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .success-confirm-button:active {
@@ -1273,8 +1217,8 @@ onMounted(() => {
 .success-modal-enter-active .success-modal,
 .success-modal-leave-active .success-modal {
   transition:
-      opacity 0.22s ease,
-      transform 0.22s ease;
+    opacity 0.22s ease,
+    transform 0.22s ease;
 }
 
 /*noinspection CssUnusedSymbol*/

@@ -50,19 +50,19 @@
     <!-- 하단 버튼 -->
     <div class="bottom-btn-area double logout-buttons">
       <button
-          class="content-btn secondary logout-action-btn"
-          type="button"
-          :disabled="loading"
-          @click="goBack"
+        class="content-btn secondary logout-action-btn"
+        type="button"
+        :disabled="loading"
+        @click="goBack"
       >
         취소
       </button>
 
       <button
-          class="content-btn primary logout-action-btn"
-          type="button"
-          :disabled="loading"
-          @click="handleLogout"
+        class="content-btn primary logout-action-btn"
+        type="button"
+        :disabled="loading"
+        @click="handleLogout"
       >
         <i v-if="!loading" class="fa-solid fa-arrow-right-from-bracket"></i>
         {{ loading ? '로그아웃 중...' : '로그아웃' }}
@@ -101,10 +101,17 @@ const handleLogout = async () => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
+@import '@/components/common/common/common.css';
 
 .logout-page {
-  position: relative;
+  width: 100%;
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 
@@ -162,7 +169,11 @@ const handleLogout = async () => {
   align-items: center;
   justify-content: center;
   border-radius: 26px;
-  background: linear-gradient(145deg, #ffc744 0%, var(--color-primary-active) 100%);
+  background: linear-gradient(
+    145deg,
+    #ffc744 0%,
+    var(--color-primary-active) 100%
+  );
   box-shadow: 0 14px 30px rgba(255, 188, 46, 0.26);
   color: var(--color-text-white);
   font-size: 31px;

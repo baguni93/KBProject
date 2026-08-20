@@ -51,13 +51,9 @@
             </div>
 
             <div class="card-text">
-              <strong class="text-18-bold">
-                Social Wallet
-              </strong>
+              <strong class="text-18-bold"> Social Wallet </strong>
 
-              <span class="text-13">
-                MZ세대를 위한 소셜 전자지갑
-              </span>
+              <span class="text-13"> MZ세대를 위한 소셜 전자지갑 </span>
             </div>
           </div>
 
@@ -83,9 +79,7 @@
               <i class="fa-solid fa-paper-plane"></i>
             </div>
 
-            <span class="text-13">
-              간편 송금
-            </span>
+            <span class="text-13"> 간편 송금 </span>
           </div>
 
           <span class="feature-divider"></span>
@@ -95,9 +89,7 @@
               <i class="fa-solid fa-credit-card"></i>
             </div>
 
-            <span class="text-13">
-              간편 결제
-            </span>
+            <span class="text-13"> 간편 결제 </span>
           </div>
 
           <span class="feature-divider"></span>
@@ -107,20 +99,14 @@
               <i class="fa-solid fa-user-group"></i>
             </div>
 
-            <span class="text-13">
-              친구와 함께
-            </span>
+            <span class="text-13"> 친구와 함께 </span>
           </div>
         </div>
       </section>
 
       <!-- 공통 하단 버튼 -->
       <div class="bottom-btn-area single">
-        <button
-            class="bottom-btn"
-            type="button"
-            @click="start"
-        >
+        <button class="bottom-btn" type="button" @click="start">
           시작하기
         </button>
       </div>
@@ -140,27 +126,24 @@ const start = () => {
 </script>
 
 <style scoped>
-@import "@/components/common/common/common.css";
-@import "@/components/common/common/layout.css";
+@import '@/components/common/common/common.css';
+@import '@/components/common/common/layout.css';
 
 .intro-page {
   width: 100%;
-  height: 100dvh;
-  overflow: hidden;
-  background: var(--color-bg-page);
+  /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .intro-layout {
   position: relative;
   overflow: hidden;
-  background:
-      linear-gradient(
-          180deg,
-          #fffdf8 0%,
-          #ffffff 38%,
-          #ffffff 100%
-      );
+  background: linear-gradient(180deg, #fffdf8 0%, #ffffff 38%, #ffffff 100%);
 }
 
 .intro-content {
@@ -263,10 +246,10 @@ const start = () => {
   height: 250px;
   border-radius: 50%;
   background: radial-gradient(
-      circle,
-      rgba(255, 188, 46, 0.29) 0%,
-      rgba(255, 188, 46, 0.11) 42%,
-      rgba(255, 188, 46, 0) 72%
+    circle,
+    rgba(255, 188, 46, 0.29) 0%,
+    rgba(255, 188, 46, 0.11) 42%,
+    rgba(255, 188, 46, 0) 72%
   );
   transform: translateX(-50%);
   animation: glow-breathe 3.5s ease-in-out 1s infinite;
@@ -308,11 +291,7 @@ const start = () => {
 .back-card {
   top: 48px;
   padding: 19px;
-  background: linear-gradient(
-      145deg,
-      #292929 0%,
-      #111111 100%
-  );
+  background: linear-gradient(145deg, #292929 0%, #111111 100%);
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.14);
   color: #ffffff;
   transform: translateX(-57%) rotate(-8deg);
@@ -350,15 +329,10 @@ const start = () => {
   top: 83px;
   z-index: 2;
   padding: 19px;
-  background: linear-gradient(
-      135deg,
-      #ffd56a 0%,
-      #ffc43d 43%,
-      #ffab13 100%
-  );
+  background: linear-gradient(135deg, #ffd56a 0%, #ffc43d 43%, #ffab13 100%);
   box-shadow:
-      0 20px 38px rgba(210, 141, 0, 0.2),
-      0 7px 14px rgba(0, 0, 0, 0.08);
+    0 20px 38px rgba(210, 141, 0, 0.2),
+    0 7px 14px rgba(0, 0, 0, 0.08);
   color: var(--color-text-main);
   transform: translateX(-43%) rotate(7deg);
   animation: front-card-float 3.6s ease-in-out 1.1s infinite;
@@ -386,7 +360,7 @@ const start = () => {
 .card-chip span {
   position: absolute;
   background: rgba(144, 94, 0, 0.16);
-  content: "";
+  content: '';
 }
 
 .card-chip::before {
