@@ -112,21 +112,26 @@ const maskAccount = (num) => {
 
 .wallet-pay-group-box {
   width: 100%;
+  min-height: 310px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 16px;
 }
 
 .kakaopay-style-card {
   width: 100%;
-  min-height: 270px;
+  min-height: 310px;
   background-color: #ffffff;
   border-radius: 22px;
   border: 1px solid #e2e8f0;
   padding: 26px 22px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .barcode-qr-dual-row {

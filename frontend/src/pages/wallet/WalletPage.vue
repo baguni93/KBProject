@@ -29,42 +29,44 @@
           </div>
 
           <!-- A. 카드 결제 모드 ↔ B. 지갑 결제 모드 부드러운 전환 트랜지션 (WalletPage 전용 스코프) -->
-          <transition name="mode-slide-fade" mode="out-in">
-            <WalletCardSliderSection
-              v-if="!isWalletModeActive"
-              key="card-mode"
-              :has-representative-card="hasRepresentativeCard"
-              :registered-cards="registeredCards"
-              :current-card-idx="currentCardIdx"
-              :get-card3-d-style="getCard3DStyle"
-              :get-card-img="getCardImg"
-              :format-masked-card-num="formatMaskedCardNum"
-              @touch-start="handleTouchStart"
-              @touch-move="handleTouchMove"
-              @touch-end="handleTouchEnd"
-              @card-click="onCardClick"
-              @add-card-click="onAddCardClick"
-              @select-dot="selectDotCard"
-            />
+          <div class="payment-content-area">
+            <transition name="mode-slide-fade" mode="out-in">
+              <WalletCardSliderSection
+                v-if="!isWalletModeActive"
+                key="card-mode"
+                :has-representative-card="hasRepresentativeCard"
+                :registered-cards="registeredCards"
+                :current-card-idx="currentCardIdx"
+                :get-card3-d-style="getCard3DStyle"
+                :get-card-img="getCardImg"
+                :format-masked-card-num="formatMaskedCardNum"
+                @touch-start="handleTouchStart"
+                @touch-move="handleTouchMove"
+                @touch-end="handleTouchEnd"
+                @card-click="onCardClick"
+                @add-card-click="onAddCardClick"
+                @select-dot="selectDotCard"
+              />
 
-            <WalletPayCodeSection
-              v-else
-              key="wallet-mode"
-              :wallet-balance="walletBalance"
-              :primary-account="primaryAccount"
-              :barcode-lines="barcodeLines"
-              :qr-modules="qrModules"
-              :dynamic-barcode-token="dynamicBarcodeToken"
-              :full-screen-mode="fullScreenMode"
-              :format-currency="formatCurrency"
-              @open-barcode="openBarcodeFullScreen"
-              @open-qr="openQrFullScreen"
-              @close-full-screen="closeFullScreen"
-              @approve-barcode="approveBarcodePayment"
-              @approve-qr="approveQrPayment"
-              @go-to-charge="goToChargeView"
-            />
-          </transition>
+              <WalletPayCodeSection
+                v-else
+                key="wallet-mode"
+                :wallet-balance="walletBalance"
+                :primary-account="primaryAccount"
+                :barcode-lines="barcodeLines"
+                :qr-modules="qrModules"
+                :dynamic-barcode-token="dynamicBarcodeToken"
+                :full-screen-mode="fullScreenMode"
+                :format-currency="formatCurrency"
+                @open-barcode="openBarcodeFullScreen"
+                @open-qr="openQrFullScreen"
+                @close-full-screen="closeFullScreen"
+                @approve-barcode="approveBarcodePayment"
+                @approve-qr="approveQrPayment"
+                @go-to-charge="goToChargeView"
+              />
+            </transition>
+          </div>
         </div>
       </div>
     </template>
@@ -1196,8 +1198,8 @@ textarea {
   align-items: center;
   justify-content: center;
   padding: 16px 20px 24px;
-  overflow: hidden !important;
-  gap: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
   width: 100%;
   box-sizing: border-box;
 }
@@ -1206,10 +1208,10 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
+  gap: 20px;
   width: 100%;
   margin: auto 0;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 .mode-control-row {
@@ -1218,6 +1220,15 @@ textarea {
   gap: 8px;
   width: 100%;
   flex-shrink: 0;
+}
+
+.payment-content-area {
+  width: 100%;
+  min-height: 310px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .mode-tab-bar {
