@@ -115,10 +115,6 @@
                 </div>
               </div>
 
-              <div class="probability-note text-12-bold">
-                <i class="fa-solid fa-star"></i>
-                <span>랜덤박스 1개의 평균 기대 포인트는 약 <strong>18.6P</strong>예요.</span>
-              </div>
             </div>
           </transition>
         </div>

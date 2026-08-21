@@ -16,45 +16,45 @@
       <section class="verification-section">
         <!-- 인증번호 / 남은 시간 / X -->
         <div
-          :class="{
+            :class="{
             error: !!errorMessage || expired || attemptExceeded,
             disabled: expired || attemptExceeded,
           }"
-          class="verification-input-area"
+            class="verification-input-area"
         >
           <div class="input-row">
             <input
-              ref="verificationInput"
-              :value="verificationCode"
-              :disabled="expired || attemptExceeded"
-              class="verification-input"
-              inputmode="numeric"
-              maxlength="6"
-              pattern="[0-9]*"
-              autocomplete="one-time-code"
-              placeholder="인증번호 6자리"
-              type="text"
-              @input="changeVerificationCode"
+                ref="verificationInput"
+                :value="verificationCode"
+                :disabled="expired || attemptExceeded"
+                class="verification-input"
+                inputmode="numeric"
+                maxlength="6"
+                pattern="[0-9]*"
+                autocomplete="one-time-code"
+                placeholder="인증번호 6자리"
+                type="text"
+                @input="changeVerificationCode"
             />
 
             <div class="input-actions">
               <!-- 남은 시간 -->
               <div class="input-timer text-13">
                 <VerificationTimer
-                  :key="timerKey"
-                  :seconds="signupStore.expiresIn"
-                  @expired="handleExpired"
+                    :key="timerKey"
+                    :seconds="signupStore.expiresIn"
+                    @expired="handleExpired"
                 />
               </div>
 
               <!-- 전체 삭제 -->
               <button
-                v-if="verificationCode"
-                :disabled="expired || attemptExceeded"
-                aria-label="인증번호 전체 삭제"
-                class="clear-button"
-                type="button"
-                @click="clearVerificationCode"
+                  v-if="verificationCode"
+                  :disabled="expired || attemptExceeded"
+                  aria-label="인증번호 전체 삭제"
+                  class="clear-button"
+                  type="button"
+                  @click="clearVerificationCode"
               >
                 <i class="fa-solid fa-xmark"></i>
               </button>
@@ -64,24 +64,24 @@
 
         <!-- 오류 메시지 -->
         <div
-          v-if="attemptExceeded || expired || errorMessage"
-          class="message-area"
-          aria-live="polite"
+            v-if="attemptExceeded || expired || errorMessage"
+            class="message-area"
+            aria-live="polite"
         >
           <p v-if="attemptExceeded" class="error-message text-13">
             {{ errorMessage }}
           </p>
 
           <p
-            v-else-if="expired && resendCount === 0"
-            class="error-message text-13"
+              v-else-if="expired && resendCount === 0"
+              class="error-message text-13"
           >
             인증시간이 만료되어 재전송이 필요해요.
           </p>
 
           <p
-            v-else-if="expired && resendCount >= 1"
-            class="error-message text-13"
+              v-else-if="expired && resendCount >= 1"
+              class="error-message text-13"
           >
             인증 가능 횟수를 초과했어요.<br />
             본인인증을 다시 진행해 주세요.
@@ -92,18 +92,13 @@
           </p>
         </div>
 
-        <!-- 개발용 인증번호 / 재전송 -->
+        <!-- 인증번호 재전송 -->
         <div class="verification-sub-row">
-          <p v-if="signupStore.developmentCode" class="development-code">
-            <span>개발용 인증번호</span>
-            <strong>{{ signupStore.developmentCode }}</strong>
-          </p>
-
           <button
-            :disabled="resending || resendCount >= 1"
-            class="resend-button text-13-bold"
-            type="button"
-            @click="resendCode"
+              :disabled="resending || resendCount >= 1"
+              class="resend-button text-13-bold"
+              type="button"
+              @click="resendCode"
           >
             {{ resending ? '재전송 중...' : '인증번호 재전송' }}
           </button>
@@ -113,10 +108,10 @@
 
     <!-- 본인인증 다시 시작 -->
     <div
-      v-if="
+        v-if="
         (expired && resendCount >= 1) || (attemptExceeded && resendCount >= 1)
       "
-      class="bottom-btn-area single"
+        class="bottom-btn-area single"
     >
       <button class="bottom-btn" type="button" @click="restartVerification">
         본인인증 다시 하기
@@ -209,8 +204,8 @@ const handleExpired = () => {
 // PIN 재설정 인증 완료
 const handlePinReset = async () => {
   sessionStorage.setItem(
-    'pinResetPhoneNumber',
-    signupStore.phoneAuth.phoneNumber,
+      'pinResetPhoneNumber',
+      signupStore.phoneAuth.phoneNumber,
   );
 
   await router.push('/auth/pin-reset');
@@ -277,8 +272,8 @@ const handleSignup = async () => {
 
   if (signupResponse.memberStatus === 'EXISTING') {
     sessionStorage.setItem(
-      'pinLoginPhoneNumber',
-      signupStore.phoneAuth.phoneNumber,
+        'pinLoginPhoneNumber',
+        signupStore.phoneAuth.phoneNumber,
     );
     await router.push('/signup/existing-member');
     return;
@@ -286,8 +281,8 @@ const handleSignup = async () => {
 
   if (signupResponse.memberStatus === 'WITHDRAWN_WAIT') {
     sessionStorage.setItem(
-      'rejoinAvailableAt',
-      signupResponse.rejoinAvailableAt,
+        'rejoinAvailableAt',
+        signupResponse.rejoinAvailableAt,
     );
     await router.push('/signup/withdrawn-member');
     return;
@@ -338,8 +333,8 @@ const verifyCode = async () => {
     console.error(error);
 
     const message = getVerificationErrorMessage(
-      error,
-      '인증번호가 일치하지 않습니다.',
+        error,
+        '인증번호가 일치하지 않습니다.',
     );
 
     errorMessage.value = message;
@@ -361,10 +356,10 @@ const verifyCode = async () => {
 // 6자리 입력 완료 시 자동 인증
 watch(verificationCode, async (code) => {
   if (
-    code.length !== 6 ||
-    loading.value ||
-    expired.value ||
-    attemptExceeded.value
+      code.length !== 6 ||
+      loading.value ||
+      expired.value ||
+      attemptExceeded.value
   ) {
     return;
   }
@@ -397,14 +392,14 @@ const resendCode = async () => {
     signupStore.setDevelopmentCode(response.verificationCode);
 
     taskStore.addTaskEvent(
-      {
-        taskType: 'PHONE_AUTH_SEND',
-        message: `인증번호는 [${response.verificationCode}]입니다.`,
-      },
-      () => {
-        verificationCode.value = response.verificationCode;
-        // 원하는 동작
-      },
+        {
+          taskType: 'PHONE_AUTH_SEND',
+          message: `인증번호는 [${response.verificationCode}]입니다.`,
+        },
+        () => {
+          verificationCode.value = response.verificationCode;
+          // 원하는 동작
+        },
     );
 
     resendCount.value += 1;
@@ -420,8 +415,8 @@ const resendCode = async () => {
     console.error(error);
 
     errorMessage.value = getVerificationErrorMessage(
-      error,
-      '인증번호 재전송에 실패했습니다.',
+        error,
+        '인증번호 재전송에 실패했습니다.',
     );
   } finally {
     resending.value = false;
@@ -469,14 +464,14 @@ onMounted(() => {
   focusInput();
 
   taskStore.addTaskEvent(
-    {
-      taskType: 'PHONE_AUTH_SEND',
-      message: `인증번호는 [${signupStore.developmentCode}]입니다.`,
-    },
-    () => {
-      verificationCode.value = signupStore.developmentCode;
-      // 원하는 동작
-    },
+      {
+        taskType: 'PHONE_AUTH_SEND',
+        message: `인증번호는 [${signupStore.developmentCode}]입니다.`,
+      },
+      () => {
+        verificationCode.value = signupStore.developmentCode;
+        // 원하는 동작
+      },
   );
 });
 </script>
@@ -532,8 +527,8 @@ onMounted(() => {
   border-bottom: 2px solid var(--color-border-main);
   box-sizing: border-box;
   transition:
-    border-color 0.2s ease,
-    opacity 0.2s ease;
+      border-color 0.2s ease,
+      opacity 0.2s ease;
 }
 
 .verification-input-area:focus-within {
@@ -626,11 +621,11 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-/* 개발용 인증번호 + 재전송 */
+/* 인증번호 재전송 */
 .verification-sub-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 16px;
   margin-top: 12px;
 }
@@ -734,8 +729,5 @@ onMounted(() => {
     gap: 10px;
   }
 
-  .development-code {
-    gap: 4px;
-  }
 }
 </style>

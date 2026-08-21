@@ -75,19 +75,6 @@
       </section>
     </div>
 
-    <Transition name="toast">
-      <div
-          v-if="message && messageType === 'success'"
-          class="conversion-toast text-13"
-          role="status"
-      >
-        <div class="conversion-toast-icon">
-          <i class="fa-solid fa-check"></i>
-        </div>
-        <span>{{ message }}</span>
-      </div>
-    </Transition>
-
     <transition name="policy-fade">
       <div v-if="showPolicy" class="policy-overlay" @click.self="showPolicy = false">
         <section class="policy-sheet" role="dialog" aria-modal="true" aria-labelledby="policy-title">
@@ -144,7 +131,6 @@ const loading = ref(false);
 const message = ref('');
 const messageType = ref('success');
 const showPolicy = ref(false);
-let messageTimer = null;
 const quickAmounts = [100, 500];
 
 const maximumPointAmount = computed(() => Math.max(Number(pointWallet.value?.pointBalance ?? 0), 0));
@@ -153,19 +139,6 @@ const expectedPointBalance = computed(() => Math.max(Number(pointWallet.value?.p
 const expectedWalletBalance = computed(() => Number(wallet.value?.balance ?? 0) + Math.max(Number(pointAmount.value ?? 0), 0));
 
 const goToPointWallet = () => router.push('/point-wallet');
-
-const showConversionSuccess = (messageText) => {
-  messageType.value = 'success';
-  message.value = messageText;
-
-  if (messageTimer) {
-    window.clearTimeout(messageTimer);
-  }
-
-  messageTimer = window.setTimeout(() => {
-    message.value = '';
-  }, 1800);
-};
 const loadBalances = async () => {
   const [pointWalletData, walletData] = await Promise.all([pointWalletApi.getWallet(), walletApi.getWalletByUserId(TEMPORARY_USER_ID)]);
   pointWallet.value = pointWalletData;
@@ -218,15 +191,24 @@ const submitConversion = async () => {
     return;
   }
 
+  const confirmed = await modalStore.showConfirm(
+    `${formatNumber(pointAmount.value)}P를 전자지갑으로 전환하시겠습니까?`,
+    '포인트 전환',
+    '전환',
+    '취소',
+  );
+
+  if (!confirmed) return;
+
   loading.value = true;
   try {
     const result = await pointWalletApi.convertPoints(pointAmount.value);
     conversionResult.value = result;
-    showConversionSuccess(
-        `${formatNumber(result.convertedPoint)}P 전환이 완료되었습니다.`,
-    );
+    messageType.value = 'success';
+    message.value = `${formatNumber(result.convertedPoint)}P가 전자지갑으로 전환되었습니다.`;
     await loadBalances();
     pointAmount.value = MINIMUM_POINT;
+    modalStore.showSuccess(message.value, '포인트 전환 완료');
   } catch (error) {
     messageType.value = 'error';
     message.value = getApiErrorMessage(error, '포인트 전환에 실패했습니다.');
@@ -519,62 +501,6 @@ onMounted(initialize);
   height: 48px;
   font-size: 15px;
   font-weight: 600;
-}
-
-/* 포인트 전환 성공 토스트 */
-.conversion-toast {
-  position: fixed;
-  z-index: 200;
-  right: 24px;
-  bottom: 34px;
-  left: 24px;
-
-  display: flex;
-  max-width: 374px;
-  min-height: 44px;
-  align-items: center;
-  gap: 9px;
-
-  margin: 0 auto;
-  padding: 9px 14px;
-  box-sizing: border-box;
-
-  border: 1px solid rgba(31, 166, 75, 0.22);
-  border-radius: 12px;
-
-  background: rgba(31, 166, 75, 0.13);
-  box-shadow: 0 8px 24px rgba(31, 166, 75, 0.12);
-
-  color: #157a38;
-
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.conversion-toast-icon {
-  display: flex;
-  width: 22px;
-  height: 22px;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 50%;
-  background: rgba(31, 166, 75, 0.16);
-  color: var(--color-success);
-
-  font-size: 11px;
-}
-
-.toast-enter-active,
-.toast-leave-active {
-  transition: opacity 0.22s ease, transform 0.22s ease;
-}
-
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
 }
 
 @keyframes point-float {

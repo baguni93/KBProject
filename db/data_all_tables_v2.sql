@@ -2284,80 +2284,107 @@ VALUES (1, '식비', NULL),
 -- ---------------------------------------------------------------------
 -- 12. point_wallet_tbl (3건)
 -- ---------------------------------------------------------------------
-INSERT INTO point_wallet_tbl (point_wallet_id,
-                              user_id,
-                              point_balance,
-                              updated_at)
-VALUES (1, 1, 500, '2026-07-24 09:10:00'),
-       (2, 2, 5000, '2026-07-24 09:20:00'),
-       (3, 3, 7500, '2026-07-24 09:30:00');
+INSERT INTO point_wallet_tbl (
+    point_wallet_id,
+    user_id,
+    point_balance,
+    updated_at
+)
+VALUES
+    (1, 1, 500, '2026-07-18 09:05:00'),
+    (2, 2, 5000, '2026-07-24 09:20:00'),
+    (3, 3, 7500, '2026-07-24 09:30:00');
+
 
 -- ---------------------------------------------------------------------
--- 13. point_transaction_tbl (7건)
+-- 13. point_transaction_tbl (5건)
 -- ---------------------------------------------------------------------
-INSERT INTO point_transaction_tbl (point_transaction_id,
-                                   point_wallet_id,
-                                   transaction_type,
-                                   point_amount,
-                                   reason_type,
-                                   created_at)
-VALUES (1, 1, 'EARN', 5000, 'EVENT', '2026-07-20 09:00:00'),
-       (2, 1, 'USE', 1000, 'CONVERSION', '2026-07-23 09:10:00'),
-       (3, 1, 'CANCEL', 3500, 'RANDOM_BOX', '2026-07-24 09:10:00'),
-       (4, 2, 'EARN', 7000, 'EVENT', '2026-07-21 09:00:00'),
-       (5, 2, 'USE', 2000, 'CONVERSION', '2026-07-24 09:20:00'),
-       (6, 3, 'EARN', 10000, 'EVENT', '2026-07-22 09:00:00'),
-       (7, 3, 'USE', 2500, 'CONVERSION', '2026-07-24 09:30:00');
+INSERT INTO point_transaction_tbl (
+    point_transaction_id,
+    point_wallet_id,
+    transaction_type,
+    point_amount,
+    reason_type,
+    created_at
+)
+VALUES
+    (1, 1, 'EARN', 500, 'RANDOM_BOX', '2026-07-18 09:05:00'),
+
+    (2, 2, 'EARN', 7000, 'EVENT', '2026-07-21 09:00:00'),
+    (3, 2, 'USE', 2000, 'CONVERSION', '2026-07-24 09:20:00'),
+
+    (4, 3, 'EARN', 10000, 'EVENT', '2026-07-22 09:00:00'),
+    (5, 3, 'USE', 2500, 'CONVERSION', '2026-07-24 09:30:00');
+
 
 -- ---------------------------------------------------------------------
--- 14. user_random_box_tbl (7건)
+-- 14. user_random_box_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO user_random_box_tbl (user_random_box_id,
-                                 user_id,
-                                 issue_reason,
-                                 source_id,
-                                 target_account_id,
-                                 box_status,
-                                 reward_point,
-                                 issued_at,
-                                 opened_at)
-VALUES (1, 1, 'ATTENDANCE', 1, NULL, 'OPENED', 500, '2026-07-18 09:00:00', '2026-07-18 09:05:00'),
-       (2, 1, 'EVENT', 1, NULL, 'UNOPENED', NULL, '2026-07-24 09:00:00', NULL),
-       (3, 2, 'ATTENDANCE', 3, NULL, 'OPENED', 1000, '2026-07-19 09:00:00', '2026-07-19 09:05:00'),
-       (4, 2, 'EVENT', 2, NULL, 'UNOPENED', NULL, '2026-07-24 09:10:00', NULL),
-       (5, 3, 'ATTENDANCE', 5, NULL, 'OPENED', 300, '2026-07-20 09:00:00', '2026-07-20 09:05:00'),
-       (6, 1, 'FEED_SHARE', 1, NULL, 'UNOPENED', NULL, '2026-07-24 10:00:00', NULL),
-       (7, 1, 'TRANSFER', 2, 2, 'UNOPENED', NULL, '2026-07-24 11:00:00', NULL);
+INSERT INTO user_random_box_tbl (
+    user_random_box_id,
+    user_id,
+    issue_reason,
+    source_id,
+    target_account_id,
+    box_status,
+    reward_point,
+    issued_at,
+    opened_at
+)
+VALUES
+    -- 1번 사용자: 과거 출석으로 받은 랜덤박스를 개봉하여 500P 획득
+    (1, 1, 'ATTENDANCE', 1, NULL, 'OPENED', 500,
+     '2026-07-18 09:00:00', '2026-07-18 09:05:00'),
+
+    (2, 2, 'ATTENDANCE', 3, NULL, 'OPENED', 1000,
+     '2026-07-19 09:00:00', '2026-07-19 09:05:00'),
+
+    (3, 2, 'EVENT', 2, NULL, 'UNOPENED', NULL,
+     '2026-07-24 09:10:00', NULL),
+
+    (4, 3, 'ATTENDANCE', 5, NULL, 'OPENED', 300,
+     '2026-07-20 09:00:00', '2026-07-20 09:05:00'),
+
+    (5, 1, 'FEED_SHARE', 1, NULL, 'UNOPENED', NULL,
+     '2026-07-24 10:00:00', NULL),
+
+    (6, 1, 'TRANSFER', 2, 2, 'UNOPENED', NULL,
+     '2026-07-24 11:00:00', NULL);
+
 
 -- ---------------------------------------------------------------------
 -- 15. attendance_tbl (6건)
 -- ---------------------------------------------------------------------
-INSERT INTO attendance_tbl (attendance_id,
-                            user_id,
-                            attendance_date)
-VALUES (1, 1, '2026-07-22'),
-       (2, 1, '2026-07-23'),
-       (3, 2, '2026-07-22'),
-       (4, 2, '2026-07-24'),
-       (5, 3, '2026-07-23'),
-       (6, 3, '2026-07-24');
+INSERT INTO attendance_tbl (
+    attendance_id,
+    user_id,
+    attendance_date
+)
+VALUES
+    (1, 1, '2026-07-22'),
+    (2, 1, '2026-07-23'),
+    (3, 2, '2026-07-22'),
+    (4, 2, '2026-07-24'),
+    (5, 3, '2026-07-23'),
+    (6, 3, '2026-07-24');
+
 
 -- ---------------------------------------------------------------------
--- 16. point_conversion_history_tbl (6건)
+-- 16. point_conversion_history_tbl (4건)
 -- ---------------------------------------------------------------------
-INSERT INTO point_conversion_history_tbl (point_conversion_id,
-                                          user_id,
-                                          point_wallet_id,
-                                          wallet_id,
-                                          converted_point,
-                                          converted_at)
-VALUES (1, 1, 1, 1, 500, '2026-07-18 12:00:00'),
-       (2, 1, 1, 1, 1000, '2026-07-19 12:00:00'),
-       (3, 2, 2, 2, 500, '2026-07-20 12:00:00'),
-       (4, 2, 2, 2, 1000, '2026-07-21 12:00:00'),
-       (5, 3, 3, 3, 500, '2026-07-22 12:00:00'),
-       (6, 3, 3, 3, 1000, '2026-07-23 12:00:00');
-
+INSERT INTO point_conversion_history_tbl (
+    point_conversion_id,
+    user_id,
+    point_wallet_id,
+    wallet_id,
+    converted_point,
+    converted_at
+)
+VALUES
+    (1, 2, 2, 2, 500, '2026-07-20 12:00:00'),
+    (2, 2, 2, 2, 1000, '2026-07-21 12:00:00'),
+    (3, 3, 3, 3, 500, '2026-07-22 12:00:00'),
+    (4, 3, 3, 3, 1000, '2026-07-23 12:00:00');
 -- ---------------------------------------------------------------------
 -- 17. spending_analysis_tbl (6건)
 -- ---------------------------------------------------------------------
@@ -2723,44 +2750,44 @@ VALUES (1, 1, '질병 진단비', 30000000, '약관에서 정한 주요 질병�
 -- ---------------------------------------------------------------------
 -- 28. settlement_tbl (8건)
 -- ---------------------------------------------------------------------
-INSERT INTO settlement_tbl (settlement_id, requester_id, title, content, total_amount,
-                            status, created_at, settlement_type, spending_category_id,
-                            last_reminder_date, completed_at)
-VALUES (1, 1, '저녁 식사 정산', '저녁 식사 정산', 30000, 'REQUEST', '2026-07-20 19:00:00', 'EQUAL', 1, NULL, NULL),
-       (2, 2, '카페 모임 정산', '카페 모임 정산', 24000, 'COMPLETE', '2026-07-21 15:00:00', 'EQUAL', 2, '2026-07-21 17:00:00',
-        '2026-07-21 18:00:00'),
-       (3, 3, '택시비 정산', '택시비 정산', 18000, 'CANCEL', '2026-07-22 23:00:00', 'UNEQUAL', 6, NULL, NULL),
-(4, 2, '저녁 식사 더치페이', '저녁 식사 더치페이', 18000, 'COMPLETE', '2026-08-08 20:00:00', 'EQUAL', 1, NULL, '2026-08-08 20:10:00'),
-(5, 3, '카페 모임 더치페이', '카페 모임 더치페이', 8000, 'COMPLETE', '2026-07-24 16:30:00', 'EQUAL', 2, NULL, '2026-07-24 16:40:00'),
-(6, 2, '택시비 더치페이', '택시비 더치페이', 14000, 'COMPLETE', '2026-06-21 00:10:00', 'EQUAL', 6, NULL, '2026-06-21 00:20:00'),
-(7, 3, '숙소비 더치페이', '숙소비 더치페이', 60000, 'COMPLETE', '2026-05-29 20:20:00', 'EQUAL', 10, NULL, '2026-05-29 20:30:00'),
-(8, 2, '병원비 더치페이', '병원비 더치페이', 35000, 'COMPLETE', '2026-04-15 15:10:00', 'EQUAL', 16, NULL, '2026-04-15 15:20:00');
+-- INSERT INTO settlement_tbl (settlement_id, requester_id, title, content, total_amount,
+--                             status, created_at, settlement_type, spending_category_id,
+--                             last_reminder_date, completed_at)
+-- VALUES (1, 1, '저녁 식사 정산', '저녁 식사 정산', 30000, 'REQUEST', '2026-07-20 19:00:00', 'EQUAL', 1, NULL, NULL),
+--        (2, 2, '카페 모임 정산', '카페 모임 정산', 24000, 'COMPLETE', '2026-07-21 15:00:00', 'EQUAL', 2, '2026-07-21 17:00:00',
+--         '2026-07-21 18:00:00'),
+--        (3, 3, '택시비 정산', '택시비 정산', 18000, 'CANCEL', '2026-07-22 23:00:00', 'UNEQUAL', 6, NULL, NULL),
+-- (4, 2, '저녁 식사 더치페이', '저녁 식사 더치페이', 18000, 'COMPLETE', '2026-08-08 20:00:00', 'EQUAL', 1, NULL, '2026-08-08 20:10:00'),
+-- (5, 3, '카페 모임 더치페이', '카페 모임 더치페이', 8000, 'COMPLETE', '2026-07-24 16:30:00', 'EQUAL', 2, NULL, '2026-07-24 16:40:00'),
+-- (6, 2, '택시비 더치페이', '택시비 더치페이', 14000, 'COMPLETE', '2026-06-21 00:10:00', 'EQUAL', 6, NULL, '2026-06-21 00:20:00'),
+-- (7, 3, '숙소비 더치페이', '숙소비 더치페이', 60000, 'COMPLETE', '2026-05-29 20:20:00', 'EQUAL', 10, NULL, '2026-05-29 20:30:00'),
+-- (8, 2, '병원비 더치페이', '병원비 더치페이', 35000, 'COMPLETE', '2026-04-15 15:10:00', 'EQUAL', 16, NULL, '2026-04-15 15:20:00');
 
 -- ---------------------------------------------------------------------
 -- 29. settlement_member_tbl (6건)
 -- ---------------------------------------------------------------------
 
-INSERT INTO settlement_member_tbl (settlement_member_id, settlement_id, user_id,
-                                   amount, status, created_at, completed_at)
-VALUES (1, 1, 2, 15000, 'REQUEST', '2026-07-20 19:01:00', NULL),
-       (2, 1, 3, 15000, 'REQUEST', '2026-07-20 19:01:00', NULL),
-       (3, 2, 1, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 17:30:00'),
-       (4, 2, 3, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 18:00:00'),
-       (5, 3, 1, 8000, 'CANCEL', '2026-07-22 23:01:00', NULL),
-       (6, 3, 2, 10000, 'CANCEL', '2026-07-22 23:01:00', NULL);
+-- INSERT INTO settlement_member_tbl (settlement_member_id, settlement_id, user_id,
+--                                    amount, status, created_at, completed_at)
+-- VALUES (1, 1, 2, 15000, 'REQUEST', '2026-07-20 19:01:00', NULL),
+--        (2, 1, 3, 15000, 'REQUEST', '2026-07-20 19:01:00', NULL),
+--        (3, 2, 1, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 17:30:00'),
+--        (4, 2, 3, 12000, 'COMPLETE', '2026-07-21 15:01:00', '2026-07-21 18:00:00'),
+--        (5, 3, 1, 8000, 'CANCEL', '2026-07-22 23:01:00', NULL),
+--        (6, 3, 2, 10000, 'CANCEL', '2026-07-22 23:01:00', NULL);
 
 -- ---------------------------------------------------------------------
 -- 30. notification_tbl (6건)
 -- ---------------------------------------------------------------------
 
-INSERT INTO notification_tbl (notification_id, receiver_id, sender_id,
-                              notification_type, target_id, status, created_at)
-VALUES (1, 2, 1, 'FRIEND_REQUEST', 1, 'READ', '2026-07-10 10:00:00'),
-       (2, 3, 1, 'FRIEND_REQUEST', 2, 'UNREAD', '2026-07-11 10:00:00'),
-       (3, 2, 1, 'SETTLEMENT_REQUEST', 1, 'UNREAD', '2026-07-20 19:01:00'),
-       (4, 3, 2, 'COMMENT', 1, 'READ', '2026-07-21 20:00:00'),
-       (5, 1, 3, 'LIKE', 2, 'UNREAD', '2026-07-22 20:00:00'),
-       (6, 1, 2, 'SETTLEMENT_REQUEST', 2, 'READ', '2026-07-23 20:00:00');
+-- INSERT INTO notification_tbl (notification_id, receiver_id, sender_id,
+--                               notification_type, target_id, status, created_at)
+-- VALUES (1, 2, 1, 'FRIEND_REQUEST', 1, 'READ', '2026-07-10 10:00:00'),
+--        (2, 3, 1, 'FRIEND_REQUEST', 2, 'UNREAD', '2026-07-11 10:00:00'),
+--        (3, 2, 1, 'SETTLEMENT_REQUEST', 1, 'UNREAD', '2026-07-20 19:01:00'),
+--        (4, 3, 2, 'COMMENT', 1, 'READ', '2026-07-21 20:00:00'),
+--        (5, 1, 3, 'LIKE', 2, 'UNREAD', '2026-07-22 20:00:00'),
+--        (6, 1, 2, 'SETTLEMENT_REQUEST', 2, 'READ', '2026-07-23 20:00:00');
 
 -- ---------------------------------------------------------------------
 -- 31. financial_transaction_tbl (6건)
@@ -3168,7 +3195,7 @@ VALUES
  '편의점, 카페 어디서나 편리한 지갑 결제를 이용하고 포인트를 받으세요.',
  'PERMANENT',
  'WALLET',
- 'OPEN',
+ 'CLOSE',
  'wallet.png',
  1,
  1,
@@ -3288,10 +3315,10 @@ INSERT INTO event_challenge_level_tbl (challenge_level_id,
                                        required_exp,
                                        reward_point)
 VALUES (1, 1, 1, 100, 1000),
-       (2, 1, 2, 250, 1500),
-       (3, 1, 3, 500, 2000),
-       (4, 1, 4, 800, 2500),
-       (5, 1, 5, 1200, 3000);
+       (2, 1, 2, 500, 1500),
+       (3, 1, 3, 1000, 2000),
+       (4, 1, 4, 1500, 2500),
+       (5, 1, 5, 2000, 3000);
 
 -- ---------------------------------------------------------------------
 -- 53. event_challenge_user_tbl (6건)

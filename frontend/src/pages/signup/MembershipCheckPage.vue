@@ -1,5 +1,5 @@
 <template>
-  <div class="signup-page page-layout">
+  <div id="membership-page" class="signup-page page-layout">
     <!-- 공통 상단바 -->
     <PageHeader custom-back @back="goBack" />
 
@@ -15,12 +15,12 @@
     <!-- 입력 영역 -->
     <main class="content-area page-content">
       <PhoneAuthForm
-        ref="phoneAuthFormRef"
-        :initial-value="signupStore.phoneAuth"
-        :loading="loading"
-        @step-change="handleStepChange"
-        @phone-valid-change="handlePhoneValidChange"
-        @submit="sendCode"
+          ref="phoneAuthFormRef"
+          :initial-value="signupStore.phoneAuth"
+          :loading="loading"
+          @step-change="handleStepChange"
+          @phone-valid-change="handlePhoneValidChange"
+          @submit="sendCode"
       />
 
       <p v-if="errorMessage" class="error-message text-13">
@@ -31,14 +31,14 @@
     <!-- 휴대폰번호 입력 완료 시에만 버튼 -->
     <Transition name="button-fade">
       <div
-        v-if="currentStep === 4 && phoneValid"
-        class="bottom-btn-area single"
+          v-if="currentStep === 4 && phoneValid"
+          class="bottom-btn-area single"
       >
         <button
-          class="bottom-btn"
-          :disabled="loading"
-          type="button"
-          @click="handleButtonClick"
+            class="bottom-btn"
+            :disabled="loading"
+            type="button"
+            @click="handleButtonClick"
         >
           인증번호 받기
         </button>
@@ -113,7 +113,7 @@ const sendCode = async (formData) => {
   } catch (error) {
     console.error(error);
     errorMessage.value =
-      error.response?.data?.message || '인증번호 발급에 실패했습니다.';
+        error.response?.data?.message || '인증번호 발급에 실패했습니다.';
   } finally {
     loading.value = false;
   }
@@ -137,6 +137,7 @@ const goBack = () => {
 @import '@/components/common/common/layout.css';
 
 .signup-page {
+  position: relative;
   background: var(--color-bg-page);
   width: 100%;
   /* 모바일 브라우저 주소창 이슈를 해결하기 위해 dvh 사용 */
@@ -177,8 +178,8 @@ const goBack = () => {
 .title-slide-enter-active,
 .title-slide-leave-active {
   transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
+      opacity 0.22s ease,
+      transform 0.22s ease;
 }
 
 .title-slide-enter-from {
@@ -195,8 +196,8 @@ const goBack = () => {
 .button-fade-enter-active,
 .button-fade-leave-active {
   transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
+      opacity 0.22s ease,
+      transform 0.22s ease;
 }
 
 .button-fade-enter-from,

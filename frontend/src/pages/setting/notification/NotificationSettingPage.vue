@@ -30,9 +30,9 @@
         <p class="text-13">{{ loadErrorMessage }}</p>
 
         <button
-          class="content-btn primary retry-button"
-          type="button"
-          @click="loadNotificationSetting"
+            class="content-btn primary retry-button"
+            type="button"
+            @click="loadNotificationSetting"
         >
           다시 시도
         </button>
@@ -41,9 +41,9 @@
       <template v-else>
         <section class="setting-list">
           <article
-            v-for="item in notificationItems"
-            :key="item.key"
-            class="setting-item"
+              v-for="item in notificationItems"
+              :key="item.key"
+              class="setting-item"
           >
             <div :class="`item-icon ${item.iconClass}`">
               <i :class="item.icon"></i>
@@ -55,13 +55,13 @@
             </div>
 
             <button
-              :class="{ active: isEnabled(item.key) }"
-              :disabled="savingKey === item.key"
-              class="toggle-button"
-              type="button"
-              :aria-label="`${item.title} ${isEnabled(item.key) ? '끄기' : '켜기'}`"
-              :aria-pressed="isEnabled(item.key)"
-              @click="toggleNotification(item.key)"
+                :class="{ active: isEnabled(item.key) }"
+                :disabled="savingKey === item.key"
+                class="toggle-button"
+                type="button"
+                :aria-label="`${item.title} ${isEnabled(item.key) ? '끄기' : '켜기'}`"
+                :aria-pressed="isEnabled(item.key)"
+                @click="toggleNotification(item.key)"
             >
               <span class="toggle-circle"></span>
             </button>
@@ -91,9 +91,9 @@
 
         <Transition name="toast">
           <div
-            v-if="saveErrorMessage"
-            class="save-error-message text-13"
-            role="alert"
+              v-if="saveErrorMessage"
+              class="save-error-message text-13"
+              role="alert"
           >
             <i class="fa-solid fa-circle-exclamation"></i>
             <span>{{ saveErrorMessage }}</span>
@@ -128,7 +128,6 @@ const savingKey = ref('');
 const loadErrorMessage = ref('');
 const saveMessage = ref('');
 const saveErrorMessage = ref('');
-let messageTimer = null;
 
 // 알림 항목
 const notificationItems = [
@@ -138,7 +137,7 @@ const notificationItems = [
     iconClass: 'finance',
     title: '금융 알림',
     description:
-      '입출금, 이체, 결제, 한도 변경 등 금융 거래 관련 알림을 받아요.',
+        '입출금, 이체, 결제, 한도 변경 등 금융 거래 관련 알림을 받아요.',
   },
   {
     key: 'friendNotificationYn',
@@ -180,16 +179,16 @@ const loadNotificationSetting = async () => {
     const data = await getNotificationSetting();
 
     notificationSetting.financeNotificationYn =
-      data.financeNotificationYn || 'N';
+        data.financeNotificationYn || 'N';
     notificationSetting.friendNotificationYn = data.friendNotificationYn || 'N';
     notificationSetting.rewardNotificationYn = data.rewardNotificationYn || 'N';
     notificationSetting.eventNotificationYn = data.eventNotificationYn || 'N';
   } catch (error) {
     console.error(error);
     loadErrorMessage.value =
-      error.response?.data?.message ||
-      error.error ||
-      '알림 설정을 불러오지 못했습니다.';
+        error.response?.data?.message ||
+        error.error ||
+        '알림 설정을 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -214,32 +213,20 @@ const toggleNotification = async (key) => {
       rewardNotificationYn: notificationSetting.rewardNotificationYn,
       eventNotificationYn: notificationSetting.eventNotificationYn,
     });
-
-    showSaveMessage('알림 설정이 변경되었습니다.');
   } catch (error) {
     console.error(error);
 
     // 저장 실패 시 이전 값으로 복구
     notificationSetting[key] = previousValue;
     saveErrorMessage.value =
-      error.response?.data?.message ||
-      error.error ||
-      '알림 설정 변경에 실패했습니다.';
+        error.response?.data?.message ||
+        error.error ||
+        '알림 설정 변경에 실패했습니다.';
   } finally {
     savingKey.value = '';
   }
 };
 
-// 저장 완료 메시지
-const showSaveMessage = (message) => {
-  saveMessage.value = message;
-
-  if (messageTimer) window.clearTimeout(messageTimer);
-
-  messageTimer = window.setTimeout(() => {
-    saveMessage.value = '';
-  }, 1800);
-};
 
 // 설정 메인 화면
 const goBack = () => {
@@ -405,8 +392,8 @@ onMounted(loadNotificationSetting);
   background: var(--color-border-main);
   cursor: pointer;
   transition:
-    background-color 0.2s ease,
-    opacity 0.2s ease;
+      background-color 0.2s ease,
+      opacity 0.2s ease;
 }
 
 .toggle-button.active {
@@ -508,29 +495,6 @@ onMounted(loadNotificationSetting);
 }
 
 /* 저장 성공 토스트 */
-.save-message {
-  position: fixed;
-  z-index: 20;
-  right: 24px;
-  bottom: 34px;
-  left: 24px;
-  display: flex;
-  max-width: 374px;
-  min-height: 44px;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 9px;
-  margin: 0 auto;
-  padding: 9px 14px;
-  border: 1px solid rgba(31, 166, 75, 0.22);
-  border-radius: 12px;
-  background: rgba(31, 166, 75, 0.13);
-  box-shadow: 0 8px 24px rgba(31, 166, 75, 0.12);
-  color: #157a38;
-  box-sizing: border-box;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
 
 .save-icon {
   display: flex;
@@ -574,8 +538,8 @@ onMounted(loadNotificationSetting);
 .toast-enter-active,
 .toast-leave-active {
   transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
+      opacity 0.22s ease,
+      transform 0.22s ease;
 }
 
 .toast-enter-from,
