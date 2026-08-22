@@ -180,10 +180,10 @@ public class KbCardCatalogScraper implements InitializingBean {
     // 카드 크롤링(앱 시연시에 반드시 다시 켜야한다.)
     @Override
     public void afterPropertiesSet() {
-//        log.info("==================================================");
-//        log.info("[카탈로그 매니저] 카드 추천용 상품/혜택 자동 동기화 시작");
-//        log.info("==================================================");
-//        scrapeCardCatalogFromKbWeb();
+        log.info("==================================================");
+        log.info("[카탈로그 매니저] 카드 추천용 상품/혜택 자동 동기화 시작");
+        log.info("==================================================");
+        scrapeCardCatalogFromKbWeb();
     }
 
     /**

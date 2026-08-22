@@ -9,13 +9,8 @@
       :selected-dutch-friends="remittanceStore.selectedDutchFriends"
       :get-friend-name="remittanceStore.getFriendName"
       :category-list="remittanceStore.categoryList"
-      :selected-files="remittanceStore.selectedFiles"
-      :image-preview-url="remittanceStore.imagePreviewUrl"
-      :image-preview-urls="remittanceStore.imagePreviewUrls"
       :my-profile-name="myProfileName"
       :format-currency="remittanceStore.formatCurrency"
-      @file-change="remittanceStore.handleFileChange"
-      @remove-file="remittanceStore.removeSelectedFile"
       @submit="submitRemittance"
     />
   </div>

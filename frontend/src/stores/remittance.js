@@ -522,27 +522,6 @@ export const useRemittanceStore = defineStore('remittance', () => {
         if (remittanceApi && remittanceApi.createSettlement) {
           const res = await remittanceApi.createSettlement(settlementPayload);
           console.log('Settlement created successfully:', res);
-          const createdSettlementId = res?.settlementId || res?.data?.settlementId || res?.id || res?.data?.id;
-
-          // 정산 생성 피드 등록 (사진 첨부 및 피드 메시지 연동)
-          try {
-            const formData = new FormData();
-            formData.append('userId', Number(userId));
-            if (createdSettlementId) formData.append('targetId', createdSettlementId);
-            formData.append('feedType', 'SETTLEMENT');
-            formData.append('content', rawContent);
-            formData.append('visibility', remitVisibility.value || 'PUBLIC');
-            if (selectedFiles.value.length > 0) {
-              selectedFiles.value.forEach((f) => formData.append('files', f));
-            } else if (selectedFile.value) {
-              formData.append('files', selectedFile.value);
-            }
-            if (feedApi && feedApi.createFeed) {
-              await feedApi.createFeed(formData);
-            }
-          } catch (fErr) {
-            console.log('정산 피드 등록 예외 (정산은 계속 진행):', fErr);
-          }
 
           // 정산 목록 즉시 갱신
           try {

@@ -156,10 +156,10 @@ public class KbInsuranceCatalogScraper implements InitializingBean {
         this.insuranceRecommendationMapper = insuranceRecommendationMapper;
         this.dataSource = dataSource;
     }
-    // 보험 크롤링 임시중단
+    // 보험 크롤링 활성화
     @Override
     public void afterPropertiesSet() {
-        //synchronizeInsuranceCatalog();
+        synchronizeInsuranceCatalog();
     }
 
     public void synchronizeInsuranceCatalog() {

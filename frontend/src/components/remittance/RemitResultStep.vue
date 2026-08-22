@@ -82,10 +82,6 @@
               <span class="lbl text-14">받는 친구</span>
               <span class="val text-15-bold">{{ receiverName || '친구' }}</span>
             </div>
-            <div v-if="remitMemo" class="detail-row text-14">
-              <span class="lbl text-14">송금 메모</span>
-              <span class="val text-15-bold">{{ remitMemo }}</span>
-            </div>
           </template>
 
           <!-- 4. 계좌 송금 (기본) -->
@@ -258,7 +254,10 @@ const getSecondaryBtnText = computed(() => {
 const handleSecondaryAction = () => {
   emit("resetAll");
   if (props.remitType === "DUTCH_CREATE" || props.remitType === "DUTCH") {
-    router.push("/settlement");
+    router.push({
+      path: "/mypage",
+      query: { tab: "settlement", type: "requested", state: "progress" },
+    });
   } else {
     router.push("/feed");
   }

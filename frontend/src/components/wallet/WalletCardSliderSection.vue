@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <template v-if="!hasRepresentativeCard">
+  <div class="wallet-card-slider-root">
+    <div v-if="!hasRepresentativeCard" class="empty-card-container">
       <div class="center-graphic-section">
         <div class="outer-dashed-ring">
           <div class="inner-dashed-ring"></div>
@@ -26,15 +26,15 @@
           </p>
         </div>
       </div>
-    </template>
+    </div>
 
-    <template v-else>
-      <div
-        class="spay-carousel-deck"
-        @touchstart="$emit('touchStart', $event)"
-        @touchmove="$emit('touchMove', $event)"
-        @touchend="$emit('touchEnd')"
-      >
+    <div
+      v-else
+      class="spay-carousel-deck"
+      @touchstart="$emit('touchStart', $event)"
+      @touchmove="$emit('touchMove', $event)"
+      @touchend="$emit('touchEnd')"
+    >
         <div class="carousel-track">
           <div
             v-for="(card, index) in registeredCards"
@@ -113,7 +113,6 @@
           스와이프하거나 카드를 터치하면 결제가 활성화됩니다.
         </div>
       </div>
-    </template>
   </div>
 </template>
 
@@ -156,15 +155,34 @@ defineEmits([
 </script>
 
 <style scoped>
-.spay-carousel-deck {
-  position: relative;
+.wallet-card-slider-root {
   width: 100%;
-  margin: 0;
+  min-height: 310px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 14px 0 10px;
+}
+
+.empty-card-container {
+  width: 100%;
+  min-height: 310px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.spay-carousel-deck {
+  position: relative;
+  width: 100%;
+  min-height: 310px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
   touch-action: pan-y;
   overflow: visible;
 }
