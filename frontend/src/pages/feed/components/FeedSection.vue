@@ -1,6 +1,7 @@
 <template>
   <main class="feed-section">
     <!-- 새로고침 로딩 -->
+
     <div
       v-if="type === 'public' && feedStore.isRefreshing"
       class="refresh-loading-area"
