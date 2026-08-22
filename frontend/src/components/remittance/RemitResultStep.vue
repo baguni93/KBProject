@@ -254,7 +254,10 @@ const getSecondaryBtnText = computed(() => {
 const handleSecondaryAction = () => {
   emit("resetAll");
   if (props.remitType === "DUTCH_CREATE" || props.remitType === "DUTCH") {
-    router.push("/settlement");
+    router.push({
+      path: "/mypage",
+      query: { tab: "settlement", type: "requested", state: "progress" },
+    });
   } else {
     router.push("/feed");
   }

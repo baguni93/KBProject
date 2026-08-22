@@ -14,6 +14,7 @@
 
       <div class="main">
         <div v-if="currentTab === 'feed'">
+          <ProfileMission></ProfileMission>
           <FeedSection type="my" />
         </div>
         <div v-if="currentTab === 'settlement'">
@@ -31,6 +32,7 @@
   </div>
 </template>
 <script setup>
+import ProfileMission from '@/pages/member/component/ProfileMission.vue';
 import MyPageTab from '@/components/my/MyPageTab.vue';
 import MyWallet from '@/components/my/MyWallet.vue';
 import HeaderButtons from '@/components/common/HeaderButtons.vue';
