@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>시연 통합 뷰</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #121214;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 40px;
+      width: 100%;
+      max-width: 1600px;
+      height: 100vh;
+      padding: 20px;
+    }
+    .device-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .label-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 18px;
+      margin-bottom: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 20px;
+      color: #ffffff;
+    }
+    .label-badge.left {
+      background-color: #3b82f6;
+    }
+    .label-badge.right {
+      background-color: #10b981;
+    }
+    .device-mockup {
+      width: 430px;
+      height: 890px;
+      background-color: #000000;
+      border-radius: 44px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 8px #2b2d31;
+      overflow: hidden;
+      position: relative;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background-color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="device-column">
+      <div class="label-badge left">신규 회원</div>
+      <div class="device-mockup">
+        <iframe src="http://localhost:5173/intro?next=/wallet" title="신규 회원 화면"></iframe>
+      </div>
+    </div>
+
+    <div class="device-column">
+      <div class="label-badge right">기존 회원</div>
+      <div class="device-mockup">
+        <iframe src="http://localhost:5173/intro?next=/wallet" title="기존 회원 화면"></iframe>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
