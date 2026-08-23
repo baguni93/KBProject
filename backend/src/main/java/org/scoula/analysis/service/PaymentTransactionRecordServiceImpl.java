@@ -97,13 +97,13 @@ public class PaymentTransactionRecordServiceImpl
         );
 
         // 카드 / QR / 바코드 결제 성공 보상: 1,000원 이상 시 랜덤박스 발급
-        try {
-            int txId = Math.abs((int)(System.currentTimeMillis() % 100000000)) + 1;
-            randomBoxService.issueForPayment(tokenDTO.getUserId(), txId, amount);
-            log.info("결제 성공 보상 랜덤박스 발급 성공 - userId={}, amount={}", tokenDTO.getUserId(), amount);
-        } catch (Exception rBoxErr) {
-            log.warn("결제 성공 후 랜덤박스 발급 예외 처리 (결제는 승인 완료): {}", rBoxErr.getMessage());
-        }
+//        try {
+//            int txId = Math.abs((int)(System.currentTimeMillis() % 100000000)) + 1;
+//            randomBoxService.issueForPayment(tokenDTO.getUserId(), txId, amount);
+//            log.info("결제 성공 보상 랜덤박스 발급 성공 - userId={}, amount={}", tokenDTO.getUserId(), amount);
+//        } catch (Exception rBoxErr) {
+//            log.warn("결제 성공 후 랜덤박스 발급 예외 처리 (결제는 승인 완료): {}", rBoxErr.getMessage());
+//        }
     }
 
     private String normalizeMerchantName(
