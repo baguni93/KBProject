@@ -104,6 +104,7 @@ const load = async () => {
   try {
     profile.value = await profileStore.getProfile(userId);
     await friendStore.getFriendList(userId);
+    console.log(profile.value);
   } catch (e) {
     console.log('MyPage load bypass', e);
   }

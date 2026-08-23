@@ -53,11 +53,13 @@
 
         <!-- 버튼 -->
         <button
+          type="button"
           class="card-button"
           :class="{
             'completed-btn': card.isCompleted,
           }"
-          @click="handleAction(card)"
+          @pointerdown.stop
+          @click.stop="handleAction(card)"
         >
           {{ card.buttonText }}
         </button>
@@ -74,6 +76,7 @@ import { storeToRefs } from 'pinia';
 
 import { useProfileStore } from '@/stores/profile';
 import { useFriendStore } from '@/stores/friend';
+import { useAuthStore } from '@/stores/auth';
 
 // ========================================
 // Router
@@ -87,6 +90,7 @@ const router = useRouter();
 
 const profileStore = useProfileStore();
 const friendStore = useFriendStore();
+const authStore = useAuthStore();
 
 const { profile } = storeToRefs(profileStore);
 const { friendList } = storeToRefs(friendStore);
@@ -95,7 +99,7 @@ const { friendList } = storeToRefs(friendStore);
 // 사용자 ID
 // ========================================
 
-const userId = 3;
+const userId = authStore.userId;
 
 // ========================================
 // Loading
@@ -145,7 +149,7 @@ const cards = computed(() => [
 
     icon: 'fa-solid fa-user-group',
 
-    isCompleted: friendList.value.length >= 1,
+    isCompleted: (friendList.value?.length ?? 0) >= 1,
   },
 
   {
@@ -160,7 +164,7 @@ const cards = computed(() => [
     icon: 'fa-solid fa-camera',
 
     isCompleted:
-      !!profile.value.imageName && profile.value.imageName !== 'unknown.png',
+      !!profile.value?.imageName && profile.value.imageName !== 'unknown.png',
   },
 
   {
@@ -174,7 +178,7 @@ const cards = computed(() => [
 
     icon: 'fa-solid fa-comment-dots',
 
-    isCompleted: !!profile.value.introduction?.trim(),
+    isCompleted: !!profile.value?.introduction?.trim(),
   },
 ]);
 
@@ -221,6 +225,16 @@ const handlePointerDown = (event) => {
   }
 
   /*
+   * 버튼을 누른 경우
+   *
+   * 버튼은 클릭 동작만 수행하고
+   * 슬라이더 드래그는 시작하지 않음
+   */
+  if (event.target.closest('.card-button')) {
+    return;
+  }
+
+  /*
    * 마우스 왼쪽 버튼만
    */
   if (event.pointerType === 'mouse' && event.button !== 0) {
@@ -243,7 +257,11 @@ const handlePointerDown = (event) => {
    * 마우스가 slider 밖으로 나가도
    * 계속 move 이벤트를 받을 수 있음
    */
-  slider.setPointerCapture(event.pointerId);
+  try {
+    slider.setPointerCapture(event.pointerId);
+  } catch (e) {
+    console.warn('Pointer capture 설정 실패:', e);
+  }
 
   isDragging.value = true;
 
@@ -362,7 +380,7 @@ const handlePointerUp = (event) => {
 // Pointer Leave
 // ========================================
 
-const handlePointerLeave = (event) => {
+const handlePointerLeave = () => {
   /*
    * pointer capture가 잡혀있으면
    * 실제로 leave 되어도 계속 동작함
@@ -490,17 +508,36 @@ onMounted(async () => {
     document.head.appendChild(link);
   }
 
-  try {
-    await Promise.all([
-      profileStore.getProfile(userId),
+  isLoading.value = true;
 
-      friendStore.getFriendList(userId),
-    ]);
+  /*
+   * userId 확인
+   */
+  console.log('프로필 완성 userId:', userId);
+
+  try {
+    await profileStore.getProfile(userId);
   } catch (e) {
-    console.error('프로필 완성 상태 조회 실패:', e);
-  } finally {
-    isLoading.value = false;
+    console.error('프로필 조회 실패:', e);
   }
+
+  try {
+    await friendStore.getFriendList(userId);
+  } catch (e) {
+    console.error('친구 목록 조회 실패:', e);
+  }
+
+  console.log('========== 최종 상태 ==========');
+
+  console.log('profile:', profile.value);
+
+  console.log('friendList:', friendList.value);
+
+  console.log('cards:', cards.value);
+
+  console.log('completedCount:', completedCount.value);
+
+  isLoading.value = false;
 });
 
 // ========================================
@@ -575,40 +612,22 @@ onBeforeUnmount(() => {
 
   overflow-y: hidden;
 
-  /*
-   * 기본 스크롤바 제거
-   */
   scrollbar-width: none;
 
-  /*
-   * 모바일에서는 가로 제스처
-   */
   touch-action: pan-x;
 
-  /*
-   * 텍스트 드래그 방지
-   */
   user-select: none;
 
   -webkit-user-select: none;
 
-  /*
-   * iOS 관성
-   */
   -webkit-overflow-scrolling: touch;
 
-  /*
-   * 부모 영역으로 overscroll 전파 방지
-   */
   overscroll-behavior-x: contain;
 
   padding: 2px 16px 6px 2px;
 
   box-sizing: border-box;
 
-  /*
-   * PC에서 마우스 드래그 가능하다는 표시
-   */
   cursor: grab;
 }
 
@@ -782,6 +801,10 @@ onBeforeUnmount(() => {
   cursor: pointer;
 
   touch-action: manipulation;
+
+  position: relative;
+
+  z-index: 2;
 
   transition:
     background-color 0.2s,
