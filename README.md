@@ -824,7 +824,7 @@ KB 카드 및 손해보험 상품 데이터를 안정적으로 수집할 수 있
 ## 1. Repository Clone
 
 ```bash
-git clone https://github.com/baguni93/KBProject.git
+git clone (https://github.com/baguni93/SocialWallet.git)
 ```
 
 ---
