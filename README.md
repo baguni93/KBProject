@@ -1,90 +1,83 @@
-# Social Wallet (소셜 지갑 서비스) - ReadMe
+# Social Wallet
 
-> **"결제는 순식간, 소통은 자연스럽게"**  
-> 편리한 금융 생활과 소셜 활동을 결합한 전자지갑 서비스 **Social Wallet**의 프로젝트 종합 안내서입니다.
+> **"결제는 순식간, 소통은 자연스럽게"**
+>
+> 금융 거래를 소셜 콘텐츠로 확장하고,
+> 금융 데이터를 읽고 즐기는 콘텐츠로 제공하는 소셜 지갑 서비스
 
----
+<br>
 
-##  1. 프로젝트 개요 (Project Overview)
-* **프로젝트명:** Social Wallet (KB IT's Your Life 7기, KB 프로젝트 30반 2팀 - 5성급 개발자)
-* **개발 기간:** 2026.07 ~ 2026.08 (약 2개월)
-* **기획 배경 및 목표:**
-  * **기존 단발성 금융 서비스의 한계 극복:** 기존 금융 앱은 결제/송금이 끝나면 앱 이용이 종료되고, 첫 화면에서 결제까지의 동선이 복잡하며 지속적인 방문 동기가 부족함.
-  * **목표:** 금융 거래를 '소셜 콘텐츠'로 확장하고, 금융을 '읽는 콘텐츠'로 확장하여 사용자 활동(체류 시간, 실행 빈도)을 높이고 서비스 만족도 및 플랫폼 가치 향상.
-
----
-
-##  2. 팀 구성 및 역할 (Team & Roles)
-| 이름 | 역할 및 담당 업무 | 주요 세부 업무 |
-| :---: | :--- | :--- |
-| **이승진** (팀장) | 팀장, 발표, UI/UX | 전자지갑, 결제, 송금, 더치페이 정산 |
-| **박우진** | PM, Git/API 관리 | 피드, 커스텀 카드, 정산, 알림 |
-| **박준우** | DBA, QA | 포인트 지갑, AI 소비분석/추천, 이벤트 |
-| **이효능** | UI/UX, 발표 | 인증, 회원/프로필, 계좌 연결 |
-| **허현정** | UI/UX | 이벤트 서비스, 커스텀 카드 일부 |
-
----
-
-##  3. 기술 스택 (Tech Stack)
-* **Frontend:** HTML, CSS, JavaScript, Vue.js (Vue 3), Vite, Pinia, Axios, Vue Router
-* **Backend:** Java, Spring Framework, Spring Security, MyBatis, JWT, Jsoup
-* **Database & Cache:** MySQL, Redis
-* **Real-time & API:** WebSocket (STOMP, SockJS), OpenAI API (GPT-5 nano)
-* **Collaboration & Tools:** Git, GitHub, Notion, Discord, IntelliJ IDEA
-
----
-
-##  4. 주요 기능 (Key Features)
-
-### 1) 전자지갑 및 금융 거래 (Wallet & Payment)
-* **계좌 연결 및 관리:** 계좌 인증을 통한 안전한 계좌 등록, 연결 및 해제 관리.
-* **송금 및 간편 결제:** PIN 번호 기반 로그인 및 인증, 비회원 대상 계좌번호 기반 송금 지원.
-* **비동기 결제 세션 + Polling:** 가맹점 승인 상태를 실시간으로 추적하고 타임아웃 및 롤백 처리.
-* **통합 금융 파이프라인:** 송금/정산 완료 시 지갑 잔액 자동 차감, 소비 내역 생성, 소셜 피드 자동 게시, 랜덤박스 리워드 지급을 일괄 처리.
-
-### 2) 소셜 피드 및 실시간 알림 (Social Feed & Real-time)
-* **금융 소셜 피드:** 송금, 결제, 정산, 커스텀 카드 발급, 소비 분석 결과 및 이벤트 참여 내역을 피드로 공유하고 좋아요/댓글로 상호작용.
-* **Redis 기반 좋아요 처리:** 고속 I/O 및 중복 체크(Set 자료구조)를 통해 좋아요 즉시 반영 및 백그라운드 DB 동기화.
-* **WebSocket + STOMP 실시간 알림:** 친구 요청, 댓글, 좋아요, 정산 요청 등의 이벤트 발생 시 페이지 새로고침 없이 실시간 푸시 알림 제공.
-
-### 3) AI 소비 패턴 분석 및 추천 (AI Spending Analysis & Recommendations)
-* **AI 칭호 발급 및 피드 공유:** OpenAI API(GPT-5-nano)를 활용하여 사용자 소비 데이터 분석 및 맞춤형 칭호 부여 (FallBack 규칙 기반 답변 처리 지원).
-* **AI 소비 카테고리 자동 분류:** 가맹점 매핑 테이블(merchant_category_mapping_tbl) 우선 조회로 불필요한 AI 호출 최소화 및 신뢰도 시스템(수동 변경률 5% 기준 매핑 관리) 도입.
-* **KB 카드 및 보험 추천:** Jsoup 웹 크롤러를 활용해 서버 기동 시 KB 카드(123건) 및 손해보험(18건) 정보를 자동 수집하여 맞춤형 추천 제공.
-
-### 4) 나만의 카드 제작 (Custom Card)
-* **Canvas 기반 커스터마이징:** 배경 색상, 그라데이션, 커스텀 이미지 업로드, 패턴, 텍스트, 이모지 등을 활용한 4단계 카드 제작 프로세스 및 Pinia 상태 관리.
-
-### 5) 정산 및 이벤트 (Settlement & Events)
-* **더치페이 정산:** 정산 그룹 생성, 친구 초대, 금액 균등/비율 분할 및 정산 요청/결제 관리.
-* **이벤트 & 리워드:** 출석 체크, 랜덤박스, 이벤트 챌린지 참여 및 보상 중복 지급 방지(UNIQUE KEY 제약 조건) 처리.
-
----
-
-##  5. 시스템 아키텍처 및 설계
-* **클라이언트-서버 구조:** Vue 3 기반 SPA와 Spring REST API 서버 간 JWT 인증 기반 통신.
-* **실시간 통신:** WebSocket STOMP 브로커를 통한 실시간 알림 전송.
-* **데이터 관리:** RDBMS(MySQL)와 캐시(Redis)의 역할 분담을 통한 성능 최적화.
 <p align="center">
-  <img src="./images/architecture.PNG" width="800px" alt="메인 화면 스크린샷">
+  <img src="./images/logo.png" width="180px" alt="Social Wallet Logo">
 </p>
 
----
+<p align="center">
+  <b>KB IT's Your Life 7기 · 30반 2팀 · 5성급 개발자</b>
+</p>
 
-##  6. 개발 이슈 및 주요 해결 과제
-1. **JWT 인증 및 보안 강화:** Filter 기반 인증 적용, `@AuthenticationPrincipal` 도입으로 사용자 식별 통일, 탈퇴 회원 정보 익명화(`withdrawn_{userId}_{timestamp}`)로 UNIQUE 제약 충돌 방지.
-2. **AI 분석 비동기 처리:** 페이지 이동 시 분석 중단 문제를 방지하기 위해 비동기 처리 및 2초 주기 Polling 도입.
-3. **송금 안정성 확보:** 핵심 송금 로직과 부가 기능(피드 등록 등)을 분리하여 부가 기능 오류가 본질적인 송금에 영향을 주지 않도록 개선.
-4. **크롤링 및 매핑 최적화:** 비정형 HTML 구조에 대응하는 5개의 크롤링 규칙을 추가하여 카드 수집 범위를 확대하고, 매핑 신뢰도 시스템을 구축.
+<p align="center">
+  <img src="https://img.shields.io/badge/Vue.js-3-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white">
+  <img src="https://img.shields.io/badge/Spring-Framework-6DB33F?style=for-the-badge&logo=spring&logoColor=white">
+  <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white">
+  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white">
+  <img src="https://img.shields.io/badge/WebSocket-STOMP-010101?style=for-the-badge">
+  <img src="https://img.shields.io/badge/OpenAI-GPT--5--nano-412991?style=for-the-badge&logo=openai&logoColor=white">
+</p>
 
----
-
-##  7. 향후 개선 및 보완 계획
-* **AI 필터링 고도화:** 부정확한 AI 답변 필터링 추가 예정.
-* **콘텐츠 확장:** 피드 동영상 업로드 기능 추가.
-* **관리자 페이지:** 서비스 운영 및 모니터링을 위한 관리자 기능 구축.
-* **클라우드 배포:** AWS 환경을 통한 정식 서비스 배포.
-* **추가 기능:** 행동 데이터 기반 피드 관심도 분석 및 OCR 기반 그림 인식 기능 도입.
+<br>
 
 ---
-© 2026 KB IT's Your Life 7기 - 5성급 개발자 (30반 2팀)
+
+## 목차
+
+- [프로젝트 개요](#프로젝트-개요)
+- [기획 배경](#기획-배경)
+- [팀 구성](#팀-구성)
+- [개발 환경 및 기술 스택](#개발-환경-및-기술-스택)
+- [주요 기능](#주요-기능)
+- [시스템 아키텍처](#시스템-아키텍처)
+- [데이터베이스](#데이터베이스)
+- [주요 기술 구현](#주요-기술-구현)
+- [개발 이슈 및 해결](#개발-이슈-및-해결)
+- [서비스 화면](#서비스-화면)
+- [시연 영상](#시연-영상)
+- [향후 개선](#향후-개선)
+- [프로젝트 회고](#프로젝트-회고)
+
+---
+
+## 프로젝트 개요
+
+| 구분 | 내용 |
+|---|---|
+| **프로젝트명** | Social Wallet |
+| **교육 과정** | KB IT's Your Life 7기 |
+| **팀** | 30반 2팀 · 5성급 개발자 |
+| **개발 기간** | 2026.07 ~ 2026.08 |
+| **개발 인원** | 5명 |
+| **서비스 유형** | 금융 · 소셜 플랫폼 |
+
+### 한 줄 소개
+
+**Social Wallet은 금융 거래와 소셜 활동을 결합한 전자지갑 서비스입니다.**
+
+송금·결제·정산과 같은 금융 활동을 단순한 거래 내역으로 끝내지 않고
+**피드 콘텐츠로 확장하여 친구들과 공유하고 소통할 수 있도록 설계했습니다.**
+
+또한 12개월 소비 데이터를 기반으로 AI 소비 분석을 제공하고,
+커스텀 카드·이벤트·리워드 등 다양한 콘텐츠를 통해 사용자의 서비스 체류와 참여를 유도합니다.
+
+---
+
+## 기획 배경
+
+### 기존 금융 서비스의 한계
+
+기존 금융 앱은 일반적으로
+
+```text
+금융 활동
+   ↓
+결제 / 송금 완료
+   ↓
+서비스 이용 종료
