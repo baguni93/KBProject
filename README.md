@@ -66,7 +66,8 @@
 * **실시간 통신:** WebSocket STOMP 브로커를 통한 실시간 알림 전송.
 * **데이터 관리:** RDBMS(MySQL)와 캐시(Redis)의 역할 분담을 통한 성능 최적화.
 <p align="center">
-  <img src="./images/architecture.png" width="600px" alt="메인 화면 스크린샷"></p>
+  <img src="./images/architecture.PNG" width="600px" alt="메인 화면 스크린샷">
+</p>
 ---
 
 ##  6. 개발 이슈 및 주요 해결 과제
