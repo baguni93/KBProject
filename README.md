@@ -880,14 +880,89 @@ AI 소비 칭호와 소비 패턴을 제공합니다.
 ## 1. Repository Clone
 
 ```bash
-git clone <repository-url>
+git clone <[repository-url](https://github.com/baguni93/KBProject.git)>
 ```
 
 ## 2. Backend
 
-```bash
-cd backend
-```
+본 프로젝트의 Backend는 Spring Framework + Gradle + Tomcat 환경에서 실행됩니다.
+
+2-1. Gradle
+
+Backend 프로젝트를 IntelliJ IDEA에서 열어 Gradle Dependency를 동기화합니다.
+
+2-2. secret.properties 설정
+
+DB, JWT, Redis, 파일 업로드 경로 등 환경별 설정값은
+secret.properties에서 관리합니다.
+
+secret.properties는 개발자별 로컬 환경이 다르기 때문에
+GitHub Repository에는 포함하지 않습니다.
+
+각자 Backend 프로젝트의 설정 경로에 secret.properties를 생성하고
+본인의 개발 환경에 맞게 설정합니다.
+
+upload.path=C:/upload
+OS별 upload.path 설정
+OS	설정 예시
+Windows	upload.path=C:/upload
+macOS	upload.path=/Users/{사용자명}/upload
+
+예를 들어 macOS 사용자의 경우:
+
+upload.path=/Users/hyoneung/upload
+
+Windows 사용자의 경우:
+
+upload.path=C:/upload
+
+upload.path는 각자의 PC에 실제 존재하는 파일 업로드용 절대 경로로 설정해야 합니다.
+
+설정한 경로에 upload 폴더가 존재하지 않는 경우
+파일 업로드 과정에서 오류가 발생할 수 있으므로 폴더를 미리 생성합니다.
+
+2-3. Tomcat 설정
+
+본 프로젝트는 Spring Framework 기반으로 Tomcat Server를 통해 실행합니다.
+
+IntelliJ IDEA에서 다음 순서로 Tomcat을 등록합니다.
+
+Run
+ → Edit Configurations
+ → +
+ → Tomcat Server
+ → Local
+
+Deployment에서 프로젝트의 Artifact를 추가합니다.
+
+backend:war exploded
+
+프로젝트에 설정된 Context Path를 적용한 후 Tomcat Server를 실행합니다.
+
+예:
+
+http://localhost:8080/{context-path}
+
+2-4. Backend 실행 순서
+Repository Clone
+      ↓
+Gradle Dependency 동기화
+      ↓
+secret.properties 생성
+      ↓
+OS별 upload.path 설정
+      ↓
+Upload 폴더 생성
+      ↓
+MySQL 실행
+      ↓
+Redis 실행
+      ↓
+Tomcat Server 설정
+      ↓
+Tomcat 실행
+
+secret.properties에는 DB 비밀번호, JWT Secret, API Key 등 민감한 정보가 포함될 수 있으므로 GitHub에 업로드하지 않습니다.
 
 필요한 환경 변수 및 DB 설정 후 Spring 서버를 실행합니다.
 
