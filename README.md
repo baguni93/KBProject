@@ -560,7 +560,7 @@ DB의 **UNIQUE KEY 제약 조건**을 활용했습니다.
 # 데이터베이스
 
 <p align="center">
-  <img src="./images/ERD.png" width="900px" alt="ERD">
+  <img src="./images/ERD.PNG" width="900px" alt="ERD">
 </p>
 
 ## 주요 도메인
@@ -738,62 +738,6 @@ HTML 구조에 따라 다른 Parsing 로직을 적용했습니다.
 ### 결과
 
 KB 카드 및 손해보험 상품 데이터를 안정적으로 수집할 수 있도록 개선했습니다.
-
----
-
-# 서비스 화면
-
-## 회원가입
-
-<p align="center">
-  <img src="./images/signup.png" width="280px" alt="회원가입">
-</p>
-
-약관 동의부터 본인인증, 간편 비밀번호, 닉네임 설정까지  
-신규 사용자의 회원가입 과정을 제공합니다.
-
----
-
-## 소셜 피드
-
-<p align="center">
-  <img src="./images/feed.png" width="280px" alt="소셜 피드">
-</p>
-
-금융 거래와 다양한 서비스 활동을 피드 형태로 확인하고  
-친구들과 좋아요와 댓글을 통해 소통할 수 있습니다.
-
----
-
-## 송금 & 정산
-
-<p align="center">
-  <img src="./images/settlement.png" width="280px" alt="송금 및 정산">
-</p>
-
-친구에게 송금하거나 함께 사용한 금액을 간편하게 정산할 수 있습니다.
-
----
-
-## 소비 분석
-
-<p align="center">
-  <img src="./images/analysis.png" width="280px" alt="소비 분석">
-</p>
-
-최근 12개월 소비 데이터를 분석하여  
-AI 소비 칭호와 소비 패턴을 제공합니다.
-
----
-
-## 커스텀 카드
-
-<p align="center">
-  <img src="./images/custom-card.png" width="280px" alt="커스텀 카드">
-</p>
-
-사용자의 사진과 다양한 디자인 요소를 활용해  
-나만의 카드를 제작하고 공유할 수 있습니다.
 
 ---
 
