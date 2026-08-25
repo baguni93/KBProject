@@ -155,7 +155,7 @@
 
 ---
 
-# 🛠 개발 환경 및 기술 스택
+#  개발 환경 및 기술 스택
 
 ## Frontend
 
@@ -559,7 +559,7 @@ DB의 **UNIQUE KEY 제약 조건**을 활용했습니다.
 </p>
 
 
-# 🗄 데이터베이스
+#  데이터베이스
 
 <p align="center">
   <img src="./images/ERD.png" width="900px" alt="ERD">
