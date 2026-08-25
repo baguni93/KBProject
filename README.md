@@ -445,3 +445,47 @@ Spring Security와 JWT를 활용해 인증 구조를 구성했습니다.
 ## 1. Repository Clone
 ```bash
 git clone [https://github.com/baguni93/KBProject.git](https://github.com/baguni93/KBProject.git)
+
+# 2. Backend
+
+본 프로젝트의 Backend는 **Spring Framework + Gradle + Tomcat** 환경에서 실행됩니다.
+
+### 2-1. Gradle
+
+Backend 프로젝트를 IntelliJ IDEA에서 열고
+Gradle Dependency를 동기화합니다.
+
+프로젝트의 build.gradle을 기준으로 필요한 의존성이 자동으로 설치됩니다.
+Backend Project
+      ↓
+build.gradle 확인
+      ↓
+Gradle Dependency 동기화
+      ↓
+필요한 라이브러리 설치
+
+---
+
+### 2-2. secret.properties 설정
+
+DB, JWT, Redis, 파일 업로드 경로 등
+개발자별 로컬 환경에 따라 달라지는 설정값은 `secret.properties`에서 관리합니다. `secret.properties`에는 개인정보 및 인증 정보가 포함될 수 있으므로
+**GitHub Repository에는 포함하지 않습니다.**
+
+Repository Clone 후 각자의 Backend 설정 경로에 `secret.properties`를 생성하고 로컬 환경에 맞게 설정합니다.
+
+#### secret.properties 주요 설정
+```properties
+# Database
+jdbc.username=YOUR_USERNAME
+jdbc.password=YOUR_PASSWORD
+
+# JWT
+jwt.secret=YOUR_JWT_SECRET
+
+# Redis
+redis.host=localhost
+redis.port=6379
+
+# File Upload
+upload.path=C:/upload
