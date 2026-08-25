@@ -804,11 +804,15 @@ AI 소비 칭호와 소비 패턴을 제공합니다.
 #  시연 영상
 
 <p align="center">
+  <a href="https://youtu.be/7DNlIi7Jd-M" target="_blank">
+    <img src="https://img.youtube.com/vi/7DNlIi7Jd-M/maxresdefault.jpg"
+         width="600px"
+         alt="Social Wallet 시연 영상">
+  </a>
+</p>
 
-<!-- YouTube 링크 또는 영상 GIF 삽입 -->
-
-**▶ Social Wallet Demo**
-
+<p align="center">
+  <b>Social Wallet Demo</b>
 </p>
 
 ---
