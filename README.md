@@ -880,92 +880,162 @@ AI 소비 칭호와 소비 패턴을 제공합니다.
 ```bash
 git clone <[repository-url](https://github.com/baguni93/KBProject.git)>
 ```
-
 ## 2. Backend
 
 본 프로젝트의 Backend는 **Spring Framework + Gradle + Tomcat** 환경에서 실행됩니다.
 
 ### 2-1. Gradle
 
-Backend 프로젝트를 IntelliJ IDEA에서 열고 Gradle Dependency를 동기화합니다.
+Backend 프로젝트를 IntelliJ IDEA에서 열고
+Gradle Dependency를 동기화합니다.
 
 프로젝트의 `build.gradle`을 기준으로 필요한 의존성이 자동으로 설치됩니다.
 
-2-2. secret.properties 설정
+```text
+Backend Project
+      ↓
+build.gradle 확인
+      ↓
+Gradle Dependency 동기화
+      ↓
+필요한 라이브러리 설치
+```
 
-DB, JWT, Redis, 파일 업로드 경로 등 환경별 설정값은
-secret.properties에서 관리합니다.
+---
 
-secret.properties는 개발자별 로컬 환경이 다르기 때문에
-GitHub Repository에는 포함하지 않습니다.
+### 2-2. `secret.properties` 설정
 
-각자 Backend 프로젝트의 설정 경로에 secret.properties를 생성한 후
-본인의 개발 환경에 맞게 설정합니다.
+DB, JWT, Redis, 파일 업로드 경로 등
+개발자별 로컬 환경에 따라 달라지는 설정값은
+`secret.properties`에서 관리합니다.
 
-파일 업로드 경로 설정
+`secret.properties`에는 개인정보 및 인증 정보가 포함될 수 있으므로
+**GitHub Repository에는 포함하지 않습니다.**
 
-파일 업로드 경로는 운영체제에 따라 다르게 설정해야 합니다.
+Repository Clone 후 각자의 Backend 설정 경로에
+`secret.properties`를 생성하고 로컬 환경에 맞게 설정합니다.
 
-OS	upload.path 예시
-Windows	C:/upload
-macOS	/Users/{사용자명}/upload
-Linux	/home/{사용자명}/upload
+#### `secret.properties` 주요 설정
 
-Windows
+```properties
+# Database
+jdbc.username=YOUR_USERNAME
+jdbc.password=YOUR_PASSWORD
 
+# JWT
+jwt.secret=YOUR_JWT_SECRET
+
+# Redis
+redis.host=localhost
+redis.port=6379
+
+# File Upload
 upload.path=C:/upload
+```
 
-macOS
+> 실제 프로젝트의 `secret.properties` 항목에 맞춰 필요한 설정값을 입력합니다.
 
+---
+
+### 2-3. OS별 `upload.path` 설정
+
+파일 업로드 경로는 개발자의 운영체제 및
+로컬 환경에 따라 다르기 때문에 **절대 경로**로 설정해야 합니다.
+
+| OS | `upload.path` 예시 |
+| :---: | :--- |
+| Windows | `C:/upload` |
+| macOS | `/Users/{사용자명}/upload` |
+| Linux | `/home/{사용자명}/upload` |
+
+#### Windows
+
+```properties
+upload.path=C:/upload
+```
+
+#### macOS
+
+```properties
 upload.path=/Users/{사용자명}/upload
+```
 
-예:
+예를 들어 macOS 사용자라면 다음과 같이 설정합니다.
 
+```properties
 upload.path=/Users/hyoneung/upload
+```
 
-upload.path는 각자의 PC에 실제 존재하는 파일 업로드용 절대 경로로 설정해야 합니다.
+`upload.path`는 **각자의 PC에 실제 존재하는 파일 업로드용 절대 경로**로 설정해야 합니다.
 
-또한 설정한 경로에 upload 폴더가 존재하지 않는 경우
+또한 해당 경로에 `upload` 폴더가 존재하지 않는 경우
 파일 업로드 과정에서 오류가 발생할 수 있으므로
-폴더를 미리 생성해야 합니다.
+실행 전에 폴더를 미리 생성합니다.
 
-예를 들어 Windows 환경이라면:
+#### Windows
 
+```text
 C:/
 └── upload/
+```
 
-macOS 환경이라면:
+#### macOS
 
+```text
 /Users/{사용자명}/
 └── upload/
-2-3. Tomcat 설정
+```
 
-본 프로젝트는 Spring Framework 기반의 Web Application으로
+---
+
+### 2-4. Tomcat Server 설정
+
+본 프로젝트는 **Spring Framework 기반 Web Application**으로
 Tomcat Server를 통해 실행합니다.
 
-IntelliJ IDEA에서 다음 순서로 Tomcat을 등록합니다.
+IntelliJ IDEA에서 다음 순서로 Tomcat Server를 등록합니다.
 
+```text
 Run
- → Edit Configurations
- → +
- → Tomcat Server
- → Local
+  ↓
+Edit Configurations
+  ↓
++
+  ↓
+Tomcat Server
+  ↓
+Local
+```
 
-Deployment 항목에서 프로젝트의 Artifact를 추가합니다.
+`Deployment` 항목에서 프로젝트의 Artifact를 추가합니다.
 
+```text
 backend:war exploded
+```
 
-프로젝트에 설정된 Context Path를 적용한 후
+프로젝트에 설정된 `Context Path`를 확인한 후
 Tomcat Server를 실행합니다.
 
-예:
-
+```text
 http://localhost:8080/{context-path}
-2-4. Backend 실행 순서
+```
 
-Backend 실행 전 다음 순서로 환경을 구성합니다.
+예를 들어 Context Path가 `backend`라면:
 
+```text
+http://localhost:8080/backend
+```
+
+---
+
+### 2-5. Backend 실행 순서
+
+Backend 실행 전 다음 순서로 개발 환경을 구성합니다.
+
+```text
 Repository Clone
+      ↓
+Backend 프로젝트 실행
       ↓
 Gradle Dependency 동기화
       ↓
@@ -982,12 +1052,50 @@ Redis 실행
 Tomcat Server 설정
       ↓
 Tomcat 실행
+```
 
-필요한 환경 변수 및 DB 설정이 완료되면
-Tomcat Server를 통해 Spring Framework를 실행합니다.
+#### 실행 환경 체크
 
-secret.properties에는 DB 비밀번호, JWT Secret, API Key 등
-민감한 정보가 포함될 수 있으므로 GitHub Repository에 업로드하지 않습니다.
+| 항목 | 확인 내용 |
+| :--- | :--- |
+| **Gradle** | `build.gradle` Dependency 동기화 |
+| **secret.properties** | DB / JWT / Redis / Upload 설정 |
+| **Upload Directory** | OS에 맞는 절대 경로 및 폴더 생성 |
+| **MySQL** | Database 실행 및 프로젝트 DB 구성 |
+| **Redis** | `localhost:6379` 실행 확인 |
+| **Tomcat** | `backend:war exploded` Artifact 등록 |
+| **Context Path** | 프로젝트 설정에 맞게 적용 |
+
+모든 환경 설정이 완료되면
+Tomcat Server를 실행하여 Spring Framework Backend를 구동합니다.
+
+> `secret.properties`에는 DB 비밀번호, JWT Secret, API Key 등
+> 민감한 정보가 포함될 수 있으므로 **절대 GitHub에 업로드하지 않습니다.**
+
+---
+
+### 2-6. Backend 설정 파일 관리
+
+개발자마다 DB 계정, 파일 저장 위치, 인증 정보 등이 다를 수 있으므로
+환경별 설정값과 소스 코드를 분리하여 관리합니다.
+
+```text
+Backend
+├── src/
+├── build.gradle
+├── ...
+└── secret.properties   ← 로컬 환경에서 직접 생성
+```
+
+`secret.properties`는 `.gitignore`에 등록하여
+Git에 추적되지 않도록 관리합니다.
+
+```gitignore
+secret.properties
+```
+
+이를 통해 팀원마다 자신의 개발 환경에 맞는 설정을 사용하면서도
+민감한 설정 정보가 Repository에 노출되는 것을 방지합니다.
 
 ## 3. Frontend
 
