@@ -1128,5 +1128,4 @@ AI 분석 과정에서 발생한 동기 처리 문제와 GPT 반복 호출 문�
 </p>
 
 <p align="center">
-  © 2026 5성급 개발자. All Rights Reserved.
 </p>
