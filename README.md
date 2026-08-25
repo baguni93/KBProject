@@ -8,7 +8,7 @@
 <br>
 
 <p align="center">
-  <img src="./images/logo.png" width="600px" alt="Social Wallet Logo">
+  <img src="./images/logo.png" width="300px" alt="Social Wallet Logo">
 </p>
 
 <p align="center">
