@@ -5,7 +5,7 @@
 
 ---
 
-## 📌 1. 프로젝트 개요 (Project Overview)
+##  1. 프로젝트 개요 (Project Overview)
 * **프로젝트명:** Social Wallet (KB IT's Your Life 7기, KB 프로젝트 30반 2팀 - 5성급 개발자)
 * **개발 기간:** 2026.07 ~ 2026.08 (약 2개월)
 * **기획 배경 및 목표:**
@@ -14,7 +14,7 @@
 
 ---
 
-## 👥 2. 팀 구성 및 역할 (Team & Roles)
+##  2. 팀 구성 및 역할 (Team & Roles)
 | 이름 | 역할 및 담당 업무 | 주요 세부 업무 |
 | :---: | :--- | :--- |
 | **이승진** (팀장) | 팀장, 발표, UI/UX | 전자지갑, 결제, 송금, 더치페이 정산 |
@@ -25,7 +25,7 @@
 
 ---
 
-## 🛠️ 3. 기술 스택 (Tech Stack)
+##  3. 기술 스택 (Tech Stack)
 * **Frontend:** HTML, CSS, JavaScript, Vue.js (Vue 3), Vite, Pinia, Axios, Vue Router
 * **Backend:** Java, Spring Framework, Spring Security, MyBatis, JWT, Jsoup
 * **Database & Cache:** MySQL, Redis
@@ -34,7 +34,7 @@
 
 ---
 
-## ✨ 4. 주요 기능 (Key Features)
+##  4. 주요 기능 (Key Features)
 
 ### 1) 전자지갑 및 금융 거래 (Wallet & Payment)
 * **계좌 연결 및 관리:** 계좌 인증을 통한 안전한 계좌 등록, 연결 및 해제 관리.
@@ -61,14 +61,14 @@
 
 ---
 
-## 🏗️ 5. 시스템 아키텍처 및 설계
+##  5. 시스템 아키텍처 및 설계
 * **클라이언트-서버 구조:** Vue 3 기반 SPA와 Spring REST API 서버 간 JWT 인증 기반 통신.
 * **실시간 통신:** WebSocket STOMP 브로커를 통한 실시간 알림 전송.
 * **데이터 관리:** RDBMS(MySQL)와 캐시(Redis)의 역할 분담을 통한 성능 최적화.
 
 ---
 
-## 📈 6. 개발 이슈 및 주요 해결 과제
+##  6. 개발 이슈 및 주요 해결 과제
 1. **JWT 인증 및 보안 강화:** Filter 기반 인증 적용, `@AuthenticationPrincipal` 도입으로 사용자 식별 통일, 탈퇴 회원 정보 익명화(`withdrawn_{userId}_{timestamp}`)로 UNIQUE 제약 충돌 방지.
 2. **AI 분석 비동기 처리:** 페이지 이동 시 분석 중단 문제를 방지하기 위해 비동기 처리 및 2초 주기 Polling 도입.
 3. **송금 안정성 확보:** 핵심 송금 로직과 부가 기능(피드 등록 등)을 분리하여 부가 기능 오류가 본질적인 송금에 영향을 주지 않도록 개선.
@@ -76,7 +76,7 @@
 
 ---
 
-## 🔮 7. 향후 개선 및 보완 계획
+##  7. 향후 개선 및 보완 계획
 * **AI 필터링 고도화:** 부정확한 AI 답변 필터링 추가 예정.
 * **콘텐츠 확장:** 피드 동영상 업로드 기능 추가.
 * **관리자 페이지:** 서비스 운영 및 모니터링을 위한 관리자 기능 구축.
