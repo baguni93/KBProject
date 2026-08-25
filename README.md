@@ -262,7 +262,7 @@
 |  Payment    | 결제 활동  |
 |  Settlement | 정산 활동  |
 |  Event      | 이벤트 활동 |
-| 🎨 Card       | 커스텀 카드 |
+|  Card       | 커스텀 카드 |
 |  Analysis   | 소비 분석  |
 
 ### Feed
@@ -758,7 +758,7 @@ KB 카드 및 손해보험 상품 데이터를 안정적으로 수집할 수 있
 
 ---
 
-## 🏠 소셜 피드
+##  소셜 피드
 
 <p align="center">
   <img src="./images/feed.png" width="280px">
