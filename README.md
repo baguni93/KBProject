@@ -1,84 +1,50 @@
-# Social Wallet
+Social Wallet
+결제는 순식간, 소통은 자연스럽게
 
-> ### **결제는 순식간, 소통은 자연스럽게**
->
-> 금융 거래를 **소셜 콘텐츠로 확장**하고,
-> 금융 데이터를 **읽고 즐기는 콘텐츠**로 제공하는 소셜 지갑 서비스
+금융 거래를 소셜 콘텐츠로 확장하고,
+금융 데이터를 읽고 즐기는 콘텐츠로 제공하는 소셜 지갑 서비스
 
-<br>
+<br> <p align="center"> <img src="./images/logo.png" width="300px" alt="Social Wallet Logo"> </p> <p align="center"> <b>KB IT's Your Life 7기 · 30반 2팀 · 5성급 개발자</b> </p> <p align="center"> <img src="https://img.shields.io/badge/Vue.js-3-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white"> <img src="https://img.shields.io/badge/Spring-Framework-6DB33F?style=for-the-badge&logo=spring&logoColor=white"> <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white"> <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white"> <img src="https://img.shields.io/badge/WebSocket-STOMP-010101?style=for-the-badge"> <img src="https://img.shields.io/badge/OpenAI-GPT--5--nano-412991?style=for-the-badge&logo=openai&logoColor=white"> </p> <br>
+목차
+프로젝트 개요
+기획 배경
+팀 구성
+개발 환경 및 기술 스택
+주요 기능
+시스템 아키텍처
+데이터베이스
+주요 기술 구현
+개발 이슈 및 해결
+서비스 화면
+시연 영상
+프로젝트 핵심 성과
+협업 방식
+실행 방법
+향후 개선 계획
+프로젝트 회고
+프로젝트 개요
+구분	내용
+프로젝트명	Social Wallet
+교육 과정	KB IT's Your Life 7기
+팀	30반 2팀 · 5성급 개발자
+개발 기간	2026.07 ~ 2026.08
+개발 인원	5명
+서비스 유형	금융 · 소셜 플랫폼
+한 줄 소개
 
-<p align="center">
-  <img src="./images/logo.png" width="300px" alt="Social Wallet Logo">
-</p>
+Social Wallet은 금융 거래와 소셜 활동을 결합한 전자지갑 서비스입니다.
 
-<p align="center">
-  <b>KB IT's Your Life 7기 · 30반 2팀 · 5성급 개발자</b>
-</p>
+송금·결제·정산과 같은 금융 활동을 단순한 거래 내역으로 끝내지 않고
+피드 콘텐츠로 확장하여 친구들과 공유하고 소통할 수 있도록 설계했습니다.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Vue.js-3-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white">
-  <img src="https://img.shields.io/badge/Spring-Framework-6DB33F?style=for-the-badge&logo=spring&logoColor=white">
-  <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white">
-  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white">
-  <img src="https://img.shields.io/badge/WebSocket-STOMP-010101?style=for-the-badge">
-  <img src="https://img.shields.io/badge/OpenAI-GPT--5--nano-412991?style=for-the-badge&logo=openai&logoColor=white">
-</p>
-
-<br>
-
----
-
-# 목차
-
-- [프로젝트 개요](#-프로젝트-개요)
-- [기획 배경](#-기획-배경)
-- [팀 구성](#-팀-구성)
-- [개발 환경 및 기술 스택](#-개발-환경-및-기술-스택)
-- [주요 기능](#-주요-기능)
-- [시스템 아키텍처](#-시스템-아키텍처)
-- [데이터베이스](#-데이터베이스)
-- [주요 기술 구현](#-주요-기술-구현)
-- [개발 이슈 및 해결](#-개발-이슈-및-해결)
-- [서비스 화면](#-서비스-화면)
-- [시연 영상](#-시연-영상)
-- [프로젝트 핵심 성과](#-프로젝트-핵심-성과)
-- [협업 방식](#-협업-방식)
-- [실행 방법](#-실행-방법)
-- [향후 개선](#-향후-개선)
-- [프로젝트 회고](#-프로젝트-회고)
-
----
-
-# 프로젝트 개요
-
-| 구분 | 내용 |
-| --- | --- |
-| **프로젝트명** | Social Wallet |
-| **교육 과정** | KB IT's Your Life 7기 |
-| **팀** | 30반 2팀 · 5성급 개발자 |
-| **개발 기간** | 2026.07 ~ 2026.08 |
-| **개발 인원** | 5명 |
-| **서비스 유형** | 금융 · 소셜 플랫폼 |
-
-### 한 줄 소개
-
-**Social Wallet은 금융 거래와 소셜 활동을 결합한 전자지갑 서비스입니다.**
-
-송금·결제·정산과 같은 금융 활동을 단순한 거래 내역으로 끝내지 않고  
-**피드 콘텐츠로 확장하여 친구들과 공유하고 소통할 수 있도록 설계했습니다.**
-
-또한 12개월 소비 데이터를 기반으로 AI 소비 분석을 제공하고,  
+또한 12개월 소비 데이터를 기반으로 AI 소비 분석을 제공하고,
 커스텀 카드·이벤트·리워드 등 다양한 콘텐츠를 통해 사용자의 서비스 체류와 참여를 유도합니다.
 
----
-
-# 기획 배경
-
-## 기존 금융 서비스의 한계
+기획 배경
+기존 금융 서비스의 한계
 
 기존 금융 앱은 일반적으로
 
-```text
 금융 활동
    ↓
 결제 / 송금 완료
@@ -101,7 +67,8 @@ Social Wallet의 방향
 서비스 재방문
 
 금융 거래를 소셜 콘텐츠로 확장하고,
-소비 데이터를 AI 기반 콘텐츠로 제공하여 사용자의 자연스러운 서비스 이용을 유도하는 것을 목표로 했습니다.
+소비 데이터를 AI 기반 콘텐츠로 제공하여
+사용자의 자연스러운 서비스 이용을 유도하는 것을 목표로 했습니다.
 
 팀 구성
 팀원	역할	주요 담당
@@ -125,7 +92,7 @@ WebSocket + STOMP 연동
 Custom Card
 카드 디자인
 배경 / 패턴
-텍스트 / 이모지
+텍스트
 이미지 업로드
 카드 발급 및 공유
 기타
@@ -230,13 +197,11 @@ FRIEND
 PRIVATE
  └─ 본인
 
-금융 서비스 특성을 고려하여 공개 범위에 따라
-거래 금액과 민감 정보의 노출 범위를 다르게 처리했습니다.
+금융 서비스 특성을 고려하여 공개 범위에 따라 거래 금액과 민감 정보의 노출 범위를 다르게 처리했습니다.
 
 03. Redis 기반 좋아요
 
-좋아요는 짧은 시간에 많은 요청이 발생할 수 있는 기능이므로
-Redis를 활용하여 빠르게 처리하도록 구현했습니다.
+좋아요는 짧은 시간에 많은 요청이 발생할 수 있는 기능이므로 Redis를 활용하여 빠르게 처리하도록 구현했습니다.
 
 Client
    ↓
@@ -256,8 +221,7 @@ DB 부하 감소
 백그라운드 DB 동기화
 04. 실시간 알림
 
-WebSocket + STOMP를 이용해
-페이지 새로고침 없이 실시간 알림을 제공합니다.
+WebSocket + STOMP를 이용해 페이지 새로고침 없이 실시간 알림을 제공합니다.
 
 알림 유형
 좋아요
@@ -276,8 +240,7 @@ WebSocket + STOMP를 이용해
 
 05. AI 소비 분석
 
-최근 12개월 소비 데이터를 기반으로
-사용자의 소비 패턴을 분석합니다.
+최근 12개월 소비 데이터를 기반으로 사용자의 소비 패턴을 분석합니다.
 
 제공 기능
 월별 소비 분석
@@ -301,15 +264,14 @@ AI 칭호 생성
 사용자 제공
 AI 호출 최적화
 
-가맹점 카테고리 분류 시
-merchant_category_mapping_tbl을 우선 조회하여 이미 분류된 가맹점은 AI를 재호출하지 않도록 구현했습니다.
+가맹점 카테고리 분류 시 merchant_category_mapping_tbl을 우선 조회하여 이미 분류된 가맹점은 AI를 재호출하지 않도록 구현했습니다.
 
 가맹점 조회
    ↓
 Mapping Table 조회
    ↓
  ┌───────────────┐
-  기존 데이터 존재
+ │ 기존 데이터 존재 │
  └───────┬───────┘
          │
     YES  │  NO
@@ -318,13 +280,11 @@ Mapping Table 조회
  사용       ↓
           결과 저장
 
-또한 매핑 데이터의 신뢰도 관리를 위해
-수동 변경률을 기준으로 매핑 데이터를 관리했습니다.
+또한 매핑 데이터의 신뢰도 관리를 위해 수동 변경률을 기준으로 매핑 데이터를 관리했습니다.
 
 06. AI 비동기 분석
 
-초기 AI 분석은 동기 방식으로 처리했지만
-사용자가 분석 중 페이지를 이동할 경우 요청이 종료되는 문제가 발생했습니다.
+초기 AI 분석은 동기 방식으로 처리했지만 사용자가 분석 중 페이지를 이동할 경우 요청이 종료되는 문제가 발생했습니다.
 
 Before
 분석 요청
@@ -347,13 +307,11 @@ After
    ↓
 결과 조회
 
-Axios 기반 비동기 요청 + 2초 Polling을 적용하여
-분석 작업과 사용자 화면을 분리했습니다.
+Axios 기반 비동기 요청 + 2초 Polling을 적용하여 분석 작업과 사용자 화면을 분리했습니다.
 
 07. 금융 상품 추천
 
-Jsoup을 활용해 KB 금융 상품 데이터를 수집하고
-사용자에게 적합한 상품을 추천할 수 있도록 구현했습니다.
+Jsoup을 활용해 KB 금융 상품 데이터를 수집하고 사용자에게 적합한 상품을 추천할 수 있도록 구현했습니다.
 
 자동 수집
 KB 상품 페이지
@@ -372,8 +330,7 @@ KB 카드 123건
 
 08. Custom Card
 
-사용자가 직접 자신만의 디지털 카드를 제작하고
-이를 피드에 공유할 수 있도록 구현했습니다.
+사용자가 직접 자신만의 디지털 카드를 제작하고 이를 피드에 공유할 수 있도록 구현했습니다.
 
 제작 요소
 단색 배경
@@ -382,7 +339,6 @@ KB 카드 123건
 사용자 이미지
 패턴
 텍스트
-이모지
 직접 그리기
 제작 과정
 약관 동의
@@ -393,7 +349,7 @@ KB 카드 123건
    ↓
 배경 / 이미지
    ↓
-패턴 / 텍스트 / 이모지
+패턴 / 텍스트
    ↓
 미리보기
    ↓
@@ -431,8 +387,7 @@ REQUEST
 포인트 보상
 이벤트 결과 공유
 
-중복 보상 지급을 방지하기 위해
-DB의 UNIQUE KEY 제약 조건을 활용했습니다.
+중복 보상 지급을 방지하기 위해 DB의 UNIQUE KEY 제약 조건을 활용했습니다.
 
 시스템 아키텍처
 <p align="center"> <img src="./images/architecture.PNG" width="850px" alt="System Architecture"> </p>
@@ -455,16 +410,14 @@ User
 주요 기술 구현
 01. Redis와 WebSocket의 역할 분리
 
-두 기술을 단순히 실시간 기능이라는 이유로 혼용하지 않고
-각각의 목적에 따라 역할을 분리했습니다.
+두 기술을 단순히 실시간 기능이라는 이유로 혼용하지 않고 각각의 목적에 따라 역할을 분리했습니다.
 
 기술	적용 기능	목적
 Redis	좋아요	빠른 상태 처리 및 DB 부하 감소
 WebSocket + STOMP	알림 / 정산	사용자에게 실시간 이벤트 전달
 02. 금융 거래와 부가 기능 분리
 
-송금 과정에서 피드 생성이나 리워드 처리 등의 부가 기능에 오류가 발생하더라도
-핵심 금융 거래 자체가 실패하지 않도록 로직을 분리했습니다.
+송금 과정에서 피드 생성이나 리워드 처리 등의 부가 기능에 오류가 발생하더라도 핵심 금융 거래 자체가 실패하지 않도록 로직을 분리했습니다.
 
 핵심 거래
   │
@@ -499,22 +452,16 @@ Authentication
  ↓
 Controller
 
-@AuthenticationPrincipal을 활용하여
-컨트롤러에서 인증 사용자를 일관된 방식으로 식별하도록 구성했습니다.
+@AuthenticationPrincipal을 활용하여 컨트롤러에서 인증 사용자를 일관된 방식으로 식별하도록 구성했습니다.
 
-또한 탈퇴 회원의 UNIQUE 제약 충돌을 방지하기 위해
-탈퇴 사용자 정보를
+또한 탈퇴 회원의 UNIQUE 제약 충돌을 방지하기 위해 탈퇴 사용자 정보를 다음과 같은 형태로 익명화했습니다.
 
 withdrawn_{userId}_{timestamp}
-
-형태로 익명화했습니다.
-
 개발 이슈 및 해결
 01. AI 분석 중 페이지 이동 문제
 문제
 
-AI 분석이 동기 방식으로 처리되어
-사용자가 페이지를 이동하면 분석 요청이 종료되는 문제가 발생했습니다.
+AI 분석이 동기 방식으로 처리되어 사용자가 페이지를 이동하면 분석 요청이 종료되는 문제가 발생했습니다.
 
 해결
 비동기 분석 요청
@@ -523,19 +470,16 @@ AI 분석이 동기 방식으로 처리되어
 결과 조회 API 분리
 결과
 
-사용자가 분석 화면을 벗어나더라도
-AI 분석 작업이 정상적으로 완료되도록 개선했습니다.
+사용자가 분석 화면을 벗어나더라도 AI 분석 작업이 정상적으로 완료되도록 개선했습니다.
 
 02. GPT 반복 호출 문제
 문제
 
-동일 가맹점에 대해 소비 카테고리를 분류할 때
-GPT API가 반복 호출되었습니다.
+동일 가맹점에 대해 소비 카테고리를 분류할 때 GPT API가 반복 호출되었습니다.
 
 해결
 
-가맹점-카테고리 매핑 테이블을 구축하고
-기존 분류 결과를 우선 조회하도록 변경했습니다.
+가맹점-카테고리 매핑 테이블을 구축하고 기존 분류 결과를 우선 조회하도록 변경했습니다.
 
 결과
 GPT 호출 횟수 감소
@@ -544,8 +488,7 @@ API 사용량 감소
 03. Redis READONLY 문제
 문제
 
-Docker Redis가 Replica 상태로 실행되어
-쓰기 요청 시 다음 오류가 발생했습니다.
+Docker Redis가 Replica 상태로 실행되어 쓰기 요청 시 다음 오류가 발생했습니다.
 
 READONLY You can't write against a read only replica.
 해결
@@ -556,19 +499,16 @@ redis-cli
 REPLICAOF NO ONE
 결과
 
-Redis를 정상적인 Master 상태로 전환하여
-쓰기 요청을 정상 처리할 수 있도록 해결했습니다.
+Redis를 정상적인 Master 상태로 전환하여 쓰기 요청을 정상 처리할 수 있도록 해결했습니다.
 
 04. 비정형 HTML 크롤링 문제
 문제
 
-금융 상품 페이지마다 HTML 구조가 달라
-단일 Selector만으로는 모든 상품 데이터를 수집하기 어려웠습니다.
+금융 상품 페이지마다 HTML 구조가 달라 단일 Selector만으로는 모든 상품 데이터를 수집하기 어려웠습니다.
 
 해결
 
-페이지 구조별 5개의 크롤링 규칙을 추가하여
-HTML 구조에 따라 다른 Parsing 로직을 적용했습니다.
+페이지 구조별 5개의 크롤링 규칙을 추가하여 HTML 구조에 따라 다른 Parsing 로직을 적용했습니다.
 
 결과
 
@@ -578,14 +518,12 @@ KB 카드 및 손해보험 상품 데이터를 안정적으로 수집할 수 있
 회원가입
 <p align="center"> <img src="./images/signup.png" width="280px" alt="회원가입"> </p>
 
-약관 동의부터 본인인증, 간편 비밀번호, 닉네임 설정까지
-신규 사용자의 회원가입 과정을 제공합니다.
+약관 동의부터 본인인증, 간편 비밀번호, 닉네임 설정까지 신규 사용자의 회원가입 과정을 제공합니다.
 
 소셜 피드
 <p align="center"> <img src="./images/feed.png" width="280px" alt="소셜 피드"> </p>
 
-금융 거래와 다양한 서비스 활동을 피드 형태로 확인하고
-친구들과 좋아요와 댓글을 통해 소통할 수 있습니다.
+금융 거래와 다양한 서비스 활동을 피드 형태로 확인하고 친구들과 좋아요와 댓글을 통해 소통할 수 있습니다.
 
 송금 & 정산
 <p align="center"> <img src="./images/settlement.png" width="280px" alt="송금 및 정산"> </p>
@@ -595,17 +533,15 @@ KB 카드 및 손해보험 상품 데이터를 안정적으로 수집할 수 있
 소비 분석
 <p align="center"> <img src="./images/analysis.png" width="280px" alt="소비 분석"> </p>
 
-최근 12개월 소비 데이터를 분석하여
-AI 소비 칭호와 소비 패턴을 제공합니다.
+최근 12개월 소비 데이터를 분석하여 AI 소비 칭호와 소비 패턴을 제공합니다.
 
 커스텀 카드
 <p align="center"> <img src="./images/custom-card.png" width="280px" alt="커스텀 카드"> </p>
 
-사용자의 사진과 다양한 디자인 요소를 활용해
-나만의 카드를 제작하고 공유할 수 있습니다.
+사용자의 사진과 다양한 디자인 요소를 활용해 나만의 카드를 제작하고 공유할 수 있습니다.
 
 시연 영상
-<p align="center"> <a href="https://youtu.be/7DNlIi7Jd-M" target="_blank"> <img src="https://img.youtube.com/vi/7DNlIi7Jd-M/maxresdefault.jpg" width="600px" alt="Social Wallet 시연 영상" > </a> </p> <p align="center"> <b>Social Wallet Demo</b> </p>
+<p align="center"> <a href="https://youtu.be/7DNlIi7Jd-M" target="_blank"> <img src="https://img.youtube.com/vi/7DNlIi7Jd-M/maxresdefault.jpg" width="600px" alt="Social Wallet 시연 영상"> </a> </p> <p align="center"> <b>Social Wallet Demo</b> </p>
 프로젝트 핵심 성과
 금융
 계좌 연결 및 관리
@@ -655,8 +591,7 @@ git clone https://github.com/baguni93/KBProject.git
 
 2-1. Gradle
 
-Backend 프로젝트를 IntelliJ IDEA에서 열고
-Gradle Dependency를 동기화합니다.
+Backend 프로젝트를 IntelliJ IDEA에서 열고 Gradle Dependency를 동기화합니다.
 
 프로젝트의 build.gradle을 기준으로 필요한 의존성이 자동으로 설치됩니다.
 
@@ -669,15 +604,11 @@ Gradle Dependency 동기화
 필요한 라이브러리 설치
 2-2. secret.properties 설정
 
-DB, JWT, Redis, 파일 업로드 경로 등
-개발자별 로컬 환경에 따라 달라지는 설정값은
-secret.properties에서 관리합니다.
+DB, JWT, Redis, 파일 업로드 경로 등 개발자별 로컬 환경에 따라 달라지는 설정값은 secret.properties에서 관리합니다.
 
-secret.properties에는 개인정보 및 인증 정보가 포함될 수 있으므로
-GitHub Repository에는 포함하지 않습니다.
+secret.properties에는 개인정보 및 인증 정보가 포함될 수 있으므로 GitHub Repository에는 포함하지 않습니다.
 
-Repository Clone 후 각자의 Backend 설정 경로에
-secret.properties를 생성하고 로컬 환경에 맞게 설정합니다.
+Repository Clone 후 각자의 Backend 설정 경로에 secret.properties를 생성하고 로컬 환경에 맞게 설정합니다.
 
 secret.properties 주요 설정
 # Database
@@ -698,8 +629,7 @@ upload.path=C:/upload
 
 2-3. OS별 upload.path 설정
 
-파일 업로드 경로는 개발자의 운영체제 및
-로컬 환경에 따라 다르기 때문에 절대 경로로 설정해야 합니다.
+파일 업로드 경로는 개발자의 운영체제 및 로컬 환경에 따라 다르기 때문에 절대 경로로 설정해야 합니다.
 
 OS	upload.path 예시
 Windows	C:/upload
@@ -716,9 +646,7 @@ upload.path=/Users/hyoneung/upload
 
 upload.path는 각자의 PC에 실제 존재하는 파일 업로드용 절대 경로로 설정해야 합니다.
 
-또한 해당 경로에 upload 폴더가 존재하지 않는 경우
-파일 업로드 과정에서 오류가 발생할 수 있으므로
-실행 전에 폴더를 미리 생성합니다.
+또한 해당 경로에 upload 폴더가 존재하지 않는 경우 파일 업로드 과정에서 오류가 발생할 수 있으므로 실행 전에 폴더를 미리 생성합니다.
 
 Windows
 C:/
@@ -728,8 +656,7 @@ macOS
 └── upload/
 2-4. Tomcat Server 설정
 
-본 프로젝트는 Spring Framework 기반 Web Application으로
-Tomcat Server를 통해 실행합니다.
+본 프로젝트는 Spring Framework 기반 Web Application으로 Tomcat Server를 통해 실행합니다.
 
 IntelliJ IDEA에서 다음 순서로 Tomcat Server를 등록합니다.
 
@@ -747,8 +674,7 @@ Deployment 항목에서 프로젝트의 Artifact를 추가합니다.
 
 backend:war exploded
 
-프로젝트에 설정된 Context Path를 확인한 후
-Tomcat Server를 실행합니다.
+프로젝트에 설정된 Context Path를 확인한 후 Tomcat Server를 실행합니다.
 
 http://localhost:8080/{context-path}
 
@@ -788,16 +714,13 @@ Redis	localhost:6379 실행 확인
 Tomcat	backend:war exploded Artifact 등록
 Context Path	프로젝트 설정에 맞게 적용
 
-모든 환경 설정이 완료되면
-Tomcat Server를 실행하여 Spring Framework Backend를 구동합니다.
+모든 환경 설정이 완료되면 Tomcat Server를 실행하여 Spring Framework Backend를 구동합니다.
 
-secret.properties에는 DB 비밀번호, JWT Secret, API Key 등
-민감한 정보가 포함될 수 있으므로 절대 GitHub에 업로드하지 않습니다.
+secret.properties에는 DB 비밀번호, JWT Secret, API Key 등 민감한 정보가 포함될 수 있으므로 절대 GitHub에 업로드하지 않습니다.
 
 2-6. Backend 설정 파일 관리
 
-개발자마다 DB 계정, 파일 저장 위치, 인증 정보 등이 다를 수 있으므로
-환경별 설정값과 소스 코드를 분리하여 관리합니다.
+개발자마다 DB 계정, 파일 저장 위치, 인증 정보 등이 다를 수 있으므로 환경별 설정값과 소스 코드를 분리하여 관리합니다.
 
 Backend
 ├── src/
@@ -805,13 +728,11 @@ Backend
 ├── ...
 └── secret.properties
 
-secret.properties는 .gitignore에 등록하여
-Git에 추적되지 않도록 관리합니다.
+secret.properties는 .gitignore에 등록하여 Git에 추적되지 않도록 관리합니다.
 
 secret.properties
 
-이를 통해 팀원마다 자신의 개발 환경에 맞는 설정을 사용하면서도
-민감한 설정 정보가 Repository에 노출되는 것을 방지합니다.
+이를 통해 팀원마다 자신의 개발 환경에 맞는 설정을 사용하면서도 민감한 설정 정보가 Repository에 노출되는 것을 방지합니다.
 
 3. Frontend
 cd frontend
@@ -847,16 +768,11 @@ OCR 기반 그림 인식
 테스트 코드 확대
 프로젝트 회고
 
-이번 프로젝트에서는 단순한 금융 CRUD 구현을 넘어
-금융 서비스와 소셜 기능을 하나의 사용자 경험으로 연결하는 것에 집중했습니다.
+이번 프로젝트에서는 단순한 금융 CRUD 구현을 넘어 금융 서비스와 소셜 기능을 하나의 사용자 경험으로 연결하는 것에 집중했습니다.
 
-특히 Redis와 WebSocket을 기능의 목적에 따라 분리하여 적용하고,
-AI 분석 과정에서 발생한 동기 처리 문제와 GPT 반복 호출 문제를 직접 해결하면서
-단순히 기술을 사용하는 것을 넘어 기술 선택의 이유와 실제 서비스에서 발생할 수 있는 문제를 고민하는 경험을 할 수 있었습니다.
+특히 Redis와 WebSocket을 기능의 목적에 따라 분리하여 적용하고, AI 분석 과정에서 발생한 동기 처리 문제와 GPT 반복 호출 문제를 직접 해결하면서 단순히 기술을 사용하는 것을 넘어 기술 선택의 이유와 실제 서비스에서 발생할 수 있는 문제를 고민하는 경험을 할 수 있었습니다.
 
-또한 팀원들과 Git, GitHub, Notion을 활용하여
-기능 개발뿐만 아니라 코드 병합, 충돌 해결, 오류 기록, API 관리 등
-협업 과정 전반을 경험할 수 있었습니다.
+또한 팀원들과 Git, GitHub, Notion을 활용하여 기능 개발뿐만 아니라 코드 병합, 충돌 해결, 오류 기록, API 관리 등 협업 과정 전반을 경험할 수 있었습니다.
 
 <br> <p align="center">
 Social Wallet
@@ -868,4 +784,4 @@ Social Wallet
 2026 KB IT's Your Life 7기 · 30반 2팀 · 5성급 개발자
 
 </p>
-<p align="center"> © 2026 5성급 개발자. All Rights Reserved. </p> ```
+<p align="center"> © 2026 5성급 개발자. All Rights Reserved. </p>
